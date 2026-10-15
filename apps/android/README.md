@@ -22,6 +22,7 @@ Four batches so far, all unit-tested on the JVM.
 | `protocol/ChatPipeline.kt` | `lib/protocol/chat_pipeline.dart` (388 lines) | the api layer over `ChatConnection`: login (token sourcing explicit > provider > userId, one AUTH_FAILED renewal round, terminal `onLoginResult`/`onAuthResult` fan-out), send (CLOSED-first validation, `/command` routing with throwing-handler fallback, interceptor rewrite→wire / drop→BLOCKED, archive both directions), incoming path (notify parse → interceptor → archive → listeners, malformed bodies dropped without touching the link), lifecycle (start/stop with throwing-listener isolation) |
 | `protocol/OfflineSendQueue.kt` | new (dart side has UI-level pending flags only) | client outbox replayed on reconnect: at-least-once (TIMEOUT keeps the entry), CLOSED stops the flush with the tail kept in order, BLOCKED/argument errors drop, any server response (incl. TARGET_OFFLINE) confirms; clientId dedupe, drop-oldest eviction at cap |
 | `protocol/WordFilterLoader.kt` | — | reads a server-format lexicon file into a `WordFilter` (no protocol channel for lexicon delivery exists — see below) |
+| `protocol/Gzip.kt` | C++/TS/C# gzip readers (new; `game_chat_features` P2 消息压缩) | `GZIPInputStream` reader for the compressed-history shape (16 MiB cap) + the `MsgSpecs.getHistory` unpack hook; the login round declares `supports_gzip` |
 
 Dart's single event loop becomes a lock: all state transitions hold one
 monitor (transport callbacks arrive on OkHttp threads, timers on the
@@ -102,11 +103,11 @@ Two legs, both must stay green:
 
 ```sh
 make test    # leg 1 (SDK-free): JDK 21 + kotlinc; compiles src/main/kotlin +
-             #   src/test/kotlin against pinned jars, runs the 110 tests
+             #   src/test/kotlin against pinned jars, runs the 122 tests
 make clean
 
 ./gradlew assembleDebug        # leg 2: AGP 9.4.1 app shell → debug APK
-./gradlew testDebugUnitTest    #   the same 110 tests through Gradle
+./gradlew testDebugUnitTest    #   the same 122 tests through Gradle
 #   (+ the push variant: ./gradlew clean assembleDebug testDebugUnitTest
 #    -PchirpPush=true — fetches Firebase, compiles the FCM receive side
 #    (ChirpFirebaseService) which the default build never sees, exercises

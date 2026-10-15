@@ -127,6 +127,23 @@ class ChatPipelineTest {
     }
 
     @Test
+    fun loginDeclaresGzipCapability() {
+        // 消息压缩消费面：登录一次性声明能力，服务端只对声明会话回 gzip 形态
+        // 历史；spec 侧挂了拆封钩子才敢声明。
+        val (pipeline, transport) = connectedPipeline()
+        val future = pipeline.login("user-1")
+        val sent = Gateway.Packet.parseFrom(transport.lastSentPayload())
+        assertTrue(Auth.LoginRequest.parseFrom(sent.body).supportsGzip)
+        transport.deliverWsMessage(
+            wsMessage(
+                Gateway.MsgID.LOGIN_RESP, sent.sequence,
+                Auth.LoginResponse.newBuilder().setCode(Common.ErrorCode.OK).build(),
+            ),
+        )
+        assertEquals(Common.ErrorCode.OK, unwrapped(future))
+    }
+
+    @Test
     fun authFailedGivesTheProviderOneRenewalChance() {
         val (pipeline, transport) = connectedPipeline()
         val outcomes = ArrayList<Common.ErrorCode>()

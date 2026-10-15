@@ -324,6 +324,8 @@ class ChatPipeline(
                 .setToken(token)
                 .setDeviceId(deviceId())
                 .setPlatform("android")
+                // 消息压缩消费面：MsgSpecs.getHistory 解码侧拆封 messages_gzip。
+                .setSupportsGzip(true)
                 .setLevel(level)
                 .build(),
         ).thenApply { resp ->
