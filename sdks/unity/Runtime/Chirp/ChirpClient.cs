@@ -482,6 +482,8 @@ namespace Chirp.Sdk
                 DeviceId = deviceId,
                 Platform = "unity",
                 SupportsMessageAck = true,
+                // 消息压缩消费面：GET_HISTORY 解码侧会拆封 messages_gzip。
+                SupportsGzip = true,
                 Level = level,
             }, timeoutMs);
         }

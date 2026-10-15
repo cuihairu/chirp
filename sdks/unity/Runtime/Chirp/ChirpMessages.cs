@@ -19,8 +19,32 @@ namespace Chirp.Sdk
         // Chat (direct chat WS entry).
         public static readonly MessageSpec<Chirp.Chat.SendMessageResponse> SendMessage =
             new(MsgID.SendMessageReq, MsgID.SendMessageResp, Chirp.Chat.SendMessageResponse.Parser);
+        // 消息压缩消费面(游戏功能 P2)：登录已声明 supports_gzip,服务端把消息清单
+        // 装进同型 GetHistoryResponse 压缩后放 messages_gzip。解码侧拆封回明文
+        // 清单再交上层,明文形态照旧直读;坏容器/坏载荷抛 GzipInflateError(与 C++
+        // BadResponse、TS GzipError 同义,见 game_chat_features.md)。
         public static readonly MessageSpec<Chirp.Chat.GetHistoryResponse> GetHistory =
-            new(MsgID.GetHistoryReq, MsgID.GetHistoryResp, Chirp.Chat.GetHistoryResponse.Parser);
+            new(MsgID.GetHistoryReq, MsgID.GetHistoryResp, Chirp.Chat.GetHistoryResponse.Parser,
+                InflateGzipHistory);
+
+        private static Chirp.Chat.GetHistoryResponse InflateGzipHistory(
+            Chirp.Chat.GetHistoryResponse resp)
+        {
+            if (resp.MessagesGzip.Length == 0)
+            {
+                return resp;
+            }
+            var inner = Chirp.Chat.GetHistoryResponse.Parser.ParseFrom(
+                GzipInflate.Inflate(resp.MessagesGzip.ToByteArray()));
+            // Only the envelope fields and the inflated list survive;
+            // MessagesGzip is dropped so callers see one uniform shape.
+            return new Chirp.Chat.GetHistoryResponse
+            {
+                Code = resp.Code,
+                HasMore = resp.HasMore,
+                Messages = { inner.Messages },
+            };
+        }
         public static readonly MessageSpec<Chirp.Chat.MarkReadResponse> MarkRead =
             new(MsgID.MarkReadReq, MsgID.MarkReadResp, Chirp.Chat.MarkReadResponse.Parser);
         public static readonly MessageSpec<Chirp.Chat.GetUserGroupsResponse> GetUserGroups =
