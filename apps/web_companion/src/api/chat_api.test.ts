@@ -6,7 +6,11 @@ import {
   GroupMemberAliasUpdatedNotify,
   GroupMemberKickedNotify,
   GroupMemberMutedNotify,
+  AchievementMetadata,
+  GuildRecruitMetadata,
   ItemMetadata,
+  PartyRecruitMetadata,
+  TradeMetadata,
   MessageAck,
   MessageDeletedNotify,
   MessageEditedNotify,
@@ -303,6 +307,110 @@ describe('ChatApi.sendMessage (optimistic)', () => {
     });
   });
 
+  it('sends ACHIEVEMENT with achievement metadata and shows the card optimistically', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.SEND_MESSAGE_REQ);
+      expect(req).toMatchObject({ msgType: MsgType.ACHIEVEMENT });
+      return { code: 0, messageId: 'srv-a1' };
+    });
+    await h.api.sendMessage(channel, '解锁了新成就', undefined, undefined, undefined, {
+      achievementId: 'achievement-7001',
+      achievementName: '全服首杀·烈焰巨龙',
+      description: '首次击杀世界 BOSS 烈焰巨龙',
+      rarity: 3,
+    });
+    const wire = h.conn.requests.find((r) => r.msgId === MsgID.SEND_MESSAGE_REQ)!;
+    const achievement = AchievementMetadata.decode(
+      (wire.req as { metadata?: Uint8Array }).metadata ?? new Uint8Array(),
+    );
+    expect(achievement.achievementId).toBe('achievement-7001');
+    expect(achievement.achievementName).toBe('全服首杀·烈焰巨龙');
+    expect(achievement.rarity).toBe(3);
+    expect(h.messages.get().byChannel[channel.key][0]).toMatchObject({
+      messageId: 'srv-a1',
+      achievement: { achievementId: 'achievement-7001', achievementName: '全服首杀·烈焰巨龙', rarity: 3 },
+    });
+  });
+
+  it('sends TRADE_STATUS with trade metadata and shows the card optimistically', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.SEND_MESSAGE_REQ);
+      expect(req).toMatchObject({ msgType: MsgType.TRADE_STATUS });
+      return { code: 0, messageId: 'srv-tr1' };
+    });
+    await h.api.sendMessage(
+      channel,
+      '交易已成交',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { tradeId: 'trade-9001', status: 'COMPLETED', amount: 1500, itemName: '烈焰剑', itemCount: 2 },
+    );
+    const wire = h.conn.requests.find((r) => r.msgId === MsgID.SEND_MESSAGE_REQ)!;
+    const trade = TradeMetadata.decode(
+      (wire.req as { metadata?: Uint8Array }).metadata ?? new Uint8Array(),
+    );
+    expect(trade.tradeId).toBe('trade-9001');
+    expect(trade.status).toBe('COMPLETED');
+    expect(trade.amount).toBe(1500);
+    expect(trade.itemName).toBe('烈焰剑');
+    expect(trade.itemCount).toBe(2);
+    expect(h.messages.get().byChannel[channel.key][0]).toMatchObject({
+      messageId: 'srv-tr1',
+      trade: { tradeId: 'trade-9001', status: 'COMPLETED', amount: 1500, itemName: '烈焰剑', itemCount: 2 },
+    });
+  });
+
+  it('sends GUILD_RECRUIT with guild metadata and shows the card optimistically', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.SEND_MESSAGE_REQ);
+      expect(req).toMatchObject({ msgType: MsgType.GUILD_RECRUIT });
+      return { code: 0, messageId: 'srv-g1' };
+    });
+    await h.api.sendMessage(
+      channel,
+      '招募成员',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      {
+        guildId: 'guild-3001',
+        guildName: '烈焰军团',
+        level: 7,
+        memberCount: 48,
+        maxMembers: 60,
+        description: '周三晚开荒',
+      },
+    );
+    const wire = h.conn.requests.find((r) => r.msgId === MsgID.SEND_MESSAGE_REQ)!;
+    const guild = GuildRecruitMetadata.decode(
+      (wire.req as { metadata?: Uint8Array }).metadata ?? new Uint8Array(),
+    );
+    expect(guild.guildId).toBe('guild-3001');
+    expect(guild.guildName).toBe('烈焰军团');
+    expect(guild.level).toBe(7);
+    expect(guild.maxMembers).toBe(60);
+    expect(h.messages.get().byChannel[channel.key][0]).toMatchObject({
+      messageId: 'srv-g1',
+      guildRecruit: {
+        guildId: 'guild-3001',
+        guildName: '烈焰军团',
+        level: 7,
+        memberCount: 48,
+        maxMembers: 60,
+      },
+    });
+  });
+
   it('leaves plain sends as TEXT without metadata on the wire', async () => {
     const h = makeHarness();
     await login(h);
@@ -392,6 +500,185 @@ describe('ChatApi incoming notifies', () => {
     );
     const second = h.messages.get().byChannel['p:user_a|user_b'][1];
     expect(second.item).toBeUndefined();
+    expect(second.content).toBe('hi');
+  });
+
+  it('parses the achievement card out of an ACHIEVEMENT notify metadata', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        msgType: MsgType.ACHIEVEMENT,
+        content: new TextEncoder().encode('解锁了新成就'),
+        metadata: AchievementMetadata.encode(
+          AchievementMetadata.fromPartial({
+            achievementId: 'achievement-7001',
+            achievementName: '全服首杀·烈焰巨龙',
+            description: '首次击杀世界 BOSS 烈焰巨龙',
+            rarity: 3,
+          }),
+        ).finish(),
+      }),
+    );
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0]).toMatchObject({
+      achievement: {
+        achievementId: 'achievement-7001',
+        achievementName: '全服首杀·烈焰巨龙',
+        rarity: 3,
+      },
+    });
+  });
+
+  it('drops the achievement card when the metadata does not parse or lacks achievement_id', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ msgType: MsgType.ACHIEVEMENT, metadata: new Uint8Array([0xde, 0xad, 0xbe, 0xef]) }),
+    );
+    const first = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(first.achievement).toBeUndefined();
+    expect(first.content).toBe('hi');
+
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm2',
+        msgType: MsgType.ACHIEVEMENT,
+        metadata: AchievementMetadata.encode(
+          AchievementMetadata.fromPartial({ achievementName: '无名成就' }),
+        ).finish(),
+      }),
+    );
+    const second = h.messages.get().byChannel['p:user_a|user_b'][1];
+    expect(second.achievement).toBeUndefined();
+    expect(second.content).toBe('hi');
+  });
+
+  it('parses the trade card out of a TRADE_STATUS notify metadata', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        msgType: MsgType.TRADE_STATUS,
+        content: new TextEncoder().encode('交易已成交'),
+        metadata: TradeMetadata.encode(
+          TradeMetadata.fromPartial({
+            tradeId: 'trade-9001',
+            status: 'COMPLETED',
+            amount: 1500,
+            itemName: '烈焰剑',
+            itemCount: 2,
+          }),
+        ).finish(),
+      }),
+    );
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0]).toMatchObject({
+      trade: {
+        tradeId: 'trade-9001',
+        status: 'COMPLETED',
+        amount: 1500,
+        itemName: '烈焰剑',
+        itemCount: 2,
+      },
+    });
+  });
+
+  it('drops the trade card when the metadata does not parse or lacks trade_id', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ msgType: MsgType.TRADE_STATUS, metadata: new Uint8Array([0xde, 0xad, 0xbe, 0xef]) }),
+    );
+    const first = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(first.trade).toBeUndefined();
+    expect(first.content).toBe('hi');
+
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm2',
+        msgType: MsgType.TRADE_STATUS,
+        metadata: TradeMetadata.encode(
+          TradeMetadata.fromPartial({ status: 'CREATED', amount: 100 }),
+        ).finish(),
+      }),
+    );
+    const second = h.messages.get().byChannel['p:user_a|user_b'][1];
+    expect(second.trade).toBeUndefined();
+    expect(second.content).toBe('hi');
+  });
+
+  it('parses the recruit cards out of GUILD/PARTY_RECRUIT notify metadata', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        msgType: MsgType.GUILD_RECRUIT,
+        content: new TextEncoder().encode('招募成员'),
+        metadata: GuildRecruitMetadata.encode(
+          GuildRecruitMetadata.fromPartial({
+            guildId: 'guild-3001',
+            guildName: '烈焰军团',
+            level: 7,
+            memberCount: 48,
+            maxMembers: 60,
+          }),
+        ).finish(),
+      }),
+    );
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0]).toMatchObject({
+      guildRecruit: { guildId: 'guild-3001', guildName: '烈焰军团', level: 7, memberCount: 48, maxMembers: 60 },
+    });
+
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm2',
+        msgType: MsgType.PARTY_RECRUIT,
+        metadata: PartyRecruitMetadata.encode(
+          PartyRecruitMetadata.fromPartial({
+            partyId: 'party-4001',
+            dungeonName: '熔岩之心',
+            needed: 5,
+            current: 3,
+            leaderName: 'alice',
+          }),
+        ).finish(),
+      }),
+    );
+    expect(h.messages.get().byChannel['p:user_a|user_b'][1]).toMatchObject({
+      partyRecruit: { partyId: 'party-4001', dungeonName: '熔岩之心', needed: 5, current: 3, leaderName: 'alice' },
+    });
+  });
+
+  it('drops the recruit cards when the metadata does not parse or lacks ids', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ msgType: MsgType.GUILD_RECRUIT, metadata: new Uint8Array([0xde, 0xad, 0xbe, 0xef]) }),
+    );
+    const first = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(first.guildRecruit).toBeUndefined();
+    expect(first.content).toBe('hi');
+
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm2',
+        msgType: MsgType.PARTY_RECRUIT,
+        metadata: PartyRecruitMetadata.encode(
+          PartyRecruitMetadata.fromPartial({ dungeonName: '无名副本' }),
+        ).finish(),
+      }),
+    );
+    const second = h.messages.get().byChannel['p:user_a|user_b'][1];
+    expect(second.partyRecruit).toBeUndefined();
     expect(second.content).toBe('hi');
   });
 
@@ -638,6 +925,56 @@ describe('ChatApi receipts and groups', () => {
     });
     expect(await h.api.createGroup('Party')).toBe('guild-9');
     expect(h.conversations.get().conversations.some((c) => c.key === 'g:guild-9')).toBe(true);
+  });
+
+  it('createGroup forwards ttl seconds and the roster carries the expiry', async () => {
+    const h = makeHarness();
+    await login(h, {
+      [MsgID.CREATE_GROUP_REQ]: { code: 0, groupId: 'guild-ttl' },
+      [MsgID.GET_USER_GROUPS_REQ]: {
+        code: 0,
+        groups: [{ groupId: 'guild-ttl', groupName: 'Raid', expiresAt: 1792032098833 }],
+      },
+    });
+    expect(await h.api.createGroup('Raid', '', 3600)).toBe('guild-ttl');
+    const create = h.conn.requests.find((r) => r.msgId === MsgID.CREATE_GROUP_REQ);
+    expect(create?.req).toMatchObject({ ttlSeconds: 3600 });
+    expect(
+      h.conversations.get().conversations.find((c) => c.key === 'g:guild-ttl')?.expiresAt,
+    ).toBe(1792032098833);
+  });
+
+  it('refreshGroups prunes group conversations missing from the roster', async () => {
+    const h = makeHarness();
+    await login(h, { [MsgID.GET_USER_GROUPS_REQ]: { code: 0, groups: [] } });
+    h.conversations.set((prev) => ({
+      conversations: [
+        ...prev.conversations,
+        {
+          kind: 'group',
+          key: 'g:gone',
+          channelId: 'gone',
+          peerId: 'gone',
+          title: 'Gone',
+          unreadLocal: 1,
+        },
+        {
+          kind: 'private',
+          key: 'p:user_a|user_x',
+          channelId: 'user_a|user_x',
+          peerId: 'user_x',
+          title: 'user_x',
+          unreadLocal: 0,
+        },
+      ],
+    }));
+
+    await h.api.refreshGroups();
+
+    const keys = h.conversations.get().conversations.map((c) => c.key);
+    // 名册外群（临时频道到点 / 退群）本地消失；私聊不参与名册修剪。
+    expect(keys).not.toContain('g:gone');
+    expect(keys).toContain('p:user_a|user_x');
   });
 
   it('loadGroupMembers returns members on success and [] otherwise', async () => {

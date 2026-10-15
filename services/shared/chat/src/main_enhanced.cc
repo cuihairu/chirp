@@ -21,12 +21,15 @@
 #include "channel_pacer.h"
 #include "chat_validation.h"
 #include "delivery_ack_manager.h"
+#include "history_compression.h"
 #include "delivery_prefs.h"
 #include "repeat_guard.h"
 #include "inject_consumer.h"
 #include "login_token_verifier.h"
 #include "message_delivery_tracker.h"
+#include "group_expiry_sweeper.h"
 #include "group_handlers.h"
+#include "history_retention_sweeper.h"
 #include "message_edit_manager.h"
 #include "message_handlers.h"
 #include "message_migration_worker.h"
@@ -98,10 +101,11 @@ struct DistributedChatState {
       const std::string& user_id, const std::string& device_id,
       const std::string& session_id,
       const std::shared_ptr<chirp::network::Session>& session,
-      const std::string& platform, int32_t level = 0) {
+      const std::string& platform, int32_t level = 0,
+      bool supports_gzip = false) {
     return chirp::network::BindAuthenticatedSession(registry, user_id, session_id,
                                                     device_id, session, platform,
-                                                    level);
+                                                    level, supports_gzip);
   }
 
   // Only releases the (user, platform) slot while it still points at THIS
@@ -278,12 +282,46 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
                                      seq, resp.SerializeAsString());
     return;
   }
+  // 成就分享（P1 ACHIEVEMENT）：与坐标/物品链接同层同口径——解析不出或
+  // achievement_id 为空的不落任何存储（basic 形态经 ValidateSendMessageRequest）。
+  if (const chirp::common::ErrorCode achievement_code = chirp::chat::ValidateAchievementMetadata(req);
+      achievement_code != chirp::common::OK) {
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(achievement_code);
+    resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+    chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP,
+                                     seq, resp.SerializeAsString());
+    return;
+  }
   // 物品链接（P0 ITEM_LINK）：与坐标链接同层同口径——解析不出或 item_id
   // 为空的不落任何存储（basic 形态经 ValidateSendMessageRequest）。
   if (const chirp::common::ErrorCode item_code = chirp::chat::ValidateItemMetadata(req);
       item_code != chirp::common::OK) {
     chirp::chat::SendMessageResponse resp;
     resp.set_code(item_code);
+    resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+    chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP,
+                                     seq, resp.SerializeAsString());
+    return;
+  }
+  // 交易状态（P1 TRADE_STATUS）：与坐标/物品/成就链接同层同口径——解析不出
+  // 或 trade_id 为空的不落任何存储（basic 形态经 ValidateSendMessageRequest）。
+  if (const chirp::common::ErrorCode trade_code = chirp::chat::ValidateTradeMetadata(req);
+      trade_code != chirp::common::OK) {
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(trade_code);
+    resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+    chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP,
+                                     seq, resp.SerializeAsString());
+    return;
+  }
+  // 招募卡片（P1 GUILD_RECRUIT/PARTY_RECRUIT）：与交易/成就链接同层同口径——
+  // 解析不出或 guild_id/party_id 为空的不落任何存储（basic 形态经
+  // ValidateSendMessageRequest）。
+  if (const chirp::common::ErrorCode recruit_code = chirp::chat::ValidateRecruitMetadata(req);
+      recruit_code != chirp::common::OK) {
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(recruit_code);
     resp.set_server_timestamp(chirp::chat::runtime::NowMs());
     chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP,
                                      seq, resp.SerializeAsString());
@@ -896,7 +934,7 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
     // listing (self excluded) rides in the response, and the user's other
     // devices learn this device came online.
     auto old = state->AddSession(user_id, req.device_id(), resp.session_id(), session,
-                                 req.platform(), req.level());
+                                 req.platform(), req.level(), req.supports_gzip());
     if (old && old.get() != session.get()) {
       KickSession(old, chirp::network::LoginKickReason(req.platform()));
     }
@@ -991,6 +1029,7 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
 void HandleGetHistory(const chirp::chat::GetHistoryRequest& req,
                     const std::shared_ptr<chirp::network::Session>& session,
                     const std::shared_ptr<PaginatedHistoryRetriever>& retriever,
+                    bool supports_gzip,
                     int64_t seq) {
   std::string channel_id = req.channel_id();
 
@@ -1017,6 +1056,9 @@ void HandleGetHistory(const chirp::chat::GetHistoryRequest& req,
     msg->set_metadata(msg_data.metadata);
   }
 
+  // 消息压缩（game_chat_features P2）：登录声明 supports_gzip 的会话收
+  // gzip 形态，其余保持明文 repeated 字段不变。
+  chirp::chat::CompressHistoryResponse(&resp, supports_gzip);
   chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_HISTORY_RESP, seq, resp.SerializeAsString());
 }
 
@@ -1076,6 +1118,17 @@ int main(int argc, char** argv) {
   const int world_channel_min_level =
       chirp::chat::runtime::ParseIntArg(argc, argv, "--world_channel_min_level", 0);
 
+  // 历史保留窗（game_chat_features P2 消息过期）：天数计，0 = 关（缺省，
+  // app/companion 部署零 I/O）。私聊窗未配时跟随普通窗——「私聊保留更久」
+  // 是把它配得更大的旋钮，不是硬规则。
+  const int history_retention_days =
+      chirp::chat::runtime::ParseIntArg(argc, argv, "--history_retention_days", 0);
+  const int private_history_retention_days_raw =
+      chirp::chat::runtime::ParseIntArg(argc, argv, "--private_history_retention_days", 0);
+  const int private_history_retention_days =
+      private_history_retention_days_raw > 0 ? private_history_retention_days_raw
+                                             : history_retention_days;
+
   std::string instance_id = chirp::chat::runtime::GetArg(argc, argv, "--instance_id", "");
   if (instance_id.empty()) {
     instance_id = "chat_" + chirp::chat::runtime::RandomHex(8);
@@ -1121,6 +1174,13 @@ int main(int argc, char** argv) {
 
   auto migration_worker = std::make_shared<MessageMigrationWorker>(io, store, store_config);
   migration_worker->Start();
+
+  // 消息过期（P2）：保留窗周期清理（双 0 = 关，Start 内部自判零 I/O）。
+  auto retention_sweeper = std::make_shared<chirp::chat::HistoryRetentionSweeper>(
+      io, store,
+      static_cast<int64_t>(history_retention_days) * 24 * 60 * 60 * 1000,
+      static_cast<int64_t>(private_history_retention_days) * 24 * 60 * 60 * 1000);
+  retention_sweeper->Start();
 
   auto router = std::make_shared<chirp::network::MessageRouter>(io, redis_host, redis_port);
   if (!router->Start()) {
@@ -1525,6 +1585,10 @@ int main(int argc, char** argv) {
   // 踢人/名单）、群消息成员扇出、typing/已读/表情的群频道成员解析共用。
   // 与 basic 同样是单实例台账；跨实例成员通知与既有 notify 一致是尽力而为。
   chirp::chat::GroupManager groups;
+  // 临时频道过期清扫（P1）：周期回收到点的临时群（读路径惰性摘除只覆盖
+  // 被读到的那些）。与保留清扫同一 io context，Start 内部零 I/O 兜底。
+  chirp::chat::GroupExpirySweeper group_expiry_sweeper(io, groups);
+  group_expiry_sweeper.Start();
   // 举报台账（basic 同一 ReportLedger，内存态）：REPORT_MESSAGE 2253 的记录面，
   // 存在性校验借撤回管道的编辑台账。
   chirp::chat::ReportLedger reports;
@@ -1749,10 +1813,11 @@ int main(int argc, char** argv) {
                       spoke_game_id, edit_handlers, &directory, hub, &group_handlers,
                       &reaction_handlers, seq);
   };
-  handlers.on_get_history = [retriever](const std::shared_ptr<chirp::network::Session>& session,
+  handlers.on_get_history = [retriever, state](const std::shared_ptr<chirp::network::Session>& session,
                                         const chirp::chat::GetHistoryRequest& req,
                                         int64_t seq) {
-    HandleGetHistory(req, session, retriever, seq);
+    HandleGetHistory(req, session, retriever,
+                     chirp::network::SessionSupportsGzip(state->registry, session.get()), seq);
   };
   handlers.on_get_history_v2 = [](const std::shared_ptr<chirp::network::Session>& session,
                                   const std::string& body,
@@ -2024,6 +2089,8 @@ int main(int argc, char** argv) {
     router->Stop();
     delivery_tracker->Stop();
     migration_worker->Stop();
+    retention_sweeper->Stop();
+    group_expiry_sweeper.Stop();
     if (metrics_server) {
       metrics_server->Stop();
     }

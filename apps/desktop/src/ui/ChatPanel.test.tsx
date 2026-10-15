@@ -143,3 +143,151 @@ describe('ChatPanel item link cards (P0 ITEM_LINK)', () => {
     expect(screen.queryByTestId('item-t1')).toBeNull();
   });
 });
+
+describe('ChatPanel achievement cards (P1 ACHIEVEMENT)', () => {
+  it('renders the achievement card with the rarity face and description', async () => {
+    renderPanel([
+      message({
+        messageId: 'ac1',
+        content: '解锁了新成就',
+        achievement: {
+          achievementId: 'achievement-7001',
+          achievementName: '全服首杀·烈焰巨龙',
+          description: '首次击杀世界 BOSS 烈焰巨龙',
+          iconUrl: '',
+          rarity: 3,
+        },
+      }),
+    ]);
+    await waitFor(() => expect(screen.getByText('解锁了新成就')).toBeTruthy());
+    const card = screen.getByTestId('achievement-ac1');
+    expect(card.getAttribute('data-rarity')).toBe('3');
+    expect(card.textContent).toContain('全服首杀·烈焰巨龙');
+    expect(card.textContent).toContain('稀有度 史诗');
+    expect(card.textContent).toContain('首次击杀世界 BOSS 烈焰巨龙');
+    expect(card.textContent).toContain('achievement-7001');
+  });
+
+  it('renders no achievement card for plain text messages', async () => {
+    renderPanel([message({ messageId: 't1', content: '纯文本' })]);
+    await waitFor(() => expect(screen.getByText('纯文本')).toBeTruthy());
+    expect(screen.queryByTestId('achievement-t1')).toBeNull();
+  });
+});
+
+describe('ChatPanel trade cards (P1 TRADE_STATUS)', () => {
+  it('renders the trade card with the status badge, amount and item summary', async () => {
+    renderPanel([
+      message({
+        messageId: 'tr1',
+        content: '交易已成交',
+        trade: {
+          tradeId: 'trade-9001',
+          status: 'COMPLETED',
+          amount: 1500,
+          itemName: '烈焰剑',
+          itemCount: 2,
+        },
+      }),
+    ]);
+    await waitFor(() => expect(screen.getByText('交易已成交')).toBeTruthy());
+    const card = screen.getByTestId('trade-tr1');
+    expect(card.getAttribute('data-trade-status')).toBe('COMPLETED');
+    expect(card.textContent).toContain('交易状态 · COMPLETED');
+    expect(card.textContent).toContain('烈焰剑 ×2');
+    expect(card.textContent).toContain('金额 1500');
+    expect(card.textContent).toContain('trade-9001');
+  });
+
+  it('renders no trade card for plain text messages', async () => {
+    renderPanel([message({ messageId: 't2', content: '纯文本' })]);
+    await waitFor(() => expect(screen.getByText('纯文本')).toBeTruthy());
+    expect(screen.queryByTestId('trade-t2')).toBeNull();
+  });
+});
+
+describe('ChatPanel recruit cards (P1 GUILD/PARTY_RECRUIT)', () => {
+  it('renders the guild recruit card with level, headcount and blurb', async () => {
+    renderPanel([
+      message({
+        messageId: 'gu1',
+        content: '招募成员',
+        guildRecruit: {
+          guildId: 'guild-3001',
+          guildName: '烈焰军团',
+          level: 7,
+          memberCount: 48,
+          maxMembers: 60,
+          description: '周三晚开荒',
+        },
+      }),
+    ]);
+    await waitFor(() => expect(screen.getByText('招募成员')).toBeTruthy());
+    const card = screen.getByTestId('guild-gu1');
+    expect(card.textContent).toContain('公会招募');
+    expect(card.textContent).toContain('烈焰军团');
+    expect(card.textContent).toContain('等级 7');
+    expect(card.textContent).toContain('人数 48/60');
+    expect(card.textContent).toContain('周三晚开荒');
+    expect(card.textContent).toContain('guild-3001');
+  });
+
+  it('renders the party recruit card with headcount need and leader', async () => {
+    renderPanel([
+      message({
+        messageId: 'pa1',
+        content: '缺 2 人',
+        partyRecruit: {
+          partyId: 'party-4001',
+          dungeonName: '熔岩之心',
+          needed: 5,
+          current: 3,
+          leaderName: 'alice',
+        },
+      }),
+    ]);
+    await waitFor(() => expect(screen.getByText('缺 2 人')).toBeTruthy());
+    const card = screen.getByTestId('party-pa1');
+    expect(card.textContent).toContain('组队招募');
+    expect(card.textContent).toContain('熔岩之心');
+    expect(card.textContent).toContain('缺 2 人');
+    expect(card.textContent).toContain('3/5');
+    expect(card.textContent).toContain('队长 alice');
+    expect(card.textContent).toContain('party-4001');
+  });
+});
+
+describe('ChatPanel emoji codes (P1 表情/贴图)', () => {
+  it('expands emoji codes in the message text and keeps unknown codes literal', async () => {
+    renderPanel([message({ messageId: 'e1', content: 'hi [emoji:fire] [emoji:zzz]' })]);
+    await waitFor(() => expect(screen.getByTestId('msg-text-e1')).toBeTruthy());
+    expect(screen.getByTestId('emoji-e1-fire').textContent).toBe('🔥');
+    expect(screen.getByTestId('msg-text-e1').textContent).toContain('[emoji:zzz]');
+  });
+
+  it('inserts the picked emoji code into the draft', async () => {
+    renderPanel([message({ messageId: 'm1', content: 'hi' })]);
+    await waitFor(() => expect(screen.getByText('hi')).toBeTruthy());
+    fireEvent.click(screen.getByTestId('emoji-picker-toggle'));
+    fireEvent.click(screen.getByTestId('emoji-pick-smile'));
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toContain('[emoji:smile]');
+  });
+});
+
+describe('ChatPanel rich text (P1 富文本)', () => {
+  it('renders bold and italic markers as strong/em and keeps the rest literal', async () => {
+    renderPanel([message({ messageId: 'rt1', content: '上分**一波推**了*真的* 2 * 3' })]);
+    await waitFor(() => expect(screen.getByTestId('msg-text-rt1')).toBeTruthy());
+    const text = screen.getByTestId('msg-text-rt1');
+    expect(text.querySelector('strong')?.textContent).toBe('一波推');
+    expect(text.querySelector('em')?.textContent).toBe('真的');
+    expect(text.textContent).toBe('上分一波推了真的 2 * 3');
+  });
+
+  it('carries the run style into an emoji inside the styled span', async () => {
+    renderPanel([message({ messageId: 'rt2', content: '**火[emoji:fire]**' })]);
+    await waitFor(() => expect(screen.getByTestId('msg-text-rt2')).toBeTruthy());
+    const bold = screen.getByTestId('msg-text-rt2').querySelector('strong');
+    expect(bold?.textContent).toBe('火🔥');
+  });
+});

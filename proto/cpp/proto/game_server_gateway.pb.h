@@ -4777,6 +4777,8 @@ class MessageInjectRequest final : public ::google::protobuf::Message
     kGameIdFieldNumber = 8,
     kSenderKindFieldNumber = 2,
     kChannelTypeFieldNumber = 4,
+    kPriorityFieldNumber = 9,
+    kTtlSecondsFieldNumber = 10,
   };
   // string inject_id = 1;
   void clear_inject_id() ;
@@ -4888,11 +4890,31 @@ class MessageInjectRequest final : public ::google::protobuf::Message
   void _internal_set_channel_type(::int32_t value);
 
   public:
+  // int32 priority = 9;
+  void clear_priority() ;
+  ::int32_t priority() const;
+  void set_priority(::int32_t value);
+
+  private:
+  ::int32_t _internal_priority() const;
+  void _internal_set_priority(::int32_t value);
+
+  public:
+  // int32 ttl_seconds = 10;
+  void clear_ttl_seconds() ;
+  ::int32_t ttl_seconds() const;
+  void set_ttl_seconds(::int32_t value);
+
+  private:
+  ::int32_t _internal_ttl_seconds() const;
+  void _internal_set_ttl_seconds(::int32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:chirp.game_server_gateway.MessageInjectRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 8,
+  static const ::google::protobuf::internal::TcParseTable<4, 10,
                                    0, 109,
                                    2>
       _table_;
@@ -4922,6 +4944,8 @@ class MessageInjectRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr game_id_;
     int sender_kind_;
     ::int32_t channel_type_;
+    ::int32_t priority_;
+    ::int32_t ttl_seconds_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -9991,6 +10015,56 @@ inline void MessageInjectRequest::set_allocated_game_id(::std::string* PROTOBUF_
     _impl_.game_id_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:chirp.game_server_gateway.MessageInjectRequest.game_id)
+}
+
+// int32 priority = 9;
+inline void MessageInjectRequest::clear_priority() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.priority_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000100U);
+}
+inline ::int32_t MessageInjectRequest::priority() const {
+  // @@protoc_insertion_point(field_get:chirp.game_server_gateway.MessageInjectRequest.priority)
+  return _internal_priority();
+}
+inline void MessageInjectRequest::set_priority(::int32_t value) {
+  _internal_set_priority(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:chirp.game_server_gateway.MessageInjectRequest.priority)
+}
+inline ::int32_t MessageInjectRequest::_internal_priority() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.priority_;
+}
+inline void MessageInjectRequest::_internal_set_priority(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.priority_ = value;
+}
+
+// int32 ttl_seconds = 10;
+inline void MessageInjectRequest::clear_ttl_seconds() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ttl_seconds_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000200U);
+}
+inline ::int32_t MessageInjectRequest::ttl_seconds() const {
+  // @@protoc_insertion_point(field_get:chirp.game_server_gateway.MessageInjectRequest.ttl_seconds)
+  return _internal_ttl_seconds();
+}
+inline void MessageInjectRequest::set_ttl_seconds(::int32_t value) {
+  _internal_set_ttl_seconds(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  // @@protoc_insertion_point(field_set:chirp.game_server_gateway.MessageInjectRequest.ttl_seconds)
+}
+inline ::int32_t MessageInjectRequest::_internal_ttl_seconds() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.ttl_seconds_;
+}
+inline void MessageInjectRequest::_internal_set_ttl_seconds(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ttl_seconds_ = value;
 }
 
 // -------------------------------------------------------------------

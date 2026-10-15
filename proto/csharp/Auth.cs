@@ -25,59 +25,59 @@ namespace Chirp.Auth {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "ChBwcm90by9hdXRoLnByb3RvEgpjaGlycC5hdXRoGhJwcm90by9jb21tb24u",
-            "cHJvdG8ibwoMTG9naW5SZXF1ZXN0Eg0KBXRva2VuGAEgASgJEhEKCWRldmlj",
-            "ZV9pZBgCIAEoCRIQCghwbGF0Zm9ybRgDIAEoCRIcChRzdXBwb3J0c19tZXNz",
-            "YWdlX2FjaxgEIAEoCBINCgVsZXZlbBgFIAEoBSIcCgpLaWNrTm90aWZ5Eg4K",
-            "BnJlYXNvbhgBIAEoCSJRCg5EZXZpY2VQcmVzZW5jZRIQCghwbGF0Zm9ybRgB",
-            "IAEoCRIRCglkZXZpY2VfaWQYAiABKAkSDgoGb25saW5lGAMgASgIEgoKAnRz",
-            "GAQgASgDIkQKFURldmljZXNQcmVzZW5jZU5vdGlmeRIrCgdkZXZpY2VzGAEg",
-            "AygLMhouY2hpcnAuYXV0aC5EZXZpY2VQcmVzZW5jZSLhAQoNTG9naW5SZXNw",
-            "b25zZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAuY29tbW9uLkVycm9yQ29kZRIS",
-            "CgpzZXNzaW9uX2lkGAIgASgJEhMKC3NlcnZlcl90aW1lGAMgASgDEg8KB3Vz",
-            "ZXJfaWQYBCABKAkSFQoNa2lja19wcmV2aW91cxgFIAEoCBIkCgRraWNrGAYg",
-            "ASgLMhYuY2hpcnAuYXV0aC5LaWNrTm90aWZ5EjIKDm9ubGluZV9kZXZpY2Vz",
-            "GAcgAygLMhouY2hpcnAuYXV0aC5EZXZpY2VQcmVzZW5jZSI0Cg1Mb2dvdXRS",
-            "ZXF1ZXN0Eg8KB3VzZXJfaWQYASABKAkSEgoKc2Vzc2lvbl9pZBgCIAEoCSJM",
-            "Cg5Mb2dvdXRSZXNwb25zZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAuY29tbW9u",
-            "LkVycm9yQ29kZRITCgtzZXJ2ZXJfdGltZRgCIAEoAyJaCg9SZWdpc3RlclJl",
-            "cXVlc3QSEAoIdXNlcm5hbWUYASABKAkSDQoFZW1haWwYAiABKAkSEAoIcGFz",
-            "c3dvcmQYAyABKAkSFAoMZGlzcGxheV9uYW1lGAQgASgJInYKEFJlZ2lzdGVy",
-            "UmVzcG9uc2USJQoEY29kZRgBIAEoDjIXLmNoaXJwLmNvbW1vbi5FcnJvckNv",
-            "ZGUSDwoHdXNlcl9pZBgCIAEoCRITCgtzZXJ2ZXJfdGltZRgDIAEoAxIVCg1l",
-            "cnJvcl9tZXNzYWdlGAQgASgJImEKFFBhc3N3b3JkTG9naW5SZXF1ZXN0EhIK",
-            "CmlkZW50aWZpZXIYASABKAkSEAoIcGFzc3dvcmQYAiABKAkSEQoJZGV2aWNl",
-            "X2lkGAMgASgJEhAKCHBsYXRmb3JtGAQgASgJIqgCChVQYXNzd29yZExvZ2lu",
-            "UmVzcG9uc2USJQoEY29kZRgBIAEoDjIXLmNoaXJwLmNvbW1vbi5FcnJvckNv",
-            "ZGUSDwoHdXNlcl9pZBgCIAEoCRIQCgh1c2VybmFtZRgDIAEoCRISCgpzZXNz",
-            "aW9uX2lkGAQgASgJEhQKDGFjY2Vzc190b2tlbhgFIAEoCRIVCg1yZWZyZXNo",
-            "X3Rva2VuGAYgASgJEh8KF2FjY2Vzc190b2tlbl9leHBpcmVzX2F0GAcgASgD",
-            "EiAKGHJlZnJlc2hfdG9rZW5fZXhwaXJlc19hdBgIIAEoAxITCgtzZXJ2ZXJf",
-            "dGltZRgJIAEoAxIVCg1raWNrX3ByZXZpb3VzGAogASgIEhUKDWVycm9yX21l",
-            "c3NhZ2UYCyABKAkiLAoTUmVmcmVzaFRva2VuUmVxdWVzdBIVCg1yZWZyZXNo",
-            "X3Rva2VuGAEgASgJIqABChRSZWZyZXNoVG9rZW5SZXNwb25zZRIlCgRjb2Rl",
-            "GAEgASgOMhcuY2hpcnAuY29tbW9uLkVycm9yQ29kZRIUCgxhY2Nlc3NfdG9r",
-            "ZW4YAiABKAkSHwoXYWNjZXNzX3Rva2VuX2V4cGlyZXNfYXQYAyABKAMSEwoL",
-            "c2VydmVyX3RpbWUYBCABKAMSFQoNZXJyb3JfbWVzc2FnZRgFIAEoCSIlChJH",
-            "ZXRTZXNzaW9uc1JlcXVlc3QSDwoHdXNlcl9pZBgBIAEoCSKIAQoLU2Vzc2lv",
-            "bkluZm8SEgoKc2Vzc2lvbl9pZBgBIAEoCRIRCglkZXZpY2VfaWQYAiABKAkS",
-            "EAoIcGxhdGZvcm0YAyABKAkSEgoKY3JlYXRlZF9hdBgEIAEoAxIYChBsYXN0",
-            "X2FjdGl2aXR5X2F0GAUgASgDEhIKCmlzX2N1cnJlbnQYBiABKAgifAoTR2V0",
-            "U2Vzc2lvbnNSZXNwb25zZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAuY29tbW9u",
-            "LkVycm9yQ29kZRIpCghzZXNzaW9ucxgCIAMoCzIXLmNoaXJwLmF1dGguU2Vz",
-            "c2lvbkluZm8SEwoLc2VydmVyX3RpbWUYAyABKAMiOwoUUmV2b2tlU2Vzc2lv",
-            "blJlcXVlc3QSDwoHdXNlcl9pZBgBIAEoCRISCgpzZXNzaW9uX2lkGAIgASgJ",
-            "IlMKFVJldm9rZVNlc3Npb25SZXNwb25zZRIlCgRjb2RlGAEgASgOMhcuY2hp",
-            "cnAuY29tbW9uLkVycm9yQ29kZRITCgtzZXJ2ZXJfdGltZRgCIAEoAyJUChVD",
-            "aGFuZ2VQYXNzd29yZFJlcXVlc3QSDwoHdXNlcl9pZBgBIAEoCRIUCgxvbGRf",
-            "cGFzc3dvcmQYAiABKAkSFAoMbmV3X3Bhc3N3b3JkGAMgASgJImsKFkNoYW5n",
-            "ZVBhc3N3b3JkUmVzcG9uc2USJQoEY29kZRgBIAEoDjIXLmNoaXJwLmNvbW1v",
-            "bi5FcnJvckNvZGUSEwoLc2VydmVyX3RpbWUYAiABKAMSFQoNZXJyb3JfbWVz",
-            "c2FnZRgDIAEoCUIkWiJnaXRodWIuY29tL2N1aS9jaGlycC9wcm90by9nby9h",
-            "dXRoYgZwcm90bzM="));
+            "cHJvdG8ihgEKDExvZ2luUmVxdWVzdBINCgV0b2tlbhgBIAEoCRIRCglkZXZp",
+            "Y2VfaWQYAiABKAkSEAoIcGxhdGZvcm0YAyABKAkSHAoUc3VwcG9ydHNfbWVz",
+            "c2FnZV9hY2sYBCABKAgSDQoFbGV2ZWwYBSABKAUSFQoNc3VwcG9ydHNfZ3pp",
+            "cBgGIAEoCCIcCgpLaWNrTm90aWZ5Eg4KBnJlYXNvbhgBIAEoCSJRCg5EZXZp",
+            "Y2VQcmVzZW5jZRIQCghwbGF0Zm9ybRgBIAEoCRIRCglkZXZpY2VfaWQYAiAB",
+            "KAkSDgoGb25saW5lGAMgASgIEgoKAnRzGAQgASgDIkQKFURldmljZXNQcmVz",
+            "ZW5jZU5vdGlmeRIrCgdkZXZpY2VzGAEgAygLMhouY2hpcnAuYXV0aC5EZXZp",
+            "Y2VQcmVzZW5jZSLhAQoNTG9naW5SZXNwb25zZRIlCgRjb2RlGAEgASgOMhcu",
+            "Y2hpcnAuY29tbW9uLkVycm9yQ29kZRISCgpzZXNzaW9uX2lkGAIgASgJEhMK",
+            "C3NlcnZlcl90aW1lGAMgASgDEg8KB3VzZXJfaWQYBCABKAkSFQoNa2lja19w",
+            "cmV2aW91cxgFIAEoCBIkCgRraWNrGAYgASgLMhYuY2hpcnAuYXV0aC5LaWNr",
+            "Tm90aWZ5EjIKDm9ubGluZV9kZXZpY2VzGAcgAygLMhouY2hpcnAuYXV0aC5E",
+            "ZXZpY2VQcmVzZW5jZSI0Cg1Mb2dvdXRSZXF1ZXN0Eg8KB3VzZXJfaWQYASAB",
+            "KAkSEgoKc2Vzc2lvbl9pZBgCIAEoCSJMCg5Mb2dvdXRSZXNwb25zZRIlCgRj",
+            "b2RlGAEgASgOMhcuY2hpcnAuY29tbW9uLkVycm9yQ29kZRITCgtzZXJ2ZXJf",
+            "dGltZRgCIAEoAyJaCg9SZWdpc3RlclJlcXVlc3QSEAoIdXNlcm5hbWUYASAB",
+            "KAkSDQoFZW1haWwYAiABKAkSEAoIcGFzc3dvcmQYAyABKAkSFAoMZGlzcGxh",
+            "eV9uYW1lGAQgASgJInYKEFJlZ2lzdGVyUmVzcG9uc2USJQoEY29kZRgBIAEo",
+            "DjIXLmNoaXJwLmNvbW1vbi5FcnJvckNvZGUSDwoHdXNlcl9pZBgCIAEoCRIT",
+            "CgtzZXJ2ZXJfdGltZRgDIAEoAxIVCg1lcnJvcl9tZXNzYWdlGAQgASgJImEK",
+            "FFBhc3N3b3JkTG9naW5SZXF1ZXN0EhIKCmlkZW50aWZpZXIYASABKAkSEAoI",
+            "cGFzc3dvcmQYAiABKAkSEQoJZGV2aWNlX2lkGAMgASgJEhAKCHBsYXRmb3Jt",
+            "GAQgASgJIqgCChVQYXNzd29yZExvZ2luUmVzcG9uc2USJQoEY29kZRgBIAEo",
+            "DjIXLmNoaXJwLmNvbW1vbi5FcnJvckNvZGUSDwoHdXNlcl9pZBgCIAEoCRIQ",
+            "Cgh1c2VybmFtZRgDIAEoCRISCgpzZXNzaW9uX2lkGAQgASgJEhQKDGFjY2Vz",
+            "c190b2tlbhgFIAEoCRIVCg1yZWZyZXNoX3Rva2VuGAYgASgJEh8KF2FjY2Vz",
+            "c190b2tlbl9leHBpcmVzX2F0GAcgASgDEiAKGHJlZnJlc2hfdG9rZW5fZXhw",
+            "aXJlc19hdBgIIAEoAxITCgtzZXJ2ZXJfdGltZRgJIAEoAxIVCg1raWNrX3By",
+            "ZXZpb3VzGAogASgIEhUKDWVycm9yX21lc3NhZ2UYCyABKAkiLAoTUmVmcmVz",
+            "aFRva2VuUmVxdWVzdBIVCg1yZWZyZXNoX3Rva2VuGAEgASgJIqABChRSZWZy",
+            "ZXNoVG9rZW5SZXNwb25zZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAuY29tbW9u",
+            "LkVycm9yQ29kZRIUCgxhY2Nlc3NfdG9rZW4YAiABKAkSHwoXYWNjZXNzX3Rv",
+            "a2VuX2V4cGlyZXNfYXQYAyABKAMSEwoLc2VydmVyX3RpbWUYBCABKAMSFQoN",
+            "ZXJyb3JfbWVzc2FnZRgFIAEoCSIlChJHZXRTZXNzaW9uc1JlcXVlc3QSDwoH",
+            "dXNlcl9pZBgBIAEoCSKIAQoLU2Vzc2lvbkluZm8SEgoKc2Vzc2lvbl9pZBgB",
+            "IAEoCRIRCglkZXZpY2VfaWQYAiABKAkSEAoIcGxhdGZvcm0YAyABKAkSEgoK",
+            "Y3JlYXRlZF9hdBgEIAEoAxIYChBsYXN0X2FjdGl2aXR5X2F0GAUgASgDEhIK",
+            "CmlzX2N1cnJlbnQYBiABKAgifAoTR2V0U2Vzc2lvbnNSZXNwb25zZRIlCgRj",
+            "b2RlGAEgASgOMhcuY2hpcnAuY29tbW9uLkVycm9yQ29kZRIpCghzZXNzaW9u",
+            "cxgCIAMoCzIXLmNoaXJwLmF1dGguU2Vzc2lvbkluZm8SEwoLc2VydmVyX3Rp",
+            "bWUYAyABKAMiOwoUUmV2b2tlU2Vzc2lvblJlcXVlc3QSDwoHdXNlcl9pZBgB",
+            "IAEoCRISCgpzZXNzaW9uX2lkGAIgASgJIlMKFVJldm9rZVNlc3Npb25SZXNw",
+            "b25zZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAuY29tbW9uLkVycm9yQ29kZRIT",
+            "CgtzZXJ2ZXJfdGltZRgCIAEoAyJUChVDaGFuZ2VQYXNzd29yZFJlcXVlc3QS",
+            "DwoHdXNlcl9pZBgBIAEoCRIUCgxvbGRfcGFzc3dvcmQYAiABKAkSFAoMbmV3",
+            "X3Bhc3N3b3JkGAMgASgJImsKFkNoYW5nZVBhc3N3b3JkUmVzcG9uc2USJQoE",
+            "Y29kZRgBIAEoDjIXLmNoaXJwLmNvbW1vbi5FcnJvckNvZGUSEwoLc2VydmVy",
+            "X3RpbWUYAiABKAMSFQoNZXJyb3JfbWVzc2FnZRgDIAEoCUIkWiJnaXRodWIu",
+            "Y29tL2N1aS9jaGlycC9wcm90by9nby9hdXRoYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Chirp.Common.CommonReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Auth.LoginRequest), global::Chirp.Auth.LoginRequest.Parser, new[]{ "Token", "DeviceId", "Platform", "SupportsMessageAck", "Level" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Auth.LoginRequest), global::Chirp.Auth.LoginRequest.Parser, new[]{ "Token", "DeviceId", "Platform", "SupportsMessageAck", "Level", "SupportsGzip" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Auth.KickNotify), global::Chirp.Auth.KickNotify.Parser, new[]{ "Reason" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Auth.DevicePresence), global::Chirp.Auth.DevicePresence.Parser, new[]{ "Platform", "DeviceId", "Online", "Ts" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Auth.DevicesPresenceNotify), global::Chirp.Auth.DevicesPresenceNotify.Parser, new[]{ "Devices" }, null, null, null, null),
@@ -143,6 +143,7 @@ namespace Chirp.Auth {
       platform_ = other.platform_;
       supportsMessageAck_ = other.supportsMessageAck_;
       level_ = other.level_;
+      supportsGzip_ = other.supportsGzip_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -228,6 +229,25 @@ namespace Chirp.Auth {
       }
     }
 
+    /// <summary>Field number for the "supports_gzip" field.</summary>
+    public const int SupportsGzipFieldNumber = 6;
+    private bool supportsGzip_;
+    /// <summary>
+    /// Declared by clients that can read gzip-compressed history payloads: a
+    /// GetHistoryResponse with messages_gzip set carries the message list in a
+    /// gzip (RFC 1952) container instead of the plain repeated field. The
+    /// server keeps the plain form for sessions that do not declare this, so
+    /// legacy clients are unaffected (game_chat_features P2 消息压缩, 2026-10-15).
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool SupportsGzip {
+      get { return supportsGzip_; }
+      set {
+        supportsGzip_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -248,6 +268,7 @@ namespace Chirp.Auth {
       if (Platform != other.Platform) return false;
       if (SupportsMessageAck != other.SupportsMessageAck) return false;
       if (Level != other.Level) return false;
+      if (SupportsGzip != other.SupportsGzip) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -260,6 +281,7 @@ namespace Chirp.Auth {
       if (Platform.Length != 0) hash ^= Platform.GetHashCode();
       if (SupportsMessageAck != false) hash ^= SupportsMessageAck.GetHashCode();
       if (Level != 0) hash ^= Level.GetHashCode();
+      if (SupportsGzip != false) hash ^= SupportsGzip.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -298,6 +320,10 @@ namespace Chirp.Auth {
         output.WriteRawTag(40);
         output.WriteInt32(Level);
       }
+      if (SupportsGzip != false) {
+        output.WriteRawTag(48);
+        output.WriteBool(SupportsGzip);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -328,6 +354,10 @@ namespace Chirp.Auth {
         output.WriteRawTag(40);
         output.WriteInt32(Level);
       }
+      if (SupportsGzip != false) {
+        output.WriteRawTag(48);
+        output.WriteBool(SupportsGzip);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -352,6 +382,9 @@ namespace Chirp.Auth {
       }
       if (Level != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(Level);
+      }
+      if (SupportsGzip != false) {
+        size += 1 + 1;
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -379,6 +412,9 @@ namespace Chirp.Auth {
       }
       if (other.Level != 0) {
         Level = other.Level;
+      }
+      if (other.SupportsGzip != false) {
+        SupportsGzip = other.SupportsGzip;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -419,6 +455,10 @@ namespace Chirp.Auth {
             Level = input.ReadInt32();
             break;
           }
+          case 48: {
+            SupportsGzip = input.ReadBool();
+            break;
+          }
         }
       }
     #endif
@@ -456,6 +496,10 @@ namespace Chirp.Auth {
           }
           case 40: {
             Level = input.ReadInt32();
+            break;
+          }
+          case 48: {
+            SupportsGzip = input.ReadBool();
             break;
           }
         }

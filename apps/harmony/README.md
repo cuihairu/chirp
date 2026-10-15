@@ -30,6 +30,16 @@ entry/src/main/ets/
 ## 验证边界（如实）
 
 - 本机与 CI 均无 OHOS 工具链（hvigor/ohpm/hdc 缺位），本目录**未编译、未运行**。
+- 消息压缩解压面（`common/HarmonyGzip.ts`，@ohos.zlib API 12 Zip 低层流式
+  接口）**未编译验证**，但已做**符号级静态核对**（2026-10-15）：文件用到的 12 个
+  符号逐条对照 OpenHarmony `interface_sdk-js/api/@ohos.zlib.d.ts` 全部存在且签名
+  一致（四个 Zip 方法均 @since 12 dynamic，与本工程 compatibleSdkVersion
+  5.0.0(12) 对齐）；核对中发现 `ZStream.totalOut` 在 d.ts 里是 `long`（官方 API
+  文档表格作 `number`），喂给 `ArrayBuffer.slice(begin: number)` 有类型风险，已
+  显式 `Number()` 归一。ArkTS 无 DecompressionStream，本端经共享协议核的
+  `setGzipDecompressor` 注入缝装配平台解压器；登录**尚未声明** `supports_gzip`
+  （声明以解压器通过编译/真机验证为前置——服务端对未声明会话永远发明文，
+  声明前该注入为待验证的预备面，明文路径不受影响）。
 - 协议核字节级对拍由 `apps/shared/protocol` 的既有 vitest 套件承载（帧/包/
   MsgID 表/管线/词库与本端消费的是同一份源码与同一份产物）；本端新增代码
   （平台适配层与 UI）无本地门禁。

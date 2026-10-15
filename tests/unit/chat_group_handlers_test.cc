@@ -12,6 +12,7 @@
 #include "group_handlers.h"
 
 #include "proto/common.pb.h"
+#include "runtime_utils.h"
 
 namespace {
 
@@ -775,4 +776,67 @@ TEST_F(GroupHandlersTest, SetGroupMuteRejectsBadTargetsAndParams) {
   at_cap.set_duration_sec(30LL * 24 * 60 * 60);
   EXPECT_EQ(handlers_->HandleSetGroupMute(at_cap, "alice").code(),
             chirp::common::OK);
+}
+
+// ---- 临时频道 TTL（P1，2026-10-15）----
+
+namespace {
+
+constexpr int64_t kMaxGroupTtlSec = 30LL * 24 * 60 * 60;
+
+}  // namespace
+
+TEST_F(GroupHandlersTest, CreateGroupTtlValidated) {
+  // 负数与超 30 天上限拒绝；恰好 30 天放行。
+  chirp::chat::CreateGroupRequest negative;
+  negative.set_creator_id("alice");
+  negative.set_group_name("g");
+  negative.set_ttl_seconds(-1);
+  EXPECT_EQ(handlers_->HandleCreateGroup(negative, "alice").code(),
+            chirp::common::INVALID_PARAM);
+
+  chirp::chat::CreateGroupRequest over_cap = negative;
+  over_cap.set_ttl_seconds(kMaxGroupTtlSec + 1);
+  EXPECT_EQ(handlers_->HandleCreateGroup(over_cap, "alice").code(),
+            chirp::common::INVALID_PARAM);
+
+  chirp::chat::CreateGroupRequest at_cap = negative;
+  at_cap.set_ttl_seconds(kMaxGroupTtlSec);
+  EXPECT_EQ(handlers_->HandleCreateGroup(at_cap, "alice").code(),
+            chirp::common::OK);
+}
+
+TEST_F(GroupHandlersTest, CreateGroupTtlSetsExpiryOnInfoAndNotify) {
+  chirp::chat::CreateGroupRequest req;
+  req.set_creator_id("alice");
+  req.set_group_name("event");
+  req.add_initial_members("bob");
+  req.set_ttl_seconds(1000);
+  const auto resp = handlers_->HandleCreateGroup(req, "alice");
+  ASSERT_EQ(resp.code(), chirp::common::OK);
+
+  // 过期时刻随 GET_GROUP_INFO / 台账读取下发，落在 [now, now+ttl] 窗内。
+  chirp::chat::GroupInfo info;
+  ASSERT_TRUE(groups_.GetGroup(resp.group_id(), &info));
+  EXPECT_GT(info.expires_at(), 0);
+  EXPECT_LE(info.expires_at(), chirp::chat::runtime::NowMs() + 1000 * 1000);
+
+  // GROUP_CREATED_NOTIFY 通知体里的 GroupInfo 同样带 expires_at
+  // （客户端据此显示倒计时并在到点后本地移除该群）。
+  bool saw_notify = false;
+  for (const auto& record : notifications_) {
+    if (record.user_id != "bob" ||
+        record.msg_id != chirp::gateway::GROUP_CREATED_NOTIFY) {
+      continue;
+    }
+    chirp::chat::GroupCreatedNotify notify;
+    ASSERT_TRUE(notify.ParseFromString(record.body));
+    saw_notify = notify.group().expires_at() == info.expires_at();
+  }
+  EXPECT_TRUE(saw_notify);
+}
+
+TEST_F(GroupHandlersTest, CreateGroupWithoutTtlStaysPermanent) {
+  const auto group = MakeGroup("alice");
+  EXPECT_EQ(group.expires_at(), 0);
 }

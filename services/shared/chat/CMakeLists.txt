@@ -15,6 +15,7 @@ list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*message_store_config\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*hybrid_message_store\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*message_delivery_tracker\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*message_migration_worker\\.cc")
+list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*history_retention_sweeper\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*paginated_history_retriever\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*channel_manager\\.cc")
 
@@ -64,6 +65,15 @@ if(MYSQL_FOUND)
         src/hybrid_message_store.cc
         src/message_delivery_tracker.cc
         src/message_migration_worker.cc
+        # 历史保留窗清理（game_chat_features P2 消息过期）：周期把
+        # now - retention 换算成 cutoff 交给 HybridMessageStore::ExpireBefore。
+        src/history_retention_sweeper.cc
+        # 临时频道过期清扫（game_chat_features P1 临时频道）：周期回收到点的
+        # 临时群（读路径惰性摘除只覆盖被读到的那些）。
+        src/group_expiry_sweeper.cc
+        # 历史读回压缩（game_chat_features P2 消息压缩）：登录声明
+        # supports_gzip 的会话收 gzip 形态消息清单。
+        src/history_compression.cc
         src/paginated_history_retriever.cc
         src/recall_tombstone.cc
         # Server-plane integration and the notification push bridge: the
@@ -130,6 +140,9 @@ add_executable(chirp_chat_distributed
     src/group_manager.cc
     src/read_receipt_manager.cc
     src/push_bridge.cc
+    # 历史读回压缩（game_chat_features P2 消息压缩）：同上，声明会话收
+    # gzip 形态消息清单。
+    src/history_compression.cc
 )
 
 chirp_configure_chat_target(chirp_chat_distributed)

@@ -150,6 +150,193 @@ describe('MessageBubble', () => {
     expect(card.textContent).not.toContain('×');
   });
 
+  it('renders the achievement card with the rarity face and description', () => {
+    render(
+      <MessageBubble
+        message={message({
+          content: '解锁了新成就',
+          achievement: {
+            achievementId: 'achievement-7001',
+            achievementName: '全服首杀·烈焰巨龙',
+            description: '首次击杀世界 BOSS 烈焰巨龙',
+            iconUrl: '',
+            rarity: 3,
+          },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('achievement-m1');
+    expect(card.getAttribute('data-rarity')).toBe('3');
+    expect(card.textContent).toContain('全服首杀·烈焰巨龙');
+    expect(card.textContent).toContain('稀有度 史诗');
+    expect(card.textContent).toContain('首次击杀世界 BOSS 烈焰巨龙');
+    expect(card.textContent).toContain('achievement-7001');
+  });
+
+  it('falls back to the plain rarity face for an unknown rarity value', () => {
+    render(
+      <MessageBubble
+        message={message({
+          achievement: {
+            achievementId: 'achievement-x',
+            achievementName: '未知成就',
+            description: '',
+            iconUrl: '',
+            rarity: 99,
+          },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('achievement-m1');
+    expect(card.getAttribute('data-rarity')).toBe('99');
+    expect(card.textContent).toContain('未知成就');
+    expect(card.textContent).toContain('稀有度 普通');
+    expect(card.textContent).not.toContain('undefined');
+  });
+
+  it('expands emoji codes in the message text into system emoji spans', () => {
+    render(
+      <MessageBubble message={message({ content: 'hi [emoji:fire] boom' })} selfId="user_a" onToggleReaction={noop} />,
+    );
+    expect(screen.getByTestId('emoji-m1-fire').textContent).toBe('🔥');
+    expect(screen.getByTestId('msg-text-m1').textContent).toBe('hi 🔥 boom');
+  });
+
+  it('keeps unknown emoji codes as literal text', () => {
+    render(
+      <MessageBubble message={message({ content: '[emoji:zzz] hi' })} selfId="user_a" onToggleReaction={noop} />,
+    );
+    expect(screen.queryByTestId('emoji-m1-zzz')).toBeNull();
+    expect(screen.getByTestId('msg-text-m1').textContent).toContain('[emoji:zzz]');
+  });
+
+  it('renders bold and italic markers as strong/em and keeps the rest literal', () => {
+    render(
+      <MessageBubble
+        message={message({ content: '上分**一波推**了*真的* 2 * 3' })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const text = screen.getByTestId('msg-text-m1');
+    expect(text.querySelector('strong')?.textContent).toBe('一波推');
+    expect(text.querySelector('em')?.textContent).toBe('真的');
+    expect(text.textContent).toBe('上分一波推了真的 2 * 3');
+  });
+
+  it('carries the run style into an emoji inside the styled span', () => {
+    render(
+      <MessageBubble
+        message={message({ content: '**火[emoji:fire]**' })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const bold = screen.getByTestId('msg-text-m1').querySelector('strong');
+    expect(bold?.textContent).toBe('火🔥');
+  });
+
+  it('renders the trade card with the status badge, amount and item summary', () => {
+    render(
+      <MessageBubble
+        message={message({
+          content: '交易已成交',
+          trade: {
+            tradeId: 'trade-9001',
+            status: 'COMPLETED',
+            amount: 1500,
+            itemName: '烈焰剑',
+            itemCount: 2,
+          },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('trade-m1');
+    expect(card.getAttribute('data-trade-status')).toBe('COMPLETED');
+    expect(card.textContent).toContain('交易状态 · COMPLETED');
+    expect(card.textContent).toContain('烈焰剑 ×2');
+    expect(card.textContent).toContain('金额 1500');
+    expect(card.textContent).toContain('trade-9001');
+  });
+
+  it('falls back to a status-only trade card when the item fields are empty', () => {
+    render(
+      <MessageBubble
+        message={message({
+          trade: { tradeId: 'trade-x', status: '', amount: 0, itemName: '', itemCount: 0 },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('trade-m1');
+    expect(card.getAttribute('data-trade-status')).toBe('');
+    expect(card.textContent).toContain('交易状态');
+    expect(card.textContent).toContain('trade-x');
+    expect(card.textContent).not.toContain('金额');
+    expect(card.textContent).not.toContain('×');
+    expect(card.textContent).not.toContain('undefined');
+  });
+
+  it('renders the guild recruit card with level, headcount and blurb', () => {
+    render(
+      <MessageBubble
+        message={message({
+          content: '招募成员',
+          guildRecruit: {
+            guildId: 'guild-3001',
+            guildName: '烈焰军团',
+            level: 7,
+            memberCount: 48,
+            maxMembers: 60,
+            description: '周三晚开荒',
+          },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('guild-m1');
+    expect(card.textContent).toContain('公会招募');
+    expect(card.textContent).toContain('烈焰军团');
+    expect(card.textContent).toContain('等级 7');
+    expect(card.textContent).toContain('人数 48/60');
+    expect(card.textContent).toContain('周三晚开荒');
+    expect(card.textContent).toContain('guild-3001');
+  });
+
+  it('renders the party recruit card with headcount need and leader', () => {
+    render(
+      <MessageBubble
+        message={message({
+          content: '缺 2 人',
+          partyRecruit: {
+            partyId: 'party-4001',
+            dungeonName: '熔岩之心',
+            needed: 5,
+            current: 3,
+            leaderName: 'alice',
+          },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('party-m1');
+    expect(card.textContent).toContain('组队招募');
+    expect(card.textContent).toContain('熔岩之心');
+    expect(card.textContent).toContain('缺 2 人');
+    expect(card.textContent).toContain('3/5');
+    expect(card.textContent).toContain('队长 alice');
+    expect(card.textContent).toContain('party-4001');
+  });
+
   it('keeps pending own messages visually unconfirmed', () => {
     render(<MessageBubble message={message({ senderId: 'user_a', pending: true })} selfId="user_a" onToggleReaction={noop} />);
     expect(screen.getByText(/发送中/)).toBeTruthy();

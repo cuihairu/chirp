@@ -38,7 +38,11 @@ public enum MsgSpecs {
     ) { try Chirp_Chat_SendMessageResponse(serializedBytes: $0) }
     public static let getHistory = MessageSpec(
         .getHistoryReq, .getHistoryResp
-    ) { try Chirp_Chat_GetHistoryResponse(serializedBytes: $0) }
+    ) { body in
+        // 消息压缩消费面：明文形态直读；压缩形态（同型载荷装在 messagesGzip）
+        // 在这里拆封回明文清单，上层只见统一形态。
+        try Gzip.inflateHistory(try Chirp_Chat_GetHistoryResponse(serializedBytes: body))
+    }
     public static let markRead = MessageSpec(
         .markReadReq, .markReadResp
     ) { try Chirp_Chat_MarkReadResponse(serializedBytes: $0) }

@@ -1,6 +1,7 @@
 #ifndef CHIRP_CHAT_GROUP_MANAGER_H_
 #define CHIRP_CHAT_GROUP_MANAGER_H_
 
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -22,6 +23,10 @@ struct GroupData {
   std::string owner_id;
   int32_t max_members;
   int64_t created_at;
+  // 临时频道（P1，2026-10-15）：过期时刻（epoch 毫秒）；0 = 永久群。
+  // 到点后群视同不存在——读路径惰性摘除（LookupLocked），另有周期清扫
+  // 回收无人访问的过期群（SweepExpired）。
+  int64_t expires_at_ms = 0;
 
   std::unordered_set<std::string> members;
   std::unordered_map<std::string, chirp::chat::GroupMemberRole> member_roles;
@@ -39,13 +44,21 @@ class GroupManager {
 public:
   GroupManager() = default;
 
-  // Create a new group
+  // Create a new group. expires_at_ms = 0 creates a permanent group; a
+  // positive value is the epoch-ms instant the group stops existing (the
+  // ttl → instant conversion and its 30-day cap live in the handler layer).
   std::string CreateGroup(const std::string& creator_id,
                          const std::string& group_name,
                          const std::string& description,
                          const std::string& avatar_url,
                          int32_t max_members,
-                         const std::vector<std::string>& initial_members);
+                         const std::vector<std::string>& initial_members,
+                         int64_t expires_at_ms = 0);
+
+  // 临时频道（P1）：摘除所有到点（expires_at_ms > 0 且 <= now_ms）的群，
+  // 返回被摘除的群 id。now_ms 显式传入（定时臂传墙钟，测试传确定值钉裁决）；
+  // 无人访问的过期群靠这条回收，读路径的惰性摘除只覆盖被读到的那些。
+  std::vector<std::string> SweepExpired(int64_t now_ms);
 
   // Get group info
   bool GetGroup(const std::string& group_id, chirp::chat::GroupInfo* info);
@@ -101,6 +114,21 @@ private:
   // without changing the compiled token stream.
   friend struct GroupManagerInternalAccess;
 
+  // Wall clock in epoch ms, or the test override when set (0 = wall clock).
+  // 临时频道的到点语义在单测里需要确定性，生产路径永远走墙钟。
+  int64_t NowMs() const;
+
+  // 台账查找 + 临时频道的惰性摘除：命中到点群（expires_at_ms > 0 且
+  // <= NowMs()）视为不存在，顺手从 groups_/user_to_groups_ 摘除并返回
+  // 空。调用方必须持有 mu_。返回的 shared_ptr 与台账解耦（摘除不影响
+  // 其他线程仍持有的引用）。
+  std::shared_ptr<GroupData> LookupLocked(const std::string& group_id);
+
+  // 摘除一群在 user_to_groups_ 里的反向引用（调用方持有 mu_ 且 group 是
+  // shared_ptr 副本，摘除不影响对象存活）。惰性摘除与周期清扫共用。
+  void UnlinkGroupLocked(const std::string& group_id,
+                         const std::shared_ptr<GroupData>& group);
+
   std::string GenerateGroupId() {
     static std::atomic<uint64_t> counter{1};
     return "group_" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -111,6 +139,8 @@ private:
   std::mutex mu_;
   std::unordered_map<std::string, std::shared_ptr<GroupData>> groups_;
   std::unordered_map<std::string, std::unordered_set<std::string>> user_to_groups_;
+  // 测试接缝：非 0 时 NowMs() 直接返回该值（单测钉临时频道到点裁决）。
+  std::atomic<int64_t> now_override_ms_{0};
 };
 
 } // namespace chat

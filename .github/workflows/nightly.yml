@@ -202,6 +202,16 @@ jobs:
       working-directory: apps/desktop
       run: pnpm install --frozen-lockfile
 
+    # 根安装必须先于桌面 typecheck/test：桌面 tsconfig 把
+    # ../../proto/ts/proto/*.ts 一起编进去，那些文件的 import（long /
+    # protobufjs/minimal）从文件所在目录向上找 node_modules——proto/ts 不属于
+    # 任何 workspace 包，pnpm 严格布局下由根声明这两个依赖（pnpm-workspace.yaml
+    # 注释），桌面自己的依赖装得再多也解不到 proto/ts 头上。2026-10-14 nightly
+    # 四腿全红 TS2307 的根因：桌面 typecheck 步插在了根安装之前。tauri build
+    # 同样吃这份安装。Verify/Pack @chirp/protocol 仍只在 x64 腿（一次）。
+    - name: Install root workspace dependencies (for desktop typecheck + @chirp/protocol + tauri build)
+      run: pnpm install --frozen-lockfile
+
     # The desktop app carries its own vitest suite (P0 消息展示 surfaces live
     # in MainWindow/ChatPanel); run it here so a red desktop test blocks the
     # bundle instead of shipping.
@@ -210,14 +220,6 @@ jobs:
       run: |
         pnpm run typecheck
         pnpm test
-
-    # 桌面 tauri build 会把 ../../proto/ts/proto/*.ts 一起编进去,那些文件
-    # 的 import(long/protobufjs/minimal)从文件所在目录向上找 node_modules——
-    # proto/ts 不属于任何 workspace 包,pnpm 严格布局下由根声明这两个依赖
-    # (pnpm-workspace.yaml 注释),所以根安装四条腿都要跑(x64 腿独跑时 arm
-    # 桌面构建 TS2307 的根因)。Verify/Pack @chirp/protocol 仍只在 x64 腿(一次)。
-    - name: Install root workspace dependencies (for @chirp/protocol + desktop build)
-      run: pnpm install --frozen-lockfile
 
     # The TS package that ships is validated by its own suite first, mirroring
     # web.yml's Test @chirp/protocol step.

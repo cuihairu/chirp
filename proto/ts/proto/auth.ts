@@ -31,6 +31,14 @@ export interface LoginRequest {
    * 0 = gate disabled); unset / 0 means "no level claimed".
    */
   level: number;
+  /**
+   * Declared by clients that can read gzip-compressed history payloads: a
+   * GetHistoryResponse with messages_gzip set carries the message list in a
+   * gzip (RFC 1952) container instead of the plain repeated field. The
+   * server keeps the plain form for sessions that do not declare this, so
+   * legacy clients are unaffected (game_chat_features P2 消息压缩, 2026-10-15).
+   */
+  supportsGzip: boolean;
 }
 
 export interface KickNotify {
@@ -187,7 +195,7 @@ export interface ChangePasswordResponse {
 }
 
 function createBaseLoginRequest(): LoginRequest {
-  return { token: "", deviceId: "", platform: "", supportsMessageAck: false, level: 0 };
+  return { token: "", deviceId: "", platform: "", supportsMessageAck: false, level: 0, supportsGzip: false };
 }
 
 export const LoginRequest = {
@@ -206,6 +214,9 @@ export const LoginRequest = {
     }
     if (message.level !== 0) {
       writer.uint32(40).int32(message.level);
+    }
+    if (message.supportsGzip !== false) {
+      writer.uint32(48).bool(message.supportsGzip);
     }
     return writer;
   },
@@ -252,6 +263,13 @@ export const LoginRequest = {
 
           message.level = reader.int32();
           continue;
+        case 6:
+          if (tag !== 48) {
+            break;
+          }
+
+          message.supportsGzip = reader.bool();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -268,6 +286,7 @@ export const LoginRequest = {
       platform: isSet(object.platform) ? globalThis.String(object.platform) : "",
       supportsMessageAck: isSet(object.supportsMessageAck) ? globalThis.Boolean(object.supportsMessageAck) : false,
       level: isSet(object.level) ? globalThis.Number(object.level) : 0,
+      supportsGzip: isSet(object.supportsGzip) ? globalThis.Boolean(object.supportsGzip) : false,
     };
   },
 
@@ -288,6 +307,9 @@ export const LoginRequest = {
     if (message.level !== 0) {
       obj.level = Math.round(message.level);
     }
+    if (message.supportsGzip !== false) {
+      obj.supportsGzip = message.supportsGzip;
+    }
     return obj;
   },
 
@@ -301,6 +323,7 @@ export const LoginRequest = {
     message.platform = object.platform ?? "";
     message.supportsMessageAck = object.supportsMessageAck ?? false;
     message.level = object.level ?? 0;
+    message.supportsGzip = object.supportsGzip ?? false;
     return message;
   },
 };

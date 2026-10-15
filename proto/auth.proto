@@ -23,6 +23,13 @@ message LoginRequest {
   // Consumed only by the world-channel send gate (--world_channel_min_level,
   // 0 = gate disabled); unset / 0 means "no level claimed".
   int32 level = 5;
+
+  // Declared by clients that can read gzip-compressed history payloads: a
+  // GetHistoryResponse with messages_gzip set carries the message list in a
+  // gzip (RFC 1952) container instead of the plain repeated field. The
+  // server keeps the plain form for sessions that do not declare this, so
+  // legacy clients are unaffected (game_chat_features P2 消息压缩, 2026-10-15).
+  bool supports_gzip = 6;
 }
 
 message KickNotify {

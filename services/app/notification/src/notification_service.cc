@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "common/metrics.h"
+#include "apns_jwt.h"
 #include "logger.h"
 
 namespace chirp {
@@ -18,6 +19,10 @@ constexpr const char* kPlatformAndroid = "android";
 constexpr const char* kPlatformWeb = "web";
 
 // Default notification templates
+// APNs provider tokens are valid for one hour; refresh with margin (Apple's
+// guidance is to not regenerate more than once per hour).
+constexpr int64_t kApnsTokenRefreshSeconds = 50 * 60;
+
 std::string GetMessageNotificationTitle(const std::string& from_username) {
   return from_username;
 }
@@ -495,6 +500,12 @@ bool NotificationService::SendAPNs(const DeviceRegistration& device,
   headers["apns-push-type"] = "alert";
   headers["apns-priority"] = "10";
   headers["apns-collapse-id"] = payload.tag;
+  // ES256 provider token (--apns-key/-key-id/-team-id all configured);
+  // tokenless deployments keep the previous header-less stub behavior.
+  const std::string bearer = ApnsBearerToken();
+  if (!bearer.empty()) {
+    headers["Authorization"] = "Bearer " + bearer;
+  }
 
   PushRequest request;
   request.provider = "apns";
@@ -507,6 +518,42 @@ bool NotificationService::SendAPNs(const DeviceRegistration& device,
 
   // Same contract as the FCM path above.
   return !response.empty();
+}
+
+std::string NotificationService::ApnsBearerToken() {
+  if (apns_config_.key_id.empty() || apns_config_.team_id.empty()) {
+    return "";
+  }
+  // Inline key bytes win; the --apns-key path is read once per build (the
+  // read happens outside the token mutex - only the cache is shared state).
+  std::string pem = apns_config_.private_key_bytes;
+  if (pem.empty() && !apns_config_.private_key_path.empty()) {
+    pem = ReadPemFile(apns_config_.private_key_path);
+  }
+  if (pem.empty()) {
+    return "";
+  }
+  const int64_t now = apns_now_();
+  {
+    std::lock_guard<std::mutex> lock(apns_token_mu_);
+    if (!apns_token_.empty() && apns_token_pem_ == pem &&
+        now - apns_token_iat_ < kApnsTokenRefreshSeconds) {
+      return apns_token_;
+    }
+  }
+  std::string token;
+  std::string error;
+  if (!BuildApnsProviderToken(pem, apns_config_.key_id, apns_config_.team_id,
+                              now, &token, &error)) {
+    common::Logger::Instance().Warn("push apns provider token build failed: " +
+                                    error);
+    return "";
+  }
+  std::lock_guard<std::mutex> lock(apns_token_mu_);
+  apns_token_ = token;
+  apns_token_pem_ = pem;
+  apns_token_iat_ = now;
+  return token;
 }
 
 std::string NotificationService::BuildFCMPayload(const NotificationPayload& payload) {

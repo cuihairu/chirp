@@ -1,3 +1,7 @@
+import { gzipSync } from 'node:zlib';
+
+import { GzipError } from './gzip';
+
 import { LoginResponse, LogoutResponse } from '@chirp/proto/auth';
 import {
   GetNotifyPrefsResponse,
@@ -5,6 +9,7 @@ import {
 } from '@chirp/proto/social';
 import {
   GetHistoryResponse,
+  GetUserGroupsResponse,
   ReportMessageResponse,
   SearchMessageResponse,
   SendMessageResponse,
@@ -15,8 +20,10 @@ import { MsgID } from '@chirp/proto/gateway';
 import { GetRoomInfoResponse, JoinRoomResponse, RoomType } from '@chirp/proto/voice';
 import { describe, expect, it } from 'vitest';
 import {
+  CREATE_GROUP,
   CREATE_ROOM,
   GET_HISTORY,
+  GET_USER_GROUPS,
   GET_NOTIFY_PREFS,
   GET_ROOM_INFO,
   JOIN_ROOM,
@@ -102,11 +109,58 @@ describe('message specs', () => {
     expect(SEND_MESSAGE.decodeResponse(resp).messageId).toBe('m9');
   });
 
+  it('carries the temp channel ttl in and the expiry out (P1 group TTL)', () => {
+    // 临时频道:ttl_seconds 进建群请求;到点时刻(expires_at)随群信息
+    // (GET_USER_GROUPS / GET_GROUP_INFO / GROUP_CREATED_NOTIFY)下发。
+    const bytes = CREATE_GROUP.encodeRequest({
+      creatorId: 'u1',
+      groupName: 'raid',
+      ttlSeconds: 3600,
+    });
+    expect(bytes.length).toBeGreaterThan(0);
+
+    const resp = GetUserGroupsResponse.encode(
+      GetUserGroupsResponse.fromPartial({
+        code: 0,
+        groups: [{ groupId: 'g-ttl', groupName: 'raid', expiresAt: 1792032098833 }],
+      }),
+    ).finish();
+    const decoded = GET_USER_GROUPS.decodeResponse(resp);
+    expect(decoded.groups?.[0]?.expiresAt).toBe(1792032098833);
+  });
+
   it('decodes history responses', () => {
     const resp = GetHistoryResponse.encode(GetHistoryResponse.fromPartial({ code: 0 })).finish();
     expect(GET_HISTORY.decodeResponse(resp).code).toBe(0);
     const logout = LogoutResponse.encode(LogoutResponse.fromPartial({})).finish();
     expect(LOGOUT.decodeResponse(logout).code).toBe(0);
+  });
+
+  it('inflates the gzip history form into plain messages', async () => {
+    // 服务端形态：清单装进同型 GetHistoryResponse 压缩后放 messagesGzip。
+    const inner = GetHistoryResponse.encode(
+      GetHistoryResponse.fromPartial({
+        code: 0,
+        messages: [{ content: new TextEncoder().encode('gz-hello') }],
+      }),
+    ).finish();
+    const wrapped = GetHistoryResponse.encode(
+      GetHistoryResponse.fromPartial({ code: 0, messagesGzip: gzipSync(inner) }),
+    ).finish();
+    const decoded = await GET_HISTORY.inflateResponse!(GET_HISTORY.decodeResponse(wrapped));
+    expect(decoded.messagesGzip).toEqual(new Uint8Array(0));
+    expect(decoded.messages.length).toBe(1);
+    // Realm-safe byte compare: jsdom exposes its own Uint8Array constructor.
+    expect(Array.from(decoded.messages[0].content)).toEqual(Array.from(new TextEncoder().encode('gz-hello')));
+  });
+
+  it('rejects a corrupt gzip history container', async () => {
+    const wrapped = GetHistoryResponse.encode(
+      GetHistoryResponse.fromPartial({ code: 0, messagesGzip: new Uint8Array([1, 2, 3, 4]) }),
+    ).finish();
+    await expect(
+      GET_HISTORY.inflateResponse!(GET_HISTORY.decodeResponse(wrapped)),
+    ).rejects.toThrow(GzipError);
   });
 
   it('roundtrips the search and member-alias specs', () => {

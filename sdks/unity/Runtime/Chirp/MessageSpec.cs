@@ -1,3 +1,4 @@
+using System;
 using Chirp.Gateway;
 using Google.Protobuf;
 
@@ -11,11 +12,13 @@ namespace Chirp.Sdk
     /// </summary>
     public sealed class MessageSpec<TResp> where TResp : IMessage<TResp>
     {
-        public MessageSpec(MsgID reqMsgId, MsgID respMsgId, MessageParser<TResp> parser)
+        public MessageSpec(MsgID reqMsgId, MsgID respMsgId, MessageParser<TResp> parser,
+            Func<TResp, TResp>? inflate = null)
         {
             ReqMsgId = reqMsgId;
             RespMsgId = respMsgId;
             _parser = parser;
+            _inflate = inflate;
         }
 
         public MsgID ReqMsgId { get; }
@@ -23,6 +26,16 @@ namespace Chirp.Sdk
 
         private readonly MessageParser<TResp> _parser;
 
-        public TResp Decode(byte[] body) => _parser.ParseFrom(body);
+        /// <summary>Optional post-decode step, present only for the
+        /// compressed-history shape (GET_HISTORY) which inflates
+        /// MessagesGzip before handing the response up. Specs without the
+        /// hook stay fully synchronous.</summary>
+        private readonly Func<TResp, TResp>? _inflate;
+
+        public TResp Decode(byte[] body)
+        {
+            var parsed = _parser.ParseFrom(body);
+            return _inflate is null ? parsed : _inflate(parsed);
+        }
     }
 }

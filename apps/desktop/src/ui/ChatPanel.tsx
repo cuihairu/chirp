@@ -1,5 +1,6 @@
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import CloseIcon from '@mui/icons-material/Close';
+import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotionsOutlined';
 import FlagIcon from '@mui/icons-material/FlagOutlined';
 import ReplyIcon from '@mui/icons-material/ReplyOutlined';
 import SendIcon from '@mui/icons-material/Send';
@@ -15,6 +16,7 @@ import {
   IconButton,
   InputBase,
   Paper,
+  Popover,
   Stack,
   Tooltip,
   Typography,
@@ -23,10 +25,21 @@ import { useEffect, useReducer, useRef, useState } from 'react';
 import { SenderKind } from '@chirp/proto/chat';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { ChatApi, ChannelRef } from '../api/chat_api';
-import type { ChatMessageView, Conversation, CoordView, ItemView } from '../state/models';
+import type {
+  AchievementView,
+  ChatMessageView,
+  Conversation,
+  CoordView,
+  GuildRecruitView,
+  ItemView,
+  PartyRecruitView,
+  TradeView,
+} from '../state/models';
 import type { MessageState } from '../state/message_store';
 import { useStoreValue, type Store } from '../state/store';
 import { TYPING_TTL_MS, type TypingState } from '../state/typing_store';
+import { expandEmojiCodes, SYSTEM_EMOJIS } from './emoji';
+import { parseRichText } from './rich_text';
 
 const fmtTime = (ts: number): string => {
   const d = new Date(ts);
@@ -63,6 +76,28 @@ const QUALITY_COLORS: Record<number, string> = {
 
 const qualityColorOf = (quality: number): string => QUALITY_COLORS[quality] ?? QUALITY_COLORS[0];
 
+// P1 成就分享：稀有度分色与物品品质同一阶梯（普通→优秀→稀有→史诗→传说），
+// 枚举外未知值回落普通（向前兼容）。与 web_companion 的 MessageBubble 同款。
+const RARITY_COLORS: Record<number, string> = {
+  0: '#9e9e9e',
+  1: '#4caf50',
+  2: '#2196f3',
+  3: '#9c27b0',
+  4: '#ff9800',
+};
+
+const RARITY_FACES: Record<number, string> = {
+  0: '普通',
+  1: '优秀',
+  2: '稀有',
+  3: '史诗',
+  4: '传说',
+};
+
+const rarityColorOf = (rarity: number): string => RARITY_COLORS[rarity] ?? RARITY_COLORS[0];
+
+const rarityFaceOf = (rarity: number): string => RARITY_FACES[rarity] ?? RARITY_FACES[0];
+
 const faceOf = (props: { mine: boolean; senderKind?: SenderKind }): { tag: string; bgcolor: string } => {
   if (props.mine) return { tag: 'mine', bgcolor: 'primary.main' };
   return KIND_FACE[props.senderKind as SenderKind] ?? USER_FACE;
@@ -91,6 +126,14 @@ function MessageRow(props: {
   coord?: CoordView;
   /** 物品卡片（P0 ITEM_LINK）；缺省 = 纯文本气泡。点击打开详情弹窗。 */
   item?: ItemView;
+  /** 成就卡片（P1 ACHIEVEMENT）；缺省 = 纯文本气泡。图标+名称+稀有度+描述。 */
+  achievement?: AchievementView;
+  /** 交易卡片（P1 TRADE_STATUS）；缺省 = 纯文本气泡。状态徽章+物品摘要+金额。 */
+  trade?: TradeView;
+  /** 公会招募卡片（P1 GUILD_RECRUIT）；缺省 = 纯文本气泡。展示性卡片。 */
+  guildRecruit?: GuildRecruitView;
+  /** 组队招募卡片（P1 PARTY_RECRUIT）；缺省 = 纯文本气泡。展示性卡片。 */
+  partyRecruit?: PartyRecruitView;
   /** 发送者类别（P0 消息展示）：决定气泡底色，自己的消息恒走主色。 */
   senderKind?: SenderKind;
   onReply?: () => void;
@@ -147,8 +190,30 @@ function MessageRow(props: {
               ) : null}
             </Box>
           ) : null}
-          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-            {props.content}
+          <Typography
+            variant="body2"
+            sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+            data-testid={`msg-text-${props.messageId}`}
+          >
+            {/* P1 富文本：**粗体** 与 *斜体* 先切样式串，表情码再在每个串内
+                展开（串级样式天然覆盖其中的表情）。 */}
+            {parseRichText(props.content).map((run, r) => (
+              <Typography
+                key={`run-${r}`}
+                component={run.bold ? 'strong' : run.italic ? 'em' : 'span'}
+                sx={run.bold ? { fontWeight: 700 } : run.italic ? { fontStyle: 'italic' } : undefined}
+              >
+                {expandEmojiCodes(run.text).map((seg, i) =>
+                  seg.kind === 'text' ? (
+                    <span key={i}>{seg.value}</span>
+                  ) : (
+                    <span key={i} data-testid={`emoji-${props.messageId}-${seg.code}`}>
+                      {seg.emoji}
+                    </span>
+                  ),
+                )}
+              </Typography>
+            ))}
           </Typography>
           {props.coord ? (
             <Box
@@ -260,6 +325,181 @@ function MessageRow(props: {
               </Dialog>
             </>
           ) : null}
+          {props.achievement ? (
+            <Box
+              data-testid={`achievement-${props.messageId}`}
+              data-rarity={props.achievement.rarity}
+              sx={{
+                display: 'block',
+                width: '100%',
+                mt: 0.5,
+                p: 1,
+                textAlign: 'left',
+                border: '1px solid',
+                borderColor: props.mine ? 'primary.contrastText' : 'divider',
+                borderRadius: 1,
+                background: 'transparent',
+                color: 'inherit',
+              }}
+            >
+              {props.achievement.iconUrl ? (
+                <Box
+                  component="img"
+                  src={props.achievement.iconUrl}
+                  alt={props.achievement.achievementName || props.achievement.achievementId}
+                  sx={{ width: 40, height: 40, mb: 0.5, display: 'block' }}
+                />
+              ) : null}
+              <Typography
+                variant="caption"
+                component="div"
+                sx={{ fontWeight: 600, color: rarityColorOf(props.achievement.rarity) }}
+              >
+                {props.achievement.achievementName || props.achievement.achievementId}
+              </Typography>
+              <Typography variant="caption" component="div" sx={{ opacity: 0.75 }}>
+                {`稀有度 ${rarityFaceOf(props.achievement.rarity)}`}
+              </Typography>
+              {props.achievement.description ? (
+                <Typography variant="caption" component="div" sx={{ mt: 0.5, opacity: 0.85 }}>
+                  {props.achievement.description}
+                </Typography>
+              ) : null}
+              <Typography variant="caption" component="div" sx={{ opacity: 0.6 }}>
+                {props.achievement.achievementId}
+              </Typography>
+            </Box>
+          ) : null}
+          {props.trade ? (
+            <Box
+              data-testid={`trade-${props.messageId}`}
+              data-trade-status={props.trade.status}
+              sx={{
+                display: 'block',
+                width: '100%',
+                mt: 0.5,
+                p: 1,
+                textAlign: 'left',
+                border: '1px solid',
+                borderColor: props.mine ? 'primary.contrastText' : 'divider',
+                borderRadius: 1,
+                background: 'transparent',
+                color: 'inherit',
+              }}
+            >
+              <Typography
+                variant="caption"
+                component="div"
+                sx={{ px: 0.5, borderRadius: 0.5, bgcolor: 'action.hover', fontWeight: 600, width: 'fit-content' }}
+              >
+                {props.trade.status ? `交易状态 · ${props.trade.status}` : '交易状态'}
+              </Typography>
+              {props.trade.itemName || props.trade.amount > 0 ? (
+                <Typography variant="caption" component="div" sx={{ fontWeight: 600, mt: 0.5 }}>
+                  {props.trade.itemName}
+                  {props.trade.itemCount > 1 ? ` ×${props.trade.itemCount}` : ''}
+                  {props.trade.itemName && props.trade.amount > 0 ? ' · ' : ''}
+                  {props.trade.amount > 0 ? `金额 ${props.trade.amount}` : ''}
+                </Typography>
+              ) : null}
+              <Typography variant="caption" component="div" sx={{ opacity: 0.6 }}>
+                {props.trade.tradeId}
+              </Typography>
+            </Box>
+          ) : null}
+          {props.guildRecruit ? (
+            <Box
+              data-testid={`guild-${props.messageId}`}
+              sx={{
+                display: 'block',
+                width: '100%',
+                mt: 0.5,
+                p: 1,
+                textAlign: 'left',
+                border: '1px solid',
+                borderColor: props.mine ? 'primary.contrastText' : 'divider',
+                borderRadius: 1,
+                background: 'transparent',
+                color: 'inherit',
+              }}
+            >
+              <Typography
+                variant="caption"
+                component="div"
+                sx={{ px: 0.5, borderRadius: 0.5, bgcolor: 'action.hover', fontWeight: 600, width: 'fit-content' }}
+              >
+                公会招募
+              </Typography>
+              <Typography variant="caption" component="div" sx={{ fontWeight: 600, mt: 0.5 }}>
+                {props.guildRecruit.guildName || props.guildRecruit.guildId}
+              </Typography>
+              {props.guildRecruit.level > 0 || props.guildRecruit.memberCount > 0 ? (
+                <Typography variant="caption" component="div" sx={{ opacity: 0.75 }}>
+                  {props.guildRecruit.level > 0 ? `等级 ${props.guildRecruit.level}` : ''}
+                  {props.guildRecruit.level > 0 && props.guildRecruit.memberCount > 0 ? ' · ' : ''}
+                  {props.guildRecruit.memberCount > 0
+                    ? `人数 ${
+                        props.guildRecruit.maxMembers > 0
+                          ? `${props.guildRecruit.memberCount}/${props.guildRecruit.maxMembers}`
+                          : `${props.guildRecruit.memberCount}`
+                      }`
+                    : ''}
+                </Typography>
+              ) : null}
+              {props.guildRecruit.description ? (
+                <Typography variant="caption" component="div" sx={{ mt: 0.5, opacity: 0.85 }}>
+                  {props.guildRecruit.description}
+                </Typography>
+              ) : null}
+              <Typography variant="caption" component="div" sx={{ opacity: 0.6 }}>
+                {props.guildRecruit.guildId}
+              </Typography>
+            </Box>
+          ) : null}
+          {props.partyRecruit ? (
+            <Box
+              data-testid={`party-${props.messageId}`}
+              sx={{
+                display: 'block',
+                width: '100%',
+                mt: 0.5,
+                p: 1,
+                textAlign: 'left',
+                border: '1px solid',
+                borderColor: props.mine ? 'primary.contrastText' : 'divider',
+                borderRadius: 1,
+                background: 'transparent',
+                color: 'inherit',
+              }}
+            >
+              <Typography
+                variant="caption"
+                component="div"
+                sx={{ px: 0.5, borderRadius: 0.5, bgcolor: 'action.hover', fontWeight: 600, width: 'fit-content' }}
+              >
+                组队招募
+              </Typography>
+              <Typography variant="caption" component="div" sx={{ fontWeight: 600, mt: 0.5 }}>
+                {props.partyRecruit.dungeonName || props.partyRecruit.partyId}
+              </Typography>
+              {props.partyRecruit.needed > 0 ? (
+                <Typography variant="caption" component="div" sx={{ opacity: 0.75 }}>
+                  {`缺 ${
+                    props.partyRecruit.needed - (props.partyRecruit.current > 0 ? props.partyRecruit.current : 0)
+                  } 人`}
+                  {props.partyRecruit.current > 0 ? ` · ${props.partyRecruit.current}/${props.partyRecruit.needed}` : ''}
+                </Typography>
+              ) : null}
+              {props.partyRecruit.leaderName ? (
+                <Typography variant="caption" component="div" sx={{ opacity: 0.75 }}>
+                  {`队长 ${props.partyRecruit.leaderName}`}
+                </Typography>
+              ) : null}
+              <Typography variant="caption" component="div" sx={{ opacity: 0.6 }}>
+                {props.partyRecruit.partyId}
+              </Typography>
+            </Box>
+          ) : null}
         </Paper>
         <Stack
           direction="row"
@@ -332,6 +572,7 @@ export default function ChatPanel(props: {
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [replying, setReplying] = useState<ChatMessageView | null>(null);
+  const [emojiAnchor, setEmojiAnchor] = useState<HTMLElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const cursors = messages.readCursors[conversation.key] ?? {};
 
@@ -486,6 +727,10 @@ export default function ChatPanel(props: {
             replyToMessageId={m.replyToMessageId}
             coord={m.coord}
             item={m.deleted ? undefined : m.item}
+            achievement={m.deleted ? undefined : m.achievement}
+            trade={m.deleted ? undefined : m.trade}
+            guildRecruit={m.deleted ? undefined : m.guildRecruit}
+            partyRecruit={m.deleted ? undefined : m.partyRecruit}
             senderKind={m.senderKind}
             onReply={m.deleted ? undefined : () => setReplying(m)}
             onReport={m.deleted || m.senderId === selfId ? undefined : () => {
@@ -543,6 +788,38 @@ export default function ChatPanel(props: {
             onKeyDown={onDraftKeyDown}
             sx={{ bgcolor: 'background.default', borderRadius: 2, px: 1.5, py: 0.75 }}
           />
+          <Tooltip title="表情">
+            <IconButton
+              aria-label="表情"
+              data-testid="emoji-picker-toggle"
+              onClick={(e) => setEmojiAnchor(e.currentTarget)}
+            >
+              <EmojiEmotionsIcon />
+            </IconButton>
+          </Tooltip>
+          <Popover
+            open={emojiAnchor !== null}
+            anchorEl={emojiAnchor}
+            onClose={() => setEmojiAnchor(null)}
+            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          >
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(8, 36px)', gap: 0.25, p: 1 }}>
+              {SYSTEM_EMOJIS.map((e) => (
+                <IconButton
+                  key={e.code}
+                  data-testid={`emoji-pick-${e.code}`}
+                  onClick={() => {
+                    setDraft((d) => `${d}[emoji:${e.code}]`);
+                    setEmojiAnchor(null);
+                  }}
+                  sx={{ fontSize: 18, borderRadius: 1 }}
+                >
+                  {e.emoji}
+                </IconButton>
+              ))}
+            </Box>
+          </Popover>
           <Tooltip title="发送">
             <span>
               <IconButton color="primary" onClick={() => void send()} disabled={!draft.trim()}>

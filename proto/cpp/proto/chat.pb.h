@@ -383,6 +383,10 @@ class GroupUpdatedNotify;
 struct GroupUpdatedNotifyDefaultTypeInternal;
 extern GroupUpdatedNotifyDefaultTypeInternal _GroupUpdatedNotify_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull GroupUpdatedNotify_class_data_;
+class GuildRecruitMetadata;
+struct GuildRecruitMetadataDefaultTypeInternal;
+extern GuildRecruitMetadataDefaultTypeInternal _GuildRecruitMetadata_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull GuildRecruitMetadata_class_data_;
 class InviteToGroupRequest;
 struct InviteToGroupRequestDefaultTypeInternal;
 extern InviteToGroupRequestDefaultTypeInternal _InviteToGroupRequest_default_instance_;
@@ -479,6 +483,10 @@ class PaginationToken;
 struct PaginationTokenDefaultTypeInternal;
 extern PaginationTokenDefaultTypeInternal _PaginationToken_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull PaginationToken_class_data_;
+class PartyRecruitMetadata;
+struct PartyRecruitMetadataDefaultTypeInternal;
+extern PartyRecruitMetadataDefaultTypeInternal _PartyRecruitMetadata_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull PartyRecruitMetadata_class_data_;
 class PermissionOverrideEntry;
 struct PermissionOverrideEntryDefaultTypeInternal;
 extern PermissionOverrideEntryDefaultTypeInternal _PermissionOverrideEntry_default_instance_;
@@ -714,6 +722,8 @@ enum MsgType : int {
   NPC_DIALOG = 13,
   TRADE_STATUS = 14,
   COORD_LINK = 15,
+  GUILD_RECRUIT = 16,
+  PARTY_RECRUIT = 17,
   SYSTEM = 99,
   MsgType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
@@ -1146,7 +1156,7 @@ class WordFilterLexicon final : public ::google::protobuf::Message
     return *reinterpret_cast<const WordFilterLexicon*>(
         &_WordFilterLexicon_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 129;
+  static constexpr int kIndexInFileMessages = 131;
   friend void swap(WordFilterLexicon& a, WordFilterLexicon& b) { a.Swap(&b); }
   inline void Swap(WordFilterLexicon* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1394,7 +1404,7 @@ class WordFilterFetchRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const WordFilterFetchRequest*>(
         &_WordFilterFetchRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 128;
+  static constexpr int kIndexInFileMessages = 130;
   friend void swap(WordFilterFetchRequest& a, WordFilterFetchRequest& b) { a.Swap(&b); }
   inline void Swap(WordFilterFetchRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1584,7 +1594,7 @@ class UnblockMessageSenderResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const UnblockMessageSenderResponse*>(
         &_UnblockMessageSenderResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 125;
+  static constexpr int kIndexInFileMessages = 127;
   friend void swap(UnblockMessageSenderResponse& a, UnblockMessageSenderResponse& b) { a.Swap(&b); }
   inline void Swap(UnblockMessageSenderResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1791,7 +1801,7 @@ class UnblockMessageSenderRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const UnblockMessageSenderRequest*>(
         &_UnblockMessageSenderRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 124;
+  static constexpr int kIndexInFileMessages = 126;
   friend void swap(UnblockMessageSenderRequest& a, UnblockMessageSenderRequest& b) { a.Swap(&b); }
   inline void Swap(UnblockMessageSenderRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -4383,7 +4393,7 @@ class SetChannelMuteResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const SetChannelMuteResponse*>(
         &_SetChannelMuteResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 118;
+  static constexpr int kIndexInFileMessages = 120;
   friend void swap(SetChannelMuteResponse& a, SetChannelMuteResponse& b) { a.Swap(&b); }
   inline void Swap(SetChannelMuteResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -4597,7 +4607,7 @@ class SetChannelMuteRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const SetChannelMuteRequest*>(
         &_SetChannelMuteRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 117;
+  static constexpr int kIndexInFileMessages = 119;
   friend void swap(SetChannelMuteRequest& a, SetChannelMuteRequest& b) { a.Swap(&b); }
   inline void Swap(SetChannelMuteRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5358,7 +5368,7 @@ class SearchMessageRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const SearchMessageRequest*>(
         &_SearchMessageRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 132;
+  static constexpr int kIndexInFileMessages = 134;
   friend void swap(SearchMessageRequest& a, SearchMessageRequest& b) { a.Swap(&b); }
   inline void Swap(SearchMessageRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5632,7 +5642,7 @@ class SearchMessageMatch final : public ::google::protobuf::Message
     return *reinterpret_cast<const SearchMessageMatch*>(
         &_SearchMessageMatch_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 133;
+  static constexpr int kIndexInFileMessages = 135;
   friend void swap(SearchMessageMatch& a, SearchMessageMatch& b) { a.Swap(&b); }
   inline void Swap(SearchMessageMatch* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -7799,6 +7809,259 @@ class PrepareFileUploadRequest final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull PrepareFileUploadRequest_class_data_;
 // -------------------------------------------------------------------
 
+class PartyRecruitMetadata final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.chat.PartyRecruitMetadata) */ {
+ public:
+  inline PartyRecruitMetadata() : PartyRecruitMetadata(nullptr) {}
+  ~PartyRecruitMetadata() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(PartyRecruitMetadata* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(PartyRecruitMetadata));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR PartyRecruitMetadata(::google::protobuf::internal::ConstantInitialized);
+
+  inline PartyRecruitMetadata(const PartyRecruitMetadata& from) : PartyRecruitMetadata(nullptr, from) {}
+  inline PartyRecruitMetadata(PartyRecruitMetadata&& from) noexcept
+      : PartyRecruitMetadata(nullptr, ::std::move(from)) {}
+  inline PartyRecruitMetadata& operator=(const PartyRecruitMetadata& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline PartyRecruitMetadata& operator=(PartyRecruitMetadata&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const PartyRecruitMetadata& default_instance() {
+    return *reinterpret_cast<const PartyRecruitMetadata*>(
+        &_PartyRecruitMetadata_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 116;
+  friend void swap(PartyRecruitMetadata& a, PartyRecruitMetadata& b) { a.Swap(&b); }
+  inline void Swap(PartyRecruitMetadata* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(PartyRecruitMetadata* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  PartyRecruitMetadata* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<PartyRecruitMetadata>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const PartyRecruitMetadata& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const PartyRecruitMetadata& from) { PartyRecruitMetadata::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(PartyRecruitMetadata* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.chat.PartyRecruitMetadata"; }
+
+  explicit PartyRecruitMetadata(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  PartyRecruitMetadata(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PartyRecruitMetadata& from);
+  PartyRecruitMetadata(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PartyRecruitMetadata&& from) noexcept
+      : PartyRecruitMetadata(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPartyIdFieldNumber = 1,
+    kDungeonNameFieldNumber = 2,
+    kLeaderNameFieldNumber = 5,
+    kNeededFieldNumber = 3,
+    kCurrentFieldNumber = 4,
+  };
+  // string party_id = 1;
+  void clear_party_id() ;
+  const ::std::string& party_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_party_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_party_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_party_id();
+  void set_allocated_party_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_party_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_party_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_party_id();
+
+  public:
+  // string dungeon_name = 2;
+  void clear_dungeon_name() ;
+  const ::std::string& dungeon_name() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_dungeon_name(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_dungeon_name();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_dungeon_name();
+  void set_allocated_dungeon_name(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_dungeon_name() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_dungeon_name(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_dungeon_name();
+
+  public:
+  // string leader_name = 5;
+  void clear_leader_name() ;
+  const ::std::string& leader_name() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_leader_name(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_leader_name();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_leader_name();
+  void set_allocated_leader_name(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_leader_name() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_leader_name(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_leader_name();
+
+  public:
+  // int32 needed = 3;
+  void clear_needed() ;
+  ::int32_t needed() const;
+  void set_needed(::int32_t value);
+
+  private:
+  ::int32_t _internal_needed() const;
+  void _internal_set_needed(::int32_t value);
+
+  public:
+  // int32 current = 4;
+  void clear_current() ;
+  ::int32_t current() const;
+  void set_current(::int32_t value);
+
+  private:
+  ::int32_t _internal_current() const;
+  void _internal_set_current(::int32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.chat.PartyRecruitMetadata)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<3, 5,
+                                   0, 71,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const PartyRecruitMetadata& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr party_id_;
+    ::google::protobuf::internal::ArenaStringPtr dungeon_name_;
+    ::google::protobuf::internal::ArenaStringPtr leader_name_;
+    ::int32_t needed_;
+    ::int32_t current_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fchat_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull PartyRecruitMetadata_class_data_;
+// -------------------------------------------------------------------
+
 class PaginationToken final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:chirp.chat.PaginationToken) */ {
  public:
@@ -8331,7 +8594,7 @@ class NpcDialogMetadata final : public ::google::protobuf::Message
     return *reinterpret_cast<const NpcDialogMetadata*>(
         &_NpcDialogMetadata_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 115;
+  static constexpr int kIndexInFileMessages = 117;
   friend void swap(NpcDialogMetadata& a, NpcDialogMetadata& b) { a.Swap(&b); }
   inline void Swap(NpcDialogMetadata* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -12776,6 +13039,271 @@ class InviteToGroupRequest final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull InviteToGroupRequest_class_data_;
 // -------------------------------------------------------------------
 
+class GuildRecruitMetadata final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.chat.GuildRecruitMetadata) */ {
+ public:
+  inline GuildRecruitMetadata() : GuildRecruitMetadata(nullptr) {}
+  ~GuildRecruitMetadata() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GuildRecruitMetadata* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GuildRecruitMetadata));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GuildRecruitMetadata(::google::protobuf::internal::ConstantInitialized);
+
+  inline GuildRecruitMetadata(const GuildRecruitMetadata& from) : GuildRecruitMetadata(nullptr, from) {}
+  inline GuildRecruitMetadata(GuildRecruitMetadata&& from) noexcept
+      : GuildRecruitMetadata(nullptr, ::std::move(from)) {}
+  inline GuildRecruitMetadata& operator=(const GuildRecruitMetadata& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GuildRecruitMetadata& operator=(GuildRecruitMetadata&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GuildRecruitMetadata& default_instance() {
+    return *reinterpret_cast<const GuildRecruitMetadata*>(
+        &_GuildRecruitMetadata_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 115;
+  friend void swap(GuildRecruitMetadata& a, GuildRecruitMetadata& b) { a.Swap(&b); }
+  inline void Swap(GuildRecruitMetadata* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GuildRecruitMetadata* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GuildRecruitMetadata* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GuildRecruitMetadata>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GuildRecruitMetadata& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GuildRecruitMetadata& from) { GuildRecruitMetadata::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GuildRecruitMetadata* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.chat.GuildRecruitMetadata"; }
+
+  explicit GuildRecruitMetadata(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GuildRecruitMetadata(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GuildRecruitMetadata& from);
+  GuildRecruitMetadata(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GuildRecruitMetadata&& from) noexcept
+      : GuildRecruitMetadata(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kGuildIdFieldNumber = 1,
+    kGuildNameFieldNumber = 2,
+    kDescriptionFieldNumber = 6,
+    kLevelFieldNumber = 3,
+    kMemberCountFieldNumber = 4,
+    kMaxMembersFieldNumber = 5,
+  };
+  // string guild_id = 1;
+  void clear_guild_id() ;
+  const ::std::string& guild_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_guild_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_guild_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_guild_id();
+  void set_allocated_guild_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_guild_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_guild_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_guild_id();
+
+  public:
+  // string guild_name = 2;
+  void clear_guild_name() ;
+  const ::std::string& guild_name() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_guild_name(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_guild_name();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_guild_name();
+  void set_allocated_guild_name(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_guild_name() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_guild_name(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_guild_name();
+
+  public:
+  // string description = 6;
+  void clear_description() ;
+  const ::std::string& description() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_description(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_description();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_description();
+  void set_allocated_description(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_description() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_description(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_description();
+
+  public:
+  // int32 level = 3;
+  void clear_level() ;
+  ::int32_t level() const;
+  void set_level(::int32_t value);
+
+  private:
+  ::int32_t _internal_level() const;
+  void _internal_set_level(::int32_t value);
+
+  public:
+  // int32 member_count = 4;
+  void clear_member_count() ;
+  ::int32_t member_count() const;
+  void set_member_count(::int32_t value);
+
+  private:
+  ::int32_t _internal_member_count() const;
+  void _internal_set_member_count(::int32_t value);
+
+  public:
+  // int32 max_members = 5;
+  void clear_max_members() ;
+  ::int32_t max_members() const;
+  void set_max_members(::int32_t value);
+
+  private:
+  ::int32_t _internal_max_members() const;
+  void _internal_set_max_members(::int32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.chat.GuildRecruitMetadata)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<3, 6,
+                                   0, 69,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GuildRecruitMetadata& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr guild_id_;
+    ::google::protobuf::internal::ArenaStringPtr guild_name_;
+    ::google::protobuf::internal::ArenaStringPtr description_;
+    ::int32_t level_;
+    ::int32_t member_count_;
+    ::int32_t max_members_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fchat_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull GuildRecruitMetadata_class_data_;
+// -------------------------------------------------------------------
+
 class GroupMemberMutedNotify final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:chirp.chat.GroupMemberMutedNotify) */ {
  public:
@@ -16927,7 +17455,7 @@ class GetChannelMutesRequest final : public ::google::protobuf::internal::ZeroFi
     return *reinterpret_cast<const GetChannelMutesRequest*>(
         &_GetChannelMutesRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 120;
+  static constexpr int kIndexInFileMessages = 122;
   friend void swap(GetChannelMutesRequest& a, GetChannelMutesRequest& b) { a.Swap(&b); }
   inline void Swap(GetChannelMutesRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -17062,7 +17590,7 @@ class GetBlockedSendersResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetBlockedSendersResponse*>(
         &_GetBlockedSendersResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 127;
+  static constexpr int kIndexInFileMessages = 129;
   friend void swap(GetBlockedSendersResponse& a, GetBlockedSendersResponse& b) { a.Swap(&b); }
   inline void Swap(GetBlockedSendersResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -17275,7 +17803,7 @@ class GetBlockedSendersRequest final : public ::google::protobuf::internal::Zero
     return *reinterpret_cast<const GetBlockedSendersRequest*>(
         &_GetBlockedSendersRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 126;
+  static constexpr int kIndexInFileMessages = 128;
   friend void swap(GetBlockedSendersRequest& a, GetBlockedSendersRequest& b) { a.Swap(&b); }
   inline void Swap(GetBlockedSendersRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -19424,6 +19952,7 @@ class CreateGroupRequest final : public ::google::protobuf::Message
     kGroupNameFieldNumber = 2,
     kDescriptionFieldNumber = 3,
     kAvatarUrlFieldNumber = 4,
+    kTtlSecondsFieldNumber = 7,
     kMaxMembersFieldNumber = 5,
   };
   // repeated string initial_members = 6;
@@ -19508,6 +20037,16 @@ class CreateGroupRequest final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_avatar_url();
 
   public:
+  // int64 ttl_seconds = 7;
+  void clear_ttl_seconds() ;
+  ::int64_t ttl_seconds() const;
+  void set_ttl_seconds(::int64_t value);
+
+  private:
+  ::int64_t _internal_ttl_seconds() const;
+  void _internal_set_ttl_seconds(::int64_t value);
+
+  public:
   // int32 max_members = 5;
   void clear_max_members() ;
   ::int32_t max_members() const;
@@ -19522,7 +20061,7 @@ class CreateGroupRequest final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 6,
+  static const ::google::protobuf::internal::TcParseTable<3, 7,
                                    0, 94,
                                    2>
       _table_;
@@ -19549,6 +20088,7 @@ class CreateGroupRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr group_name_;
     ::google::protobuf::internal::ArenaStringPtr description_;
     ::google::protobuf::internal::ArenaStringPtr avatar_url_;
+    ::int64_t ttl_seconds_;
     ::int32_t max_members_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -19855,7 +20395,7 @@ class CoordMetadata final : public ::google::protobuf::Message
     return *reinterpret_cast<const CoordMetadata*>(
         &_CoordMetadata_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 116;
+  static constexpr int kIndexInFileMessages = 118;
   friend void swap(CoordMetadata& a, CoordMetadata& b) { a.Swap(&b); }
   inline void Swap(CoordMetadata* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -20968,7 +21508,7 @@ class ChannelMuteState final : public ::google::protobuf::Message
     return *reinterpret_cast<const ChannelMuteState*>(
         &_ChannelMuteState_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 119;
+  static constexpr int kIndexInFileMessages = 121;
   friend void swap(ChannelMuteState& a, ChannelMuteState& b) { a.Swap(&b); }
   inline void Swap(ChannelMuteState* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -22133,7 +22673,7 @@ class BlockMessageSenderResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const BlockMessageSenderResponse*>(
         &_BlockMessageSenderResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 123;
+  static constexpr int kIndexInFileMessages = 125;
   friend void swap(BlockMessageSenderResponse& a, BlockMessageSenderResponse& b) { a.Swap(&b); }
   inline void Swap(BlockMessageSenderResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -22340,7 +22880,7 @@ class BlockMessageSenderRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const BlockMessageSenderRequest*>(
         &_BlockMessageSenderRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 122;
+  static constexpr int kIndexInFileMessages = 124;
   friend void swap(BlockMessageSenderRequest& a, BlockMessageSenderRequest& b) { a.Swap(&b); }
   inline void Swap(BlockMessageSenderRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -23022,7 +23562,7 @@ class WordFilterUpdateNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const WordFilterUpdateNotify*>(
         &_WordFilterUpdateNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 131;
+  static constexpr int kIndexInFileMessages = 133;
   friend void swap(WordFilterUpdateNotify& a, WordFilterUpdateNotify& b) { a.Swap(&b); }
   inline void Swap(WordFilterUpdateNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -23217,7 +23757,7 @@ class WordFilterFetchResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const WordFilterFetchResponse*>(
         &_WordFilterFetchResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 130;
+  static constexpr int kIndexInFileMessages = 132;
   friend void swap(WordFilterFetchResponse& a, WordFilterFetchResponse& b) { a.Swap(&b); }
   inline void Swap(WordFilterFetchResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -23424,7 +23964,7 @@ class SearchMessageResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const SearchMessageResponse*>(
         &_SearchMessageResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 134;
+  static constexpr int kIndexInFileMessages = 136;
   friend void swap(SearchMessageResponse& a, SearchMessageResponse& b) { a.Swap(&b); }
   inline void Swap(SearchMessageResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -24758,6 +25298,7 @@ class GroupInfo final : public ::google::protobuf::Message
     kMemberCountFieldNumber = 6,
     kMaxMembersFieldNumber = 7,
     kCreatedAtFieldNumber = 8,
+    kExpiresAtFieldNumber = 10,
     kMetadataFieldNumber = 9,
   };
   // string group_id = 1;
@@ -24865,6 +25406,16 @@ class GroupInfo final : public ::google::protobuf::Message
   void _internal_set_created_at(::int64_t value);
 
   public:
+  // int64 expires_at = 10;
+  void clear_expires_at() ;
+  ::int64_t expires_at() const;
+  void set_expires_at(::int64_t value);
+
+  private:
+  ::int64_t _internal_expires_at() const;
+  void _internal_set_expires_at(::int64_t value);
+
+  public:
   // map<string, string> metadata = 9;
   int metadata_size() const;
   private:
@@ -24884,7 +25435,7 @@ class GroupInfo final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 9,
+  static const ::google::protobuf::internal::TcParseTable<4, 10,
                                    1, 92,
                                    2>
       _table_;
@@ -24914,6 +25465,7 @@ class GroupInfo final : public ::google::protobuf::Message
     ::int32_t member_count_;
     ::int32_t max_members_;
     ::int64_t created_at_;
+    ::int64_t expires_at_;
     ::google::protobuf::internal::MapField<GroupInfo_MetadataEntry_DoNotUse, ::std::string, ::std::string,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING>
@@ -26169,6 +26721,7 @@ class GetHistoryResponse final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kMessagesFieldNumber = 2,
+    kMessagesGzipFieldNumber = 4,
     kCodeFieldNumber = 1,
     kHasMoreFieldNumber = 3,
   };
@@ -26189,6 +26742,21 @@ class GetHistoryResponse final : public ::google::protobuf::Message
   const ::chirp::chat::ChatMessage& messages(int index) const;
   ::chirp::chat::ChatMessage* PROTOBUF_NONNULL add_messages();
   const ::google::protobuf::RepeatedPtrField<::chirp::chat::ChatMessage>& messages() const;
+  // bytes messages_gzip = 4;
+  void clear_messages_gzip() ;
+  const ::std::string& messages_gzip() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_messages_gzip(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_messages_gzip();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_messages_gzip();
+  void set_allocated_messages_gzip(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_messages_gzip() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_messages_gzip(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_messages_gzip();
+
+  public:
   // .chirp.common.ErrorCode code = 1;
   void clear_code() ;
   ::chirp::common::ErrorCode code() const;
@@ -26213,7 +26781,7 @@ class GetHistoryResponse final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 3,
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
                                    1, 0,
                                    2>
       _table_;
@@ -26236,6 +26804,7 @@ class GetHistoryResponse final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::RepeatedPtrField< ::chirp::chat::ChatMessage > messages_;
+    ::google::protobuf::internal::ArenaStringPtr messages_gzip_;
     int code_;
     bool has_more_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -27036,7 +27605,7 @@ class GetChannelMutesResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetChannelMutesResponse*>(
         &_GetChannelMutesResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 121;
+  static constexpr int kIndexInFileMessages = 123;
   friend void swap(GetChannelMutesResponse& a, GetChannelMutesResponse& b) { a.Swap(&b); }
   inline void Swap(GetChannelMutesResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -34211,7 +34780,7 @@ inline void GetHistoryResponse::clear_code() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.code_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000002U);
+                  0x00000004U);
 }
 inline ::chirp::common::ErrorCode GetHistoryResponse::code() const {
   // @@protoc_insertion_point(field_get:chirp.chat.GetHistoryResponse.code)
@@ -34219,7 +34788,7 @@ inline ::chirp::common::ErrorCode GetHistoryResponse::code() const {
 }
 inline void GetHistoryResponse::set_code(::chirp::common::ErrorCode value) {
   _internal_set_code(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   // @@protoc_insertion_point(field_set:chirp.chat.GetHistoryResponse.code)
 }
 inline ::chirp::common::ErrorCode GetHistoryResponse::_internal_code() const {
@@ -34292,7 +34861,7 @@ inline void GetHistoryResponse::clear_has_more() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.has_more_ = false;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000004U);
+                  0x00000008U);
 }
 inline bool GetHistoryResponse::has_more() const {
   // @@protoc_insertion_point(field_get:chirp.chat.GetHistoryResponse.has_more)
@@ -34300,7 +34869,7 @@ inline bool GetHistoryResponse::has_more() const {
 }
 inline void GetHistoryResponse::set_has_more(bool value) {
   _internal_set_has_more(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   // @@protoc_insertion_point(field_set:chirp.chat.GetHistoryResponse.has_more)
 }
 inline bool GetHistoryResponse::_internal_has_more() const {
@@ -34310,6 +34879,71 @@ inline bool GetHistoryResponse::_internal_has_more() const {
 inline void GetHistoryResponse::_internal_set_has_more(bool value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.has_more_ = value;
+}
+
+// bytes messages_gzip = 4;
+inline void GetHistoryResponse::clear_messages_gzip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.messages_gzip_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& GetHistoryResponse::messages_gzip() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.GetHistoryResponse.messages_gzip)
+  return _internal_messages_gzip();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GetHistoryResponse::set_messages_gzip(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.messages_gzip_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.GetHistoryResponse.messages_gzip)
+}
+inline ::std::string* PROTOBUF_NONNULL GetHistoryResponse::mutable_messages_gzip()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_messages_gzip();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.GetHistoryResponse.messages_gzip)
+  return _s;
+}
+inline const ::std::string& GetHistoryResponse::_internal_messages_gzip() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.messages_gzip_.Get();
+}
+inline void GetHistoryResponse::_internal_set_messages_gzip(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.messages_gzip_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GetHistoryResponse::_internal_mutable_messages_gzip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.messages_gzip_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GetHistoryResponse::release_messages_gzip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.GetHistoryResponse.messages_gzip)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.messages_gzip_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.messages_gzip_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GetHistoryResponse::set_allocated_messages_gzip(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.messages_gzip_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.messages_gzip_.IsDefault()) {
+    _impl_.messages_gzip_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.GetHistoryResponse.messages_gzip)
 }
 
 // -------------------------------------------------------------------
@@ -34581,7 +35215,7 @@ inline void CreateGroupRequest::clear_max_members() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.max_members_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000020U);
+                  0x00000040U);
 }
 inline ::int32_t CreateGroupRequest::max_members() const {
   // @@protoc_insertion_point(field_get:chirp.chat.CreateGroupRequest.max_members)
@@ -34589,7 +35223,7 @@ inline ::int32_t CreateGroupRequest::max_members() const {
 }
 inline void CreateGroupRequest::set_max_members(::int32_t value) {
   _internal_set_max_members(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:chirp.chat.CreateGroupRequest.max_members)
 }
 inline ::int32_t CreateGroupRequest::_internal_max_members() const {
@@ -34671,6 +35305,31 @@ inline ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL
 CreateGroupRequest::_internal_mutable_initial_members() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.initial_members_;
+}
+
+// int64 ttl_seconds = 7;
+inline void CreateGroupRequest::clear_ttl_seconds() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ttl_seconds_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000020U);
+}
+inline ::int64_t CreateGroupRequest::ttl_seconds() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.CreateGroupRequest.ttl_seconds)
+  return _internal_ttl_seconds();
+}
+inline void CreateGroupRequest::set_ttl_seconds(::int64_t value) {
+  _internal_set_ttl_seconds(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:chirp.chat.CreateGroupRequest.ttl_seconds)
+}
+inline ::int64_t CreateGroupRequest::_internal_ttl_seconds() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.ttl_seconds_;
+}
+inline void CreateGroupRequest::_internal_set_ttl_seconds(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ttl_seconds_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -35209,7 +35868,7 @@ inline void GroupInfo::clear_metadata() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.metadata_.Clear();
   ClearHasBitForRepeated(_impl_._has_bits_[0],
-                  0x00000100U);
+                  0x00000200U);
 }
 inline const ::google::protobuf::Map<::std::string, ::std::string>& GroupInfo::_internal_metadata() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -35225,9 +35884,34 @@ inline ::google::protobuf::Map<::std::string, ::std::string>* PROTOBUF_NONNULL G
 }
 inline ::google::protobuf::Map<::std::string, ::std::string>* PROTOBUF_NONNULL GroupInfo::mutable_metadata()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000100U);
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000200U);
   // @@protoc_insertion_point(field_mutable_map:chirp.chat.GroupInfo.metadata)
   return _internal_mutable_metadata();
+}
+
+// int64 expires_at = 10;
+inline void GroupInfo::clear_expires_at() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.expires_at_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000100U);
+}
+inline ::int64_t GroupInfo::expires_at() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.GroupInfo.expires_at)
+  return _internal_expires_at();
+}
+inline void GroupInfo::set_expires_at(::int64_t value) {
+  _internal_set_expires_at(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:chirp.chat.GroupInfo.expires_at)
+}
+inline ::int64_t GroupInfo::_internal_expires_at() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.expires_at_;
+}
+inline void GroupInfo::_internal_set_expires_at(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.expires_at_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -55498,6 +56182,529 @@ inline ::int32_t TradeMetadata::_internal_item_count() const {
 inline void TradeMetadata::_internal_set_item_count(::int32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.item_count_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// GuildRecruitMetadata
+
+// string guild_id = 1;
+inline void GuildRecruitMetadata::clear_guild_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.guild_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& GuildRecruitMetadata::guild_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.GuildRecruitMetadata.guild_id)
+  return _internal_guild_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GuildRecruitMetadata::set_guild_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.guild_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.GuildRecruitMetadata.guild_id)
+}
+inline ::std::string* PROTOBUF_NONNULL GuildRecruitMetadata::mutable_guild_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_guild_id();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.GuildRecruitMetadata.guild_id)
+  return _s;
+}
+inline const ::std::string& GuildRecruitMetadata::_internal_guild_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.guild_id_.Get();
+}
+inline void GuildRecruitMetadata::_internal_set_guild_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.guild_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GuildRecruitMetadata::_internal_mutable_guild_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.guild_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GuildRecruitMetadata::release_guild_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.GuildRecruitMetadata.guild_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.guild_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.guild_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GuildRecruitMetadata::set_allocated_guild_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.guild_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.guild_id_.IsDefault()) {
+    _impl_.guild_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.GuildRecruitMetadata.guild_id)
+}
+
+// string guild_name = 2;
+inline void GuildRecruitMetadata::clear_guild_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.guild_name_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& GuildRecruitMetadata::guild_name() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.GuildRecruitMetadata.guild_name)
+  return _internal_guild_name();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GuildRecruitMetadata::set_guild_name(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.guild_name_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.GuildRecruitMetadata.guild_name)
+}
+inline ::std::string* PROTOBUF_NONNULL GuildRecruitMetadata::mutable_guild_name()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_guild_name();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.GuildRecruitMetadata.guild_name)
+  return _s;
+}
+inline const ::std::string& GuildRecruitMetadata::_internal_guild_name() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.guild_name_.Get();
+}
+inline void GuildRecruitMetadata::_internal_set_guild_name(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.guild_name_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GuildRecruitMetadata::_internal_mutable_guild_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.guild_name_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GuildRecruitMetadata::release_guild_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.GuildRecruitMetadata.guild_name)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.guild_name_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.guild_name_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GuildRecruitMetadata::set_allocated_guild_name(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.guild_name_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.guild_name_.IsDefault()) {
+    _impl_.guild_name_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.GuildRecruitMetadata.guild_name)
+}
+
+// int32 level = 3;
+inline void GuildRecruitMetadata::clear_level() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.level_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000008U);
+}
+inline ::int32_t GuildRecruitMetadata::level() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.GuildRecruitMetadata.level)
+  return _internal_level();
+}
+inline void GuildRecruitMetadata::set_level(::int32_t value) {
+  _internal_set_level(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:chirp.chat.GuildRecruitMetadata.level)
+}
+inline ::int32_t GuildRecruitMetadata::_internal_level() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.level_;
+}
+inline void GuildRecruitMetadata::_internal_set_level(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.level_ = value;
+}
+
+// int32 member_count = 4;
+inline void GuildRecruitMetadata::clear_member_count() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.member_count_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000010U);
+}
+inline ::int32_t GuildRecruitMetadata::member_count() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.GuildRecruitMetadata.member_count)
+  return _internal_member_count();
+}
+inline void GuildRecruitMetadata::set_member_count(::int32_t value) {
+  _internal_set_member_count(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:chirp.chat.GuildRecruitMetadata.member_count)
+}
+inline ::int32_t GuildRecruitMetadata::_internal_member_count() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.member_count_;
+}
+inline void GuildRecruitMetadata::_internal_set_member_count(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.member_count_ = value;
+}
+
+// int32 max_members = 5;
+inline void GuildRecruitMetadata::clear_max_members() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.max_members_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000020U);
+}
+inline ::int32_t GuildRecruitMetadata::max_members() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.GuildRecruitMetadata.max_members)
+  return _internal_max_members();
+}
+inline void GuildRecruitMetadata::set_max_members(::int32_t value) {
+  _internal_set_max_members(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:chirp.chat.GuildRecruitMetadata.max_members)
+}
+inline ::int32_t GuildRecruitMetadata::_internal_max_members() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.max_members_;
+}
+inline void GuildRecruitMetadata::_internal_set_max_members(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.max_members_ = value;
+}
+
+// string description = 6;
+inline void GuildRecruitMetadata::clear_description() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.description_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline const ::std::string& GuildRecruitMetadata::description() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.GuildRecruitMetadata.description)
+  return _internal_description();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GuildRecruitMetadata::set_description(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.description_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.GuildRecruitMetadata.description)
+}
+inline ::std::string* PROTOBUF_NONNULL GuildRecruitMetadata::mutable_description()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_description();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.GuildRecruitMetadata.description)
+  return _s;
+}
+inline const ::std::string& GuildRecruitMetadata::_internal_description() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.description_.Get();
+}
+inline void GuildRecruitMetadata::_internal_set_description(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.description_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GuildRecruitMetadata::_internal_mutable_description() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.description_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GuildRecruitMetadata::release_description() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.GuildRecruitMetadata.description)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.description_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.description_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GuildRecruitMetadata::set_allocated_description(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.description_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.description_.IsDefault()) {
+    _impl_.description_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.GuildRecruitMetadata.description)
+}
+
+// -------------------------------------------------------------------
+
+// PartyRecruitMetadata
+
+// string party_id = 1;
+inline void PartyRecruitMetadata::clear_party_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.party_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& PartyRecruitMetadata::party_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.PartyRecruitMetadata.party_id)
+  return _internal_party_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void PartyRecruitMetadata::set_party_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.party_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.PartyRecruitMetadata.party_id)
+}
+inline ::std::string* PROTOBUF_NONNULL PartyRecruitMetadata::mutable_party_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_party_id();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.PartyRecruitMetadata.party_id)
+  return _s;
+}
+inline const ::std::string& PartyRecruitMetadata::_internal_party_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.party_id_.Get();
+}
+inline void PartyRecruitMetadata::_internal_set_party_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.party_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL PartyRecruitMetadata::_internal_mutable_party_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.party_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE PartyRecruitMetadata::release_party_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.PartyRecruitMetadata.party_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.party_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.party_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void PartyRecruitMetadata::set_allocated_party_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.party_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.party_id_.IsDefault()) {
+    _impl_.party_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.PartyRecruitMetadata.party_id)
+}
+
+// string dungeon_name = 2;
+inline void PartyRecruitMetadata::clear_dungeon_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.dungeon_name_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& PartyRecruitMetadata::dungeon_name() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.PartyRecruitMetadata.dungeon_name)
+  return _internal_dungeon_name();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void PartyRecruitMetadata::set_dungeon_name(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.dungeon_name_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.PartyRecruitMetadata.dungeon_name)
+}
+inline ::std::string* PROTOBUF_NONNULL PartyRecruitMetadata::mutable_dungeon_name()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_dungeon_name();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.PartyRecruitMetadata.dungeon_name)
+  return _s;
+}
+inline const ::std::string& PartyRecruitMetadata::_internal_dungeon_name() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.dungeon_name_.Get();
+}
+inline void PartyRecruitMetadata::_internal_set_dungeon_name(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.dungeon_name_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL PartyRecruitMetadata::_internal_mutable_dungeon_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.dungeon_name_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE PartyRecruitMetadata::release_dungeon_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.PartyRecruitMetadata.dungeon_name)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.dungeon_name_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.dungeon_name_.Set("", GetArena());
+  }
+  return released;
+}
+inline void PartyRecruitMetadata::set_allocated_dungeon_name(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.dungeon_name_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.dungeon_name_.IsDefault()) {
+    _impl_.dungeon_name_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.PartyRecruitMetadata.dungeon_name)
+}
+
+// int32 needed = 3;
+inline void PartyRecruitMetadata::clear_needed() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.needed_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000008U);
+}
+inline ::int32_t PartyRecruitMetadata::needed() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.PartyRecruitMetadata.needed)
+  return _internal_needed();
+}
+inline void PartyRecruitMetadata::set_needed(::int32_t value) {
+  _internal_set_needed(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:chirp.chat.PartyRecruitMetadata.needed)
+}
+inline ::int32_t PartyRecruitMetadata::_internal_needed() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.needed_;
+}
+inline void PartyRecruitMetadata::_internal_set_needed(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.needed_ = value;
+}
+
+// int32 current = 4;
+inline void PartyRecruitMetadata::clear_current() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.current_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000010U);
+}
+inline ::int32_t PartyRecruitMetadata::current() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.PartyRecruitMetadata.current)
+  return _internal_current();
+}
+inline void PartyRecruitMetadata::set_current(::int32_t value) {
+  _internal_set_current(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:chirp.chat.PartyRecruitMetadata.current)
+}
+inline ::int32_t PartyRecruitMetadata::_internal_current() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.current_;
+}
+inline void PartyRecruitMetadata::_internal_set_current(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.current_ = value;
+}
+
+// string leader_name = 5;
+inline void PartyRecruitMetadata::clear_leader_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.leader_name_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline const ::std::string& PartyRecruitMetadata::leader_name() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.PartyRecruitMetadata.leader_name)
+  return _internal_leader_name();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void PartyRecruitMetadata::set_leader_name(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.leader_name_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.PartyRecruitMetadata.leader_name)
+}
+inline ::std::string* PROTOBUF_NONNULL PartyRecruitMetadata::mutable_leader_name()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_leader_name();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.PartyRecruitMetadata.leader_name)
+  return _s;
+}
+inline const ::std::string& PartyRecruitMetadata::_internal_leader_name() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.leader_name_.Get();
+}
+inline void PartyRecruitMetadata::_internal_set_leader_name(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.leader_name_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL PartyRecruitMetadata::_internal_mutable_leader_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.leader_name_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE PartyRecruitMetadata::release_leader_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.PartyRecruitMetadata.leader_name)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.leader_name_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.leader_name_.Set("", GetArena());
+  }
+  return released;
+}
+inline void PartyRecruitMetadata::set_allocated_leader_name(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.leader_name_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.leader_name_.IsDefault()) {
+    _impl_.leader_name_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.PartyRecruitMetadata.leader_name)
 }
 
 // -------------------------------------------------------------------

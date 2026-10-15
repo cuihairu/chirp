@@ -30,13 +30,17 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "CChirpGzip",
+            linkerSettings: [.linkedLibrary("z")]
+        ),
+        .target(
             name: "ChirpProtos",
             dependencies: [.product(name: "SwiftProtobuf", package: "swift-protobuf")],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .target(
             name: "ChirpProtocol",
-            dependencies: ["ChirpProtos"],
+            dependencies: ["ChirpProtos", "CChirpGzip"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .target(

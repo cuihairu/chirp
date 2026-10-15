@@ -307,7 +307,14 @@ type MessageInjectRequest struct {
 	// Empty keeps the direct injection semantics. Carrying game_id with
 	// channel_type PRIVATE is rejected (INVALID_PARAM): either a channel
 	// fan-out or a 1:1 inject, never an ambiguous both.
-	GameId        string `protobuf:"bytes,8,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	GameId string `protobuf:"bytes,8,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	// 展示面元数据（值域契约：与 chat.Priority 对齐——0 LOW / 1 NORMAL /
+	// 2 HIGH / 3 URGENT）。chat 侧按值直传（channel_type 同款口径），落入
+	// ChatMessage.priority。缺省 0 = 普通消息，旧游戏侧零感知。
+	Priority int32 `protobuf:"varint,9,opt,name=priority,proto3" json:"priority,omitempty"`
+	// 走马灯/公告的显示时长（秒），直传 ChatMessage.ttl_seconds；与
+	// priority=URGENT 同置才点亮走马灯（systemSurfaceOf 判定二要素）。
+	TtlSeconds    int32 `protobuf:"varint,10,opt,name=ttl_seconds,json=ttlSeconds,proto3" json:"ttl_seconds,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -396,6 +403,20 @@ func (x *MessageInjectRequest) GetGameId() string {
 		return x.GameId
 	}
 	return ""
+}
+
+func (x *MessageInjectRequest) GetPriority() int32 {
+	if x != nil {
+		return x.Priority
+	}
+	return 0
+}
+
+func (x *MessageInjectRequest) GetTtlSeconds() int32 {
+	if x != nil {
+		return x.TtlSeconds
+	}
+	return 0
 }
 
 type MessageInjectResponse struct {
@@ -2489,7 +2510,7 @@ const file_proto_game_server_gateway_proto_rawDesc = "" +
 	"\x13ServerHeartbeatPing\x12$\n" +
 	"\x0eclient_time_ms\x18\x01 \x01(\x03R\fclientTimeMs\";\n" +
 	"\x13ServerHeartbeatPong\x12$\n" +
-	"\x0eserver_time_ms\x18\x01 \x01(\x03R\fserverTimeMs\"\xae\x02\n" +
+	"\x0eserver_time_ms\x18\x01 \x01(\x03R\fserverTimeMs\"\xeb\x02\n" +
 	"\x14MessageInjectRequest\x12\x1b\n" +
 	"\tinject_id\x18\x01 \x01(\tR\binjectId\x12F\n" +
 	"\vsender_kind\x18\x02 \x01(\x0e2%.chirp.game_server_gateway.SenderKindR\n" +
@@ -2501,7 +2522,11 @@ const file_proto_game_server_gateway_proto_rawDesc = "" +
 	"\vreceiver_id\x18\x06 \x01(\tR\n" +
 	"receiverId\x12\x18\n" +
 	"\acontent\x18\a \x01(\fR\acontent\x12\x17\n" +
-	"\agame_id\x18\b \x01(\tR\x06gameId\"a\n" +
+	"\agame_id\x18\b \x01(\tR\x06gameId\x12\x1a\n" +
+	"\bpriority\x18\t \x01(\x05R\bpriority\x12\x1f\n" +
+	"\vttl_seconds\x18\n" +
+	" \x01(\x05R\n" +
+	"ttlSeconds\"a\n" +
 	"\x15MessageInjectResponse\x12+\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12\x1b\n" +
 	"\tinject_id\x18\x02 \x01(\tR\binjectId\"`\n" +

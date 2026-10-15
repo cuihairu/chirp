@@ -114,6 +114,9 @@ public:
   bool MarkMessageRecalled(const std::string& channel_id,
                            const std::string& message_id) override;
 
+  // 消息过期（P2）：一条 DELETE 两个 cutoff（私聊与其余频道各自窗）
+  uint64_t ExpireBefore(int64_t private_cutoff_ms, int64_t other_cutoff_ms) override;
+
   // Get offline messages for a user
   std::vector<StoredMessage> GetOfflineMessages(const std::string& user_id) override;
 

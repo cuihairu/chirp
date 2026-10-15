@@ -171,6 +171,15 @@ public nonisolated struct Chirp_GameServerGateway_MessageInjectRequest: Sendable
   /// fan-out or a 1:1 inject, never an ambiguous both.
   public var gameID: String = String()
 
+  /// 展示面元数据（值域契约：与 chat.Priority 对齐——0 LOW / 1 NORMAL /
+  /// 2 HIGH / 3 URGENT）。chat 侧按值直传（channel_type 同款口径），落入
+  /// ChatMessage.priority。缺省 0 = 普通消息，旧游戏侧零感知。
+  public var priority: Int32 = 0
+
+  /// 走马灯/公告的显示时长（秒），直传 ChatMessage.ttl_seconds；与
+  /// priority=URGENT 同置才点亮走马灯（systemSurfaceOf 判定二要素）。
+  public var ttlSeconds: Int32 = 0
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -926,7 +935,7 @@ nonisolated extension Chirp_GameServerGateway_ServerHeartbeatPong: SwiftProtobuf
 
 nonisolated extension Chirp_GameServerGateway_MessageInjectRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".MessageInjectRequest"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}inject_id\0\u{3}sender_kind\0\u{3}sender_id\0\u{3}channel_type\0\u{3}channel_id\0\u{3}receiver_id\0\u{1}content\0\u{3}game_id\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}inject_id\0\u{3}sender_kind\0\u{3}sender_id\0\u{3}channel_type\0\u{3}channel_id\0\u{3}receiver_id\0\u{1}content\0\u{3}game_id\0\u{1}priority\0\u{3}ttl_seconds\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -942,6 +951,8 @@ nonisolated extension Chirp_GameServerGateway_MessageInjectRequest: SwiftProtobu
       case 6: try { try decoder.decodeSingularStringField(value: &self.receiverID) }()
       case 7: try { try decoder.decodeSingularBytesField(value: &self.content) }()
       case 8: try { try decoder.decodeSingularStringField(value: &self.gameID) }()
+      case 9: try { try decoder.decodeSingularInt32Field(value: &self.priority) }()
+      case 10: try { try decoder.decodeSingularInt32Field(value: &self.ttlSeconds) }()
       default: break
       }
     }
@@ -972,6 +983,12 @@ nonisolated extension Chirp_GameServerGateway_MessageInjectRequest: SwiftProtobu
     if !self.gameID.isEmpty {
       try visitor.visitSingularStringField(value: self.gameID, fieldNumber: 8)
     }
+    if self.priority != 0 {
+      try visitor.visitSingularInt32Field(value: self.priority, fieldNumber: 9)
+    }
+    if self.ttlSeconds != 0 {
+      try visitor.visitSingularInt32Field(value: self.ttlSeconds, fieldNumber: 10)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -984,6 +1001,8 @@ nonisolated extension Chirp_GameServerGateway_MessageInjectRequest: SwiftProtobu
     if lhs.receiverID != rhs.receiverID {return false}
     if lhs.content != rhs.content {return false}
     if lhs.gameID != rhs.gameID {return false}
+    if lhs.priority != rhs.priority {return false}
+    if lhs.ttlSeconds != rhs.ttlSeconds {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

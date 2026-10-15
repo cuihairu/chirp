@@ -576,6 +576,107 @@ public nonisolated struct Chirp_Social_FriendRemovedNotify: Sendable {
 }
 
 /// ---------------------------------------------------------------------------
+/// 好友上线通知偏好（P1，可关闭）。按用户存，缺省全开——只显式关掉的用户
+/// 不再收到 FRIEND_ONLINE_NOTIFY(3029)；花名册 PRESENCE_NOTIFY 不受影响。
+public nonisolated struct Chirp_Social_NotifyPrefs: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var friendOnlineNotify: Bool = false
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Chirp_Social_SetNotifyPrefsRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var userID: String = String()
+
+  public var prefs: Chirp_Social_NotifyPrefs {
+    get {_prefs ?? Chirp_Social_NotifyPrefs()}
+    set {_prefs = newValue}
+  }
+  /// Returns true if `prefs` has been explicitly set.
+  public var hasPrefs: Bool {self._prefs != nil}
+  /// Clears the value of `prefs`. Subsequent reads from it will return its default value.
+  public mutating func clearPrefs() {self._prefs = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _prefs: Chirp_Social_NotifyPrefs? = nil
+}
+
+public nonisolated struct Chirp_Social_SetNotifyPrefsResponse: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var code: Chirp_Common_ErrorCode = .ok
+
+  /// 回显生效值
+  public var prefs: Chirp_Social_NotifyPrefs {
+    get {_prefs ?? Chirp_Social_NotifyPrefs()}
+    set {_prefs = newValue}
+  }
+  /// Returns true if `prefs` has been explicitly set.
+  public var hasPrefs: Bool {self._prefs != nil}
+  /// Clears the value of `prefs`. Subsequent reads from it will return its default value.
+  public mutating func clearPrefs() {self._prefs = nil}
+
+  public var serverTime: Int64 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _prefs: Chirp_Social_NotifyPrefs? = nil
+}
+
+public nonisolated struct Chirp_Social_GetNotifyPrefsRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var userID: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Chirp_Social_GetNotifyPrefsResponse: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var code: Chirp_Common_ErrorCode = .ok
+
+  public var prefs: Chirp_Social_NotifyPrefs {
+    get {_prefs ?? Chirp_Social_NotifyPrefs()}
+    set {_prefs = newValue}
+  }
+  /// Returns true if `prefs` has been explicitly set.
+  public var hasPrefs: Bool {self._prefs != nil}
+  /// Clears the value of `prefs`. Subsequent reads from it will return its default value.
+  public mutating func clearPrefs() {self._prefs = nil}
+
+  public var serverTime: Int64 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _prefs: Chirp_Social_NotifyPrefs? = nil
+}
+
+/// ---------------------------------------------------------------------------
 /// Server-side storage snapshots. These are Redis VALUES (one key per user,
 /// e.g. "chirp:social:friends:<uid>"), never wire messages. Keeping them
 /// separate from the response messages lets the storage schema evolve without
@@ -601,6 +702,18 @@ public nonisolated struct Chirp_Social_StoredPendingRequests: Sendable {
   // methods supported on all messages.
 
   public var requests: Dictionary<String,Chirp_Social_FriendRequest> = [:]
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Chirp_Social_StoredNotifyPrefs: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var friendOnlineNotify: Bool = false
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -1676,6 +1789,193 @@ nonisolated extension Chirp_Social_FriendRemovedNotify: SwiftProtobuf.Message, S
   }
 }
 
+nonisolated extension Chirp_Social_NotifyPrefs: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".NotifyPrefs"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}friend_online_notify\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularBoolField(value: &self.friendOnlineNotify) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.friendOnlineNotify != false {
+      try visitor.visitSingularBoolField(value: self.friendOnlineNotify, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Chirp_Social_NotifyPrefs, rhs: Chirp_Social_NotifyPrefs) -> Bool {
+    if lhs.friendOnlineNotify != rhs.friendOnlineNotify {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Chirp_Social_SetNotifyPrefsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".SetNotifyPrefsRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}user_id\0\u{1}prefs\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.userID) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._prefs) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if !self.userID.isEmpty {
+      try visitor.visitSingularStringField(value: self.userID, fieldNumber: 1)
+    }
+    try { if let v = self._prefs {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Chirp_Social_SetNotifyPrefsRequest, rhs: Chirp_Social_SetNotifyPrefsRequest) -> Bool {
+    if lhs.userID != rhs.userID {return false}
+    if lhs._prefs != rhs._prefs {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Chirp_Social_SetNotifyPrefsResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".SetNotifyPrefsResponse"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}code\0\u{1}prefs\0\u{3}server_time\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularEnumField(value: &self.code) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._prefs) }()
+      case 3: try { try decoder.decodeSingularInt64Field(value: &self.serverTime) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if self.code != .ok {
+      try visitor.visitSingularEnumField(value: self.code, fieldNumber: 1)
+    }
+    try { if let v = self._prefs {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    } }()
+    if self.serverTime != 0 {
+      try visitor.visitSingularInt64Field(value: self.serverTime, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Chirp_Social_SetNotifyPrefsResponse, rhs: Chirp_Social_SetNotifyPrefsResponse) -> Bool {
+    if lhs.code != rhs.code {return false}
+    if lhs._prefs != rhs._prefs {return false}
+    if lhs.serverTime != rhs.serverTime {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Chirp_Social_GetNotifyPrefsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".GetNotifyPrefsRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}user_id\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.userID) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.userID.isEmpty {
+      try visitor.visitSingularStringField(value: self.userID, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Chirp_Social_GetNotifyPrefsRequest, rhs: Chirp_Social_GetNotifyPrefsRequest) -> Bool {
+    if lhs.userID != rhs.userID {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Chirp_Social_GetNotifyPrefsResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".GetNotifyPrefsResponse"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}code\0\u{1}prefs\0\u{3}server_time\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularEnumField(value: &self.code) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._prefs) }()
+      case 3: try { try decoder.decodeSingularInt64Field(value: &self.serverTime) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if self.code != .ok {
+      try visitor.visitSingularEnumField(value: self.code, fieldNumber: 1)
+    }
+    try { if let v = self._prefs {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    } }()
+    if self.serverTime != 0 {
+      try visitor.visitSingularInt64Field(value: self.serverTime, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Chirp_Social_GetNotifyPrefsResponse, rhs: Chirp_Social_GetNotifyPrefsResponse) -> Bool {
+    if lhs.code != rhs.code {return false}
+    if lhs._prefs != rhs._prefs {return false}
+    if lhs.serverTime != rhs.serverTime {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
 nonisolated extension Chirp_Social_StoredFriendList: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".StoredFriendList"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}friend_user_ids\0")
@@ -1731,6 +2031,36 @@ nonisolated extension Chirp_Social_StoredPendingRequests: SwiftProtobuf.Message,
 
   public static func ==(lhs: Chirp_Social_StoredPendingRequests, rhs: Chirp_Social_StoredPendingRequests) -> Bool {
     if lhs.requests != rhs.requests {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Chirp_Social_StoredNotifyPrefs: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".StoredNotifyPrefs"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}friend_online_notify\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularBoolField(value: &self.friendOnlineNotify) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.friendOnlineNotify != false {
+      try visitor.visitSingularBoolField(value: self.friendOnlineNotify, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Chirp_Social_StoredNotifyPrefs, rhs: Chirp_Social_StoredNotifyPrefs) -> Bool {
+    if lhs.friendOnlineNotify != rhs.friendOnlineNotify {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

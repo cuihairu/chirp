@@ -26,12 +26,18 @@ function(chirp_unit_test_common_links target)
 endfunction()
 
 # Common library tests
+# gzip_test.cc exercises libs/common/gzip.cc (also compiled in below), which
+# links zlib directly here - find_package is directory-scoped, so the one in
+# libs/common/CMakeLists.txt does not reach this file.
+find_package(ZLIB REQUIRED)
 add_executable(common_tests
   common_test.cc
   crash_handler_test.cc
+  gzip_test.cc
   ${CMAKE_SOURCE_DIR}/libs/common/base64.cc
   ${CMAKE_SOURCE_DIR}/libs/common/config.cc
   ${CMAKE_SOURCE_DIR}/libs/common/crash_handler.cc
+  ${CMAKE_SOURCE_DIR}/libs/common/gzip.cc
   ${CMAKE_SOURCE_DIR}/libs/common/jwt.cc
   ${CMAKE_SOURCE_DIR}/libs/common/logger.cc
   ${CMAKE_SOURCE_DIR}/libs/common/sha256.cc
@@ -42,6 +48,7 @@ target_link_libraries(common_tests
   GTest::gtest
   GTest::gtest_main
   ${absl_pkg_LIBRARIES}
+  ZLIB::ZLIB
 )
 
 if(TARGET client)
@@ -196,7 +203,9 @@ add_executable(chat_managers_tests
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/distributed_runtime.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/chat_validation.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/delivery_ack_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/history_compression.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/group_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/group_expiry_sweeper.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/group_handlers.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/message_handlers.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/reaction_manager.cc
@@ -392,9 +401,11 @@ add_test(NAME service_bridge_tests COMMAND service_bridge_tests)
 add_executable(notification_tests
   notification_test.cc
   notification_internal_test.cc
+  notification_apns_jwt_test.cc
   push_transport_http_test.cc
   push_transport_tls_test.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_service.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/apns_jwt.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/push_transport.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/http_push_transport.cc
 )
@@ -424,6 +435,7 @@ add_executable(notification_handlers_tests
   notification_handlers_test.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_handlers.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_service.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/apns_jwt.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/push_transport.cc
 )
 
@@ -448,6 +460,7 @@ add_executable(notification_client_tests
   notification_client_test.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_handlers.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_service.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/apns_jwt.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/push_transport.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/push_bridge.cc
 )
@@ -474,6 +487,7 @@ add_executable(notification_main_session_tests
   notification_main_session_test.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_handlers.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_service.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/apns_jwt.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/push_transport.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/http_push_transport.cc
 )
@@ -951,6 +965,7 @@ add_test(NAME auth_basic_session_tests COMMAND auth_basic_session_tests)
 add_executable(chat_mysql_tests
   chat_mysql_test.cc
   fake_mysql.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/history_retention_sweeper.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/hybrid_message_store.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/message_delivery_tracker.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/message_migration_worker.cc

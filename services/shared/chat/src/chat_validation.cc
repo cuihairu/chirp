@@ -139,6 +139,50 @@ chirp::common::ErrorCode ValidateItemMetadata(const SendMessageRequest& req) {
   return chirp::common::OK;
 }
 
+chirp::common::ErrorCode ValidateAchievementMetadata(const SendMessageRequest& req) {
+  if (req.msg_type() != ACHIEVEMENT) {
+    return chirp::common::OK;
+  }
+  AchievementMetadata achievement;
+  // 空串同上：achievement_id 空判同时覆盖「没带 metadata」与「解析不出」。
+  if (!achievement.ParseFromString(req.metadata()) ||
+      achievement.achievement_id().empty()) {
+    return chirp::common::INVALID_PARAM;
+  }
+  return chirp::common::OK;
+}
+
+chirp::common::ErrorCode ValidateTradeMetadata(const SendMessageRequest& req) {
+  if (req.msg_type() != TRADE_STATUS) {
+    return chirp::common::OK;
+  }
+  TradeMetadata trade;
+  // 空串同上：trade_id 空判同时覆盖「没带 metadata」与「解析不出」。
+  // status 是展示文本（proto 注释约定 CREATED/ACCEPTED/COMPLETED/CANCELLED），
+  // 门不锁枚举——新状态值不应被旧服务端挡下，与「不越权校验未启用语义」同口径。
+  if (!trade.ParseFromString(req.metadata()) || trade.trade_id().empty()) {
+    return chirp::common::INVALID_PARAM;
+  }
+  return chirp::common::OK;
+}
+
+chirp::common::ErrorCode ValidateRecruitMetadata(const SendMessageRequest& req) {
+  // 公会/组队招募同门：各自按对应 Metadata 解析且 id 非空（空判同时覆盖
+  // 「没带 metadata」与「解析不出」），其余 msg_type 原样透传。
+  if (req.msg_type() == GUILD_RECRUIT) {
+    GuildRecruitMetadata guild;
+    if (!guild.ParseFromString(req.metadata()) || guild.guild_id().empty()) {
+      return chirp::common::INVALID_PARAM;
+    }
+  } else if (req.msg_type() == PARTY_RECRUIT) {
+    PartyRecruitMetadata party;
+    if (!party.ParseFromString(req.metadata()) || party.party_id().empty()) {
+      return chirp::common::INVALID_PARAM;
+    }
+  }
+  return chirp::common::OK;
+}
+
 chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& req,
                                                     std::string_view authenticated_user_id) {
   if (!IsAuthenticated(authenticated_user_id)) {
@@ -162,6 +206,24 @@ chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& re
   if (const chirp::common::ErrorCode item_code = ValidateItemMetadata(req);
       item_code != chirp::common::OK) {
     return item_code;
+  }
+  // 成就分享（P1 ACHIEVEMENT）与坐标/物品链接同层：垃圾/缺 achievement_id
+  // 的 metadata 同样在落任何存储之前拦下。
+  if (const chirp::common::ErrorCode achievement_code = ValidateAchievementMetadata(req);
+      achievement_code != chirp::common::OK) {
+    return achievement_code;
+  }
+  // 交易状态（P1 TRADE_STATUS）与成就分享同层：垃圾/缺 trade_id 的 metadata
+  // 同样在落任何存储之前拦下。
+  if (const chirp::common::ErrorCode trade_code = ValidateTradeMetadata(req);
+      trade_code != chirp::common::OK) {
+    return trade_code;
+  }
+  // 招募卡片（P1 GUILD_RECRUIT/PARTY_RECRUIT）同层：垃圾/缺 id 的 metadata
+  // 同样在落任何存储之前拦下。
+  if (const chirp::common::ErrorCode recruit_code = ValidateRecruitMetadata(req);
+      recruit_code != chirp::common::OK) {
+    return recruit_code;
   }
 
   if (req.channel_type() == PRIVATE) {

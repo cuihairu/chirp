@@ -1506,6 +1506,7 @@ TEST_F(DistributedRuntimeTest, WsServerDataAndDisconnectPaths) {
 
 #ifndef CHIRP_SKIP_MAIN_DISTRIBUTED_INCLUDE
 #include "fake_servers.h"
+#include "gzip.h"
 
 #define main chirp_chat_distributed_main
 #include "main_distributed.cc"
@@ -1917,7 +1918,7 @@ TEST_F(DistributedInternalsTest, HandleGetHistoryFiltersBadEntries) {
   chirp::chat::GetHistoryRequest req;
   req.set_channel_id("c1");
   req.set_limit(10);
-  HandleGetHistory(req, session, store_, 2);
+  HandleGetHistory(req, session, store_, /*supports_gzip=*/false, 2);
 
   Packet pkt;
   ASSERT_TRUE(DecodeFramed(session->sent[0], &pkt));
@@ -1928,13 +1929,52 @@ TEST_F(DistributedInternalsTest, HandleGetHistoryFiltersBadEntries) {
   EXPECT_EQ(resp.messages(0).content(), "valid");
 }
 
+TEST_F(DistributedInternalsTest, HandleGetHistoryGzipForCapableSession) {
+  // 消息压缩（game_chat_features P2）：声明能力的会话收 gzip 形态。
+  chirp::chat::ChatMessage good;
+  good.set_message_id("g1");
+  good.set_content("valid");
+
+  chirp_test::FakeRedisServer fake([&](const std::vector<std::string>& args) {
+    if (!args.empty() && args[0] == "LRANGE") {
+      return chirp_test::Array({good.SerializeAsString()});
+    }
+    return chirp_test::Simple("OK");
+  });
+  store_->redis = std::make_shared<chirp::network::RedisClient>("127.0.0.1", fake.port());
+
+  auto session = std::make_shared<MockSession>();
+  state_->SetGzipCapable(session.get(), true);
+  chirp::chat::GetHistoryRequest req;
+  req.set_channel_id("c1");
+  req.set_limit(10);
+  HandleGetHistory(req, session, store_, /*supports_gzip=*/true, 2);
+
+  Packet pkt;
+  ASSERT_TRUE(DecodeFramed(session->sent[0], &pkt));
+  chirp::chat::GetHistoryResponse resp;
+  ASSERT_TRUE(resp.ParseFromString(pkt.body()));
+  EXPECT_EQ(resp.messages_size(), 0);
+  ASSERT_FALSE(resp.messages_gzip().empty());
+  std::string raw;
+  ASSERT_TRUE(chirp::common::GzipDecompress(resp.messages_gzip(), &raw));
+  chirp::chat::GetHistoryResponse inflated;
+  ASSERT_TRUE(inflated.ParseFromString(raw));
+  ASSERT_EQ(inflated.messages_size(), 1);
+  EXPECT_EQ(inflated.messages(0).content(), "valid");
+
+  // 登录改口清声明（指针复用不继承旧声明），之后回到明文形态。
+  state_->SetGzipCapable(session.get(), false);
+  EXPECT_FALSE(state_->IsGzipCapable(session.get()));
+}
+
 TEST_F(DistributedInternalsTest, HandleGetHistoryWithoutRedisSucceeds) {
   auto session = std::make_shared<MockSession>();
   chirp::chat::GetHistoryRequest req;
   req.set_channel_id("c1");
   req.set_limit(10);
 
-  HandleGetHistory(req, session, store_, /*seq=*/7);
+  HandleGetHistory(req, session, store_, /*supports_gzip=*/false, /*seq=*/7);
 
   Packet pkt;
   ASSERT_TRUE(DecodeFramed(session->sent[0], &pkt));

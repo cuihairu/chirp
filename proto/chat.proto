@@ -19,6 +19,8 @@ enum MsgType {
   NPC_DIALOG = 13;    // NPC 对话
   TRADE_STATUS = 14;  // 交易状态
   COORD_LINK = 15;    // 坐标链接（metadata = CoordMetadata）
+  GUILD_RECRUIT = 16; // 公会招募（metadata = GuildRecruitMetadata）
+  PARTY_RECRUIT = 17; // 组队招募（metadata = PartyRecruitMetadata）
 
   SYSTEM = 99;        // 系统消息
 }
@@ -124,6 +126,13 @@ message GetHistoryResponse {
   common.ErrorCode code = 1;
   repeated ChatMessage messages = 2;
   bool has_more = 3;           // 是否还有更多历史消息
+
+  // gzip (RFC 1952) container of a GetHistoryResponse that carries only the
+  // messages list. Set instead of `messages` for sessions that declared
+  // LoginRequest.supports_gzip: clients inflate it and parse the bytes back
+  // as this message, then read `.messages`. On gzip failure the server
+  // keeps the plain form, so this field is only ever set with valid bytes.
+  bytes messages_gzip = 4;
 }
 
 // ========== Group Chat ==========
@@ -144,6 +153,10 @@ message CreateGroupRequest {
   string avatar_url = 4;
   int32 max_members = 5;       // 0 for unlimited
   repeated string initial_members = 6;
+  // 临时频道（P1，2026-10-15）：有效期秒数，0 = 永久群。上限 30 天
+  // （2592000），超限或负数回 INVALID_PARAM。到点后群视同不存在——成员
+  // 的本群频道发送回 AUTH_FAILED，群从 GET_USER_GROUPS 消失。
+  int64 ttl_seconds = 7;
 }
 
 message CreateGroupResponse {
@@ -163,6 +176,10 @@ message GroupInfo {
   int32 max_members = 7;
   int64 created_at = 8;
   map<string, string> metadata = 9;
+  // 临时频道：过期时刻（epoch 毫秒）；0 = 永久群。随 GET_GROUP_INFO /
+  // GET_USER_GROUPS / GROUP_CREATED_NOTIFY 下发，客户端据此显示倒计时并在
+  // 到点后本地移除该群。
+  int64 expires_at = 10;
 }
 
 // Group member information
@@ -1035,6 +1052,29 @@ message TradeMetadata {
   int64 amount = 3;              // 交易金额
   string item_name = 4;
   int32 item_count = 5;
+}
+
+// 公会招募卡片（msg_type = GUILD_RECRUIT 时；game_chat_features P1「公会招募」）。
+// 伴侣面无公会加入动作面（一键加入待公会申请协议），渲染为展示性卡片；
+// 游戏内客户端的加入自渲染走 SDK 侧。
+message GuildRecruitMetadata {
+  string guild_id = 1;           // 公会唯一 id（校验落点：空拒绝）
+  string guild_name = 2;
+  int32 level = 3;               // 公会等级
+  int32 member_count = 4;        // 当前人数
+  int32 max_members = 5;         // 人数上限（0 = 不展示）
+  string description = 6;        // 招募语（可选）
+}
+
+// 组队招募卡片（msg_type = PARTY_RECRUIT 时；game_chat_features P1「组队招募」）。
+// 伴侣面无申请动作面（一键申请待队伍申请协议），渲染为展示性卡片；
+// 游戏内客户端的申请自渲染走 SDK 侧。
+message PartyRecruitMetadata {
+  string party_id = 1;           // 队伍唯一 id（校验落点：空拒绝）
+  string dungeon_name = 2;       // 副本名
+  int32 needed = 3;              // 人数需求
+  int32 current = 4;             // 当前已组人数（0 = 不展示）
+  string leader_name = 5;        // 队长名（可选）
 }
 
 // NPC 对话（msg_type = NPC_DIALOG 时）

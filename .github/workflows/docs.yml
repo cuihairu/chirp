@@ -64,7 +64,10 @@ jobs:
           path: ./docs/.vitepress/dist
 
   # Deployment job
+  # Pages 部署只允许 main 的 push（github-pages 环境限定部署分支，
+  # PR run 里 deploy-pages 必被拒、2 秒即红——PR 只做构建校验）。
   deploy:
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

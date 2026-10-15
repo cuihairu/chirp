@@ -6,6 +6,8 @@ import ReplyIcon from '@mui/icons-material/ReplyOutlined';
 import { useState } from 'react';
 import { SenderKind } from '@chirp/proto/chat';
 import { QUICK_REACTIONS } from './quick_reactions';
+import { expandEmojiCodes } from './emoji';
+import { parseRichText } from './rich_text';
 import type { ChatMessageView } from '../state/models';
 import { zh } from '../i18n/zh';
 
@@ -24,6 +26,28 @@ const QUALITY_COLORS: Record<number, string> = {
 };
 
 const qualityColorOf = (quality: number): string => QUALITY_COLORS[quality] ?? QUALITY_COLORS[0];
+
+// P1 成就分享：稀有度分色与物品品质同一阶梯（普通→优秀→稀有→史诗→传说），
+// 枚举外未知值回落普通（向前兼容，与品质回落同口径）。
+const RARITY_COLORS: Record<number, string> = {
+  0: '#9e9e9e',
+  1: '#4caf50',
+  2: '#2196f3',
+  3: '#9c27b0',
+  4: '#ff9800',
+};
+
+const RARITY_FACES: Record<number, string> = {
+  0: '普通',
+  1: '优秀',
+  2: '稀有',
+  3: '史诗',
+  4: '传说',
+};
+
+const rarityColorOf = (rarity: number): string => RARITY_COLORS[rarity] ?? RARITY_COLORS[0];
+
+const rarityFaceOf = (rarity: number): string => RARITY_FACES[rarity] ?? RARITY_FACES[0];
 
 // P0 消息展示：气泡底色按 sender_kind 区分——系统黄、NPC 绿、服务橙（交易）；
 // 玩家走纸色。自己的消息不受类别影响，恒走 primary 主色（客户端结构上只能
@@ -142,8 +166,32 @@ export default function MessageBubble({
           )}
         </Box>
       )}
-      <Typography variant="body2" sx={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
-        {message.deleted ? zh.chat.deleted : message.content}
+      <Typography
+        variant="body2"
+        sx={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}
+        data-testid={`msg-text-${message.messageId}`}
+      >
+        {message.deleted
+          ? zh.chat.deleted
+          : // P1 富文本：**粗体**/*斜体* 先切样式串，表情码再在每个串内展开
+            // （串级样式天然覆盖其中的表情，与 sender_kind 分色互不干扰）。
+            parseRichText(message.content).map((run, r) => (
+              <Typography
+                key={`run-${r}`}
+                component={run.bold ? 'strong' : run.italic ? 'em' : 'span'}
+                sx={run.bold ? { fontWeight: 700 } : run.italic ? { fontStyle: 'italic' } : undefined}
+              >
+                {expandEmojiCodes(run.text).map((seg, i) =>
+                  seg.kind === 'text' ? (
+                    <span key={i}>{seg.value}</span>
+                  ) : (
+                    <span key={i} data-testid={`emoji-${message.messageId}-${seg.code}`}>
+                      {seg.emoji}
+                    </span>
+                  ),
+                )}
+              </Typography>
+            ))}
       </Typography>
       {!message.deleted && message.coord && (
         <Box
@@ -258,6 +306,183 @@ export default function MessageBubble({
             </DialogContent>
           </Dialog>
         </>
+      )}
+      {!message.deleted && message.achievement && (
+        <Box
+          data-testid={`achievement-${message.messageId}`}
+          data-rarity={message.achievement.rarity}
+          sx={{
+            display: 'block',
+            width: '100%',
+            mb: 0.5,
+            p: 1,
+            border: '1px solid',
+            borderColor: mine ? 'primary.contrastText' : 'divider',
+            borderRadius: 1,
+            background: 'transparent',
+            textAlign: 'left',
+          }}
+        >
+          {message.achievement.iconUrl && (
+            <Box
+              component="img"
+              src={message.achievement.iconUrl}
+              alt={message.achievement.achievementName || message.achievement.achievementId}
+              sx={{ width: 40, height: 40, mb: 0.5, display: 'block' }}
+            />
+          )}
+          <Typography
+            variant="caption"
+            sx={{ display: 'block', fontWeight: 600, color: rarityColorOf(message.achievement.rarity) }}
+          >
+            {message.achievement.achievementName || message.achievement.achievementId}
+          </Typography>
+          <Typography variant="caption" sx={{ display: 'block', opacity: 0.75 }}>
+            {zh.chat.achievementRarity} {rarityFaceOf(message.achievement.rarity)}
+          </Typography>
+          {message.achievement.description && (
+            <Typography variant="caption" sx={{ display: 'block', mt: 0.5, opacity: 0.85 }}>
+              {message.achievement.description}
+            </Typography>
+          )}
+          <Typography variant="caption" sx={{ display: 'block', opacity: 0.6 }}>
+            {message.achievement.achievementId}
+          </Typography>
+        </Box>
+      )}
+      {!message.deleted && message.trade && (
+        <Box
+          data-testid={`trade-${message.messageId}`}
+          data-trade-status={message.trade.status}
+          sx={{
+            display: 'block',
+            width: '100%',
+            mb: 0.5,
+            p: 1,
+            border: '1px solid',
+            borderColor: mine ? 'primary.contrastText' : 'divider',
+            borderRadius: 1,
+            background: 'transparent',
+            textAlign: 'left',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                px: 0.5,
+                borderRadius: 0.5,
+                bgcolor: 'action.hover',
+                fontWeight: 600,
+              }}
+            >
+              {zh.chat.tradeStatus}
+              {message.trade.status && ` · ${message.trade.status}`}
+            </Typography>
+          </Box>
+          {(message.trade.itemName || message.trade.amount > 0) && (
+            <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mt: 0.5 }}>
+              {message.trade.itemName}
+              {message.trade.itemCount > 1 && ` ×${message.trade.itemCount}`}
+              {message.trade.itemName && message.trade.amount > 0 && ' · '}
+              {message.trade.amount > 0 && `${zh.chat.tradeAmount} ${message.trade.amount}`}
+            </Typography>
+          )}
+          <Typography variant="caption" sx={{ display: 'block', opacity: 0.6 }}>
+            {message.trade.tradeId}
+          </Typography>
+        </Box>
+      )}
+      {!message.deleted && message.guildRecruit && (
+        <Box
+          data-testid={`guild-${message.messageId}`}
+          sx={{
+            display: 'block',
+            width: '100%',
+            mb: 0.5,
+            p: 1,
+            border: '1px solid',
+            borderColor: mine ? 'primary.contrastText' : 'divider',
+            borderRadius: 1,
+            background: 'transparent',
+            textAlign: 'left',
+          }}
+        >
+          <Typography
+            variant="caption"
+            component="div"
+            sx={{ px: 0.5, borderRadius: 0.5, bgcolor: 'action.hover', fontWeight: 600, width: 'fit-content' }}
+          >
+            {zh.chat.guildRecruit}
+          </Typography>
+          <Typography variant="caption" component="div" sx={{ fontWeight: 600, mt: 0.5 }}>
+            {message.guildRecruit.guildName || message.guildRecruit.guildId}
+          </Typography>
+          {(message.guildRecruit.level > 0 || message.guildRecruit.memberCount > 0) && (
+            <Typography variant="caption" component="div" sx={{ opacity: 0.75 }}>
+              {message.guildRecruit.level > 0 && `${zh.chat.guildLevel} ${message.guildRecruit.level}`}
+              {message.guildRecruit.level > 0 && message.guildRecruit.memberCount > 0 && ' · '}
+              {message.guildRecruit.memberCount > 0 &&
+                `${zh.chat.guildMembers} ${
+                  message.guildRecruit.maxMembers > 0
+                    ? `${message.guildRecruit.memberCount}/${message.guildRecruit.maxMembers}`
+                    : `${message.guildRecruit.memberCount}`
+                }`}
+            </Typography>
+          )}
+          {message.guildRecruit.description && (
+            <Typography variant="caption" component="div" sx={{ mt: 0.5, opacity: 0.85 }}>
+              {message.guildRecruit.description}
+            </Typography>
+          )}
+          <Typography variant="caption" component="div" sx={{ opacity: 0.6 }}>
+            {message.guildRecruit.guildId}
+          </Typography>
+        </Box>
+      )}
+      {!message.deleted && message.partyRecruit && (
+        <Box
+          data-testid={`party-${message.messageId}`}
+          sx={{
+            display: 'block',
+            width: '100%',
+            mb: 0.5,
+            p: 1,
+            border: '1px solid',
+            borderColor: mine ? 'primary.contrastText' : 'divider',
+            borderRadius: 1,
+            background: 'transparent',
+            textAlign: 'left',
+          }}
+        >
+          <Typography
+            variant="caption"
+            component="div"
+            sx={{ px: 0.5, borderRadius: 0.5, bgcolor: 'action.hover', fontWeight: 600, width: 'fit-content' }}
+          >
+            {zh.chat.partyRecruit}
+          </Typography>
+          <Typography variant="caption" component="div" sx={{ fontWeight: 600, mt: 0.5 }}>
+            {message.partyRecruit.dungeonName || message.partyRecruit.partyId}
+          </Typography>
+          {message.partyRecruit.needed > 0 && (
+            <Typography variant="caption" component="div" sx={{ opacity: 0.75 }}>
+              {`${zh.chat.partyNeeded} ${
+                message.partyRecruit.needed -
+                (message.partyRecruit.current > 0 ? message.partyRecruit.current : 0)
+              } 人`}
+              {message.partyRecruit.current > 0 && ` · ${message.partyRecruit.current}/${message.partyRecruit.needed}`}
+            </Typography>
+          )}
+          {message.partyRecruit.leaderName && (
+            <Typography variant="caption" component="div" sx={{ opacity: 0.75 }}>
+              {`${zh.chat.partyLeader} ${message.partyRecruit.leaderName}`}
+            </Typography>
+          )}
+          <Typography variant="caption" component="div" sx={{ opacity: 0.6 }}>
+            {message.partyRecruit.partyId}
+          </Typography>
+        </Box>
       )}
       <Typography variant="caption" sx={{ opacity: 0.75 }}>
         {timeLabel(message.timestamp)}

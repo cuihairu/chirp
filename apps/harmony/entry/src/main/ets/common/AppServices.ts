@@ -3,6 +3,7 @@ import { PresenceStatus } from '@chirp/proto/social';
 import { planeUrls, createServices, type Services } from '../code/api/services';
 import type { WebSocketLike } from '@chirp/app-protocol/chirp_client';
 import { HarmonyWebSocket } from './HarmonyWebSocket';
+import { installHarmonyGzipDecompressor } from './HarmonyGzip';
 import {
   cachedHostConfig,
   loadHostConfig,
@@ -304,5 +305,10 @@ function conversationTitle(channelKey: string): string {
 
 /** 鸿蒙 WebSocket 工厂：createServices 的必传注入点。 */
 const wsFactory = (url: string): WebSocketLike => new HarmonyWebSocket(url);
+
+// ArkTS 无 DecompressionStream：把平台 gzip 解压器（@ohos.zlib）装进共享
+// 协议核的注入缝，历史读回的拆封钩子照常走共享 msg_map。登录尚未声明
+// supports_gzip，服务端对未声明会话永远发明文，此注入当前为待验证的预备面。
+installHarmonyGzipDecompressor();
 
 export const appServices = new AppServices();

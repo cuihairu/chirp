@@ -39,6 +39,8 @@
 
 #include "fake_servers.h"
 #include "in_memory_redis.h"
+#include "gzip.h"
+#include "history_compression.h"
 #include "jwt.h"
 #include "network/tcp_client.h"
 #include "network/websocket_client.h"
@@ -281,13 +283,15 @@ class BasicChatTest : public ::testing::Test {
                                    const std::string& device_id = "d1",
                                    const std::string& platform = "web",
                                    bool supports_ack = false, int64_t seq = 1,
-                                   int32_t level = 0) {
+                                   int32_t level = 0,
+                                   bool supports_gzip = false) {
     chirp::auth::LoginRequest req;
     req.set_token(token);
     req.set_device_id(device_id);
     req.set_platform(platform);
     req.set_supports_message_ack(supports_ack);
     req.set_level(level);
+    req.set_supports_gzip(supports_gzip);
     DispatchReq(chirp::gateway::LOGIN_REQ, req, session, seq);
     chirp::auth::LoginResponse resp;
     const auto frames = FramesOf(*session, chirp::gateway::LOGIN_RESP);
@@ -1169,6 +1173,97 @@ TEST_F(BasicChatTest, CoordLinkSendCarriesMetadataThroughHistory) {
   EXPECT_EQ(hist_meta.z(), 3);
 }
 
+// --- 消息压缩（game_chat_features P2 消息压缩）：登录声明 supports_gzip 的
+// 会话历史读回收 gzip 形态，未声明的保持明文 -------------------------------
+
+TEST_F(BasicChatTest, HistoryGzipForCapableSessionAndPlainForOthers) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice", "d1", "web", /*supports_ack=*/false, /*seq=*/1,
+                  /*level=*/0, /*supports_gzip=*/true).code(),
+            chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  ASSERT_EQ(Send(alice, "alice", "bob", "first message", chirp::chat::PRIVATE).code(),
+            chirp::common::OK);
+  ASSERT_EQ(Send(alice, "alice", "bob", "second message", chirp::chat::PRIVATE).code(),
+            chirp::common::OK);
+
+  // 声明能力的会话：明文清单搬空，gzip 容器在场；code/has_more 留在外层。
+  chirp::chat::GetHistoryRequest hist;
+  hist.set_user_id("alice");
+  hist.set_channel_type(chirp::chat::PRIVATE);
+  hist.set_channel_id("alice|bob");
+  hist.set_limit(10);
+  DispatchReq(chirp::gateway::GET_HISTORY_REQ, hist, alice);
+  const auto gz_frames = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(gz_frames.size(), 1u);
+  chirp::chat::GetHistoryResponse gz_resp;
+  ASSERT_TRUE(gz_resp.ParseFromString(gz_frames[0].body()));
+  ASSERT_EQ(gz_resp.code(), chirp::common::OK);
+  EXPECT_EQ(gz_resp.messages_size(), 0);
+  ASSERT_FALSE(gz_resp.messages_gzip().empty());
+
+  // 解压回 GetHistoryResponse：消息清单原样回来（与消费端同一套解法）。
+  std::string raw;
+  ASSERT_TRUE(chirp::common::GzipDecompress(gz_resp.messages_gzip(), &raw));
+  chirp::chat::GetHistoryResponse inflated;
+  ASSERT_TRUE(inflated.ParseFromString(raw));
+  ASSERT_EQ(inflated.messages_size(), 2);
+  const std::string& first = inflated.messages(0).content();
+  const std::string& second = inflated.messages(1).content();
+  EXPECT_TRUE((first == "first message" && second == "second message") ||
+              (first == "second message" && second == "first message"));
+
+  // 同频道、未声明能力的会话照旧收明文。
+  chirp::chat::GetHistoryRequest hist_bob = hist;
+  hist_bob.set_user_id("bob");
+  DispatchReq(chirp::gateway::GET_HISTORY_REQ, hist_bob, bob);
+  const auto plain_frames = FramesOf(*bob, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(plain_frames.size(), 1u);
+  chirp::chat::GetHistoryResponse plain;
+  ASSERT_TRUE(plain.ParseFromString(plain_frames[0].body()));
+  ASSERT_EQ(plain.code(), chirp::common::OK);
+  EXPECT_TRUE(plain.messages_gzip().empty());
+  EXPECT_EQ(plain.messages_size(), 2);
+}
+
+TEST_F(BasicChatTest, HistoryGzipFallsBackToPlainOnEmptyAndAllDefault) {
+  auto alice = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice", "d1", "web", /*supports_ack=*/false, /*seq=*/1,
+                  /*level=*/0, /*supports_gzip=*/true).code(),
+            chirp::common::OK);
+
+  // 空历史：没有可压内容，gzip 场不开，明文空清单照走。
+  chirp::chat::GetHistoryRequest hist;
+  hist.set_user_id("alice");
+  hist.set_channel_type(chirp::chat::PRIVATE);
+  hist.set_channel_id("alice|bob");
+  hist.set_limit(10);
+  DispatchReq(chirp::gateway::GET_HISTORY_REQ, hist, alice);
+  const auto frames = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(frames.size(), 1u);
+  chirp::chat::GetHistoryResponse empty;
+  ASSERT_TRUE(empty.ParseFromString(frames[0].body()));
+  EXPECT_EQ(empty.code(), chirp::common::OK);
+  EXPECT_TRUE(empty.messages_gzip().empty());
+  EXPECT_EQ(empty.messages_size(), 0);
+
+  // 全默认 ChatMessage：repeated message 元素逐个写长度前缀，序列化非空 →
+  // gzip 路径照常走，解压回两条（正文为空）。
+  chirp::chat::GetHistoryResponse all_default;
+  all_default.add_messages();
+  all_default.add_messages();
+  chirp::chat::CompressHistoryResponse(&all_default, /*supports_gzip=*/true);
+  EXPECT_EQ(all_default.messages_size(), 0);
+  ASSERT_FALSE(all_default.messages_gzip().empty());
+  std::string raw;
+  ASSERT_TRUE(chirp::common::GzipDecompress(all_default.messages_gzip(), &raw));
+  chirp::chat::GetHistoryResponse inflated;
+  ASSERT_TRUE(inflated.ParseFromString(raw));
+  EXPECT_EQ(inflated.messages_size(), 2);
+}
+
 TEST_F(BasicChatTest, CoordLinkRejectsGarbageMetadataAndEmptyMapId) {
   auto alice = std::make_shared<MockSession>();
   auto bob = std::make_shared<MockSession>();
@@ -1316,7 +1411,351 @@ TEST_F(BasicChatTest, ItemLinkRejectsGarbageMetadataAndEmptyItemId) {
   EXPECT_EQ(Send(alice, "alice", "bob", "plain text").code(), chirp::common::OK);
 }
 
+TEST_F(BasicChatTest, AchievementShareCarriesMetadataThroughHistory) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  // ACHIEVEMENT 消息：metadata = AchievementMetadata，content 是展示文本
+  // （与普通文本同一套敏感词/长度守门）。
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_receiver_id("bob");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_msg_type(chirp::chat::ACHIEVEMENT);
+  req.set_content("解锁了新成就");
+  chirp::chat::AchievementMetadata meta;
+  meta.set_achievement_id("achievement-7001");
+  meta.set_achievement_name("全服首杀·烈焰巨龙");
+  meta.set_description("首次击杀世界 BOSS 烈焰巨龙");
+  meta.set_rarity(3);
+  req.set_metadata(meta.SerializeAsString());
+  DispatchReq(chirp::gateway::SEND_MESSAGE_REQ, req, alice);
+  const auto frames = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);
+  ASSERT_EQ(frames.size(), 1u);
+  chirp::chat::SendMessageResponse send_resp;
+  ASSERT_TRUE(send_resp.ParseFromString(frames[0].body()));
+  ASSERT_EQ(send_resp.code(), chirp::common::OK);
+
+  // 实时 notify 到 bob：msg_type + metadata 原样到达。
+  const auto notifies = FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(notifies.size(), 1u);
+  chirp::chat::ChatMessage live;
+  ASSERT_TRUE(live.ParseFromString(notifies[0].body()));
+  EXPECT_EQ(live.msg_type(), chirp::chat::ACHIEVEMENT);
+  chirp::chat::AchievementMetadata live_meta;
+  ASSERT_TRUE(live_meta.ParseFromString(live.metadata()));
+  EXPECT_EQ(live_meta.achievement_id(), "achievement-7001");
+  EXPECT_EQ(live_meta.achievement_name(), "全服首杀·烈焰巨龙");
+  EXPECT_EQ(live_meta.description(), "首次击杀世界 BOSS 烈焰巨龙");
+  EXPECT_EQ(live_meta.rarity(), 3);
+
+  // 历史读回：basic 内存/Redis 直存 ChatMessage，metadata 保真。
+  chirp::chat::GetHistoryRequest hist;
+  hist.set_user_id("alice");
+  hist.set_channel_type(chirp::chat::PRIVATE);
+  hist.set_channel_id("alice|bob");
+  hist.set_limit(10);
+  DispatchReq(chirp::gateway::GET_HISTORY_REQ, hist, alice);
+  chirp::chat::GetHistoryResponse history;
+  const auto hist_frames = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(hist_frames.size(), 1u);
+  ASSERT_TRUE(history.ParseFromString(hist_frames[0].body()));
+  ASSERT_EQ(history.code(), chirp::common::OK);
+  ASSERT_EQ(history.messages_size(), 1);
+  EXPECT_EQ(history.messages(0).msg_type(), chirp::chat::ACHIEVEMENT);
+  chirp::chat::AchievementMetadata hist_meta;
+  ASSERT_TRUE(hist_meta.ParseFromString(history.messages(0).metadata()));
+  EXPECT_EQ(hist_meta.achievement_id(), "achievement-7001");
+  EXPECT_EQ(hist_meta.rarity(), 3);
+}
+
+TEST_F(BasicChatTest, AchievementShareRejectsGarbageMetadataAndEmptyAchievementId) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  auto SendAchievement = [this, &alice](const std::string& metadata) {
+    chirp::chat::SendMessageRequest req;
+    req.set_sender_id("alice");
+    req.set_receiver_id("bob");
+    req.set_channel_type(chirp::chat::PRIVATE);
+    req.set_msg_type(chirp::chat::ACHIEVEMENT);
+    req.set_content("点我");
+    req.set_metadata(metadata);
+    DispatchReq(chirp::gateway::SEND_MESSAGE_REQ, req, alice);
+    const auto frames = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);
+    chirp::chat::SendMessageResponse resp;
+    if (!frames.empty()) {
+      resp.ParseFromString(frames.back().body());
+    }
+    return resp;
+  };
+
+  // 垃圾 metadata（截断的 length-delimited 字段，解析必败）→ INVALID_PARAM，
+  // 不落任何存储、不产生 notify。
+  EXPECT_EQ(SendAchievement("\x0A" "\x05" "ab").code(), chirp::common::INVALID_PARAM);
+  EXPECT_TRUE(FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY).empty());
+  // achievement_id 为空的成就没有可查详情的落点（卡片无从渲染）→ INVALID_PARAM。
+  chirp::chat::AchievementMetadata no_id;
+  no_id.set_achievement_name("无名成就");
+  EXPECT_EQ(SendAchievement(no_id.SerializeAsString()).code(), chirp::common::INVALID_PARAM);
+  // 拒收的消息不进历史：后续合法发送读回只应有这一条。
+  chirp::chat::AchievementMetadata good;
+  good.set_achievement_id("achievement-1");
+  ASSERT_EQ(SendAchievement(good.SerializeAsString()).code(), chirp::common::OK);
+
+  // TEXT 消息不受影响（无 metadata 照常走通）。
+  EXPECT_EQ(Send(alice, "alice", "bob", "plain text").code(), chirp::common::OK);
+}
+
+TEST_F(BasicChatTest, TradeStatusCarriesMetadataThroughHistory) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  // TRADE_STATUS 消息：metadata = TradeMetadata，content 是展示文本
+  // （与普通文本同一套敏感词/长度守门）。
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_receiver_id("bob");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_msg_type(chirp::chat::TRADE_STATUS);
+  req.set_content("交易已成交");
+  chirp::chat::TradeMetadata meta;
+  meta.set_trade_id("trade-9001");
+  meta.set_status("COMPLETED");
+  meta.set_amount(1500);
+  meta.set_item_name("烈焰剑");
+  meta.set_item_count(2);
+  req.set_metadata(meta.SerializeAsString());
+  DispatchReq(chirp::gateway::SEND_MESSAGE_REQ, req, alice);
+  const auto frames = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);
+  ASSERT_EQ(frames.size(), 1u);
+  chirp::chat::SendMessageResponse send_resp;
+  ASSERT_TRUE(send_resp.ParseFromString(frames[0].body()));
+  ASSERT_EQ(send_resp.code(), chirp::common::OK);
+
+  // 实时 notify 到 bob：msg_type + metadata 原样到达。
+  const auto notifies = FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(notifies.size(), 1u);
+  chirp::chat::ChatMessage live;
+  ASSERT_TRUE(live.ParseFromString(notifies[0].body()));
+  EXPECT_EQ(live.msg_type(), chirp::chat::TRADE_STATUS);
+  chirp::chat::TradeMetadata live_meta;
+  ASSERT_TRUE(live_meta.ParseFromString(live.metadata()));
+  EXPECT_EQ(live_meta.trade_id(), "trade-9001");
+  EXPECT_EQ(live_meta.status(), "COMPLETED");
+  EXPECT_EQ(live_meta.amount(), 1500);
+  EXPECT_EQ(live_meta.item_name(), "烈焰剑");
+  EXPECT_EQ(live_meta.item_count(), 2);
+
+  // 历史读回：basic 内存/Redis 直存 ChatMessage，metadata 保真。
+  chirp::chat::GetHistoryRequest hist;
+  hist.set_user_id("alice");
+  hist.set_channel_type(chirp::chat::PRIVATE);
+  hist.set_channel_id("alice|bob");
+  hist.set_limit(10);
+  DispatchReq(chirp::gateway::GET_HISTORY_REQ, hist, alice);
+  chirp::chat::GetHistoryResponse history;
+  const auto hist_frames = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(hist_frames.size(), 1u);
+  ASSERT_TRUE(history.ParseFromString(hist_frames[0].body()));
+  ASSERT_EQ(history.code(), chirp::common::OK);
+  ASSERT_EQ(history.messages_size(), 1);
+  EXPECT_EQ(history.messages(0).msg_type(), chirp::chat::TRADE_STATUS);
+  chirp::chat::TradeMetadata hist_meta;
+  ASSERT_TRUE(hist_meta.ParseFromString(history.messages(0).metadata()));
+  EXPECT_EQ(hist_meta.trade_id(), "trade-9001");
+  EXPECT_EQ(hist_meta.status(), "COMPLETED");
+}
+
+TEST_F(BasicChatTest, TradeStatusRejectsGarbageMetadataAndEmptyTradeId) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  auto SendTrade = [this, &alice](const std::string& metadata) {
+    chirp::chat::SendMessageRequest req;
+    req.set_sender_id("alice");
+    req.set_receiver_id("bob");
+    req.set_channel_type(chirp::chat::PRIVATE);
+    req.set_msg_type(chirp::chat::TRADE_STATUS);
+    req.set_content("交易");
+    req.set_metadata(metadata);
+    DispatchReq(chirp::gateway::SEND_MESSAGE_REQ, req, alice);
+    const auto frames = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);
+    chirp::chat::SendMessageResponse resp;
+    if (!frames.empty()) {
+      resp.ParseFromString(frames.back().body());
+    }
+    return resp;
+  };
+
+  // 垃圾 metadata（截断的 length-delimited 字段，解析必败）→ INVALID_PARAM，
+  // 不落任何存储、不产生 notify。
+  EXPECT_EQ(SendTrade("\x0A" "\x05" "ab").code(), chirp::common::INVALID_PARAM);
+  EXPECT_TRUE(FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY).empty());
+  // trade_id 为空的交易没有可回查的落点（卡片无从关联）→ INVALID_PARAM。
+  chirp::chat::TradeMetadata no_id;
+  no_id.set_status("CREATED");
+  no_id.set_amount(100);
+  EXPECT_EQ(SendTrade(no_id.SerializeAsString()).code(), chirp::common::INVALID_PARAM);
+  // 拒收的消息不进历史：后续合法发送读回只应有这一条。
+  chirp::chat::TradeMetadata good;
+  good.set_trade_id("trade-1");
+  ASSERT_EQ(SendTrade(good.SerializeAsString()).code(), chirp::common::OK);
+
+  // TEXT 消息不受影响（无 metadata 照常走通）。
+  EXPECT_EQ(Send(alice, "alice", "bob", "plain text").code(), chirp::common::OK);
+}
+
 // --- 群组频道：成员广播 + 离线成员入队 + 非成员拒收 ------------------------------
+
+TEST_F(BasicChatTest, RecruitCardsCarryMetadataThroughHistory) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  // 公会招募：metadata = GuildRecruitMetadata，content 是展示文本。
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_receiver_id("bob");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_msg_type(chirp::chat::GUILD_RECRUIT);
+  req.set_content("招募成员");
+  chirp::chat::GuildRecruitMetadata guild;
+  guild.set_guild_id("guild-3001");
+  guild.set_guild_name("烈焰军团");
+  guild.set_level(7);
+  guild.set_member_count(48);
+  guild.set_max_members(60);
+  guild.set_description("周三晚开荒");
+  req.set_metadata(guild.SerializeAsString());
+  DispatchReq(chirp::gateway::SEND_MESSAGE_REQ, req, alice);
+  const auto frames = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);
+  ASSERT_EQ(frames.size(), 1u);
+  chirp::chat::SendMessageResponse send_resp;
+  ASSERT_TRUE(send_resp.ParseFromString(frames[0].body()));
+  ASSERT_EQ(send_resp.code(), chirp::common::OK);
+
+  // 实时 notify 到 bob：msg_type + metadata 原样到达。
+  const auto notifies = FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(notifies.size(), 1u);
+  chirp::chat::ChatMessage live;
+  ASSERT_TRUE(live.ParseFromString(notifies[0].body()));
+  EXPECT_EQ(live.msg_type(), chirp::chat::GUILD_RECRUIT);
+  chirp::chat::GuildRecruitMetadata live_guild;
+  ASSERT_TRUE(live_guild.ParseFromString(live.metadata()));
+  EXPECT_EQ(live_guild.guild_id(), "guild-3001");
+  EXPECT_EQ(live_guild.guild_name(), "烈焰军团");
+  EXPECT_EQ(live_guild.level(), 7);
+  EXPECT_EQ(live_guild.max_members(), 60);
+
+  // 组队招募同链路：metadata = PartyRecruitMetadata。
+  chirp::chat::SendMessageRequest party_req;
+  party_req.set_sender_id("alice");
+  party_req.set_receiver_id("bob");
+  party_req.set_channel_type(chirp::chat::PRIVATE);
+  party_req.set_msg_type(chirp::chat::PARTY_RECRUIT);
+  party_req.set_content("缺 2 人");
+  chirp::chat::PartyRecruitMetadata party;
+  party.set_party_id("party-4001");
+  party.set_dungeon_name("熔岩之心");
+  party.set_needed(5);
+  party.set_current(3);
+  party.set_leader_name("alice");
+  party_req.set_metadata(party.SerializeAsString());
+  DispatchReq(chirp::gateway::SEND_MESSAGE_REQ, party_req, alice);
+  const auto party_notifies = FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(party_notifies.size(), 2u);
+  chirp::chat::ChatMessage party_live;
+  ASSERT_TRUE(party_live.ParseFromString(party_notifies[1].body()));
+  EXPECT_EQ(party_live.msg_type(), chirp::chat::PARTY_RECRUIT);
+  chirp::chat::PartyRecruitMetadata live_party;
+  ASSERT_TRUE(live_party.ParseFromString(party_live.metadata()));
+  EXPECT_EQ(live_party.party_id(), "party-4001");
+  EXPECT_EQ(live_party.dungeon_name(), "熔岩之心");
+  EXPECT_EQ(live_party.needed(), 5);
+  EXPECT_EQ(live_party.current(), 3);
+
+  // 历史读回：metadata 保真。
+  chirp::chat::GetHistoryRequest hist;
+  hist.set_user_id("alice");
+  hist.set_channel_type(chirp::chat::PRIVATE);
+  hist.set_channel_id("alice|bob");
+  hist.set_limit(10);
+  DispatchReq(chirp::gateway::GET_HISTORY_REQ, hist, alice);
+  chirp::chat::GetHistoryResponse history;
+  const auto hist_frames = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(hist_frames.size(), 1u);
+  ASSERT_TRUE(history.ParseFromString(hist_frames[0].body()));
+  ASSERT_EQ(history.code(), chirp::common::OK);
+  ASSERT_EQ(history.messages_size(), 2);
+  // 历史按时间升序：先发的公会招募在前、后发的组队招募在后。
+  EXPECT_EQ(history.messages(0).msg_type(), chirp::chat::GUILD_RECRUIT);
+  EXPECT_EQ(history.messages(1).msg_type(), chirp::chat::PARTY_RECRUIT);
+  chirp::chat::GuildRecruitMetadata hist_guild;
+  ASSERT_TRUE(hist_guild.ParseFromString(history.messages(0).metadata()));
+  EXPECT_EQ(hist_guild.guild_id(), "guild-3001");
+}
+
+TEST_F(BasicChatTest, RecruitCardsRejectGarbageMetadataAndEmptyIds) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  auto SendTyped = [this, &alice](chirp::chat::MsgType type, const std::string& metadata) {
+    chirp::chat::SendMessageRequest req;
+    req.set_sender_id("alice");
+    req.set_receiver_id("bob");
+    req.set_channel_type(chirp::chat::PRIVATE);
+    req.set_msg_type(type);
+    req.set_content("招募");
+    req.set_metadata(metadata);
+    DispatchReq(chirp::gateway::SEND_MESSAGE_REQ, req, alice);
+    const auto frames = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);
+    chirp::chat::SendMessageResponse resp;
+    if (!frames.empty()) {
+      resp.ParseFromString(frames.back().body());
+    }
+    return resp;
+  };
+
+  // 垃圾 metadata → INVALID_PARAM，不落任何存储、不产生 notify。
+  EXPECT_EQ(SendTyped(chirp::chat::GUILD_RECRUIT, "\x0A" "\x05" "ab").code(),
+            chirp::common::INVALID_PARAM);
+  // guild_id 为空的招募没有可加入的落点 → INVALID_PARAM。
+  chirp::chat::GuildRecruitMetadata no_guild;
+  no_guild.set_guild_name("无名公会");
+  EXPECT_EQ(SendTyped(chirp::chat::GUILD_RECRUIT, no_guild.SerializeAsString()).code(),
+            chirp::common::INVALID_PARAM);
+  // party_id 为空同理。
+  chirp::chat::PartyRecruitMetadata no_party;
+  no_party.set_dungeon_name("无名副本");
+  EXPECT_EQ(SendTyped(chirp::chat::PARTY_RECRUIT, no_party.SerializeAsString()).code(),
+            chirp::common::INVALID_PARAM);
+  EXPECT_TRUE(FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY).empty());
+
+  // 合法招募放行（校验门的通过臂）。
+  chirp::chat::GuildRecruitMetadata good;
+  good.set_guild_id("guild-1");
+  ASSERT_EQ(SendTyped(chirp::chat::GUILD_RECRUIT, good.SerializeAsString()).code(),
+            chirp::common::OK);
+  chirp::chat::PartyRecruitMetadata good_party;
+  good_party.set_party_id("party-1");
+  ASSERT_EQ(SendTyped(chirp::chat::PARTY_RECRUIT, good_party.SerializeAsString()).code(),
+            chirp::common::OK);
+
+  // TEXT 消息不受影响（无 metadata 照常走通）。
+  EXPECT_EQ(Send(alice, "alice", "bob", "plain text").code(), chirp::common::OK);
+}
 
 TEST_F(BasicChatTest, GroupSendBroadcastsToMembersAndRefusesNonMember) {
   auto alice = std::make_shared<MockSession>();
@@ -1416,6 +1855,58 @@ TEST_F(BasicChatTest, GroupMuteBlocksMemberSendUntilUnmute) {
   EXPECT_EQ(unmuted.muted_until_ts(), 0);
   EXPECT_EQ(Send(bob, "bob", "", "back again", chirp::chat::TEAM, group_id).code(),
             chirp::common::OK);
+}
+
+// --- 临时频道：ttl 到点后群视同不存在（发送 AUTH_FAILED、群列表消失） ---------
+
+TEST_F(BasicChatTest, TempGroupExpiryBlocksSendAndDropsFromList) {
+  auto alice = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+
+  // ttl=1s 的临时频道。e2e 走真实墙钟：GroupManager 的时钟接缝是私有接缝，
+  // 会话层碰不到；sleep 越过到点时刻（1.2s 留 20% 余量）。
+  chirp::chat::CreateGroupRequest create;
+  create.set_creator_id("alice");
+  create.set_group_name("raid");
+  create.add_initial_members("alice");
+  create.set_ttl_seconds(1);
+  DispatchReq(chirp::gateway::CREATE_GROUP_REQ, create, alice);
+  const auto created = FramesOf(*alice, chirp::gateway::CREATE_GROUP_RESP);
+  ASSERT_EQ(created.size(), 1u);
+  chirp::chat::CreateGroupResponse create_resp;
+  ASSERT_TRUE(create_resp.ParseFromString(created[0].body()));
+  ASSERT_EQ(create_resp.code(), chirp::common::OK);
+  const std::string group_id = create_resp.group_id();
+
+  // 到点前：成员发送正常，群列表带出 expires_at（客户端据此倒计时）。
+  EXPECT_EQ(Send(alice, "alice", "", "raid start", chirp::chat::TEAM, group_id).code(),
+            chirp::common::OK);
+
+  chirp::chat::GetUserGroupsRequest list_req;
+  list_req.set_user_id("alice");
+  DispatchReq(chirp::gateway::GET_USER_GROUPS_REQ, list_req, alice);
+  const auto listed = FramesOf(*alice, chirp::gateway::GET_USER_GROUPS_RESP);
+  ASSERT_EQ(listed.size(), 1u);
+  chirp::chat::GetUserGroupsResponse list_resp;
+  ASSERT_TRUE(list_resp.ParseFromString(listed[0].body()));
+  ASSERT_EQ(list_resp.groups_size(), 1);
+  EXPECT_EQ(list_resp.groups(0).group_id(), group_id);
+  EXPECT_GT(list_resp.groups(0).expires_at(), 0);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(1200));
+
+  // 到点后：惰性摘除已发生——发送 AUTH_FAILED（与非成员同语义）、群列表消失。
+  EXPECT_EQ(Send(alice, "alice", "", "after end", chirp::chat::TEAM, group_id).code(),
+            chirp::common::AUTH_FAILED);
+
+  alice->sent.clear();
+  DispatchReq(chirp::gateway::GET_USER_GROUPS_REQ, list_req, alice);
+  const auto relisted = FramesOf(*alice, chirp::gateway::GET_USER_GROUPS_RESP);
+  ASSERT_EQ(relisted.size(), 1u);
+  chirp::chat::GetUserGroupsResponse relist_resp;
+  ASSERT_TRUE(relist_resp.ParseFromString(relisted[0].body()));
+  EXPECT_EQ(relist_resp.total_count(), 0);
+  EXPECT_EQ(relist_resp.groups_size(), 0);
 }
 
 // --- 举报：玩家举报消息（去重幂等，台账外消息拒收） --------------------------

@@ -150,6 +150,37 @@ TEST(InjectConsumerTest, PropagatesSystemSenderKind) {
   EXPECT_EQ(rec.stored[0].sender_kind(), chirp::chat::SENDER_SYSTEM);
 }
 
+TEST(InjectConsumerTest, PropagatesPriorityAndTtlForSystemSurfaces) {
+  RecordingHooks rec;
+  InjectConsumer consumer(rec.MakeHooks());
+
+  // 系统播报臂：priority=URGENT + ttl>0 是走马灯判定二要素（systemSurfaceOf，
+  // 与频道无关）；注入走 WORLD 频道（inject 合法域 PRIVATE..WORLD），展示面
+  // 元数据必须原样落库，缺一个走马灯就不亮。
+  InjectMessageNotify notify = MakeNotify("system", "boss spawned");
+  auto* req = notify.mutable_message();
+  req->set_channel_type(static_cast<int32_t>(chirp::chat::WORLD));
+  req->clear_receiver_id();
+  req->set_channel_id("world");
+  req->set_priority(chirp::chat::PRIORITY_URGENT);
+  req->set_ttl_seconds(60);
+
+  const InjectOutcome out = consumer.HandleInject(notify);
+
+  EXPECT_EQ(out.code, ErrorCode::OK);
+  ASSERT_EQ(rec.stored.size(), 1u);
+  EXPECT_EQ(rec.stored[0].priority(), chirp::chat::PRIORITY_URGENT);
+  EXPECT_EQ(rec.stored[0].ttl_seconds(), 60);
+
+  // 缺省臂：不带 priority/ttl 的注入保持零值（PRIORITY_LOW=0），与既有
+  // TEXT 注入形态完全一致——旧游戏侧零感知。
+  const InjectOutcome plain = consumer.HandleInject(MakeNotify("npc:blacksmith_01", "hello"));
+  EXPECT_EQ(plain.code, ErrorCode::OK);
+  ASSERT_EQ(rec.stored.size(), 2u);
+  EXPECT_EQ(rec.stored[1].priority(), chirp::chat::PRIORITY_LOW);
+  EXPECT_EQ(rec.stored[1].ttl_seconds(), 0);
+}
+
 TEST(InjectConsumerTest, BroadcastWithoutMembersStoresOnly) {
   RecordingHooks rec;
   InjectConsumer consumer(rec.MakeHooks());

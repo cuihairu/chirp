@@ -1,6 +1,7 @@
 #include "group_manager.h"
 
 #include <algorithm>
+#include <chrono>
 
 namespace chirp {
 namespace chat {
@@ -10,7 +11,8 @@ std::string GroupManager::CreateGroup(const std::string& creator_id,
                                      const std::string& description,
                                      const std::string& avatar_url,
                                      int32_t max_members,
-                                     const std::vector<std::string>& initial_members) {
+                                     const std::vector<std::string>& initial_members,
+                                     int64_t expires_at_ms) {
   auto group = std::make_shared<GroupData>();
   group->group_id = GenerateGroupId();
   group->group_name = group_name;
@@ -20,6 +22,7 @@ std::string GroupManager::CreateGroup(const std::string& creator_id,
   group->max_members = max_members;
   group->created_at = std::chrono::duration_cast<std::chrono::milliseconds>(
       std::chrono::system_clock::now().time_since_epoch()).count();
+  group->expires_at_ms = expires_at_ms;
 
   // Add owner as admin
   group->members.insert(creator_id);
@@ -48,17 +51,15 @@ std::string GroupManager::CreateGroup(const std::string& creator_id,
 
 bool GroupManager::HasGroup(const std::string& group_id) {
   std::lock_guard<std::mutex> lock(mu_);
-  return groups_.count(group_id) > 0;
+  return LookupLocked(group_id) != nullptr;
 }
 
 bool GroupManager::GetGroup(const std::string& group_id, chirp::chat::GroupInfo* info) {
   std::lock_guard<std::mutex> lock(mu_);
-  auto it = groups_.find(group_id);
-  if (it == groups_.end()) {
+  auto group = LookupLocked(group_id);
+  if (!group) {
     return false;
   }
-
-  const auto& group = it->second;
   std::lock_guard<std::mutex> group_lock(group->mu);
 
   info->set_group_id(group->group_id);
@@ -69,6 +70,7 @@ bool GroupManager::GetGroup(const std::string& group_id, chirp::chat::GroupInfo*
   info->set_member_count(static_cast<int32_t>(group->members.size()));
   info->set_max_members(group->max_members);
   info->set_created_at(group->created_at);
+  info->set_expires_at(group->expires_at_ms);
 
   return true;
 }
@@ -76,12 +78,10 @@ bool GroupManager::GetGroup(const std::string& group_id, chirp::chat::GroupInfo*
 bool GroupManager::AddMember(const std::string& group_id, const std::string& user_id,
                             chirp::chat::GroupMemberRole role) {
   std::lock_guard<std::mutex> lock(mu_);
-  auto it = groups_.find(group_id);
-  if (it == groups_.end()) {
+  auto group = LookupLocked(group_id);
+  if (!group) {
     return false;
   }
-
-  auto& group = it->second;
   std::lock_guard<std::mutex> group_lock(group->mu);
 
   if (group->max_members > 0 && static_cast<int32_t>(group->members.size()) >= group->max_members) {
@@ -97,12 +97,10 @@ bool GroupManager::AddMember(const std::string& group_id, const std::string& use
 
 bool GroupManager::RemoveMember(const std::string& group_id, const std::string& user_id) {
   std::lock_guard<std::mutex> lock(mu_);
-  auto it = groups_.find(group_id);
-  if (it == groups_.end()) {
+  auto group = LookupLocked(group_id);
+  if (!group) {
     return false;
   }
-
-  auto& group = it->second;
   std::lock_guard<std::mutex> group_lock(group->mu);
 
   group->members.erase(user_id);
@@ -124,12 +122,10 @@ std::vector<chirp::chat::GroupMember> GroupManager::GetMembers(const std::string
   std::vector<chirp::chat::GroupMember> result;
 
   std::lock_guard<std::mutex> lock(mu_);
-  auto it = groups_.find(group_id);
-  if (it == groups_.end()) {
+  auto group = LookupLocked(group_id);
+  if (!group) {
     return result;
   }
-
-  const auto& group = it->second;
   std::lock_guard<std::mutex> group_lock(group->mu);
 
   result.reserve(group->members.size());
@@ -155,12 +151,10 @@ std::vector<chirp::chat::GroupMember> GroupManager::GetMembers(const std::string
 
 bool GroupManager::IsMember(const std::string& group_id, const std::string& user_id) {
   std::lock_guard<std::mutex> lock(mu_);
-  auto it = groups_.find(group_id);
-  if (it == groups_.end()) {
+  auto group = LookupLocked(group_id);
+  if (!group) {
     return false;
   }
-
-  const auto& group = it->second;
   std::lock_guard<std::mutex> group_lock(group->mu);
   return group->members.count(user_id) > 0;
 }
@@ -177,12 +171,10 @@ std::vector<chirp::chat::GroupInfo> GroupManager::GetUserGroups(const std::strin
   // NOTE: GetGroup() also locks mu_; call it while holding mu_ would
   // deadlock (std::mutex is not recursive), so fill the info inline here.
   for (const auto& group_id : user_it->second) {
-    auto group_it = groups_.find(group_id);
-    if (group_it == groups_.end()) {
+    auto group = LookupLocked(group_id);
+    if (!group) {
       continue;
     }
-
-    const auto& group = group_it->second;
     std::lock_guard<std::mutex> group_lock(group->mu);
 
     chirp::chat::GroupInfo info;
@@ -194,6 +186,7 @@ std::vector<chirp::chat::GroupInfo> GroupManager::GetUserGroups(const std::strin
     info.set_member_count(static_cast<int32_t>(group->members.size()));
     info.set_max_members(group->max_members);
     info.set_created_at(group->created_at);
+    info.set_expires_at(group->expires_at_ms);
     result.push_back(std::move(info));
   }
 
@@ -203,12 +196,10 @@ std::vector<chirp::chat::GroupInfo> GroupManager::GetUserGroups(const std::strin
 bool GroupManager::SetMemberRole(const std::string& group_id, const std::string& user_id,
                                 chirp::chat::GroupMemberRole role) {
   std::lock_guard<std::mutex> lock(mu_);
-  auto it = groups_.find(group_id);
-  if (it == groups_.end()) {
+  auto group = LookupLocked(group_id);
+  if (!group) {
     return false;
   }
-
-  auto& group = it->second;
   std::lock_guard<std::mutex> group_lock(group->mu);
 
   if (group->members.count(user_id) == 0) {
@@ -222,12 +213,10 @@ bool GroupManager::SetMemberRole(const std::string& group_id, const std::string&
 bool GroupManager::SetMemberAlias(const std::string& group_id, const std::string& user_id,
                                   const std::string& alias) {
   std::lock_guard<std::mutex> lock(mu_);
-  auto it = groups_.find(group_id);
-  if (it == groups_.end()) {
+  auto group = LookupLocked(group_id);
+  if (!group) {
     return false;
   }
-
-  auto& group = it->second;
   std::lock_guard<std::mutex> group_lock(group->mu);
 
   if (group->members.count(user_id) == 0) {
@@ -245,12 +234,10 @@ bool GroupManager::SetMemberAlias(const std::string& group_id, const std::string
 std::string GroupManager::GetMemberAlias(const std::string& group_id,
                                          const std::string& user_id) {
   std::lock_guard<std::mutex> lock(mu_);
-  auto it = groups_.find(group_id);
-  if (it == groups_.end()) {
+  auto group = LookupLocked(group_id);
+  if (!group) {
     return {};
   }
-
-  const auto& group = it->second;
   std::lock_guard<std::mutex> group_lock(group->mu);
   auto alias_it = group->member_aliases.find(user_id);
   return alias_it == group->member_aliases.end() ? std::string() : alias_it->second;
@@ -259,12 +246,10 @@ std::string GroupManager::GetMemberAlias(const std::string& group_id,
 bool GroupManager::SetMemberMute(const std::string& group_id,
                                  const std::string& user_id, int64_t until_ms) {
   std::lock_guard<std::mutex> lock(mu_);
-  auto it = groups_.find(group_id);
-  if (it == groups_.end()) {
+  auto group = LookupLocked(group_id);
+  if (!group) {
     return false;
   }
-
-  auto& group = it->second;
   std::lock_guard<std::mutex> group_lock(group->mu);
 
   if (group->members.count(user_id) == 0) {
@@ -282,12 +267,10 @@ bool GroupManager::SetMemberMute(const std::string& group_id,
 int64_t GroupManager::MutedUntil(const std::string& group_id,
                                  const std::string& user_id, int64_t now_ms) {
   std::lock_guard<std::mutex> lock(mu_);
-  auto it = groups_.find(group_id);
-  if (it == groups_.end()) {
+  auto group = LookupLocked(group_id);
+  if (!group) {
     return 0;
   }
-
-  const auto& group = it->second;
   std::lock_guard<std::mutex> group_lock(group->mu);
   auto mute_it = group->member_mutes.find(user_id);
   if (mute_it == group->member_mutes.end()) {
@@ -299,6 +282,62 @@ int64_t GroupManager::MutedUntil(const std::string& group_id,
     return 0;
   }
   return mute_it->second;
+}
+
+int64_t GroupManager::NowMs() const {
+  const int64_t override_ms = now_override_ms_.load();
+  if (override_ms != 0) {
+    return override_ms;
+  }
+  return std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+void GroupManager::UnlinkGroupLocked(const std::string& group_id,
+                                     const std::shared_ptr<GroupData>& group) {
+  std::lock_guard<std::mutex> group_lock(group->mu);
+  for (const auto& member_id : group->members) {
+    auto user_it = user_to_groups_.find(member_id);
+    if (user_it == user_to_groups_.end()) {
+      continue;
+    }
+    user_it->second.erase(group_id);
+    if (user_it->second.empty()) {
+      user_to_groups_.erase(user_it);
+    }
+  }
+}
+
+std::shared_ptr<GroupData> GroupManager::LookupLocked(const std::string& group_id) {
+  auto it = groups_.find(group_id);
+  if (it == groups_.end()) {
+    return nullptr;
+  }
+  auto group = it->second;
+  if (group->expires_at_ms > 0 && group->expires_at_ms <= NowMs()) {
+    // 惰性摘除：到点群读到即清，成员映射同步解绑。
+    UnlinkGroupLocked(group_id, group);
+    groups_.erase(it);
+    return nullptr;
+  }
+  return group;
+}
+
+std::vector<std::string> GroupManager::SweepExpired(int64_t now_ms) {
+  std::vector<std::string> removed;
+
+  std::lock_guard<std::mutex> lock(mu_);
+  for (auto it = groups_.begin(); it != groups_.end();) {
+    auto group = it->second;  // shared_ptr copy: keeps the group alive across erase
+    if (group->expires_at_ms <= 0 || group->expires_at_ms > now_ms) {
+      ++it;
+      continue;
+    }
+    UnlinkGroupLocked(it->first, group);
+    removed.push_back(it->first);
+    it = groups_.erase(it);
+  }
+  return removed;
 }
 
 } // namespace chat

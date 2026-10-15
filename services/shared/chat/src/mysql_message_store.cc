@@ -453,6 +453,24 @@ bool MySQLMessageStore::MarkMessageRecalled(const std::string& channel_id,
   return result;
 }
 
+uint64_t MySQLMessageStore::ExpireBefore(int64_t private_cutoff_ms, int64_t other_cutoff_ms) {
+  auto conn = pool_->GetConnection();
+  if (!conn) {
+    return 0;
+  }
+
+  // 一条 DELETE 两个 cutoff：私聊（channel_type = 0）与其余频道各自保留窗。
+  // epoch 毫秒恒正，cutoff <= 0 的子句天然匹配不到行（= 该类不清理）。
+  std::string query =
+      "DELETE FROM messages WHERE (channel_type = 0 AND timestamp < " +
+      std::to_string(private_cutoff_ms) + ") OR (channel_type != 0 AND timestamp < " +
+      std::to_string(other_cutoff_ms) + ")";
+
+  const uint64_t removed = conn->Execute(query) ? conn->AffectedRows() : 0;
+  pool_->ReturnConnection(std::move(conn));
+  return removed;
+}
+
 std::vector<StoredMessage> MySQLMessageStore::GetOfflineMessages(const std::string& user_id) {
   auto conn = pool_->GetConnection();
   if (!conn) {

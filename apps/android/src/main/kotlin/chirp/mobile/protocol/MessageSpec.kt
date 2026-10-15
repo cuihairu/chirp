@@ -16,12 +16,23 @@ import com.google.protobuf.MessageLite
  * and echoes the request's sequence. The spec keeps both ids and the decoder
  * in one place so call sites never touch raw msgIds.
  * Port of mobile_companion lib/protocol/msg_map.dart (all 40 pairs).
+ *
+ * The optional inflate step is present only for the compressed-history shape
+ * (GET_HISTORY): it runs after the proto parse so the payload can be opened
+ * as the same-shape response the server compressed. Specs without it stay a
+ * plain parse.
  */
 class MessageSpec<T : MessageLite>(
     val reqMsgId: Gateway.MsgID,
     val respMsgId: Gateway.MsgID,
-    val decodeResponse: (ByteArray) -> T,
-)
+    parseResponse: (ByteArray) -> T,
+    inflate: ((T) -> T)? = null,
+) {
+    val decodeResponse: (ByteArray) -> T = { body ->
+        val parsed = parseResponse(body)
+        if (inflate == null) parsed else inflate(parsed)
+    }
+}
 
 // Core pair used by the connection layer itself.
 object MsgSpecs {
@@ -38,6 +49,7 @@ object MsgSpecs {
     )
     val getHistory = MessageSpec(
         Gateway.MsgID.GET_HISTORY_REQ, Gateway.MsgID.GET_HISTORY_RESP, Chat.GetHistoryResponse::parseFrom,
+        ::inflateGzipHistory,
     )
     val markRead = MessageSpec(
         Gateway.MsgID.MARK_READ_REQ, Gateway.MsgID.MARK_READ_RESP, Chat.MarkReadResponse::parseFrom,

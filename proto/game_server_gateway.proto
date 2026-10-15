@@ -65,6 +65,13 @@ message MessageInjectRequest {
   // channel_type PRIVATE is rejected (INVALID_PARAM): either a channel
   // fan-out or a 1:1 inject, never an ambiguous both.
   string game_id = 8;
+  // 展示面元数据（值域契约：与 chat.Priority 对齐——0 LOW / 1 NORMAL /
+  // 2 HIGH / 3 URGENT）。chat 侧按值直传（channel_type 同款口径），落入
+  // ChatMessage.priority。缺省 0 = 普通消息，旧游戏侧零感知。
+  int32 priority = 9;
+  // 走马灯/公告的显示时长（秒），直传 ChatMessage.ttl_seconds；与
+  // priority=URGENT 同置才点亮走马灯（systemSurfaceOf 判定二要素）。
+  int32 ttl_seconds = 10;
 }
 
 message MessageInjectResponse {

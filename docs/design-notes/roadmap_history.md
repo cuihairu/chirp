@@ -75,7 +75,7 @@
 
 - [x] **移动伴侣应用** (`apps/mobile_companion` - Flutter/RN) **(Demo — 不应呈现为生产就绪)**(2026-09-29 随原生迁移移除:协议核移植至 `apps/android`/`apps/ios`,同组测试向量对拍;CI 腿 `mobile-build.yml` 与 `proto/dart` 同批删除)
   - [x] **UI 框架**:联系人列表、聊天窗口、语音房间。
-  - [ ] **后台服务**:推送通知(APNs/FCM),保证应用被杀后用户仍"可达"。 **(provider HTTP 投递仍为日志 stub，见 P2)**
+  - [ ] **后台服务**:推送通知(APNs/FCM),保证应用被杀后用户仍"可达"。 **(默认日志传输；`--push_transport http` 打开真实 HTTP/1.1+TLS provider 投递，APNs 需 HTTP/2 由部署前置协议转换，见 P2)**
   - [x] **语音交互**:CallKit/ConnectionService 集成(系统电话 UI)。
 - [x] **CLI 客户端** (`apps/cli_client` - C++) **(Demo — 用于 smoke/手工验证)**
   - [x] 简单的终端聊天客户端,用于测试。
@@ -83,7 +83,7 @@
   - [x] 连接洪泛测试
   - [x] 消息风暴测试
   - [x] 统计上报
-- [ ] **管理后台** (`apps/admin_dashboard`) **(Stub — 使用 mock 数据与演示页面，未接真实后端)**
+- [ ] **管理后台** (`apps/admin_dashboard`) **(Stub — 页面首选真实 HTTP 调 `/api/{stats,users,channels,messages}`，失败回落内置 mock 演示数据；仓内无 `/api/*` 后端服务，仍未接真实后端)**
 
 ## 6. 运维与测试
 
