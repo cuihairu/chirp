@@ -143,16 +143,16 @@ final class GzipTests: XCTestCase {
         }
         let outer = Chirp_Chat_GetHistoryResponse.with {
             $0.hasMore_p = true
-            $0.messagesGzip = Data(gzip(inner.serializedData()))
+            $0.messagesGzip = Data(gzip([UInt8](inner.serializedData())))
         }
 
         let resp = try MsgSpecs.getHistory.decodeResponse([UInt8](outer.serializedData()))
 
-        XCTAssertEqual(resp.code, .ok)
+        XCTAssertEqual(Chirp_Common_ErrorCode.ok, resp.code)
         XCTAssertTrue(resp.hasMore_p)
         XCTAssertTrue(resp.messagesGzip.isEmpty)
-        XCTAssertEqual(resp.messages.map(\.messageID), ["m1", "m2"])
-        XCTAssertEqual(resp.messages.map(\.senderID), ["u1", "u2"])
+        XCTAssertEqual(["m1", "m2"], resp.messages.map { $0.messageID })
+        XCTAssertEqual(["u1", "u2"], resp.messages.map { $0.senderID })
     }
 
     func testGetHistoryAcceptsThePlainForm() throws {
