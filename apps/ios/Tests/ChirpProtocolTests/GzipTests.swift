@@ -141,7 +141,8 @@ final class GzipTests: XCTestCase {
                 Chirp_Chat_ChatMessage.with { $0.messageID = "m2"; $0.senderID = "u2" },
             ]
         }
-        let outer = Chirp_Chat_GetHistoryResponse.with {
+        // serializedData() throws, so the rethrowing builder needs try here.
+        let outer = try Chirp_Chat_GetHistoryResponse.with {
             $0.hasMore_p = true
             $0.messagesGzip = Data(gzip([UInt8](inner.serializedData())))
         }
