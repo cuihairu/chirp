@@ -489,7 +489,13 @@ export default function MessageBubble({
         {mine && message.pending && ` · ${zh.chat.statusPending}`}
         {mine &&
           message.failed &&
-          ` · ${message.failureReason === 'muted' ? zh.chat.statusMuted : zh.chat.statusFailed}`}
+          ` · ${
+            message.failureReason === 'muted'
+              ? zh.chat.statusMuted
+              : message.failureReason === 'dm_restricted'
+                ? zh.chat.statusDmRestricted
+                : zh.chat.statusFailed
+          }`}
         {mine && message.queuedOffline && ` · ${zh.chat.statusQueued}`}
         {mine && read && ` · ${zh.chat.read}`}
         {!mine && message.edited && ` ${zh.chat.edited}`}

@@ -153,6 +153,42 @@ describe('FriendsDialog', () => {
     expect(setReq!.req).toMatchObject({ prefs: { friendOnlineNotify: true } });
   });
 
+  it('loads the dm restriction switch and toggles it (2255-2257)', async () => {
+    // 防骚扰开关走聊天面连接（不是 socialConn）。
+    let enabled = true; // 服务端记着的值：开
+    const mounted = await renderLoggedIn(
+      <FriendsDialog open onClose={vi.fn()} onOpenChannel={vi.fn()} />,
+      {
+        responder: async (msgId, req) => {
+          if (msgId === MsgID.GET_DM_RESTRICTION_REQ) {
+            return { code: 0, enabled };
+          }
+          if (msgId === MsgID.SET_DM_RESTRICTION_REQ) {
+            enabled = (req as { enabled?: boolean }).enabled ?? false;
+            return { code: 0, enabled };
+          }
+          return { code: 0 };
+        },
+      },
+    );
+
+    // 打开面板拉当前开关（服务端记着开）。
+    await waitFor(() =>
+      expect(mounted.conn.requests.some((r) => r.msgId === MsgID.GET_DM_RESTRICTION_REQ)).toBe(true),
+    );
+    const input = screen
+      .getByTestId('dm-restriction-switch')
+      .querySelector('input') as HTMLInputElement;
+    await waitFor(() => expect(input.checked).toBe(true));
+
+    // 关掉开关 → SET_DM_RESTRICTION 带显式 false 上线。
+    fireEvent.click(input);
+    await waitFor(() => expect(input.checked).toBe(false));
+    const setReq = mounted.conn.requests.find((r) => r.msgId === MsgID.SET_DM_RESTRICTION_REQ);
+    expect(setReq).toBeDefined();
+    expect(setReq!.req).toMatchObject({ enabled: false });
+  });
+
   it('opens a private channel when messaging a friend', async () => {
     const onOpenChannel = vi.fn();
     const social = new FakeChatConnection();

@@ -291,3 +291,15 @@ describe('ChatPanel rich text (P1 富文本)', () => {
     expect(bold?.textContent).toBe('火🔥');
   });
 });
+describe('ChatPanel rejection hints (P1 拒收回码)', () => {
+  it('names the mute and dm restriction reasons on failed bubbles', async () => {
+    renderPanel([
+      message({ messageId: 'f1', senderId: SELF, failed: true, failureReason: 'muted' }),
+      message({ messageId: 'f2', senderId: SELF, failed: true, failureReason: 'dm_restricted' }),
+      message({ messageId: 'f3', senderId: SELF, failed: true }),
+    ]);
+    await waitFor(() => expect(screen.getByText('禁言中，消息未发送')).toBeTruthy());
+    expect(screen.getByText('对方开启了私聊限制，仅好友/同群可私信')).toBeTruthy();
+    expect(screen.getByText('发送失败')).toBeTruthy();
+  });
+});

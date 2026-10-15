@@ -99,6 +99,22 @@ export default function MainWindow(props: {
     });
   }, [socialApi, planeUp.social]);
 
+  // 防骚扰私聊限制(2255-2257)：顶栏开关，与上线通知同形态——登录拉当前值
+  // (不可用回 null 按缺省关渲染、按钮置灰)，点击即 SET(失败静默)。
+  const [dmRestrictionOn, setDmRestrictionOn] = useState<boolean | null>(null);
+  useEffect(() => {
+    void api.getDmRestriction().then((value) => {
+      if (value !== null) setDmRestrictionOn(value);
+    });
+  }, [api]);
+
+  const toggleDmRestriction = (): void => {
+    if (dmRestrictionOn === null) return;
+    const next = !dmRestrictionOn;
+    setDmRestrictionOn(next);
+    void api.setDmRestriction(next);
+  };
+
   // 实验平面登录：各平面独立降级（unreachable → 隐藏对应功能面）。
   useEffect(() => {
     const userId = services.auth.get().userId;
@@ -233,6 +249,17 @@ export default function MainWindow(props: {
               data-testid="friend-online-notify"
             >
               上线通知
+            </Button>
+          </Tooltip>
+          <Tooltip title={dmRestrictionOn === true ? '私聊限制开启中' : '开启后仅好友/同群可私信我'}>
+            <Button
+              size="small"
+              variant={dmRestrictionOn === true ? 'contained' : 'outlined'}
+              disabled={dmRestrictionOn === null}
+              onClick={toggleDmRestriction}
+              data-testid="dm-restriction"
+            >
+              私聊限制
             </Button>
           </Tooltip>
           <Button size="small" startIcon={<LogoutIcon />} onClick={() => void api.logout().then(onSignOut)}>

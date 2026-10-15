@@ -514,3 +514,43 @@ describe('ChatApi temp channel ttl (P1 group TTL)', () => {
     expect(keys).toContain('p:user_a|user_x');
   });
 });
+
+/** 防骚扰私聊限制（P1，2255-2258）：拒收回码单独标注 + 开关读写。 */
+describe('ChatApi dm restriction (P1)', () => {
+  it('tags a DM_RESTRICTED rejection with its own failure reason', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async () => ({ code: 14 })); // DM_RESTRICTED
+    await h.api.sendMessage(privateChannel(), 'stranger dm');
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0]).toMatchObject({
+      failed: true,
+      pending: false,
+      failureReason: 'dm_restricted',
+    });
+  });
+
+  it('sends SET_DM_RESTRICTION_REQ with enabled and returns the code', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.SET_DM_RESTRICTION_REQ);
+      expect(req).toMatchObject({ enabled: true });
+      return { code: 0, enabled: true };
+    });
+    expect(await h.api.setDmRestriction(true)).toBe(0);
+  });
+
+  it('reads the switch through GET and maps non-OK to null', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.GET_DM_RESTRICTION_REQ);
+      expect(req).toMatchObject({});
+      return { code: 0, enabled: true };
+    });
+    expect(await h.api.getDmRestriction()).toBe(true);
+
+    h.conn.setResponder(async () => ({ code: 3 })); // AUTH_FAILED
+    expect(await h.api.getDmRestriction()).toBeNull();
+  });
+});

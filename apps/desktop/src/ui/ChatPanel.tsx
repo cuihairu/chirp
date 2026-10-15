@@ -115,7 +115,7 @@ function MessageRow(props: {
   timestamp: number;
   pending: boolean;
   failed?: boolean;
-  failureReason?: 'muted';
+  failureReason?: 'muted' | 'dm_restricted';
   queuedOffline?: boolean;
   edited?: boolean;
   readByPeer: boolean;
@@ -531,7 +531,11 @@ function MessageRow(props: {
           ) : null}
           {props.failed ? (
             <Typography variant="caption" color="error">
-              {props.failureReason === 'muted' ? '禁言中，消息未发送' : '发送失败'}
+              {props.failureReason === 'muted'
+                ? '禁言中，消息未发送'
+                : props.failureReason === 'dm_restricted'
+                  ? '对方开启了私聊限制，仅好友/同群可私信'
+                  : '发送失败'}
             </Typography>
           ) : null}
           {props.queuedOffline ? (

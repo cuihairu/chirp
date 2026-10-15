@@ -39,6 +39,7 @@ import {
   CREATE_GROUP,
   DELETE_MESSAGE,
   EDIT_MESSAGE,
+  GET_DM_RESTRICTION,
   GET_GROUP_MEMBERS,
   GET_HISTORY,
   GET_USER_GROUPS,
@@ -52,6 +53,7 @@ import {
   REMOVE_REACTION,
   SEARCH_MESSAGE,
   SEND_MESSAGE,
+  SET_DM_RESTRICTION,
   SET_GROUP_MUTE,
   SET_MEMBER_ALIAS,
   type MessageSpec,
@@ -548,12 +550,17 @@ export class ChatApi {
       this.ensureConversation(channel, channel.kind === 'private' ? channel.peerId : channel.channelId);
       touchConversation(this.conversations, channel.key, text, confirmed.timestamp);
     } else {
-      // 禁言拒发(MUTED)单独标注,气泡给禁言专属提示而非笼统「发送失败」。
+      // 禁言拒发(MUTED)与防骚扰拒收(DM_RESTRICTED)单独标注,气泡给专属
+      // 提示而非笼统「发送失败」。
       failPendingMessage(
         this.messages,
         channel.key,
         clientId,
-        resp.code === ErrorCode.MUTED ? 'muted' : undefined,
+        resp.code === ErrorCode.MUTED
+          ? 'muted'
+          : resp.code === ErrorCode.DM_RESTRICTED
+            ? 'dm_restricted'
+            : undefined,
       );
     }
   }
@@ -841,6 +848,24 @@ export class ChatApi {
     if (!messageId) return { code: ErrorCode.INVALID_PARAM, messageId, reportCount: 0 };
     const resp = await this.conn.request(REPORT_MESSAGE, { messageId, reason });
     return resp;
+  }
+
+  // ---- 防骚扰私聊限制(SET/GET_DM_RESTRICTION 2255-2258) ----
+  // 接收方开关,缺省关。开启后陌生人(非好友且无共同群)的私聊被拒
+  // DM_RESTRICTED 且消息不落任何存储;开关是服务端内存态,进程重启复位。
+  async setDmRestriction(enabled: boolean): Promise<number> {
+    const resp = await this.conn.request(SET_DM_RESTRICTION, { enabled });
+    return resp.code;
+  }
+
+  /** 读取开关(2257/2258):请求体无字段;不可用/失败回 null(按缺省关渲染)。 */
+  async getDmRestriction(): Promise<boolean | null> {
+    try {
+      const resp = await this.conn.request(GET_DM_RESTRICTION, {});
+      return resp.code === 0 ? resp.enabled : null;
+    } catch {
+      return null;
+    }
   }
 
   /** 2120: someone was kicked. If it was me, forget the group locally. */
