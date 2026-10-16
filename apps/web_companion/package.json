@@ -21,7 +21,7 @@
     "@mui/material": "^9.5.0",
     "long": "^5.3.2",
     "protobufjs": "^7.2.0",
-    "react": "^18.2.0",
+    "react": "^19.3.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^7.18.4",
     "@chirp/app-protocol": "file:../shared/protocol"
@@ -31,7 +31,7 @@
     "@testing-library/dom": "^9.3.4",
     "@testing-library/react": "^16.3.3",
     "@types/node": "^26.6.5",
-    "@types/react": "^18.2.0",
+    "@types/react": "^19.3.0",
     "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react": "^6.1.2",
     "@vitest/coverage-v8": "^4.1.11",
