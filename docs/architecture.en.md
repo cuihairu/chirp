@@ -88,7 +88,7 @@ Deployment shapes: `app_sdk_gateway + app_chat + app_auth + app_notification`. A
 
 ## Peer Registration Protocol
 
-When `game_chat` starts, it attaches to `app_chat` through the built-in peer registration handshake. Registration, access control, and version negotiation are all native capabilities of chat. Protocol-level fields, error codes, CLI, and implementation status are in [Chat Peer Registration Protocol](api/peer_protocol.md).
+When `game_chat` starts, it attaches to `app_chat` through the built-in peer registration handshake. Registration, access control, and version negotiation are all native capabilities of chat. Protocol-level fields, error codes, CLI, and implementation status are in [Chat Peer Registration Protocol](api/peer_protocol.en.md).
 
 ### Handshake
 
@@ -312,7 +312,7 @@ TCP 流:    [uint32_be payload_size][chirp.gateway.Packet protobuf bytes]
 WebSocket: binary frame payload = [uint32_be payload_size][chirp.gateway.Packet protobuf bytes]
 ```
 
-`chirp.gateway.Packet` carries `msg_id`, `sequence`, `body`, and `request_id` (distributed correlation id; 0 = not provided, in which case both ends fall back to a per-connection monotonic value, and forwarding chains pass it through unchanged — see [API Overview](api/overview.md)). Message ID blocks:
+`chirp.gateway.Packet` carries `msg_id`, `sequence`, `body`, and `request_id` (distributed correlation id; 0 = not provided, in which case both ends fall back to a per-connection monotonic value, and forwarding chains pass it through unchanged — see [API Overview](api/overview.en.md)). Message ID blocks:
 
 | Block | Plane | Purpose |
 | --- | --- | --- |
@@ -332,7 +332,7 @@ WebSocket: binary frame payload = [uint32_be payload_size][chirp.gateway.Packet 
 | 5052 | `CHANNEL_MESSAGE_NOTIFY` | spoke → hub (channel message uplink, hub fans out) |
 | 5053 | `PEER_INJECT_MESSAGE_NOTIFY` | hub → spoke (player reply injection; the name carries the `PEER_` prefix to distinguish it from the server_gateway chain's 5007 `INJECT_MESSAGE_NOTIFY`) |
 
-Field tables, error code tables, capability negotiation, and the CLI are in [Chat Peer Registration Protocol](api/peer_protocol.md).
+Field tables, error code tables, capability negotiation, and the CLI are in [Chat Peer Registration Protocol](api/peer_protocol.en.md).
 
 ## Architectural Commitments
 

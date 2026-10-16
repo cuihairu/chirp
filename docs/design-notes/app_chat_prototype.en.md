@@ -91,7 +91,7 @@ States and special forms (all from current behavior in `MessageBubble.tsx`):
 - **Read**: own messages append `· Read` once "the peer's read cursor ≥ this message";
 - **(Edited)**: a message edited by the peer shows the marker; your own edit updates in place;
 - **Recall**: the whole message collapses to "message recalled" (identical on both sides);
-- **Sensitive words**: content that hits the word list is already rewritten text (the REPLACE strategy displays `**`), the convention is in [Word filter](word_filter.md);
+- **Sensitive words**: content that hits the word list is already rewritten text (the REPLACE strategy displays `**`), the convention is in [Word filter](word_filter.en.md);
 - Group chats additionally have the owner marker and the member count (inside group settings).
 
 ### Group settings (group-chat ⚙)
@@ -150,7 +150,7 @@ graph TD
     GW -.-> PLANES
 ```
 
-Key points (for the access semantics see [SDK overview](../sdk/index.md) and [SDK hooks](sdk_hooks.md)):
+Key points (for the access semantics see [SDK overview](../sdk/index.en.md) and [SDK hooks](sdk_hooks.en.md)):
 
 - **The game side only deals with events and Tasks**: callbacks such as `OnChatMessage` are already dispatched back to the main thread by the engine shell; request-response goes through the spec table (`RequestAsync`, correlated by sequence number, throws on timeout);
 - **The send-side pre-check happens inside the SDK**: after registering `WordFilterSync` as an interceptor, the whole `SendMessageAsync` pipeline passes the word list first; the word list is pushed by the server, the client adjudicates a prediction of the server's adjudication;

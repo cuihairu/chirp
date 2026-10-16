@@ -108,4 +108,4 @@ Both TCP and WebSocket carry:
 - Chat messages currently go directly to the Chat service and do not pass through the Gateway.
 - Social, voice, notification, search, the mobile apps, the admin dashboard and the various SDK wrappers are not all production-ready.
 
-For the precise state see [Overall Architecture](../architecture.md) and [Capability Matrix](../CAPABILITY_MATRIX.md).
+For the precise state see [Overall Architecture](../architecture.en.md) and [Capability Matrix](../CAPABILITY_MATRIX.en.md).

@@ -4,7 +4,7 @@
 
 Aimed at game client/server teams integrating chirp for the first time. Every item here is a behavior where **the server rejects the message or silently changes its behavior**; if the client does not handle it, the symptom shows up as "the message was lost", "it won't send", or "I got kicked for no reason". Thresholds and defaults follow the code; this page marks the corresponding defaults; deployments can override them via startup arguments, see each service's `--help`.
 
-For the message frame format, the msg-id table and the error code table, see [API Overview](../api/overview.md).
+For the message frame format, the msg-id table and the error code table, see [API Overview](../api/overview.en.md).
 
 ## Send side: six defenses, one chain
 
@@ -176,7 +176,7 @@ client.SendMessage(opts, "gg", [](const std::error_code& ec,
 - Injected messages carry the `inject_id` idempotency key: a resend with the same id produces no duplicate message, so retries are safe.
 - An injection returning `OK` only means the server plane accepted it; it does not confirm delivery on the player's side; offline players go through the offline queue.
 - Authentication rejection shows up as periodic retry warnings (fixed delay, unlimited retries) and never exits on its own — when credentials are misconfigured, watch the startup log.
-- The Go SDK's semantics align item by item with the C++ reference implementation; for details see [Server SDK](../sdk/server.md).
+- The Go SDK's semantics align item by item with the C++ reference implementation; for details see [Server SDK](../sdk/server.en.md).
 
 ## Quick self-check checklist
 
@@ -194,8 +194,8 @@ When integrating and debugging, go through this list in order — most cases of 
 
 ## Related documents
 
-- [API Overview](../api/overview.md): frame format, msg-id table, error code table
-- [Server Plane](../server_plane.md): the 5xxx contracts and semantics
-- [Peer registration protocol](../api/peer_protocol.md): cross-plane spoke/hub handshake
-- [SDK hooks interface](../design-notes/sdk_hooks.md): interceptors/storage/auth providers
-- [Game chat feature list](../design-notes/game_chat_features.md): the original feature design
+- [API Overview](../api/overview.en.md): frame format, msg-id table, error code table
+- [Server Plane](../server_plane.en.md): the 5xxx contracts and semantics
+- [Peer registration protocol](../api/peer_protocol.en.md): cross-plane spoke/hub handshake
+- [SDK hooks interface](../design-notes/sdk_hooks.en.md): interceptors/storage/auth providers
+- [Game chat feature list](../design-notes/game_chat_features.en.md): the original feature design

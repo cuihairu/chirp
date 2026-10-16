@@ -2,7 +2,7 @@
 
 # Server Plane: game backend integration
 
-Status: **Experimental**——the hub (`chirp_game_server_gateway`), the chat-side consumer, and the Redis Streams broker fallback are all implemented and verified by unit tests (100% line coverage): chat dials in as an internal peer, and injected messages go through the same storage/delivery tail as player messages. The two-plane topology is in [overall architecture](./architecture.md).
+Status: **Experimental**——the hub (`chirp_game_server_gateway`), the chat-side consumer, and the Redis Streams broker fallback are all implemented and verified by unit tests (100% line coverage): chat dials in as an internal peer, and injected messages go through the same storage/delivery tail as player messages. The two-plane topology is in [overall architecture](./architecture.en.md).
 
 > **Architecture note (2026-09-21; landed 2026-09-22).** Target topology: `game_chat` registers into `app_chat` using the native peer registration protocol (with whitelist and version negotiation), with no external bridging process. Identity binding, channel subscriptions, and the unread badge ledger are all handled internally by `app_chat` (`PlayerDirectory`); fan-in delivery moved up accordingly——`game_chat` hands channel messages over the peer to `app_chat`, which fans them out by subscription. `chirp_game_server_gateway` keeps its original duties: game backend injection + reliable event delivery downward; it no longer carries any data face of WP-8.
 

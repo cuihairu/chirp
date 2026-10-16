@@ -2,7 +2,7 @@
 
 # Chirp Quickstart
 
-The maintained getting-started guide has moved to [guide/getting-started.md](./guide/getting-started.md).
+The maintained getting-started guide has moved to [guide/getting-started.md](./guide/getting-started.en.md).
 
 Minimal local path:
 
@@ -28,4 +28,4 @@ Smoke tests:
 ./test_services.sh --smoke-party
 ```
 
-Before enabling non-core services, read [Core](./CORE.md) and the [Capability Matrix](./CAPABILITY_MATRIX.md).
+Before enabling non-core services, read [Core](./CORE.en.md) and the [Capability Matrix](./CAPABILITY_MATRIX.en.md).

@@ -14,7 +14,7 @@ docker compose logs -f
 docker compose down
 ```
 
-On a first deployment, focus on the four services redis, auth, gateway and chat, see [CORE.md](../CORE.md).
+On a first deployment, focus on the four services redis, auth, gateway and chat, see [CORE.md](../CORE.en.md).
 
 `docker-compose.cluster.yml` (single-machine cluster form, with haproxy), `deploy/haproxy.cfg`, `deploy/deploy-cluster.sh`, `deploy/k8s/*.yaml` and `scripts/build-cluster.sh` are all in the tree; the k8s manifests are early templates (see the status note at the top), and the correspondence between the haproxy configuration and the cluster compose script and the current service names/ports should be checked before use.
 
@@ -81,7 +81,7 @@ Multiple gateway instances need Redis configured (`--redis_host`), otherwise cro
 
 ## Capacity reference
 
-The data comes from the [gateway capacity benchmark](../design-notes/capacity_benchmark.md) of 2026-09-27, measured on a single machine:
+The data comes from the [gateway capacity benchmark](../design-notes/capacity_benchmark.en.md) of 2026-09-27, measured on a single machine:
 
 - Concurrent online connections: 12000/12000 logged in and online, 0 handshake timeouts (a pure-capacity tier spreading 200 conn/s over 60 seconds)
 - Connection establishment rate: 200 conn/s is clean with no concurrent traffic; when connection establishment overlaps with message sending, even 50 conn/s breaks through (the steady500 tier has 165/500 pipe handshake timeouts)
@@ -125,6 +125,6 @@ Database columns are additive (see the upgrade scripts), and old binaries tolera
 
 ## Related pages
 
-- [Overall Architecture](../architecture.md)
-- [Scalability notes](../design-notes/SCALABILITY.md)
-- [API Overview](../api/overview.md)
+- [Overall Architecture](../architecture.en.md)
+- [Scalability notes](../design-notes/SCALABILITY.en.md)
+- [API Overview](../api/overview.en.md)

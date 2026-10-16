@@ -2,9 +2,9 @@
 
 # Game chat architecture notes
 
-This page is kept as a design note (design-notes) for the game chat scenario. For the current prototype wireframes of the app chat UI and the in-game integration diagrams, see [App chat prototype](app_chat_prototype.md).
+This page is kept as a design note (design-notes) for the game chat scenario. For the current prototype wireframes of the app chat UI and the in-game integration diagrams, see [App chat prototype](app_chat_prototype.en.md).
 
-For the current repository architecture, service boundaries, protocol baseline, and the architecture soundness review, read [Overall Architecture](../architecture.md) first.
+For the current repository architecture, service boundaries, protocol baseline, and the architecture soundness review, read [Overall Architecture](../architecture.en.md) first.
 
 ## Current position
 
@@ -12,7 +12,7 @@ The currently supported backend path is `gateway + auth + chat`.
 
 - `gateway` is the login/session edge; it currently handles login, logout, heartbeat, and optional Redis backing for cross-instance kicks.
 - `chat` is currently a standalone TCP/WebSocket service and the actual entry point for the current chat smoke tests.
-- Social, voice, notification, search, the SDK wrapper layer, the mobile apps, and the admin dashboard are experimental or demo surfaces unless [Capability Matrix](../CAPABILITY_MATRIX.md) says otherwise.
+- Social, voice, notification, search, the SDK wrapper layer, the mobile apps, and the admin dashboard are experimental or demo surfaces unless [Capability Matrix](../CAPABILITY_MATRIX.en.md) says otherwise.
 
 ## Design intent
 
@@ -56,6 +56,6 @@ For game clients this is a good choice: compact, stable across languages, and co
 
 ## Practical advice
 
-- For local verification, use the current direct `chat` path described in [Overall Architecture](../architecture.md).
+- For local verification, use the current direct `chat` path described in [Overall Architecture](../architecture.en.md).
 - For product architecture, once gateway routing is implemented, converge on a single public edge first.
 - Do not write social, voice, search, push, or advanced chat features up as "supported" until they have matching tests and a clear runtime topology.

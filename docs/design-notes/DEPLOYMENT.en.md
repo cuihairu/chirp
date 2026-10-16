@@ -58,11 +58,11 @@ cmake --build --preset dev
 ctest --preset dev
 ```
 
-Service configuration is authoritative in the command-line flags; samples are in `docker-compose.yml` and [guide/deployment.md](../guide/deployment.md). The chat storage layer additionally reads `CHIRP_*` environment variables (`message_store_config.cc`). Logs are plain text lines (`YYYY-MM-DD HH:MM:SS [LEVEL] [tid=...] message`, `libs/common/logger.*`), with no JSON structured output.
+Service configuration is authoritative in the command-line flags; samples are in `docker-compose.yml` and [guide/deployment.md](../guide/deployment.en.md). The chat storage layer additionally reads `CHIRP_*` environment variables (`message_store_config.cc`). Logs are plain text lines (`YYYY-MM-DD HH:MM:SS [LEVEL] [tid=...] message`, `libs/common/logger.*`), with no JSON structured output.
 
 ## Capacity
 
-For the capacity numbers, use the measurements in [capacity_benchmark.md](./capacity_benchmark.md): 12000 concurrent logged-in online connections on a single machine, 200 conn/s for clean establishment (with concurrent traffic in flight even 50 conn/s gets pushed through), and steady-state private-chat throughput constrained by the 1 second/user pacing. This page no longer maintains an estimate table.
+For the capacity numbers, use the measurements in [capacity_benchmark.md](./capacity_benchmark.en.md): 12000 concurrent logged-in online connections on a single machine, 200 conn/s for clean establishment (with concurrent traffic in flight even 50 conn/s gets pushed through), and steady-state private-chat throughput constrained by the 1 second/user pacing. This page no longer maintains an estimate table.
 
 ## Backup and network security
 

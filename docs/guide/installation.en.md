@@ -248,6 +248,6 @@ netstat -an | grep 6379
 
 ## Next steps
 
-- [Getting Started](./getting-started.md)
-- [Overall Architecture](../architecture.md)
-- [Deployment Guide](./deployment.md)
+- [Getting Started](./getting-started.en.md)
+- [Overall Architecture](../architecture.en.md)
+- [Deployment Guide](./deployment.en.md)

@@ -14,10 +14,10 @@ Chirp should currently be understood as a real-time communication backend skelet
 | Auth | TCP 6000 | Supported | token verification path; the enhanced auth depends on local libraries and is conditional |
 | Chat | TCP 7000 / WS 7001 | Supported | Private chat, groups, history, offline queue; optional Redis/MySQL enhancement paths |
 | Server Gateway | TCP 8100 | Experimental | Trusted service-plane hub: the game backend authenticates with `service_id` + secret, injects system/NPC messages, and receives events queued until acked |
-| NPC Dialog | no listener | Experimental | server plane client: replies to `npc.player_message` events using keyword rules and injects the replies back into chat (see [server_plane.md](./server_plane.md)) |
+| NPC Dialog | no listener | Experimental | server plane client: replies to `npc.player_message` events using keyword rules and injects the replies back into chat (see [server_plane.md](./server_plane.en.md)) |
 | Search | TCP 5007 | Supported | message search: SQLite FTS5 index, 2248/2249 composite cursor pagination; both SDK gateways with `--search_host` (default 5007) forward, degrading without a kick |
 | Notification | TCP 5006 / WS 5016 | Experimental | device registry and push face (6xxx); provider delivery logs by default (`--push_transport logging`), `--push_transport http` enables real HTTP(S) provider POST (`HttpPushTransport`, https endpoints verify TLS 1.2+ certificates; the official APNs endpoint requires HTTP/2, so production deployments need a protocol conversion in front) |
-| App Gateway | TCP 5200 / WS 5201 | Experimental | companion app edge: login/heartbeat/session binding, plus device message forwarding to Notification (authenticated sessions only). Today it is only the connection skeleton——the goal is the **player aggregation plane**: one player identity associated with multiple games (cross-game channel subscription, aggregated in-game chat, cross-game voice teaming); see "Game-facing plane vs player aggregation plane" in [architecture.md](./architecture.md) |
+| App Gateway | TCP 5200 / WS 5201 | Experimental | companion app edge: login/heartbeat/session binding, plus device message forwarding to Notification (authenticated sessions only). Today it is only the connection skeleton——the goal is the **player aggregation plane**: one player identity associated with multiple games (cross-game channel subscription, aggregated in-game chat, cross-game voice teaming); see "Game-facing plane vs player aggregation plane" in [architecture.md](./architecture.en.md) |
 
 Minimum viable topology:
 
@@ -49,7 +49,7 @@ graph TD
 - Private chat and history go directly through `chat`.
 - Once the SDK gateway is configured with `--chat_host`, it forwards client 2xxx business packets frame by frame to chat over a per-client `ServiceBridge` pipe (chat re-runs login authentication on its side; if the chat bridge drops, the client is kicked off per the existing semantics). 2248 is intercepted before the 2xxx catch-all: with `--search_host` (default 5007) configured, it forwards to the search service; a failed search bridge degrades back to `SERVER_UNAVAILABLE` without kicking the client, and without `--search_host` configured it falls back to the chat catch-all.
 - social (3xxx) / voice (4xxx) are not on the forwarding path; without `--chat_host` configured, 2xxx is not forwarded. Gateway login and chat-side authentication are two independent gates.
-- The game plane (game plane) and the app plane (app plane) are two independent systems: each has its own chat (`game_chat` / `app_chat`, the same binary, deployed separately) and its own edge. The game plane is self-contained: the game backend issues tokens and `game_chat` verifies them locally (`--token_secret`), with no dependency on external auth. The app plane has its own auth (`app_auth`). Cross-plane communication is a built-in chat capability: `game_chat` registers into `app_chat` using the native peer registration protocol (with whitelist and version negotiation)——see [architecture.md](./architecture.md).
+- The game plane (game plane) and the app plane (app plane) are two independent systems: each has its own chat (`game_chat` / `app_chat`, the same binary, deployed separately) and its own edge. The game plane is self-contained: the game backend issues tokens and `game_chat` verifies them locally (`--token_secret`), with no dependency on external auth. The app plane has its own auth (`app_auth`). Cross-plane communication is a built-in chat capability: `game_chat` registers into `app_chat` using the native peer registration protocol (with whitelist and version negotiation)——see [architecture.md](./architecture.en.md).
 - Redis and MySQL paths are always treated as optional enhancements unless a deployment explicitly enables them.
 
 ## Protocol
@@ -71,7 +71,7 @@ message Packet {
 }
 ```
 
-`sequence` is responsible for request/reply pairing; `request_id` is responsible for log correlation across planes and across services; the two are independent of each other (generation and pass-through rules are in [API overview](./api/overview.md)).
+`sequence` is responsible for request/reply pairing; `request_id` is responsible for log correlation across planes and across services; the two are independent of each other (generation and pass-through rules are in [API overview](./api/overview.en.md)).
 
 Key mappings:
 
@@ -146,7 +146,7 @@ requires `--allow_scaffold_login 1` (off by default). Revocation is still bounde
 
 `chirp_game_server_gateway` (TCP 8100) speaks the same Packet framing on a different trust face:
 peers are the game backend and internal services, authenticated with `service_id` + secret——never
-user accounts. The full contract is in [Server Plane](./server_plane.md).
+user accounts. The full contract is in [Server Plane](./server_plane.en.md).
 
 | Packet `msg_id` | Packet `body` |
 | --- | --- |
@@ -239,11 +239,11 @@ until you have checked the current code and tests:
 - NPC dialogue system design (the keyword-rule service scope implemented in `services/game/npc_dialog` is narrower; the design note describes the fuller vision)
 - The alternative target and scalability examples for distributed chat
 
-The current state is in the [capability matrix](./CAPABILITY_MATRIX.md).
+The current state is in the [capability matrix](./CAPABILITY_MATRIX.en.md).
 
 ## Detail pages
 
-- [Getting Started guide](./guide/getting-started.md)
-- [API overview](./api/overview.md)
-- [Overall architecture](./architecture.md)
-- [Capability matrix](./CAPABILITY_MATRIX.md)
+- [Getting Started guide](./guide/getting-started.en.md)
+- [API overview](./api/overview.en.md)
+- [Overall architecture](./architecture.en.md)
+- [Capability matrix](./CAPABILITY_MATRIX.en.md)
