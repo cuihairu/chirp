@@ -2,7 +2,7 @@
 
 # Gateway concurrent-connection capacity benchmark (measured)
 
-> Measured 2026-09-27. Backfills the "load test: gateway 10k+ concurrent-connection benchmark" item in [roadmap_history](design-notes/roadmap_history.en).
+> Measured 2026-09-27. Backfills the "load test: gateway 10k+ concurrent-connection benchmark" item in [roadmap_history](/design-notes/roadmap_history).
 > **All numbers come from single-instance loopback tests on a shared development machine**; environmental noise and measurement caveats are in [Limitations](#limitations-and-applicability) and must be quoted together with that section.
 
 ## TL;DR
@@ -27,24 +27,24 @@ chirp_load_client ──TCP──> chirp_game_sdk_gateway ──one pipe per cli
    N connections              (port G/WS)            ServiceBridge 2xxx forwarding    (port P/WS)
 ```
 
-- The client wire protocol matches production: ; login goes through the gateway scaffold (token=user_id).
-- chat and gateway are each a **single-threaded ** (, ).
-- The gateway opens one pipe to chat per client; the pipe is authenticated via  (); the pipe handshake timeout is hard-coded at 5s ().
+- The client wire protocol matches production: `[u32_be len][chirp.gateway.Packet]`; login goes through the gateway scaffold (token=user_id).
+- chat and gateway are each a **single-threaded `io_context::run()`** (`services/shared/chat/src/main.cc`, `services/game/sdk_gateway/src/main.cc`).
+- The gateway opens one pipe to chat per client; the pipe is authenticated via `SERVER_AUTH_REQ` (`--gateway_service_secret`); the pipe handshake timeout is hard-coded at 5s (`libs/network/service_bridge.cc:25`).
 
 ### Dependency shape (critical)
 
- (the enhanced main) has Redis/MySQL arguments that **default to 127.0.0.1** (); without explicit configuration it connects to the shared instances, and if the shared MySQL rejects the credentials, every message's archive write **fails on a single attempt in the background thread and only warns** ( , no retry), but the resulting history-tier skew gets amplified by reads and writes and slows responses — measured, the 200-connection tier ran 9 minutes without exiting and saw 65% pipe handshake timeouts. Formal measurement therefore uses dedicated throwaway dependencies:
+`chirp_chat` (the enhanced main) has Redis/MySQL arguments that **default to 127.0.0.1** (`main_enhanced.cc`); without explicit configuration it connects to the shared instances, and if the shared MySQL rejects the credentials, every message's archive write **fails on a single attempt in the background thread and only warns** (`hybrid_message_store.cc` `StoreMessageAsync`, no retry), but the resulting history-tier skew gets amplified by reads and writes and slows responses — measured, the 200-connection tier ran 9 minutes without exiting and saw 65% pipe handshake timeouts. Formal measurement therefore uses dedicated throwaway dependencies:
 
-- dedicated redis: 
-- dedicated MariaDB:  (the store auto-creates ), then just 
+- dedicated redis: `redis-server --port 16379 --save "" --appendonly no`
+- dedicated MariaDB: `mariadbd --datadir=… --port=13306 --skip-grant-tables` (the store auto-creates `CREATE TABLE IF NOT EXISTS`), then just `CREATE DATABASE chirp`
 
-Known harmless noise: 's startup self-check uses  and misreads the nil reply for "key does not exist" as a connection failure, logging one WARN line (); actual reads and writes proceed normally ( is now a reused connection pool, see [Bottlenecks](#bottlenecks-and-boundaries) item 4).
+Known harmless noise: `HybridMessageStore`'s startup self-check uses `GET ping` and misreads the nil reply for "key does not exist" as a connection failure, logging one WARN line (`hybrid_message_store.cc:109-111`); actual reads and writes proceed normally (`RedisClient` is now a reused connection pool, see [Bottlenecks](#bottlenecks-and-boundaries) item 4).
 
 ## Tooling and method
 
-- Tool:  () — one thread per connection, supports  to spread out connections, ,  for a pure-connection tier, per-round RTT percentiles, login RTT percentiles, and send-window throughput.
-- Runner:  — port preflight plus an ownership assertion (when a bind conflicts, probing falsely succeeds, which once produced the garbage data "5000/5000 online, login p99=42s"), taskset core pinning (services 0-3 / clients 5-13), VmHWM and  CPU core-seconds, gateway handshake-timeout counting.
-- Concurrency guard:  (a sourced two-piece set shared by run_capacity_bench.sh and the individual probe scripts) —  uses flock for machine-level mutual exclusion on  ( queues,  defaults to 3600s);  checks each port for a listener, passes idle ones through, and when occupied only cleans up an orphan that is "this uid + the benchmark binary" under , otherwise reporting an error and exiting (shared-machine discipline: never kill another session's live process on its behalf). Port blocks per probe: steady 17880-83, scale 17850-53, perf 17840-43, est_rate 17870-73, stack 17830-33, cpu_attribution 17810-13, run_capacity_bench 17800-03 ( etc. can be overridden). Ladder drivers (ladder_local / capacity_ladder_local / capacity_ramp_ladder) do not take the lock again — each tier's inner runner carries its own guard, and taking the same flock at the outer level would self-deadlock.
+- Tool: `chirp_load_client` (`tools/benchmark/load_client.cc`) — one thread per connection, supports `--ramp-ms` to spread out connections, `--barrier on|off`, `--rounds 0` for a pure-connection tier, per-round RTT percentiles, login RTT percentiles, and send-window throughput.
+- Runner: `tools/benchmark/run_capacity_bench.sh` — port preflight plus an ownership assertion (when a bind conflicts, probing falsely succeeds, which once produced the garbage data "5000/5000 online, login p99=42s"), taskset core pinning (services 0-3 / clients 5-13), VmHWM and `/proc/$pid/stat` CPU core-seconds, gateway handshake-timeout counting.
+- Concurrency guard: `tools/benchmark/bench_guard.sh` (a sourced two-piece set shared by run_capacity_bench.sh and the individual probe scripts) — `bench_acquire_lock` uses flock for machine-level mutual exclusion on `/tmp/chirp_bench.lock` (`LOCK_WAIT=1` queues, `LOCK_TIMEOUT` defaults to 3600s); `bench_preflight_ports` checks each port for a listener, passes idle ones through, and when occupied only cleans up an orphan that is "this uid + the benchmark binary" under `FORCE=1`, otherwise reporting an error and exiting (shared-machine discipline: never kill another session's live process on its behalf). Port blocks per probe: steady 17880-83, scale 17850-53, perf 17840-43, est_rate 17870-73, stack 17830-33, cpu_attribution 17810-13, run_capacity_bench 17800-03 (`CHAT_PORT` etc. can be overridden). Ladder drivers (ladder_local / capacity_ladder_local / capacity_ramp_ladder) do not take the lock again — each tier's inner runner carries its own guard, and taking the same flock at the outer level would self-deadlock.
 - Each tier starts and stops the services independently; the user prefix rotates per tier, avoiding cross-tier rate-limit/mute residue.
 
 Reproduce (example):
@@ -65,7 +65,7 @@ BIN_DIR=./build-rel bash tools/benchmark/run_capacity_bench.sh 12000 0 1100 6000
 | 2000 | 33.3 conn/s | 2000/2000 | 1714 | 4/10/63 ms | 36.5MB | 11.0MB | 13.61 (60s) | ~84 |
 | **12000** | 200 conn/s | **12000/12000** | **10636** | 3/17/54 ms | **73.0MB** | **24.5MB** | 30.68 (63.5s) | ~73 |
 
-> **Note**: this round used  to spread the 12k connections over 60 seconds, avoiding a same-instant hammer against the handshake limit. The  count arises from the interaction between the spread-out ramp window and the 5s handshake timeout.  is the cumulative delta during the ctest window. The environmental loadavg is affected by parallel builds in multiple sessions.
+> **Note**: this round used `ramp_ms=60000` to spread the 12k connections over 60 seconds, avoiding a same-instant hammer against the handshake limit. The `handshake_timeouts` count arises from the interaction between the spread-out ramp window and the 5s handshake timeout. `chat CPU core-seconds` is the cumulative delta during the ctest window. The environmental loadavg is affected by parallel builds in multiple sessions.
 
 > **Contrast**: the numbers in the earlier table came from an old build with no MySQL/Redis dependencies; this table is a measurement of the enhanced chat (HybridMessageStore + MySQL) on a shared 14-core development machine, with load shared across sessions.
 
@@ -89,10 +89,10 @@ Why steady-state window throughput is far below the pacing ceiling (500/1.1≈45
 ## Bottlenecks and boundaries
 
 1. **chat's single io thread serializes connection handling with message handling**. Pure connecting is 200/s all-green; but when the connection ramp overlaps with message sending (steady500/1000 tiers), message handling crowds out the io thread and the pipe handshake's 5s hard deadline is breached (165/500 timeouts even at 50 conn/s). Production implication: **a login storm during peak hours and message traffic amplify each other**. Mitigation directions: make the pipe handshake timeout configurable, and split handshakes from message handling onto separate threads / separate priorities.
-2. **Barrier synchronization storms** (): after everyone assembles, rounds are sent in phase-lock, so with 2k connections every round is 2000 simultaneous sends, and the RTT tail reaches 60s (queue drain time). This is a measurement-method pitfall to avoid, and it is also the expected behavior of a real "everyone sends at the same instant" scenario.
-3. **Throughput structural ceiling = pacing**: private 1s per user, hard-coded (, in-process); in a multi-instance deployment each instance counts independently; the Redis fuzzy gate (120/min per user) and the login IP rate limit only take effect with .
-4. ~~** opens a new TCP short connection per command**~~ **A synchronous connection pool has landed (2026-10-11)**: 's per-command short connections were replaced by a reused idle connection pool (cap , a liveness probe on take, a failed connection is discarded without retry), so the RPush on the message path no longer pays the connect+close handshake every time. This is the throughput-boosting optimization this benchmark called out; async-ification/coroutine-ification is a separate project per the criteria in . Pipe reuse is still not done.
-5. **MySQL must be configured correctly**: archiving is a single background-thread attempt that only warns on failure with no retry (), so a bad dependency desynchronizes the hot/cold history tiers and slows responses (see [Dependency shape](#dependency-shape-critical); for the delivery-contract criterion see [special audit](/审计-专项审查-投递认证与状态一致性.en) D2).
+2. **Barrier synchronization storms** (`--barrier on`): after everyone assembles, rounds are sent in phase-lock, so with 2k connections every round is 2000 simultaneous sends, and the RTT tail reaches 60s (queue drain time). This is a measurement-method pitfall to avoid, and it is also the expected behavior of a real "everyone sends at the same instant" scenario.
+3. **Throughput structural ceiling = pacing**: private 1s per user, hard-coded (`ChannelPacer`, in-process); in a multi-instance deployment each instance counts independently; the Redis fuzzy gate (120/min per user) and the login IP rate limit only take effect with `--redis_host`.
+4. ~~**`RedisClient` opens a new TCP short connection per command**~~ **A synchronous connection pool has landed (2026-10-11)**: `SendCmd`'s per-command short connections were replaced by a reused idle connection pool (cap `kDefaultMaxIdle=8`, a liveness probe on take, a failed connection is discarded without retry), so the RPush on the message path no longer pays the connect+close handshake every time. This is the throughput-boosting optimization this benchmark called out; async-ification/coroutine-ification is a separate project per the criteria in `asio_coroutine_adoption.md`. Pipe reuse is still not done.
+5. **MySQL must be configured correctly**: archiving is a single background-thread attempt that only warns on failure with no retry (`StoreMessageAsync`), so a bad dependency desynchronizes the hot/cold history tiers and slows responses (see [Dependency shape](#dependency-shape-critical); for the delivery-contract criterion see [special audit](/审计-专项审查-投递认证与状态一致性.en) D2).
 6. The client is a thread/connection model: tens of thousands of threads contend for cores and push RTT up on their own (a polled barrier was once measured to drive loadavg to 1181), hence taskset core pinning + a condition-variable barrier; above tens of thousands, switch to an event-driven client before measuring.
 
 ## Limitations and applicability
@@ -105,6 +105,6 @@ Why steady-state window throughput is far below the pacing ceiling (500/1.1≈45
 
 ## Related
 
-- [roadmap_history](design-notes/roadmap_history.en) § operations and testing "load test" item backfill
-- [SCALABILITY](design-notes/SCALABILITY.en) / [game_chat_architecture](design-notes/game_chat_architecture.en)
-- Tooling reference: the local README in [tools/benchmark](https://github.com/) (the  section)
+- [roadmap_history](/design-notes/roadmap_history) § operations and testing "load test" item backfill
+- [SCALABILITY](/design-notes/SCALABILITY) / [game_chat_architecture](/design-notes/game_chat_architecture)
+- Tooling reference: the local README in [tools/benchmark](https://github.com/) (the `chirp_load_client` section)
