@@ -122,8 +122,8 @@ importers:
         specifier: ^30.1.2
         version: 30.1.2
       ts-proto:
-        specifier: ^1.160.0
-        version: 1.181.2
+        specifier: ^2.15.0
+        version: 2.15.0
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
@@ -247,6 +247,9 @@ packages:
   '@bramus/specificity@2.4.3':
     resolution: {integrity: sha512-0GEz8qJWokkUVYQYRukmkSHIFNoBH8QTreeHrAFbvz1XFYc3Y+puhMs8PQ5x8GNugiC2l5jvDBXKLbBIByeSBw==}
     hasBin: true
+
+  '@bufbuild/protobuf@2.16.0':
+    resolution: {integrity: sha512-FWa0sPlqYGJgpTs6OxBRcL/AW4JT0OIO+W1ajerluoTVh8CV0B7XM1qsNCRgnkSCkRCgOICKHRQlY17jrsm0+Q==}
 
   '@csstools/color-helpers@6.1.2':
     resolution: {integrity: sha512-grhRy3OKmniaAEKXMjua5z/EODX0MSqBGjunw8+j/3HQjOnahs2AGhvEOIYVUWcU6ScApbhLhVrQTX8XqrMrow==}
@@ -1947,11 +1950,11 @@ packages:
   ts-poet@6.12.0:
     resolution: {integrity: sha512-xo+iRNMWqyvXpFTaOAvLPA5QAWO6TZrSUs5s4Odaya3epqofBu/fMLHEWl8jPmjhA0s9sgj9sNvF1BmaQlmQkA==}
 
-  ts-proto-descriptors@1.16.0:
-    resolution: {integrity: sha512-3yKuzMLpltdpcyQji1PJZRfoo4OJjNieKTYkQY8pF7xGKsYz/RHe3aEe4KiRxcinoBmnEhmuI+yJTxLb922ULA==}
+  ts-proto-descriptors@2.1.0:
+    resolution: {integrity: sha512-S5EZYEQ6L9KLFfjSRpZWDIXDV/W7tAj8uW7pLsihIxyr62EAVSiKuVPwE8iWnr849Bqa53enex1jhDUcpgquzA==}
 
-  ts-proto@1.181.2:
-    resolution: {integrity: sha512-knJ8dtjn2Pd0c5ZGZG8z9DMiD4PUY8iGI9T9tb8DvGdWRMkLpf0WcPO7G+7cmbZyxvNTAG6ci3fybEaFgMZIvg==}
+  ts-proto@2.15.0:
+    resolution: {integrity: sha512-gF4REbeiwHRonatnj9MwR3s9A49XmQWzzjso+2oAN8IrLya1HWg0zEAOi0AIH/sm7nzv5s3fr3voSUBYaV2Txg==}
     hasBin: true
 
   type-check@0.4.0:
@@ -2268,6 +2271,8 @@ snapshots:
   '@bramus/specificity@2.4.3':
     dependencies:
       css-tree: 3.2.1
+
+  '@bufbuild/protobuf@2.16.0': {}
 
   '@csstools/color-helpers@6.1.2': {}
 
@@ -3907,17 +3912,16 @@ snapshots:
     dependencies:
       dprint-node: 1.0.8
 
-  ts-proto-descriptors@1.16.0:
+  ts-proto-descriptors@2.1.0:
     dependencies:
-      long: 5.3.2
-      protobufjs: 7.6.6
+      '@bufbuild/protobuf': 2.16.0
 
-  ts-proto@1.181.2:
+  ts-proto@2.15.0:
     dependencies:
+      '@bufbuild/protobuf': 2.16.0
       case-anything: 2.1.13
-      protobufjs: 7.6.6
       ts-poet: 6.12.0
-      ts-proto-descriptors: 1.16.0
+      ts-proto-descriptors: 2.1.0
 
   type-check@0.4.0:
     dependencies:
