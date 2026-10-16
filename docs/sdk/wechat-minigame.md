@@ -1,6 +1,4 @@
----
-title: 微信小游戏接入
----
+> 🌐 Language: **中文** (this page) | [English](./wechat-minigame.en.md)
 
 # 微信小游戏
 

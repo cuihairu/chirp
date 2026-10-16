@@ -1,6 +1,4 @@
----
-title: 接入避坑指南
----
+> 🌐 Language: **中文** (this page) | [English](./integration-pitfalls.en.md)
 
 # 接入避坑指南
 

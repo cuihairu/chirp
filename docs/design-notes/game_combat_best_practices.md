@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./game_combat_best_practices.en.md)
+
 # 游戏战斗系统最佳实践 (Game Combat System Best Practices)
 
 > 状态说明：本文是通用游戏战斗设计笔记，不是 Chirp 当前后端能力说明。它更适合作为玩法系统或客户端实现的参考。

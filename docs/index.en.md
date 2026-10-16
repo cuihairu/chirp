@@ -11,7 +11,7 @@ hero:
       link: /CORE.en
       theme: primary
     - text: Getting Started
-      link: /guide/getting-started
+      link: /guide/getting-started.en
       theme: secondary
     - text: 中文
       link: /
@@ -40,10 +40,10 @@ Read first:
 
 - [Core](/CORE.en): the currently usable paths, protocols, service boundaries and local verification commands
 - [Capability Matrix](/CAPABILITY_MATRIX.en): the real completeness of each service, SDK and application
-- [Introduction](/guide/introduction): what the documentation covers, the supported paths and the boundary notes
-- [Installation](/guide/installation): development environment and dependency preparation
-- [Getting Started](/guide/getting-started): local build, Docker Compose and smoke tests
-- [API Overview](/api/overview): Packet envelope, message IDs and core flows
+- [Introduction](/guide/introduction.en): what the documentation covers, the supported paths and the boundary notes
+- [Installation](/guide/installation.en): development environment and dependency preparation
+- [Getting Started](/guide/getting-started.en): local build, Docker Compose and smoke tests
+- [API Overview](/api/overview.en): Packet envelope, message IDs and core flows
 - [Overall Architecture](/architecture.en): service topology, data flow and architecture judgments
 
 ## Documentation layers

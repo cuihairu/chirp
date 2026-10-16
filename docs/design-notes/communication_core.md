@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./communication_core.en.md)
+
 # Chirp Communication Core 模型收敛
 
 > 状态说明：本文是架构收敛草案。文中 [现状] 代表当前已实现的运行面，[提案] 代表设计意图、尚未落地。请勿把 [提案] 当作默认支持的运行时功能。本文供后续协议与服务演进时对齐概念，不改变现有 wire 协议。

@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./npc_dialog_system.en.md)
+
 # NPC 对话系统设计文档 (NPC Dialog System Design)
 
 > 状态说明：本文是 NPC 对话系统设计草案，不代表 Chirp 当前已落地该后端能力。请将它视为演进参考，而不是默认支持的运行时功能。

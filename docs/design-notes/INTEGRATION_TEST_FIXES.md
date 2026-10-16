@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./INTEGRATION_TEST_FIXES.en.md)
+
 # 集成测试修复总结
 
 ## 概览

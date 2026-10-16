@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./DEPLOYMENT.en.md)
+
 # 部署笔记(历史)
 
 > 本文是早期的部署笔记,混有已过时的模板内容。现行部署指南是 [guide/deployment.md](../guide/deployment.md)(Docker Compose、真实二进制路径、真实命令行参数、实测容量数据);需要下部署结论时以那一页为准。

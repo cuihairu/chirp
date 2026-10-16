@@ -1,6 +1,4 @@
----
-title: SDK 总览
----
+> 🌐 Language: **中文** (this page) | [English](./index.en.md)
 
 # SDK 总览
 

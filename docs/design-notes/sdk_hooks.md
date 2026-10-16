@@ -1,6 +1,4 @@
----
-title: SDK 钩子接口设计
----
+> 🌐 Language: **中文** (this page) | [English](./sdk_hooks.en.md)
 
 # SDK 钩子接口设计
 

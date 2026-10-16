@@ -1,6 +1,4 @@
----
-title: Cocos Creator 接入
----
+> 🌐 Language: **中文** (this page) | [English](./cocos-creator.en.md)
 
 # Cocos Creator
 

@@ -1,6 +1,4 @@
----
-title: 游戏聊天特征
----
+> 🌐 Language: **中文** (this page) | [English](./game_chat_features.en.md)
 
 # 游戏聊天特征
 

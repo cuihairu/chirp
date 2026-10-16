@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./SCALABILITY_CHAT_IMPLEMENTATION.en.md)
+
 # Chat 服务分布式改造示例
 
 > 状态说明：本文是分布式 Chat 改造示例和实现笔记。实际当前架构边界请以 [整体架构](../architecture.md) 与 [能力矩阵](../CAPABILITY_MATRIX.md) 为准。

@@ -1,6 +1,4 @@
----
-title: 部署指南
----
+> 🌐 Language: **中文** (this page) | [English](./deployment.en.md)
 
 # 部署指南
 

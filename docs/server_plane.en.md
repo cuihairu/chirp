@@ -20,7 +20,7 @@ The game backend does not have to re-implement this wire contract from scratch: 
 
 The `service_id` + secret pair is an appkey/appSecret-style credential: it identifies the connecting backend and is long-lived. This gives two iron rules:
 
-- **Never take it into a client.** Anything baked into a game client or app binary is effectively public. Clients hold short-lived user tokens; the game backend exchanges/derives these tokens after the player's own login. See [credential model](./architecture.md#凭证模型).
+- **Never take it into a client.** Anything baked into a game client or app binary is effectively public. Clients hold short-lived user tokens; the game backend exchanges/derives these tokens after the player's own login. See [credential model](./architecture.en.md#credential-model).
 - **Never use it to impersonate a user.** Injections carry `sender_kind` (`SYSTEM` / `NPC` / `SERVICE`) precisely so the server plane can act without pretending to be some player account.
 
 ## Running it
