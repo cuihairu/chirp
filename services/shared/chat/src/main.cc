@@ -37,6 +37,7 @@
 #include "player_directory.h"
 #include "channel_pacer.h"
 #include "delivery_prefs.h"
+#include "friend_graph.h"
 #include "repeat_guard.h"
 #include "word_filter.h"
 #include "word_filter_push.h"
@@ -555,6 +556,9 @@ struct FeatureHandlers {
   // the session registry (session_to_level), same trust class as the
   // scaffolding identity.
   int world_channel_min_level = 0;
+  // 防骚扰好友判定（game_chat_features P2，2255-2258）：null 时私聊门的
+  // 好友半边按「非好友」处理（无 Redis 部署只剩同群半边生效）。
+  chirp::chat::FriendGraph* friend_graph = nullptr;
 };
 
 void HandlePacket(const std::shared_ptr<MessageStore>& store,
@@ -944,6 +948,25 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
                                 chirp::chat::runtime::NowMs())) {
       chirp::chat::SendMessageResponse resp;
       resp.set_code(chirp::common::MUTED);
+      resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP,
+                                       pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+
+    // 防骚扰私聊门（game_chat_features P2，2255-2258）：接收方开启私聊限制
+    // 时，陌生人（非好友且无共同群）的私聊被拒 DM_RESTRICTED，消息不落任何
+    // 存储。本人会话与 NPC 接收方不设限（对话面无门槛语义）；黑名单语义更
+    // 强（静默丢弃不暴露拉黑态）且位于投递侧，两者可叠加。
+    if (req.channel_type() == chirp::chat::PRIVATE &&
+        req.sender_id() != req.receiver_id() &&
+        !chirp::chat::npc::IsNpcReceiver(features.npc_prefix, req.receiver_id()) &&
+        features.delivery_prefs->IsDmRestricted(req.receiver_id()) &&
+        !(features.friend_graph != nullptr &&
+          features.friend_graph->AreFriends(req.receiver_id(), req.sender_id())) &&
+        !features.groups.ShareAnyGroup(req.sender_id(), req.receiver_id())) {
+      chirp::chat::SendMessageResponse resp;
+      resp.set_code(chirp::common::DM_RESTRICTED);
       resp.set_server_timestamp(chirp::chat::runtime::NowMs());
       chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP,
                                        pkt.sequence(), resp.SerializeAsString());
@@ -1341,6 +1364,35 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     chirp::chat::runtime::SendPacket(session, chirp::gateway::SET_GROUP_MUTE_RESP, pkt.sequence(), resp.SerializeAsString());
     break;
   }
+  case chirp::gateway::SET_DM_RESTRICTION_REQ: {
+    // 防骚扰开关（game_chat_features P2）：本人设置，回显生效后的状态。
+    chirp::chat::SetDmRestrictionRequest req;
+    chirp::chat::SetDmRestrictionResponse resp;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      resp.set_code(chirp::common::INVALID_PARAM);
+    } else if (authenticated_user_id.empty()) {
+      resp.set_code(chirp::common::AUTH_FAILED);
+    } else {
+      features.delivery_prefs->SetDmRestricted(authenticated_user_id, req.enabled());
+      resp.set_code(chirp::common::OK);
+      resp.set_enabled(req.enabled());
+    }
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::SET_DM_RESTRICTION_RESP,
+                                     pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::GET_DM_RESTRICTION_REQ: {
+    chirp::chat::GetDmRestrictionResponse resp;
+    if (authenticated_user_id.empty()) {
+      resp.set_code(chirp::common::AUTH_FAILED);
+    } else {
+      resp.set_code(chirp::common::OK);
+      resp.set_enabled(features.delivery_prefs->IsDmRestricted(authenticated_user_id));
+    }
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_DM_RESTRICTION_RESP,
+                                     pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
   case chirp::gateway::REPORT_MESSAGE_REQ: {
     chirp::chat::ReportMessageRequest req;
     if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
@@ -1606,6 +1658,11 @@ int main(int argc, char** argv) {
     redis = std::make_shared<chirp::network::RedisClient>(redis_host, redis_port);
   }
 
+  // 防骚扰好友判定（game_chat_features P2，2255-2258）：读 social 平面落在
+  // 同一 Redis 的好友快照；无 Redis 时好友半边按「非好友」收紧，同群半边
+  // 照常生效。
+  chirp::chat::FriendGraph friend_graph(redis);
+
   auto store = std::make_shared<MessageStore>(redis, offline_ttl_seconds);
   auto state = std::make_shared<chirp::network::SessionRegistry>();
 
@@ -1777,6 +1834,7 @@ int main(int argc, char** argv) {
   features.channel_pacer = &channel_pacer;
   features.repeat_guard = &repeat_guard;
   features.delivery_prefs = &delivery_prefs;
+  features.friend_graph = &friend_graph;
   features.word_filter = &word_filter;
   features.token_verifier = &token_verifier;
   features.acks = acks.get();

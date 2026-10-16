@@ -1100,6 +1100,16 @@ TEST_F(SdkClientTest, RequestsWithoutConnectionReportNotConnected) {
       [&](const std::error_code& ec, const chirp::chat::ReportMessageResponse&) {
         report_done.set_value(ec);
       });
+  std::promise<std::error_code> dm_set_done;
+  std::promise<std::error_code> dm_get_done;
+  client.SetDmRestriction(true,
+      [&](const std::error_code& ec, const chirp::chat::SetDmRestrictionResponse&) {
+        dm_set_done.set_value(ec);
+      });
+  client.FetchDmRestriction(
+      [&](const std::error_code& ec, const chirp::chat::GetDmRestrictionResponse&) {
+        dm_get_done.set_value(ec);
+      });
   auto search_future = search_done.get_future();
   auto alias_future = alias_done.get_future();
   auto mute_future = mute_done.get_future();
@@ -1116,6 +1126,14 @@ TEST_F(SdkClientTest, RequestsWithoutConnectionReportNotConnected) {
   ASSERT_EQ(report_future.wait_for(std::chrono::milliseconds(5000)),
             std::future_status::ready);
   EXPECT_EQ(report_future.get(), make_error_code(ChatError::NotConnected));
+  auto dm_set_future = dm_set_done.get_future();
+  auto dm_get_future = dm_get_done.get_future();
+  ASSERT_EQ(dm_set_future.wait_for(std::chrono::milliseconds(5000)),
+            std::future_status::ready);
+  EXPECT_EQ(dm_set_future.get(), make_error_code(ChatError::NotConnected));
+  ASSERT_EQ(dm_get_future.wait_for(std::chrono::milliseconds(5000)),
+            std::future_status::ready);
+  EXPECT_EQ(dm_get_future.get(), make_error_code(ChatError::NotConnected));
 }
 
 TEST_F(ChatClientLoopbackTest, ConnectWhileAlreadyConnectedIsIgnored) {
@@ -4380,6 +4398,56 @@ TEST_F(ConvenienceApiTest, ReportMessageRoundTrip) {
   }, ec);
   EXPECT_FALSE(ec);
   EXPECT_EQ(again.report_count(), 2);
+}
+
+TEST_F(ConvenienceApiTest, DmRestrictionRoundTrip) {
+  bool enabled_seen = false;
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    switch (pkt.msg_id()) {
+    case chirp::gateway::SET_DM_RESTRICTION_REQ: {
+      chirp::chat::SetDmRestrictionRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_TRUE(req.enabled());
+      enabled_seen = true;
+      chirp::chat::SetDmRestrictionResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_enabled(true);
+      send(RespFor(pkt, chirp::gateway::SET_DM_RESTRICTION_RESP,
+                   resp.SerializeAsString()));
+      return;
+    }
+    case chirp::gateway::GET_DM_RESTRICTION_REQ: {
+      chirp::chat::GetDmRestrictionRequest req;
+      EXPECT_TRUE(req.ParseFromString(pkt.body()));  // 空请求体
+      chirp::chat::GetDmRestrictionResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_enabled(enabled_seen);
+      send(RespFor(pkt, chirp::gateway::GET_DM_RESTRICTION_RESP,
+                   resp.SerializeAsString()));
+      return;
+    }
+    default:
+      return;
+    }
+  });
+  ConnectAndLogin();
+
+  std::error_code ec;
+  const auto set = WaitRpc<chirp::chat::SetDmRestrictionResponse>([&](auto cb) {
+    client_->SetDmRestriction(true, cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(set.code(), chirp::common::OK);
+  EXPECT_TRUE(set.enabled());
+
+  // 读回回显开关态(陌生人判定语义由服务端单测覆盖)。
+  ec.clear();
+  const auto get = WaitRpc<chirp::chat::GetDmRestrictionResponse>([&](auto cb) {
+    client_->FetchDmRestriction(cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(get.code(), chirp::common::OK);
+  EXPECT_TRUE(get.enabled());
 }
 
 TEST_F(ConvenienceApiTest, GroupLifecycleRoundTrip) {

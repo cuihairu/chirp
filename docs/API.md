@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./API.en.md)
+
 # Chirp API 说明
 
 权威的 API 总览已迁移到 [api/overview.md](./api/overview.md)。

@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./capacity_benchmark.en.md)
+
 # 网关并发连接容量基准（实测）
 
 > 2026-09-27 实测。回填 [roadmap_history](/design-notes/roadmap_history) 「压测：网关 10k+ 并发连接基准」一项。

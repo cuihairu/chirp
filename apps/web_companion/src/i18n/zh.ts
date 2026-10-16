@@ -33,6 +33,7 @@ export const zh = {
     statusPending: '发送中…',
     statusFailed: '发送失败',
     statusMuted: '禁言中,消息未发送',
+    statusDmRestricted: '对方开启了私聊限制,仅好友/同群可私信',
     statusQueued: '对方离线,已排队',
     edited: '(已编辑)',
     deleted: '消息已撤回',
@@ -104,6 +105,7 @@ export const zh = {
     friendOnlineNotify: '好友上线通知',
     friendOnlineNow: (user: string) => `${user} 上线了`,
     friendOnlineGame: (user: string, game: string) => `${user} 进入了 ${game}`,
+    dmRestriction: '陌生人私聊限制(仅好友/同群可私信我)',
   },
   party: {
     title: '组队',

@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./web_companion.en.md)
+
 # Web 伴侣 App(apps/web_companion)
 
 Status: **Experimental** —— 一期已交付:登录、私聊、群组、好友与在线状态;二期已交付:组队(第三条 WS)与设备管理(第四条 WS,经 app_gateway)。走**过渡路径**(浏览器直连 chat 7001、social 8001、party 7501 与 app_gateway 5201 的 WS 边缘),不是最终拓扑;统一边缘依赖 P1 登录语义统一(见 [TODO.md](../TODO.md))。

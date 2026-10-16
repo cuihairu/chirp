@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AchievementMetadata, ChannelType, ChatMessage, GuildRecruitMetadata, ItemMetadata, MsgType, PartyRecruitMetadata, Priority, SenderKind, TradeMetadata } from '@chirp/proto/chat';
+import { AchievementMetadata, ChannelType, ChatMessage, GuildRecruitMetadata, ItemMetadata, MsgType, PartyRecruitMetadata, Priority, SenderKind, SkillMetadata, TradeMetadata } from '@chirp/proto/chat';
 import { MsgID } from '@chirp/proto/gateway';
 import { ChatApi, channelRefOf, type ChannelRef, type SystemSurface } from './chat_api';
 import { createStore } from '../state/store';
@@ -512,5 +512,128 @@ describe('ChatApi temp channel ttl (P1 group TTL)', () => {
     // 名册外群（临时频道到点 / 退群）本地消失；私聊不参与名册修剪。
     expect(keys).not.toContain('g:gone');
     expect(keys).toContain('p:user_a|user_x');
+  });
+});
+
+/** 防骚扰私聊限制（P1，2255-2258）：拒收回码单独标注 + 开关读写。 */
+describe('ChatApi dm restriction (P1)', () => {
+  it('tags a DM_RESTRICTED rejection with its own failure reason', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async () => ({ code: 14 })); // DM_RESTRICTED
+    await h.api.sendMessage(privateChannel(), 'stranger dm');
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0]).toMatchObject({
+      failed: true,
+      pending: false,
+      failureReason: 'dm_restricted',
+    });
+  });
+
+  it('sends SET_DM_RESTRICTION_REQ with enabled and returns the code', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.SET_DM_RESTRICTION_REQ);
+      expect(req).toMatchObject({ enabled: true });
+      return { code: 0, enabled: true };
+    });
+    expect(await h.api.setDmRestriction(true)).toBe(0);
+  });
+
+  it('reads the switch through GET and maps non-OK to null', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.GET_DM_RESTRICTION_REQ);
+      expect(req).toMatchObject({});
+      return { code: 0, enabled: true };
+    });
+    expect(await h.api.getDmRestriction()).toBe(true);
+
+    h.conn.setResponder(async () => ({ code: 3 })); // AUTH_FAILED
+    expect(await h.api.getDmRestriction()).toBeNull();
+  });
+});
+
+/** 技能链接卡片（P1 SKILL_LINK）：metadata 通用管线进卡片，解析口径与服务端门一致。 */
+describe('ChatApi skill link cards (P1 SKILL_LINK)', () => {
+  it('parses the skill card out of a SKILL_LINK notify metadata', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        msgType: MsgType.SKILL_LINK,
+        content: new TextEncoder().encode('分享技能'),
+        metadata: SkillMetadata.encode(
+          SkillMetadata.fromPartial({
+            skillId: 'skill-5001',
+            skillName: '烈焰斩',
+            level: 10,
+            description: '对目标造成 120% 攻击力的火焰伤害',
+          }),
+        ).finish(),
+      }),
+    );
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0]).toMatchObject({
+      skill: { skillId: 'skill-5001', skillName: '烈焰斩', level: 10, description: '对目标造成 120% 攻击力的火焰伤害' },
+    });
+  });
+
+  it('drops the skill card when the metadata does not parse or lacks skill_id', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ msgType: MsgType.SKILL_LINK, metadata: new Uint8Array([0xde, 0xad, 0xbe, 0xef]) }),
+    );
+    const first = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(first.skill).toBeUndefined();
+    expect(first.content).toBe('hi');
+
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm2',
+        msgType: MsgType.SKILL_LINK,
+        metadata: SkillMetadata.encode(SkillMetadata.fromPartial({ skillName: '无名技能' })).finish(),
+      }),
+    );
+    const second = h.messages.get().byChannel['p:user_a|user_b'][1];
+    expect(second.skill).toBeUndefined();
+    expect(second.content).toBe('hi');
+  });
+
+  it('sends SKILL_LINK with skill metadata and shows the card optimistically', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.SEND_MESSAGE_REQ);
+      expect(req).toMatchObject({ msgType: MsgType.SKILL_LINK });
+      return { code: 0, messageId: 'srv-s1' };
+    });
+    await h.api.sendMessage(
+      privateChannel(),
+      '分享技能',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { skillId: 'skill-5001', skillName: '烈焰斩', level: 10, description: '对目标造成 120% 攻击力的火焰伤害' },
+    );
+    const wire = h.conn.requests.find((r) => r.msgId === MsgID.SEND_MESSAGE_REQ)!;
+    const skill = SkillMetadata.decode(
+      (wire.req as { metadata?: Uint8Array }).metadata ?? new Uint8Array(),
+    );
+    expect(skill.skillId).toBe('skill-5001');
+    expect(skill.skillName).toBe('烈焰斩');
+    expect(skill.level).toBe(10);
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0]).toMatchObject({
+      messageId: 'srv-s1',
+      skill: { skillId: 'skill-5001', skillName: '烈焰斩', level: 10 },
+    });
   });
 });

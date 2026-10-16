@@ -39,7 +39,8 @@ export default function FriendsDialog({
   onClose: () => void;
   onOpenChannel: (key: string) => void;
 }) {
-  const { socialApi, friends, presence, conversations, auth } = useServices();
+  const { socialApi, api: chatApi, friends, presence, conversations, auth } =
+    useServices();
   const selfId = useStoreValue(auth).userId ?? '';
   const friendState = useStoreValue(friends);
   const presenceState = useStoreValue(presence);
@@ -55,6 +56,17 @@ export default function FriendsDialog({
     if (!open || !socialApi) return;
     void socialApi.getNotifyPrefs().then((value) => {
       if (value !== null) setNotifyOn(value);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  // 防骚扰私聊限制开关(2255-2257):同一面板形态,打开拉当前值(不可用回
+  // null 按缺省关渲染),切换即 SET(失败静默,下次打开重拉)。
+  const [dmRestricted, setDmRestricted] = useState(false);
+  useEffect(() => {
+    if (!open || !chatApi) return;
+    void chatApi.getDmRestriction().then((value) => {
+      if (value !== null) setDmRestricted(value);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -82,6 +94,11 @@ export default function FriendsDialog({
   const toggleNotify = (checked: boolean): void => {
     setNotifyOn(checked);
     void socialApi?.setNotifyPrefs(checked);
+  };
+
+  const toggleDmRestriction = (checked: boolean): void => {
+    setDmRestricted(checked);
+    void chatApi?.setDmRestriction(checked);
   };
 
   const add = async (): Promise<void> => {
@@ -131,6 +148,16 @@ export default function FriendsDialog({
             checked={notifyOn}
             onChange={(e) => toggleNotify(e.target.checked)}
             data-testid="friend-online-notify-switch"
+          />
+        </Box>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="body2">{zh.social.dmRestriction}</Typography>
+          <Switch
+            size="small"
+            checked={dmRestricted}
+            onChange={(e) => toggleDmRestriction(e.target.checked)}
+            data-testid="dm-restriction-switch"
           />
         </Box>
 

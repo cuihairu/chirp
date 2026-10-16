@@ -1,6 +1,4 @@
----
-title: 安装指南
----
+> 🌐 Language: **中文** (this page) | [English](./installation.en.md)
 
 # 安装指南
 

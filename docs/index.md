@@ -13,6 +13,9 @@ hero:
     - text: 快速开始
       link: /guide/getting-started
       theme: secondary
+    - text: English
+      link: /index.en
+      theme: alt
 features:
   - icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M9.5 14.5 14.5 9.5"/><path d="M7.5 16.5 6 18a3.5 3.5 0 1 1-5-5l1.5-1.5"/><path d="M16.5 7.5 18 6a3.5 3.5 0 1 1 5 5l-1.5 1.5"/></svg>'
     title: 核心链路

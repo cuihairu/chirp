@@ -468,6 +468,37 @@ namespace Chirp.Sdk
             return await RequestAsync(Specs.ReportMessage, request, timeoutMs).ConfigureAwait(false);
         }
 
+        /// <summary>防骚扰私聊限制(SET_DM_RESTRICTION_REQ/RESP 2255/2256):
+        /// 接收方开关,缺省关。开启后陌生人的私聊被拒 DM_RESTRICTED(消息不落
+        /// 任何存储)。开关是服务端 io 线程内存态,进程重启即复位。连接态检查
+        /// 先于参数校验,非连接态抛 RequestError(Closed)。</summary>
+        public async Task<Chirp.Chat.SetDmRestrictionResponse> SetDmRestrictionAsync(bool enabled,
+            int? timeoutMs = null)
+        {
+            if (Status != ConnStatus.Connected)
+            {
+                throw new RequestError(RequestErrorKind.Closed);
+            }
+            var request = new Chirp.Chat.SetDmRestrictionRequest
+            {
+                Enabled = enabled,
+            };
+            return await RequestAsync(Specs.SetDmRestriction, request, timeoutMs).ConfigureAwait(false);
+        }
+
+        /// <summary>读取防骚扰私聊限制开关态(GET_DM_RESTRICTION_REQ/RESP
+        /// 2257/2258)。返回 GetDmRestrictionResponse{code, enabled}。</summary>
+        public async Task<Chirp.Chat.GetDmRestrictionResponse> GetDmRestrictionAsync(
+            int? timeoutMs = null)
+        {
+            if (Status != ConnStatus.Connected)
+            {
+                throw new RequestError(RequestErrorKind.Closed);
+            }
+            return await RequestAsync(Specs.GetDmRestriction,
+                new Chirp.Chat.GetDmRestrictionRequest(), timeoutMs).ConfigureAwait(false);
+        }
+
         // ----- hook internals -----
 
         // level: client-declared game level (world-channel level gate,

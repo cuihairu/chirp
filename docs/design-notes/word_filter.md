@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./word_filter.en.md)
+
 # 敏感词过滤（word filter）算法规约
 
 聊天消息的敏感词过滤在**服务端强制执行**，客户端做发送侧预检。本文是四端共享的

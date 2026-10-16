@@ -33,6 +33,7 @@ import type {
   GuildRecruitView,
   ItemView,
   PartyRecruitView,
+  SkillView,
   TradeView,
 } from '../state/models';
 import type { MessageState } from '../state/message_store';
@@ -115,7 +116,7 @@ function MessageRow(props: {
   timestamp: number;
   pending: boolean;
   failed?: boolean;
-  failureReason?: 'muted';
+  failureReason?: 'muted' | 'dm_restricted';
   queuedOffline?: boolean;
   edited?: boolean;
   readByPeer: boolean;
@@ -128,6 +129,8 @@ function MessageRow(props: {
   item?: ItemView;
   /** 成就卡片（P1 ACHIEVEMENT）；缺省 = 纯文本气泡。图标+名称+稀有度+描述。 */
   achievement?: AchievementView;
+  /** 技能卡片（P1 SKILL_LINK）；缺省 = 纯文本气泡。图标+名称+等级+描述。 */
+  skill?: SkillView;
   /** 交易卡片（P1 TRADE_STATUS）；缺省 = 纯文本气泡。状态徽章+物品摘要+金额。 */
   trade?: TradeView;
   /** 公会招募卡片（P1 GUILD_RECRUIT）；缺省 = 纯文本气泡。展示性卡片。 */
@@ -370,6 +373,44 @@ function MessageRow(props: {
               </Typography>
             </Box>
           ) : null}
+          {props.skill ? (
+            <Box
+              data-testid={`skill-${props.messageId}`}
+              sx={{
+                display: 'block',
+                width: '100%',
+                mt: 0.5,
+                p: 1,
+                textAlign: 'left',
+                border: '1px solid',
+                borderColor: props.mine ? 'primary.contrastText' : 'divider',
+                borderRadius: 1,
+                background: 'transparent',
+                color: 'inherit',
+              }}
+            >
+              {props.skill.iconUrl ? (
+                <Box
+                  component="img"
+                  src={props.skill.iconUrl}
+                  alt={props.skill.skillName || props.skill.skillId}
+                  sx={{ width: 40, height: 40, mb: 0.5, display: 'block' }}
+                />
+              ) : null}
+              <Typography variant="caption" component="div" sx={{ fontWeight: 600 }}>
+                {props.skill.skillName || props.skill.skillId}
+                {props.skill.level > 0 ? ` Lv.${props.skill.level}` : ''}
+              </Typography>
+              {props.skill.description ? (
+                <Typography variant="caption" component="div" sx={{ mt: 0.5, opacity: 0.85 }}>
+                  {props.skill.description}
+                </Typography>
+              ) : null}
+              <Typography variant="caption" component="div" sx={{ opacity: 0.6 }}>
+                {props.skill.skillId}
+              </Typography>
+            </Box>
+          ) : null}
           {props.trade ? (
             <Box
               data-testid={`trade-${props.messageId}`}
@@ -531,7 +572,11 @@ function MessageRow(props: {
           ) : null}
           {props.failed ? (
             <Typography variant="caption" color="error">
-              {props.failureReason === 'muted' ? '禁言中，消息未发送' : '发送失败'}
+              {props.failureReason === 'muted'
+                ? '禁言中，消息未发送'
+                : props.failureReason === 'dm_restricted'
+                  ? '对方开启了私聊限制，仅好友/同群可私信'
+                  : '发送失败'}
             </Typography>
           ) : null}
           {props.queuedOffline ? (
@@ -728,6 +773,7 @@ export default function ChatPanel(props: {
             coord={m.coord}
             item={m.deleted ? undefined : m.item}
             achievement={m.deleted ? undefined : m.achievement}
+            skill={m.deleted ? undefined : m.skill}
             trade={m.deleted ? undefined : m.trade}
             guildRecruit={m.deleted ? undefined : m.guildRecruit}
             partyRecruit={m.deleted ? undefined : m.partyRecruit}

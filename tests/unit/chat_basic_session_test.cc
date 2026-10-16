@@ -18,8 +18,10 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <thread>
 #include <utility>
@@ -36,6 +38,9 @@
 #include "proto/common.pb.h"
 #include "proto/game_server_gateway.pb.h"
 #include "proto/gateway.pb.h"
+#include "proto/social.pb.h"
+
+#include "friend_graph.h"
 
 #include "fake_servers.h"
 #include "in_memory_redis.h"
@@ -86,6 +91,20 @@ class MockSession : public chirp::network::Session {
   bool closed = false;
   bool close_after_send = false;
   bool half_closed = false;
+};
+
+// 站桩 RedisClient（防骚扰批）：FriendGraph 只调 Get——按 key 查表即可承载
+// 好友快照注入（真 Redis 桩在 in_memory_redis.h，这里不需要整套 RESP）。
+class StubRedisClient : public chirp::network::RedisClient {
+ public:
+  StubRedisClient() : RedisClient("stub", 1) {}
+
+  std::optional<std::string> Get(const std::string& key) override {
+    const auto it = kv.find(key);
+    return it == kv.end() ? std::nullopt : std::optional<std::string>(it->second);
+  }
+
+  std::map<std::string, std::string> kv;
 };
 
 // Strips the u32-BE length prefix produced by ProtobufFraming::Encode and
@@ -252,6 +271,7 @@ class BasicChatTest : public ::testing::Test {
     // 与 rate_limiter/word_filter 的可换装缝同款做法）。
     features_->repeat_guard = &repeat_;
     features_->delivery_prefs = &delivery_prefs_;
+    features_->friend_graph = &friend_graph_;
     features_->word_filter = &word_filter_;
     features_->token_verifier = &verifier_;
     features_->acks = acks_.get();
@@ -348,6 +368,10 @@ class BasicChatTest : public ::testing::Test {
 
   chirp::chat::PushBridge push_{nullptr};
   chirp::chat::DeliveryPrefs delivery_prefs_;
+  // 防骚扰好友判定：与 production main 同位装配（redis 可空 = 好友半边恒
+  // 非好友）；用例经 stub_redis_->kv 注入快照。
+  std::shared_ptr<StubRedisClient> stub_redis_ = std::make_shared<StubRedisClient>();
+  chirp::chat::FriendGraph friend_graph_{stub_redis_};
   chirp::chat::ChannelPacer pacer_;
   chirp::chat::RepeatGuard repeat_;
   chirp::chat::WordFilter word_filter_{chirp::chat::WordFilterOptions{}};
@@ -1757,6 +1781,108 @@ TEST_F(BasicChatTest, RecruitCardsRejectGarbageMetadataAndEmptyIds) {
   EXPECT_EQ(Send(alice, "alice", "bob", "plain text").code(), chirp::common::OK);
 }
 
+TEST_F(BasicChatTest, SkillCardCarriesMetadataThroughHistory) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  // 技能链接：metadata = SkillMetadata，content 是展示文本。
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_receiver_id("bob");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_msg_type(chirp::chat::SKILL_LINK);
+  req.set_content("分享技能");
+  chirp::chat::SkillMetadata skill;
+  skill.set_skill_id("skill-5001");
+  skill.set_skill_name("烈焰斩");
+  skill.set_level(10);
+  skill.set_icon_url("https://cdn.example.com/skill/5001.png");
+  skill.set_description("对目标造成 120% 攻击力的火焰伤害");
+  req.set_metadata(skill.SerializeAsString());
+  DispatchReq(chirp::gateway::SEND_MESSAGE_REQ, req, alice);
+  const auto frames = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);
+  ASSERT_EQ(frames.size(), 1u);
+  chirp::chat::SendMessageResponse send_resp;
+  ASSERT_TRUE(send_resp.ParseFromString(frames[0].body()));
+  ASSERT_EQ(send_resp.code(), chirp::common::OK);
+
+  // 实时 notify 到 bob：msg_type + metadata 原样到达。
+  const auto notifies = FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(notifies.size(), 1u);
+  chirp::chat::ChatMessage live;
+  ASSERT_TRUE(live.ParseFromString(notifies[0].body()));
+  EXPECT_EQ(live.msg_type(), chirp::chat::SKILL_LINK);
+  chirp::chat::SkillMetadata live_skill;
+  ASSERT_TRUE(live_skill.ParseFromString(live.metadata()));
+  EXPECT_EQ(live_skill.skill_id(), "skill-5001");
+  EXPECT_EQ(live_skill.skill_name(), "烈焰斩");
+  EXPECT_EQ(live_skill.level(), 10);
+  EXPECT_EQ(live_skill.description(), "对目标造成 120% 攻击力的火焰伤害");
+
+  // 历史读回：metadata 保真。
+  chirp::chat::GetHistoryRequest hist;
+  hist.set_user_id("alice");
+  hist.set_channel_type(chirp::chat::PRIVATE);
+  hist.set_channel_id("alice|bob");
+  hist.set_limit(10);
+  DispatchReq(chirp::gateway::GET_HISTORY_REQ, hist, alice);
+  chirp::chat::GetHistoryResponse history;
+  const auto hist_frames = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(hist_frames.size(), 1u);
+  ASSERT_TRUE(history.ParseFromString(hist_frames[0].body()));
+  ASSERT_EQ(history.code(), chirp::common::OK);
+  ASSERT_EQ(history.messages_size(), 1);
+  EXPECT_EQ(history.messages(0).msg_type(), chirp::chat::SKILL_LINK);
+  chirp::chat::SkillMetadata hist_skill;
+  ASSERT_TRUE(hist_skill.ParseFromString(history.messages(0).metadata()));
+  EXPECT_EQ(hist_skill.skill_id(), "skill-5001");
+}
+
+TEST_F(BasicChatTest, SkillCardRejectsGarbageMetadataAndEmptyIds) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  auto SendTyped = [this, &alice](chirp::chat::MsgType type, const std::string& metadata) {
+    chirp::chat::SendMessageRequest req;
+    req.set_sender_id("alice");
+    req.set_receiver_id("bob");
+    req.set_channel_type(chirp::chat::PRIVATE);
+    req.set_msg_type(type);
+    req.set_content("技能");
+    req.set_metadata(metadata);
+    DispatchReq(chirp::gateway::SEND_MESSAGE_REQ, req, alice);
+    const auto frames = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);
+    chirp::chat::SendMessageResponse resp;
+    if (!frames.empty()) {
+      resp.ParseFromString(frames.back().body());
+    }
+    return resp;
+  };
+
+  // 垃圾 metadata → INVALID_PARAM，不落任何存储、不产生 notify。
+  EXPECT_EQ(SendTyped(chirp::chat::SKILL_LINK, "\x0A" "\x05" "ab").code(),
+            chirp::common::INVALID_PARAM);
+  // skill_id 为空的技能卡片没有可回查的落点 → INVALID_PARAM。
+  chirp::chat::SkillMetadata no_skill;
+  no_skill.set_skill_name("无名技能");
+  EXPECT_EQ(SendTyped(chirp::chat::SKILL_LINK, no_skill.SerializeAsString()).code(),
+            chirp::common::INVALID_PARAM);
+  EXPECT_TRUE(FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY).empty());
+
+  // 合法技能放行（校验门的通过臂）。
+  chirp::chat::SkillMetadata good;
+  good.set_skill_id("skill-1");
+  ASSERT_EQ(SendTyped(chirp::chat::SKILL_LINK, good.SerializeAsString()).code(),
+            chirp::common::OK);
+
+  // TEXT 消息不受影响（无 metadata 照常走通）。
+  EXPECT_EQ(Send(alice, "alice", "bob", "plain text").code(), chirp::common::OK);
+}
+
 TEST_F(BasicChatTest, GroupSendBroadcastsToMembersAndRefusesNonMember) {
   auto alice = std::make_shared<MockSession>();
   auto carol = std::make_shared<MockSession>();
@@ -1954,6 +2080,115 @@ TEST_F(BasicChatTest, ReportMessageDedupsAndRefusesUnknownMessage) {
   // 台账外 message_id 拒收（USER_NOT_FOUND）。
   const auto garbage = ReportOnce(alice, "never-delivered");
   EXPECT_EQ(garbage.code(), chirp::common::USER_NOT_FOUND);
+}
+
+// --- 防骚扰：接收方私聊限制——陌生人被拒（DM_RESTRICTED），好友/同群/本人放行 --
+
+TEST_F(BasicChatTest, DmRestrictionBlocksStrangersButNotFriendsCoMembersOrSelf) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  auto carol = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+  ASSERT_EQ(Login(carol, "carol").code(), chirp::common::OK);
+
+  auto SetRestriction = [&](const std::shared_ptr<MockSession>& caller, bool enabled) {
+    chirp::chat::SetDmRestrictionRequest req;
+    req.set_enabled(enabled);
+    DispatchReq(chirp::gateway::SET_DM_RESTRICTION_REQ, req, caller);
+    const auto frames = FramesOf(*caller, chirp::gateway::SET_DM_RESTRICTION_RESP);
+    chirp::chat::SetDmRestrictionResponse resp;
+    if (!frames.empty()) {
+      resp.ParseFromString(frames.back().body());
+    }
+    return resp;
+  };
+  auto GetRestriction = [&](const std::shared_ptr<MockSession>& caller) {
+    chirp::chat::GetDmRestrictionRequest req;
+    DispatchReq(chirp::gateway::GET_DM_RESTRICTION_REQ, req, caller);
+    const auto frames = FramesOf(*caller, chirp::gateway::GET_DM_RESTRICTION_RESP);
+    chirp::chat::GetDmRestrictionResponse resp;
+    if (!frames.empty()) {
+      resp.ParseFromString(frames.back().body());
+    }
+    return resp;
+  };
+
+  // 未登录会话设置/查询：AUTH_FAILED。
+  {
+    auto unlogged = std::make_shared<MockSession>();
+    const auto set_resp = SetRestriction(unlogged, true);
+    EXPECT_EQ(set_resp.code(), chirp::common::AUTH_FAILED);
+    const auto get_resp = GetRestriction(unlogged);
+    EXPECT_EQ(get_resp.code(), chirp::common::AUTH_FAILED);
+  }
+
+  // 垃圾 body：INVALID_PARAM。
+  {
+    alice->sent.clear();
+    Dispatch(chirp::gateway::SET_DM_RESTRICTION_REQ, "\x80garbage", alice);
+    const auto frames = FramesOf(*alice, chirp::gateway::SET_DM_RESTRICTION_RESP);
+    ASSERT_EQ(frames.size(), 1u);
+    chirp::chat::SetDmRestrictionResponse resp;
+    ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+    EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  }
+
+  // 缺省关：GET 回 false；开启后回显 true。
+  const auto before = GetRestriction(alice);
+  EXPECT_EQ(before.code(), chirp::common::OK);
+  EXPECT_FALSE(before.enabled());
+  const auto enabled = SetRestriction(alice, true);
+  EXPECT_EQ(enabled.code(), chirp::common::OK);
+  EXPECT_TRUE(enabled.enabled());
+
+  // 陌生人（无好友快照、无共同群）私聊被拒 DM_RESTRICTED；接收方零投递、
+  // 离线队列零入队（消息不落任何存储）。
+  EXPECT_EQ(Send(bob, "bob", "alice", "hello?").code(),
+            chirp::common::DM_RESTRICTED);
+  EXPECT_EQ(FramesOf(*alice, chirp::gateway::CHAT_MESSAGE_NOTIFY).size(), 0u);
+  EXPECT_TRUE(store_->PopOffline("alice", chirp::chat::kDefaultOfflineSlot).empty());
+
+  // NPC 接收方不设限（对话面无门槛语义；此处无 hub_peer，落常规投递路径，
+  // 回 TARGET_OFFLINE 而非 DM_RESTRICTED）。
+  EXPECT_EQ(Send(bob, "bob", "npc:guide", "hello npc").code(),
+            chirp::common::TARGET_OFFLINE);
+
+  // 好友半边：carol 在 alice 的好友快照里 → 放行。
+  chirp::social::StoredFriendList stored;
+  stored.add_friend_user_ids("carol");
+  stub_redis_->kv["chirp:social:friends:alice"] = stored.SerializeAsString();
+  EXPECT_EQ(Send(carol, "carol", "alice", "hi from a friend").code(),
+            chirp::common::OK);
+
+  // 同群半边：alice+bob 共群后，bob 的私聊放行。
+  chirp::chat::CreateGroupRequest create;
+  create.set_creator_id("alice");
+  create.set_group_name("coop");
+  create.add_initial_members("alice");
+  create.add_initial_members("bob");
+  DispatchReq(chirp::gateway::CREATE_GROUP_REQ, create, alice);
+  const auto created = FramesOf(*alice, chirp::gateway::CREATE_GROUP_RESP);
+  ASSERT_EQ(created.size(), 1u);
+  chirp::chat::CreateGroupResponse create_resp;
+  ASSERT_TRUE(create_resp.ParseFromString(created[0].body()));
+  ASSERT_EQ(create_resp.code(), chirp::common::OK);
+  EXPECT_EQ(Send(bob, "bob", "alice", "co-member now").code(), chirp::common::OK);
+
+  // 本人私聊在 basic 形态本就被参数校验拒（INVALID_PARAM，先于本门）——钉住
+  // 「限制门不改变其回码」：不是 DM_RESTRICTED。enhanced 形态（无此校验）由
+  // enhanced 用例覆盖本人豁免。
+  EXPECT_EQ(Send(alice, "alice", "alice", "note to self").code(),
+            chirp::common::INVALID_PARAM);
+
+  // 关闭开关：bob 的私聊恢复放行；GET 回 false。
+  const auto disabled = SetRestriction(alice, false);
+  EXPECT_EQ(disabled.code(), chirp::common::OK);
+  EXPECT_FALSE(disabled.enabled());
+  EXPECT_EQ(Send(bob, "bob", "alice", "open again").code(), chirp::common::OK);
+  const auto after = GetRestriction(alice);
+  EXPECT_EQ(after.code(), chirp::common::OK);
+  EXPECT_FALSE(after.enabled());
 }
 
 // --- 跨平面：游戏前缀回复 + 好友私聊镜像 + spoke 上行（真 hub/link） ------------

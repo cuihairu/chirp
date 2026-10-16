@@ -1,6 +1,4 @@
----
-title: 指南
----
+> 🌐 Language: **中文** (this page) | [English](./index.en.md)
 
 # 指南
 

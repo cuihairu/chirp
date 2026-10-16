@@ -379,6 +379,53 @@ public class ChirpClientGlueTests
     }
 
     [Fact]
+    public async Task DmRestrictionAsync_RoundTrip_EchoesEnabled()
+    {
+        var transport = new GlueTransport();
+        var client = NewClient(_ => transport);
+        await client.ConnectAsync();
+
+        var pending = client.SetDmRestrictionAsync(true);
+        var request = transport.LastSentPacket();
+        Assert.Equal(MsgID.SetDmRestrictionReq, request.MsgId);
+        var req = Chirp.Chat.SetDmRestrictionRequest.Parser.ParseFrom(request.Body);
+        Assert.True(req.Enabled);
+
+        transport.ServerPacket(new Packet
+        {
+            MsgId = MsgID.SetDmRestrictionResp,
+            Sequence = request.Sequence,
+            Body = ByteString.CopyFrom(new Chirp.Chat.SetDmRestrictionResponse
+            {
+                Code = Chirp.Common.ErrorCode.Ok,
+                Enabled = true,
+            }.ToByteArray()),
+        });
+        var resp = await pending;
+        Assert.Equal(Chirp.Common.ErrorCode.Ok, resp.Code);
+        Assert.True(resp.Enabled);
+
+        // get:空请求体,响应携带当前开关态(陌生人判定语义由服务端单测覆盖)。
+        var reading = client.GetDmRestrictionAsync();
+        var getRequest = transport.LastSentPacket();
+        Assert.Equal(MsgID.GetDmRestrictionReq, getRequest.MsgId);
+        Assert.Equal(0, getRequest.Body.Length);
+        transport.ServerPacket(new Packet
+        {
+            MsgId = MsgID.GetDmRestrictionResp,
+            Sequence = getRequest.Sequence,
+            Body = ByteString.CopyFrom(new Chirp.Chat.GetDmRestrictionResponse
+            {
+                Code = Chirp.Common.ErrorCode.Ok,
+                Enabled = true,
+            }.ToByteArray()),
+        });
+        var state = await reading;
+        Assert.Equal(Chirp.Common.ErrorCode.Ok, state.Code);
+        Assert.True(state.Enabled);
+    }
+
+    [Fact]
     public async Task SearchMessagesAsync_ValidationOrder_ConnectionThenKeyword()
     {
         var transport = new GlueTransport();

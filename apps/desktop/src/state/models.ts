@@ -99,6 +99,16 @@ export interface PartyRecruitView {
   leaderName: string;
 }
 
+/** Skill link card (P1 SKILL_LINK): icon + name + level + description. */
+export interface SkillView {
+  skillId: string;
+  skillName: string;
+  /** 技能等级；0 = 不展示。 */
+  level: number;
+  iconUrl: string;
+  description: string;
+}
+
 export interface ChatMessageView {
   /** Server message id; optimistic sends carry a local id until confirmed. */
   messageId: string;
@@ -115,8 +125,9 @@ export interface ChatMessageView {
   pending: boolean;
   /** Server rejected the send (RESP code != OK). */
   failed?: boolean;
-  /** Rejection reason detail: 'muted' surfaces the mute-specific bubble hint. */
-  failureReason?: 'muted';
+  /** Rejection reason detail: 'muted'/'dm_restricted' surface their
+   *  specific bubble hints. */
+  failureReason?: 'muted' | 'dm_restricted';
   /** TARGET_OFFLINE is still a delivery: queued server-side. */
   queuedOffline?: boolean;
   edited?: boolean;
@@ -129,6 +140,8 @@ export interface ChatMessageView {
   item?: ItemView;
   /** Achievement share card (P1 ACHIEVEMENT); absent = plain text bubble. */
   achievement?: AchievementView;
+  /** Skill link card (P1 SKILL_LINK); absent = plain text bubble. */
+  skill?: SkillView;
   /** Trade status card (P1 TRADE_STATUS); absent = plain text bubble. */
   trade?: TradeView;
   /** Guild recruit card (P1 GUILD_RECRUIT); absent = plain text bubble. */

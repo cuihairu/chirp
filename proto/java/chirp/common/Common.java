@@ -125,6 +125,18 @@ public final class Common extends com.google.protobuf.GeneratedFile {
      * <code>LEVEL_REQUIRED = 13;</code>
      */
     LEVEL_REQUIRED(13),
+    /**
+     * <pre>
+     * Game-plane DM restriction (game_chat_features P2 专码): the receiver
+     * enabled the stranger-DM switch (SET_DM_RESTRICTION_REQ 2255) and the
+     * sender is neither a social-plane friend nor a co-member of any group.
+     * The send is refused without touching any store; other channels are
+     * unaffected.
+     * </pre>
+     *
+     * <code>DM_RESTRICTED = 14;</code>
+     */
+    DM_RESTRICTED(14),
     UNRECOGNIZED(-1),
     ;
 
@@ -231,6 +243,18 @@ public final class Common extends com.google.protobuf.GeneratedFile {
      * <code>LEVEL_REQUIRED = 13;</code>
      */
     public static final int LEVEL_REQUIRED_VALUE = 13;
+    /**
+     * <pre>
+     * Game-plane DM restriction (game_chat_features P2 专码): the receiver
+     * enabled the stranger-DM switch (SET_DM_RESTRICTION_REQ 2255) and the
+     * sender is neither a social-plane friend nor a co-member of any group.
+     * The send is refused without touching any store; other channels are
+     * unaffected.
+     * </pre>
+     *
+     * <code>DM_RESTRICTED = 14;</code>
+     */
+    public static final int DM_RESTRICTED_VALUE = 14;
 
 
     public final int getNumber() {
@@ -271,6 +295,7 @@ public final class Common extends com.google.protobuf.GeneratedFile {
         case 11: return CONTENT_TOO_LONG;
         case 12: return MUTED;
         case 13: return LEVEL_REQUIRED;
+        case 14: return DM_RESTRICTED;
         default: return null;
       }
     }
@@ -697,15 +722,15 @@ public final class Common extends com.google.protobuf.GeneratedFile {
   static {
     java.lang.String[] descriptorData = {
       "\n\022proto/common.proto\022\014chirp.common\"\007\n\005Em" +
-      "pty*\220\002\n\tErrorCode\022\006\n\002OK\020\000\022\022\n\016INTERNAL_ER" +
+      "pty*\243\002\n\tErrorCode\022\006\n\002OK\020\000\022\022\n\016INTERNAL_ER" +
       "ROR\020\001\022\021\n\rINVALID_PARAM\020\002\022\017\n\013AUTH_FAILED\020" +
       "\003\022\023\n\017SESSION_EXPIRED\020\004\022\022\n\016USER_NOT_FOUND" +
       "\020\005\022\022\n\016TARGET_OFFLINE\020\006\022\026\n\022SERVER_UNAVAIL" +
       "ABLE\020\007\022\020\n\014RATE_LIMITED\020\010\022\024\n\020VERSION_MISM" +
       "ATCH\020\t\022\021\n\rWORD_FILTERED\020\n\022\024\n\020CONTENT_TOO" +
-      "_LONG\020\013\022\t\n\005MUTED\020\014\022\022\n\016LEVEL_REQUIRED\020\rB&" +
-      "Z$github.com/cui/chirp/proto/go/commonb\006" +
-      "proto3"
+      "_LONG\020\013\022\t\n\005MUTED\020\014\022\022\n\016LEVEL_REQUIRED\020\r\022\021" +
+      "\n\rDM_RESTRICTED\020\016B&Z$github.com/cui/chir" +
+      "p/proto/go/commonb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,

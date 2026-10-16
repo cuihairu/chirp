@@ -1,6 +1,4 @@
----
-title: API 参考
----
+> 🌐 Language: **中文** (this page) | [English](./index.en.md)
 
 # API 参考
 

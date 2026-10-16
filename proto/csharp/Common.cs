@@ -24,15 +24,15 @@ namespace Chirp.Common {
     static CommonReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChJwcm90by9jb21tb24ucHJvdG8SDGNoaXJwLmNvbW1vbiIHCgVFbXB0eSqQ",
+            "ChJwcm90by9jb21tb24ucHJvdG8SDGNoaXJwLmNvbW1vbiIHCgVFbXB0eSqj",
             "AgoJRXJyb3JDb2RlEgYKAk9LEAASEgoOSU5URVJOQUxfRVJST1IQARIRCg1J",
             "TlZBTElEX1BBUkFNEAISDwoLQVVUSF9GQUlMRUQQAxITCg9TRVNTSU9OX0VY",
             "UElSRUQQBBISCg5VU0VSX05PVF9GT1VORBAFEhIKDlRBUkdFVF9PRkZMSU5F",
             "EAYSFgoSU0VSVkVSX1VOQVZBSUxBQkxFEAcSEAoMUkFURV9MSU1JVEVEEAgS",
             "FAoQVkVSU0lPTl9NSVNNQVRDSBAJEhEKDVdPUkRfRklMVEVSRUQQChIUChBD",
             "T05URU5UX1RPT19MT05HEAsSCQoFTVVURUQQDBISCg5MRVZFTF9SRVFVSVJF",
-            "RBANQiZaJGdpdGh1Yi5jb20vY3VpL2NoaXJwL3Byb3RvL2dvL2NvbW1vbmIG",
-            "cHJvdG8z"));
+            "RBANEhEKDURNX1JFU1RSSUNURUQQDkImWiRnaXRodWIuY29tL2N1aS9jaGly",
+            "cC9wcm90by9nby9jb21tb25iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.Common.ErrorCode), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -89,6 +89,14 @@ namespace Chirp.Common {
     /// store is touched; other channels are unaffected.
     /// </summary>
     [pbr::OriginalName("LEVEL_REQUIRED")] LevelRequired = 13,
+    /// <summary>
+    /// Game-plane DM restriction (game_chat_features P2 专码): the receiver
+    /// enabled the stranger-DM switch (SET_DM_RESTRICTION_REQ 2255) and the
+    /// sender is neither a social-plane friend nor a co-member of any group.
+    /// The send is refused without touching any store; other channels are
+    /// unaffected.
+    /// </summary>
+    [pbr::OriginalName("DM_RESTRICTED")] DmRestricted = 14,
   }
 
   #endregion

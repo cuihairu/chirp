@@ -1,6 +1,4 @@
----
-title: LayaAir 接入
----
+> 🌐 Language: **中文** (this page) | [English](./layaair.en.md)
 
 # LayaAir
 

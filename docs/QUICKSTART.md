@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./QUICKSTART.en.md)
+
 # Chirp 快速上手
 
 受维护的快速上手指南已迁移到 [guide/getting-started.md](./guide/getting-started.md)。

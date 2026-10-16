@@ -442,3 +442,18 @@ export const REPORT_MESSAGE = defineSpec(
   Chat.ReportMessageRequest,
   Chat.ReportMessageResponse,
 );
+
+// 防骚扰私聊限制(SET/GET_DM_RESTRICTION 2255-2258):接收方开关,缺省关。
+// 开启后陌生人的私聊被拒 DM_RESTRICTED(消息不落任何存储)。
+export const SET_DM_RESTRICTION = defineSpec(
+  MsgID.SET_DM_RESTRICTION_REQ,
+  MsgID.SET_DM_RESTRICTION_RESP,
+  Chat.SetDmRestrictionRequest,
+  Chat.SetDmRestrictionResponse,
+);
+export const GET_DM_RESTRICTION = defineSpec(
+  MsgID.GET_DM_RESTRICTION_REQ,
+  MsgID.GET_DM_RESTRICTION_RESP,
+  Chat.GetDmRestrictionRequest,
+  Chat.GetDmRestrictionResponse,
+);

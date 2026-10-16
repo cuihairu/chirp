@@ -159,6 +159,30 @@ bool GroupManager::IsMember(const std::string& group_id, const std::string& user
   return group->members.count(user_id) > 0;
 }
 
+bool GroupManager::ShareAnyGroup(const std::string& user_a,
+                                 const std::string& user_b) {
+  if (user_a == user_b) {
+    return true;
+  }
+  std::lock_guard<std::mutex> lock(mu_);
+  const auto a_it = user_to_groups_.find(user_a);
+  const auto b_it = user_to_groups_.find(user_b);
+  if (a_it == user_to_groups_.end() || b_it == user_to_groups_.end()) {
+    return false;
+  }
+  // 从较小一侧的群集合出发逐个走 LookupLocked：命中到点群会顺手被惰性
+  // 摘除，不影响其余判定（与 IsMember 的读路径同契约）。
+  const auto& [smaller, larger] =
+      a_it->second.size() <= b_it->second.size() ? std::pair{a_it->second, b_it->second}
+                                                 : std::pair{b_it->second, a_it->second};
+  for (const auto& group_id : smaller) {
+    if (larger.count(group_id) > 0 && LookupLocked(group_id) != nullptr) {
+      return true;
+    }
+  }
+  return false;
+}
+
 std::vector<chirp::chat::GroupInfo> GroupManager::GetUserGroups(const std::string& user_id) {
   std::vector<chirp::chat::GroupInfo> result;
 

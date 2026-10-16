@@ -79,6 +79,11 @@ public:
   // Check if user is member
   bool IsMember(const std::string& group_id, const std::string& user_id);
 
+  // 防骚扰（game_chat_features P2，2255-2258）：两用户是否共享至少一个存活
+  // 群（到点临时群经 LookupLocked 惰性摘除后不算）。陌生人私聊门的同群
+  // 半边；两人相同恒 true（本人会话本就绕过该门，这里只保证语义自洽）。
+  bool ShareAnyGroup(const std::string& user_a, const std::string& user_b);
+
   // Get user's groups
   std::vector<chirp::chat::GroupInfo> GetUserGroups(const std::string& user_id);
 

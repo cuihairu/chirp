@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./asio_coroutine_adoption.en.md)
+
 # ASIO 协程化分析:要不要、何时、怎么走
 
 > 状态:技术决策分析(2026-09)。结论是"不整体重写、新模块采用",理由见下文;若未来证据变化,按文末决策表重新评估。能力边界以 [CAPABILITY_MATRIX](../CAPABILITY_MATRIX.md) 为准。

@@ -3,6 +3,8 @@ import {
   ChannelType,
   ChatMessage,
   CoordMetadata,
+  GetDmRestrictionRequest,
+  GetDmRestrictionResponse,
   GroupMemberAliasUpdatedNotify,
   GroupMemberMutedNotify,
   MsgType,
@@ -12,6 +14,8 @@ import {
   SearchMessageResponse,
   SendMessageRequest,
   SendMessageResponse,
+  SetDmRestrictionRequest,
+  SetDmRestrictionResponse,
   SetGroupMuteRequest,
   SetGroupMuteResponse,
   SetMemberAliasRequest,
@@ -404,6 +408,34 @@ describe('ChatPipeline send pipeline', () => {
         ReportMessageResponse.fromPartial({ code: ErrorCode.OK, reportCount: 1 }),
       ).finish());
       expect((await plain).reportCount).toBe(1);
+    });
+  });
+
+  it('dm restriction: set/get wire round-trip; enabled echo on both', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const pending = pipeline.setDmRestriction(true);
+      expect(ws.lastSentPacket().msgId).toBe(MsgID.SET_DM_RESTRICTION_REQ);
+      const req = SetDmRestrictionRequest.decode(ws.lastSentPacket().body);
+      expect(req.enabled).toBe(true);
+
+      settle(ws, MsgID.SET_DM_RESTRICTION_RESP, SetDmRestrictionResponse.encode(
+        SetDmRestrictionResponse.fromPartial({ code: ErrorCode.OK, enabled: true }),
+      ).finish());
+      const resp = await pending;
+      expect(resp.code).toBe(ErrorCode.OK);
+      expect(resp.enabled).toBe(true);
+
+      // get: empty request body, response carries the current switch state.
+      const reading = pipeline.getDmRestriction();
+      expect(ws.lastSentPacket().msgId).toBe(MsgID.GET_DM_RESTRICTION_REQ);
+      const getReq = GetDmRestrictionRequest.decode(ws.lastSentPacket().body);
+      expect(Object.keys(getReq)).toEqual([]); // GET body carries no fields
+      settle(ws, MsgID.GET_DM_RESTRICTION_RESP, GetDmRestrictionResponse.encode(
+        GetDmRestrictionResponse.fromPartial({ code: ErrorCode.OK, enabled: true }),
+      ).finish());
+      const state = await reading;
+      expect(state.code).toBe(ErrorCode.OK);
+      expect(state.enabled).toBe(true);
     });
   });
 

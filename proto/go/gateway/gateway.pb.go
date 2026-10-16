@@ -171,6 +171,15 @@ const (
 	// chat.proto 的 ReportMessageRequest / ReportMessageResponse。
 	MsgID_REPORT_MESSAGE_REQ  MsgID = 2253
 	MsgID_REPORT_MESSAGE_RESP MsgID = 2254
+	// 防骚扰私聊限制（game_chat_features P2，2026-10-15）：接收方开关，开启后
+	// 陌生人（非 social 平面好友且无共同群）发给本用户的私聊被拒
+	// （DM_RESTRICTED）；缺省关，好友/同群/本人/NPC 接收方不受影响。body 见
+	// chat.proto 的 SetDmRestrictionRequest / SetDmRestrictionResponse /
+	// GetDmRestrictionRequest / GetDmRestrictionResponse。
+	MsgID_SET_DM_RESTRICTION_REQ  MsgID = 2255
+	MsgID_SET_DM_RESTRICTION_RESP MsgID = 2256
+	MsgID_GET_DM_RESTRICTION_REQ  MsgID = 2257
+	MsgID_GET_DM_RESTRICTION_RESP MsgID = 2258
 	// Social service
 	MsgID_ADD_FRIEND_REQ             MsgID = 3001
 	MsgID_ADD_FRIEND_RESP            MsgID = 3002
@@ -438,6 +447,10 @@ var (
 		2252: "GROUP_MEMBER_MUTED_NOTIFY",
 		2253: "REPORT_MESSAGE_REQ",
 		2254: "REPORT_MESSAGE_RESP",
+		2255: "SET_DM_RESTRICTION_REQ",
+		2256: "SET_DM_RESTRICTION_RESP",
+		2257: "GET_DM_RESTRICTION_REQ",
+		2258: "GET_DM_RESTRICTION_RESP",
 		3001: "ADD_FRIEND_REQ",
 		3002: "ADD_FRIEND_RESP",
 		3003: "FRIEND_REQUEST_ACTION_REQ",
@@ -669,6 +682,10 @@ var (
 		"GROUP_MEMBER_MUTED_NOTIFY":         2252,
 		"REPORT_MESSAGE_REQ":                2253,
 		"REPORT_MESSAGE_RESP":               2254,
+		"SET_DM_RESTRICTION_REQ":            2255,
+		"SET_DM_RESTRICTION_RESP":           2256,
+		"GET_DM_RESTRICTION_REQ":            2257,
+		"GET_DM_RESTRICTION_RESP":           2258,
 		"ADD_FRIEND_REQ":                    3001,
 		"ADD_FRIEND_RESP":                   3002,
 		"FRIEND_REQUEST_ACTION_REQ":         3003,
@@ -1387,7 +1404,7 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"channel_id\x18\x01 \x01(\tR\tchannelId\x12\x1b\n" +
 	"\tsender_id\x18\x02 \x01(\tR\bsenderId\x12\x18\n" +
 	"\acontent\x18\x03 \x01(\fR\acontent\x12\"\n" +
-	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\x82/\n" +
+	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\xf8/\n" +
 	"\x05MsgID\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x13\n" +
 	"\x0eHEARTBEAT_PING\x10\xe9\a\x12\x13\n" +
@@ -1494,7 +1511,11 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\x13SET_GROUP_MUTE_RESP\x10\xcb\x11\x12\x1e\n" +
 	"\x19GROUP_MEMBER_MUTED_NOTIFY\x10\xcc\x11\x12\x17\n" +
 	"\x12REPORT_MESSAGE_REQ\x10\xcd\x11\x12\x18\n" +
-	"\x13REPORT_MESSAGE_RESP\x10\xce\x11\x12\x13\n" +
+	"\x13REPORT_MESSAGE_RESP\x10\xce\x11\x12\x1b\n" +
+	"\x16SET_DM_RESTRICTION_REQ\x10\xcf\x11\x12\x1c\n" +
+	"\x17SET_DM_RESTRICTION_RESP\x10\xd0\x11\x12\x1b\n" +
+	"\x16GET_DM_RESTRICTION_REQ\x10\xd1\x11\x12\x1c\n" +
+	"\x17GET_DM_RESTRICTION_RESP\x10\xd2\x11\x12\x13\n" +
 	"\x0eADD_FRIEND_REQ\x10\xb9\x17\x12\x14\n" +
 	"\x0fADD_FRIEND_RESP\x10\xba\x17\x12\x1e\n" +
 	"\x19FRIEND_REQUEST_ACTION_REQ\x10\xbb\x17\x12\x1f\n" +

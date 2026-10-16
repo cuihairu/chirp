@@ -1,6 +1,4 @@
----
-title: Godot 接入
----
+> 🌐 Language: **中文** (this page) | [English](./godot.en.md)
 
 # Godot
 

@@ -65,7 +65,8 @@ public enum MsgSpecs {
         .getGroupMembersReq, .getGroupMembersResp
     ) { try Chirp_Chat_GetGroupMembersResponse(serializedBytes: $0) }
 
-    // Group-domain moderation/search (P1: alias, history search, mute).
+    // Group-domain moderation/search (P1: alias, history search, mute), plus
+    // message governance (P1 report 2253, P2 stranger-DM switch 2255-2258).
     public static let setMemberAlias = MessageSpec(
         .setMemberAliasReq, .setMemberAliasResp
     ) { try Chirp_Chat_SetMemberAliasResponse(serializedBytes: $0) }
@@ -75,6 +76,15 @@ public enum MsgSpecs {
     public static let setGroupMute = MessageSpec(
         .setGroupMuteReq, .setGroupMuteResp
     ) { try Chirp_Chat_SetGroupMuteResponse(serializedBytes: $0) }
+    public static let reportMessage = MessageSpec(
+        .reportMessageReq, .reportMessageResp
+    ) { try Chirp_Chat_ReportMessageResponse(serializedBytes: $0) }
+    public static let setDmRestriction = MessageSpec(
+        .setDmRestrictionReq, .setDmRestrictionResp
+    ) { try Chirp_Chat_SetDmRestrictionResponse(serializedBytes: $0) }
+    public static let getDmRestriction = MessageSpec(
+        .getDmRestrictionReq, .getDmRestrictionResp
+    ) { try Chirp_Chat_GetDmRestrictionResponse(serializedBytes: $0) }
 
     // Reactions, edit/delete (typing has no REQ: it is fire-and-forget 2208).
     public static let addReaction = MessageSpec(
@@ -218,6 +228,8 @@ public enum MsgSpecs {
         AnyMessageSpec(getUserGroups), AnyMessageSpec(createGroup), AnyMessageSpec(inviteToGroup),
         AnyMessageSpec(leaveGroup), AnyMessageSpec(kickMember), AnyMessageSpec(getGroupMembers),
         AnyMessageSpec(setMemberAlias), AnyMessageSpec(searchMessages), AnyMessageSpec(setGroupMute),
+        AnyMessageSpec(reportMessage), AnyMessageSpec(setDmRestriction),
+        AnyMessageSpec(getDmRestriction),
         AnyMessageSpec(addReaction), AnyMessageSpec(removeReaction), AnyMessageSpec(editMessage),
         AnyMessageSpec(deleteMessage),
         AnyMessageSpec(addFriend), AnyMessageSpec(friendRequestAction),

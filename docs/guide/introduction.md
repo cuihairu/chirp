@@ -1,6 +1,4 @@
----
-title: 简介
----
+> 🌐 Language: **中文** (this page) | [English](./introduction.en.md)
 
 # 简介
 

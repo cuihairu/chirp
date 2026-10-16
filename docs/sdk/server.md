@@ -1,6 +1,4 @@
----
-title: 服务端 SDK
----
+> 🌐 Language: **中文** (this page) | [English](./server.en.md)
 
 # 服务端 SDK(游戏后端接入)
 

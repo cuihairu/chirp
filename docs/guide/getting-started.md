@@ -1,6 +1,4 @@
----
-title: 快速上手
----
+> 🌐 Language: **中文** (this page) | [English](./getting-started.en.md)
 
 # 快速上手
 

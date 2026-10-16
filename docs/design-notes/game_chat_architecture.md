@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./game_chat_architecture.en.md)
+
 # 游戏聊天架构笔记
 
 本页作为游戏聊天场景的设计笔记(design-notes)保留。应用聊天 UI 的当前原型线框与游戏内集成图,见[应用聊天原型](app_chat_prototype.md)。

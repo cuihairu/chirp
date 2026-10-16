@@ -198,6 +198,46 @@ describe('MessageBubble', () => {
     expect(card.textContent).not.toContain('undefined');
   });
 
+  it('renders the skill card with the level face and description', () => {
+    render(
+      <MessageBubble
+        message={message({
+          content: '分享技能',
+          skill: {
+            skillId: 'skill-5001',
+            skillName: '烈焰斩',
+            level: 10,
+            iconUrl: '',
+            description: '对目标造成 120% 攻击力的火焰伤害',
+          },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('skill-m1');
+    expect(card.textContent).toContain('烈焰斩');
+    expect(card.textContent).toContain('Lv.10');
+    expect(card.textContent).toContain('对目标造成 120% 攻击力的火焰伤害');
+    expect(card.textContent).toContain('skill-5001');
+  });
+
+  it('omits the level face when the skill level is zero and falls back to the id', () => {
+    render(
+      <MessageBubble
+        message={message({
+          skill: { skillId: 'skill-x', skillName: '', level: 0, iconUrl: '', description: '' },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('skill-m1');
+    expect(card.textContent).toContain('skill-x');
+    expect(card.textContent).not.toContain('Lv.');
+    expect(card.textContent).not.toContain('undefined');
+  });
+
   it('expands emoji codes in the message text into system emoji spans', () => {
     render(
       <MessageBubble message={message({ content: 'hi [emoji:fire] boom' })} selfId="user_a" onToggleReaction={noop} />,

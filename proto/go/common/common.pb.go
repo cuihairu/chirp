@@ -55,6 +55,12 @@ const (
 	// --world_channel_min_level. The send is refused before any budget or
 	// store is touched; other channels are unaffected.
 	ErrorCode_LEVEL_REQUIRED ErrorCode = 13
+	// Game-plane DM restriction (game_chat_features P2 专码): the receiver
+	// enabled the stranger-DM switch (SET_DM_RESTRICTION_REQ 2255) and the
+	// sender is neither a social-plane friend nor a co-member of any group.
+	// The send is refused without touching any store; other channels are
+	// unaffected.
+	ErrorCode_DM_RESTRICTED ErrorCode = 14
 )
 
 // Enum value maps for ErrorCode.
@@ -74,6 +80,7 @@ var (
 		11: "CONTENT_TOO_LONG",
 		12: "MUTED",
 		13: "LEVEL_REQUIRED",
+		14: "DM_RESTRICTED",
 	}
 	ErrorCode_value = map[string]int32{
 		"OK":                 0,
@@ -90,6 +97,7 @@ var (
 		"CONTENT_TOO_LONG":   11,
 		"MUTED":              12,
 		"LEVEL_REQUIRED":     13,
+		"DM_RESTRICTED":      14,
 	}
 )
 
@@ -161,7 +169,7 @@ var File_proto_common_proto protoreflect.FileDescriptor
 const file_proto_common_proto_rawDesc = "" +
 	"\n" +
 	"\x12proto/common.proto\x12\fchirp.common\"\a\n" +
-	"\x05Empty*\x90\x02\n" +
+	"\x05Empty*\xa3\x02\n" +
 	"\tErrorCode\x12\x06\n" +
 	"\x02OK\x10\x00\x12\x12\n" +
 	"\x0eINTERNAL_ERROR\x10\x01\x12\x11\n" +
@@ -177,7 +185,8 @@ const file_proto_common_proto_rawDesc = "" +
 	"\x12\x14\n" +
 	"\x10CONTENT_TOO_LONG\x10\v\x12\t\n" +
 	"\x05MUTED\x10\f\x12\x12\n" +
-	"\x0eLEVEL_REQUIRED\x10\rB&Z$github.com/cui/chirp/proto/go/commonb\x06proto3"
+	"\x0eLEVEL_REQUIRED\x10\r\x12\x11\n" +
+	"\rDM_RESTRICTED\x10\x0eB&Z$github.com/cui/chirp/proto/go/commonb\x06proto3"
 
 var (
 	file_proto_common_proto_rawDescOnce sync.Once

@@ -1,6 +1,4 @@
----
-title: Chat Peer 注册协议
----
+> 🌐 Language: **中文** (this page) | [English](./peer_protocol.en.md)
 
 # Chat Peer 注册协议(5050-5053)
 

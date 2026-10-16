@@ -1,6 +1,4 @@
----
-title: API 总览
----
+> 🌐 Language: **中文** (this page) | [English](./overview.en.md)
 
 # API 总览
 
@@ -129,6 +127,7 @@ message Packet {
 | 2122-2124 | 群昵称 alias | 客户端 <-> Chat | `SET_MEMBER_ALIAS_REQ/RESP` + `GROUP_MEMBER_ALIAS_UPDATED_NOTIFY`;本人或 MODERATOR+ 设他人;别名随 `GroupMember.alias` 下发,渲染消费成员列表与消息发送者名两处 |
 | 2250-2252 | 群管理员禁言 | 客户端 <-> Chat | `SET_GROUP_MUTE_REQ/RESP` + `GROUP_MEMBER_MUTED_NOTIFY`;MODERATOR+ 禁言/解禁本群成员(秒数,0=解禁,上限 30 天);禁言中成员群频道发言被拒 `MUTED`,禁言态随 `GroupMember.muted_until_ts` 下发 |
 | 2253-2254 | 举报 | 客户端 <-> Chat | `REPORT_MESSAGE_REQ/RESP`;玩家举报消息,内存台账按 (message_id, reporter_id) 去重幂等,回去重后累计 `report_count`;被举报消息须在本实例编辑台账(与撤回台账外同语义 `USER_NOT_FOUND`);理由可选上限 500 码点,超限/空 message_id 回 `INVALID_PARAM`,未登录回 `AUTH_FAILED` |
+| 2255-2258 | 防骚扰私聊限制 | 客户端 <-> Chat | `SET/GET_DM_RESTRICTION_REQ/RESP`;接收方开关(缺省关,io 线程内存态,进程重启复位),开启后陌生人的私聊被拒 `DM_RESTRICTED`(消息不落任何存储);陌生人 = 非 social 平面好友快照(`chirp:social:friends:<receiver>`)且无共同群;好友/同群/本人/NPC 接收方豁免;Redis 缺失按非好友收紧(只剩同群半边生效);未登录回 `AUTH_FAILED`,body 损坏回 `INVALID_PARAM` |
 | 2201 / 2202 | `MARK_READ_REQ` / `RESP` | 客户端 -> Chat | 标记已读(服务端游标) |
 | 2203 / 2204 | `GET_READ_RECEIPTS_REQ` / `RESP` | 客户端 -> Chat | 消息已读回执查询 |
 | 2205 / 2206 | `GET_UNREAD_COUNT_REQ` / `RESP` | 客户端 -> Chat | 未读数 |

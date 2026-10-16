@@ -350,6 +350,43 @@ export default function MessageBubble({
           </Typography>
         </Box>
       )}
+      {!message.deleted && message.skill && (
+        <Box
+          data-testid={`skill-${message.messageId}`}
+          sx={{
+            display: 'block',
+            width: '100%',
+            mb: 0.5,
+            p: 1,
+            border: '1px solid',
+            borderColor: mine ? 'primary.contrastText' : 'divider',
+            borderRadius: 1,
+            background: 'transparent',
+            textAlign: 'left',
+          }}
+        >
+          {message.skill.iconUrl && (
+            <Box
+              component="img"
+              src={message.skill.iconUrl}
+              alt={message.skill.skillName || message.skill.skillId}
+              sx={{ width: 40, height: 40, mb: 0.5, display: 'block' }}
+            />
+          )}
+          <Typography variant="caption" sx={{ display: 'block', fontWeight: 600 }}>
+            {message.skill.skillName || message.skill.skillId}
+            {message.skill.level > 0 && ` Lv.${message.skill.level}`}
+          </Typography>
+          {message.skill.description && (
+            <Typography variant="caption" sx={{ display: 'block', mt: 0.5, opacity: 0.85 }}>
+              {message.skill.description}
+            </Typography>
+          )}
+          <Typography variant="caption" sx={{ display: 'block', opacity: 0.6 }}>
+            {message.skill.skillId}
+          </Typography>
+        </Box>
+      )}
       {!message.deleted && message.trade && (
         <Box
           data-testid={`trade-${message.messageId}`}
@@ -489,7 +526,13 @@ export default function MessageBubble({
         {mine && message.pending && ` · ${zh.chat.statusPending}`}
         {mine &&
           message.failed &&
-          ` · ${message.failureReason === 'muted' ? zh.chat.statusMuted : zh.chat.statusFailed}`}
+          ` · ${
+            message.failureReason === 'muted'
+              ? zh.chat.statusMuted
+              : message.failureReason === 'dm_restricted'
+                ? zh.chat.statusDmRestricted
+                : zh.chat.statusFailed
+          }`}
         {mine && message.queuedOffline && ` · ${zh.chat.statusQueued}`}
         {mine && read && ` · ${zh.chat.read}`}
         {!mine && message.edited && ` ${zh.chat.edited}`}

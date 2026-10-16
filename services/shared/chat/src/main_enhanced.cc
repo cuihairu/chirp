@@ -23,6 +23,7 @@
 #include "delivery_ack_manager.h"
 #include "history_compression.h"
 #include "delivery_prefs.h"
+#include "friend_graph.h"
 #include "repeat_guard.h"
 #include "inject_consumer.h"
 #include "login_token_verifier.h"
@@ -232,6 +233,7 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
                       chirp::network::ChatPeerHub* hub,
                       chirp::chat::GroupHandlers* group_handlers,
                       chirp::chat::ReactionHandlers* reaction_handlers,
+                      chirp::chat::FriendGraph* friend_graph,
                       int64_t seq) {
   chirp::chat::ChatMessage msg;
   msg.set_message_id(chirp::chat::runtime::GenerateMessageId());
@@ -327,6 +329,17 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
                                      seq, resp.SerializeAsString());
     return;
   }
+  // 技能链接（P1 SKILL_LINK）：与招募卡片同层同口径——解析不出或 skill_id
+  // 为空的不落任何存储（basic 形态经 ValidateSendMessageRequest）。
+  if (const chirp::common::ErrorCode skill_code = chirp::chat::ValidateSkillMetadata(req);
+      skill_code != chirp::common::OK) {
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(skill_code);
+    resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+    chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP,
+                                     seq, resp.SerializeAsString());
+    return;
+  }
   msg.set_metadata(req.metadata());
 
   // 群频道成员门（web e2e 权限回码契约，与 basic 群分支同语义）：频道命中
@@ -354,6 +367,27 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
                               chirp::chat::runtime::NowMs())) {
     chirp::chat::SendMessageResponse resp;
     resp.set_code(chirp::common::MUTED);
+    resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+    chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP,
+                                     seq, resp.SerializeAsString());
+    return;
+  }
+
+  // 防骚扰私聊门（game_chat_features P2，2255-2258，与 basic 同一门）：接收方
+  // 开启私聊限制时，陌生人（非好友且无共同群）的私聊被拒 DM_RESTRICTED，
+  // 消息不进 Redis/MySQL 任何一层。本人会话与 NPC 接收方不设限；黑名单在
+  // 投递侧（语义更强，静默丢弃），两者可叠加。
+  if (req.channel_type() == chirp::chat::PRIVATE &&
+      req.sender_id() != req.receiver_id() &&
+      !chirp::chat::npc::IsNpcReceiver(npc_prefix, req.receiver_id()) &&
+      delivery_prefs != nullptr &&
+      delivery_prefs->IsDmRestricted(req.receiver_id()) &&
+      !(friend_graph != nullptr &&
+        friend_graph->AreFriends(req.receiver_id(), req.sender_id())) &&
+      (group_handlers == nullptr ||
+       !group_handlers->ShareAnyGroup(req.sender_id(), req.receiver_id()))) {
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(chirp::common::DM_RESTRICTED);
     resp.set_server_timestamp(chirp::chat::runtime::NowMs());
     chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP,
                                      seq, resp.SerializeAsString());
@@ -621,7 +655,8 @@ bool DispatchClientFeaturePacket(
     chirp::chat::ReactionHandlers* reaction_handlers,
     chirp::chat::ReadReceiptHandlers* receipt_handlers,
     chirp::chat::MessageEditHandlers* edit_handlers,
-    chirp::chat::ReportHandlers* report_handlers = nullptr) {
+    chirp::chat::ReportHandlers* report_handlers = nullptr,
+    chirp::chat::DeliveryPrefs* delivery_prefs = nullptr) {
   switch (pkt.msg_id()) {
     case chirp::gateway::CREATE_GROUP_REQ: {
       chirp::chat::CreateGroupRequest req;
@@ -740,6 +775,38 @@ bool DispatchClientFeaturePacket(
         resp = group_handlers->HandleSetGroupMute(req, authenticated_user);
       }
       chirp::chat::runtime::SendPacket(session, chirp::gateway::SET_GROUP_MUTE_RESP,
+                                       pkt.sequence(), resp.SerializeAsString());
+      break;
+    }
+    case chirp::gateway::SET_DM_RESTRICTION_REQ: {
+      // 防骚扰开关（game_chat_features P2，2255）：本人设置，回显生效后的
+      // 状态；delivery_prefs 为空按未装配拒绝（同 report_handlers 先例）。
+      chirp::chat::SetDmRestrictionRequest req;
+      chirp::chat::SetDmRestrictionResponse resp;
+      if (delivery_prefs == nullptr) {
+        resp.set_code(chirp::common::AUTH_FAILED);
+      } else if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+        resp.set_code(chirp::common::INVALID_PARAM);
+      } else if (authenticated_user.empty()) {
+        resp.set_code(chirp::common::AUTH_FAILED);
+      } else {
+        delivery_prefs->SetDmRestricted(authenticated_user, req.enabled());
+        resp.set_code(chirp::common::OK);
+        resp.set_enabled(req.enabled());
+      }
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::SET_DM_RESTRICTION_RESP,
+                                       pkt.sequence(), resp.SerializeAsString());
+      break;
+    }
+    case chirp::gateway::GET_DM_RESTRICTION_REQ: {
+      chirp::chat::GetDmRestrictionResponse resp;
+      if (delivery_prefs == nullptr || authenticated_user.empty()) {
+        resp.set_code(chirp::common::AUTH_FAILED);
+      } else {
+        resp.set_code(chirp::common::OK);
+        resp.set_enabled(delivery_prefs->IsDmRestricted(authenticated_user));
+      }
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_DM_RESTRICTION_RESP,
                                        pkt.sequence(), resp.SerializeAsString());
       break;
     }
@@ -1603,6 +1670,14 @@ int main(int argc, char** argv) {
   // Per-user push filters (game_chat_features P0 频道屏蔽). Referenced by the
   // mute handlers below; lives as long as main, like channel_pacer.
   chirp::chat::DeliveryPrefs delivery_prefs;
+  // 防骚扰好友判定（game_chat_features P2，2255-2258）：与 basic 同一来源——
+  // social 平面落在同一 Redis 的好友快照；无 Redis 时好友半边按「非好友」
+  // 收紧，同群半边照常生效。
+  std::shared_ptr<chirp::network::RedisClient> friend_redis;
+  if (!redis_host.empty()) {
+    friend_redis = std::make_shared<chirp::network::RedisClient>(redis_host, redis_port);
+  }
+  chirp::chat::FriendGraph friend_graph(friend_redis);
 
   // Read receipts (basic parity): in-memory cursor + broadcast MESSAGE_READ_NOTIFY
   // to the other members — 私聊解析对端、群频道查群台账（群已读随群台账生效）。
@@ -1681,7 +1756,8 @@ int main(int argc, char** argv) {
                               delivery_prefs_ptr = &delivery_prefs,
                               send_gate = &edge_rate_limiter,
                               edit_handlers = recall_runtime.handlers.get(),
-                              &group_handlers, &reaction_handlers](
+                              &group_handlers, &reaction_handlers,
+                              &friend_graph](
                                  const std::shared_ptr<chirp::network::Session>& session,
                                  const chirp::chat::SendMessageRequest& req,
                                  int64_t seq) {
@@ -1811,7 +1887,7 @@ int main(int argc, char** argv) {
     HandleSendMessage(working, session, state, store, delivery_tracker, acks.get(),
                       delivery_prefs_ptr, router, peer, npc_service_id, npc_prefix, link,
                       spoke_game_id, edit_handlers, &directory, hub, &group_handlers,
-                      &reaction_handlers, seq);
+                      &reaction_handlers, &friend_graph, seq);
   };
   handlers.on_get_history = [retriever, state](const std::shared_ptr<chirp::network::Session>& session,
                                         const chirp::chat::GetHistoryRequest& req,
@@ -1962,6 +2038,7 @@ int main(int argc, char** argv) {
   auto on_packet = [handlers, gateway_service_secret, trusted_conns, &edge_rate_limiter,
                     &directory, &word_filter, &receipt_handlers, state, &group_handlers,
                     &typing_handlers, &reaction_handlers, &report_handlers,
+                    &delivery_prefs,
                     edit_handlers = recall_runtime.handlers.get()](
                        const std::shared_ptr<chirp::network::Session>& session,
                        const chirp::gateway::Packet& pkt) {
@@ -2008,7 +2085,8 @@ int main(int argc, char** argv) {
     if (DispatchClientFeaturePacket(pkt, session, state->GetUserId(session),
                                     &group_handlers, &typing_handlers,
                                     &reaction_handlers, &receipt_handlers,
-                                    edit_handlers, &report_handlers)) {
+                                    edit_handlers, &report_handlers,
+                                    &delivery_prefs)) {
       return;
     }
     if (pkt.msg_id() == chirp::gateway::LOGIN_REQ &&

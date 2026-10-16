@@ -24,6 +24,7 @@ import {
   SearchMessageResponse,
   SetGroupMuteResponse,
   SetMemberAliasResponse,
+  SkillMetadata,
   type SendMessageRequest,
   TypingIndicator,
 } from '@chirp/proto/chat';
@@ -39,6 +40,7 @@ import {
   CREATE_GROUP,
   DELETE_MESSAGE,
   EDIT_MESSAGE,
+  GET_DM_RESTRICTION,
   GET_GROUP_MEMBERS,
   GET_HISTORY,
   GET_USER_GROUPS,
@@ -52,6 +54,7 @@ import {
   REMOVE_REACTION,
   SEARCH_MESSAGE,
   SEND_MESSAGE,
+  SET_DM_RESTRICTION,
   SET_GROUP_MUTE,
   SET_MEMBER_ALIAS,
   type MessageSpec,
@@ -67,6 +70,7 @@ import {
   type AchievementView,
   type GuildRecruitView,
   type PartyRecruitView,
+  type SkillView,
   type TradeView,
   type ItemView,
   type MessageReactionView,
@@ -351,6 +355,13 @@ export class ChatApi {
       current?: number;
       leaderName?: string;
     },
+    skill?: {
+      skillId: string;
+      skillName?: string;
+      level?: number;
+      iconUrl?: string;
+      description?: string;
+    },
   ): Promise<void> {
     const senderId = this.auth.get().userId;
     if (!senderId) return;
@@ -377,7 +388,9 @@ export class ChatApi {
                 ? MsgType.GUILD_RECRUIT
                 : partyRecruit
                   ? MsgType.PARTY_RECRUIT
-                  : MsgType.TEXT,
+                  : skill
+                    ? MsgType.SKILL_LINK
+                    : MsgType.TEXT,
       content: contentBytes,
       clientTimestamp: Date.now(),
     };
@@ -458,6 +471,19 @@ export class ChatApi {
         }),
       ).finish();
     }
+    // 技能链接（P1 SKILL_LINK）：带 skill 入参即切 SKILL_LINK，技能进
+    // metadata（与坐标/物品/成就/招募同一 metadata 通道；level 缺省 0）。
+    if (skill) {
+      wire.metadata = SkillMetadata.encode(
+        SkillMetadata.fromPartial({
+          skillId: skill.skillId,
+          skillName: skill.skillName,
+          level: skill.level,
+          iconUrl: skill.iconUrl,
+          description: skill.description,
+        }),
+      ).finish();
+    }
     // 预检只读写 content（两面在我们手上非缺省），断言为完整消息面。
     const blocked = !this.wordFilter.onBeforeSend(wire as SendMessageRequest);
     const clientId = `pending-${Date.now().toString(36)}-${pendingCounter++}`;
@@ -522,6 +548,15 @@ export class ChatApi {
             leaderName: partyRecruit.leaderName ?? '',
           }
         : undefined,
+      skill: skill
+        ? {
+            skillId: skill.skillId,
+            skillName: skill.skillName ?? '',
+            level: skill.level ?? 0,
+            iconUrl: skill.iconUrl ?? '',
+            description: skill.description ?? '',
+          }
+        : undefined,
     };
     addPendingMessage(this.messages, optimistic);
 
@@ -548,12 +583,17 @@ export class ChatApi {
       this.ensureConversation(channel, channel.kind === 'private' ? channel.peerId : channel.channelId);
       touchConversation(this.conversations, channel.key, text, confirmed.timestamp);
     } else {
-      // 禁言拒发(MUTED)单独标注,气泡给禁言专属提示而非笼统「发送失败」。
+      // 禁言拒发(MUTED)与防骚扰拒收(DM_RESTRICTED)单独标注,气泡给专属
+      // 提示而非笼统「发送失败」。
       failPendingMessage(
         this.messages,
         channel.key,
         clientId,
-        resp.code === ErrorCode.MUTED ? 'muted' : undefined,
+        resp.code === ErrorCode.MUTED
+          ? 'muted'
+          : resp.code === ErrorCode.DM_RESTRICTED
+            ? 'dm_restricted'
+            : undefined,
       );
     }
   }
@@ -841,6 +881,24 @@ export class ChatApi {
     if (!messageId) return { code: ErrorCode.INVALID_PARAM, messageId, reportCount: 0 };
     const resp = await this.conn.request(REPORT_MESSAGE, { messageId, reason });
     return resp;
+  }
+
+  // ---- 防骚扰私聊限制(SET/GET_DM_RESTRICTION 2255-2258) ----
+  // 接收方开关,缺省关。开启后陌生人(非好友且无共同群)的私聊被拒
+  // DM_RESTRICTED 且消息不落任何存储;开关是服务端内存态,进程重启复位。
+  async setDmRestriction(enabled: boolean): Promise<number> {
+    const resp = await this.conn.request(SET_DM_RESTRICTION, { enabled });
+    return resp.code;
+  }
+
+  /** 读取开关(2257/2258):请求体无字段;不可用/失败回 null(按缺省关渲染)。 */
+  async getDmRestriction(): Promise<boolean | null> {
+    try {
+      const resp = await this.conn.request(GET_DM_RESTRICTION, {});
+      return resp.code === 0 ? resp.enabled : null;
+    } catch {
+      return null;
+    }
   }
 
   /** 2120: someone was kicked. If it was me, forget the group locally. */
@@ -1204,6 +1262,26 @@ const partyRecruitViewOf = (msg: ChatMessage): PartyRecruitView | undefined => {
   };
 };
 
+// 技能卡片解析（P1 SKILL_LINK）：解析口径与服务端校验门一致——非
+// SKILL_LINK 或 metadata 空/解析不出/缺 skill_id 的不当卡片。
+const skillViewOf = (msg: ChatMessage): SkillView | undefined => {
+  if (msg.msgType !== MsgType.SKILL_LINK || msg.metadata.length === 0) return undefined;
+  let skill: SkillMetadata;
+  try {
+    skill = SkillMetadata.decode(msg.metadata);
+  } catch {
+    return undefined;
+  }
+  if (!skill.skillId) return undefined;
+  return {
+    skillId: skill.skillId,
+    skillName: skill.skillName,
+    level: skill.level,
+    iconUrl: skill.iconUrl,
+    description: skill.description,
+  };
+};
+
 const toView = (msg: ChatMessage, channel: ChannelRef): ChatMessageView => ({
   messageId: msg.messageId,
   senderId: msg.senderId,
@@ -1217,6 +1295,7 @@ const toView = (msg: ChatMessage, channel: ChannelRef): ChatMessageView => ({
   coord: coordViewOf(msg),
   item: itemViewOf(msg),
   achievement: achievementViewOf(msg),
+  skill: skillViewOf(msg),
   trade: tradeViewOf(msg),
   guildRecruit: guildRecruitViewOf(msg),
   partyRecruit: partyRecruitViewOf(msg),

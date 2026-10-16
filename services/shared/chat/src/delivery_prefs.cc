@@ -83,4 +83,13 @@ std::vector<std::string> DeliveryPrefs::GetBlockedUsers(
   return {it->second.begin(), it->second.end()};
 }
 
+void DeliveryPrefs::SetDmRestricted(const std::string& user_id, bool enabled) {
+  dm_restricted_[user_id] = enabled;
+}
+
+bool DeliveryPrefs::IsDmRestricted(const std::string& user_id) const {
+  const auto it = dm_restricted_.find(user_id);
+  return it != dm_restricted_.end() && it->second;
+}
+
 } // namespace chirp::chat

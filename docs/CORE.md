@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./CORE.en.md)
+
 # Chirp 核心
 
 本页是当前核心运行时的浓缩版事实来源。

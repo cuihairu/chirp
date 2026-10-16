@@ -53,6 +53,12 @@ class DeliveryPrefs {
   // callers that show a list sort for themselves.
   std::vector<std::string> GetBlockedUsers(const std::string& user_id) const;
 
+  // 防骚扰维度（game_chat_features P2，2255-2258）：接收方私聊限制开关，
+  // 缺省关。开启后陌生人（非好友且无共同群）的私聊在发送门被拒
+  // （DM_RESTRICTED）。Set 回显生效后的状态；IsDmRestricted 缺省 false。
+  void SetDmRestricted(const std::string& user_id, bool enabled);
+  bool IsDmRestricted(const std::string& user_id) const;
+
  private:
   static int SlotFor(ChannelType type);
 
@@ -61,6 +67,9 @@ class DeliveryPrefs {
 
   // Per user, the set of senders they refuse delivery from.
   std::unordered_map<std::string, std::unordered_set<std::string>> blocked_;
+
+  // Per user, the stranger-DM switch (default off).
+  std::unordered_map<std::string, bool> dm_restricted_;
 };
 
 } // namespace chirp::chat

@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./CRASH_COLLECTION.en.md)
+
 # 崩溃采集（Crashpad）设计简档
 
 > 2026-10-08 简档（先设计后实现）。选型已钉：**Google Crashpad**，C++ 直集成；

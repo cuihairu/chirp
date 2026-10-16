@@ -747,6 +747,28 @@ target_include_directories(delivery_prefs_tests
 
 add_test(NAME delivery_prefs_tests COMMAND delivery_prefs_tests)
 
+# 防骚扰好友判定 (game_chat_features P2, 2255-2258): FriendGraph 只读消费
+# social 平面的 Redis 好友快照,桩 RedisClient 钉判定矩阵。
+add_executable(chat_friend_graph_tests
+  chat_friend_graph_test.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/friend_graph.cc
+)
+
+chirp_unit_test_common_links(chat_friend_graph_tests)
+target_link_libraries(chat_friend_graph_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(chat_friend_graph_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME chat_friend_graph_tests COMMAND chat_friend_graph_tests)
+
 # NOTE: presence_manager.cc used to be excluded from the social build
 # because it did not compile (a proto enum name clash plus a copyable-mutex
 # member); it is fixed and covered by social_presence_tests below. The

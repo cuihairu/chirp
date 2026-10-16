@@ -48,12 +48,12 @@ export function addPendingMessage(store: Store<MessageState>, message: ChatMessa
 }
 
 /** Flip a pending send to failed (RESP error or timeout); reason carries the
- *  mute-specific hint when the server rejected with MUTED. */
+ *  specific hint when the server rejected with MUTED or DM_RESTRICTED. */
 export function failPendingMessage(
   store: Store<MessageState>,
   channelKey: string,
   clientId: string,
-  reason?: 'muted',
+  reason?: 'muted' | 'dm_restricted',
 ): void {
   store.set((prev) => ({
     ...prev,

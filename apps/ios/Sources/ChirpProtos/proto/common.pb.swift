@@ -60,6 +60,13 @@ public nonisolated enum Chirp_Common_ErrorCode: SwiftProtobuf.Enum, Swift.CaseIt
   /// --world_channel_min_level. The send is refused before any budget or
   /// store is touched; other channels are unaffected.
   case levelRequired // = 13
+
+  /// Game-plane DM restriction (game_chat_features P2 专码): the receiver
+  /// enabled the stranger-DM switch (SET_DM_RESTRICTION_REQ 2255) and the
+  /// sender is neither a social-plane friend nor a co-member of any group.
+  /// The send is refused without touching any store; other channels are
+  /// unaffected.
+  case dmRestricted // = 14
   case UNRECOGNIZED(Int)
 
   public init() {
@@ -82,6 +89,7 @@ public nonisolated enum Chirp_Common_ErrorCode: SwiftProtobuf.Enum, Swift.CaseIt
     case 11: self = .contentTooLong
     case 12: self = .muted
     case 13: self = .levelRequired
+    case 14: self = .dmRestricted
     default: self = .UNRECOGNIZED(rawValue)
     }
   }
@@ -102,6 +110,7 @@ public nonisolated enum Chirp_Common_ErrorCode: SwiftProtobuf.Enum, Swift.CaseIt
     case .contentTooLong: return 11
     case .muted: return 12
     case .levelRequired: return 13
+    case .dmRestricted: return 14
     case .UNRECOGNIZED(let i): return i
     }
   }
@@ -122,6 +131,7 @@ public nonisolated enum Chirp_Common_ErrorCode: SwiftProtobuf.Enum, Swift.CaseIt
     .contentTooLong,
     .muted,
     .levelRequired,
+    .dmRestricted,
   ]
 
 }
@@ -141,7 +151,7 @@ public nonisolated struct Chirp_Common_Empty: Sendable {
 fileprivate nonisolated let _protobuf_package = "chirp.common"
 
 nonisolated extension Chirp_Common_ErrorCode: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0OK\0\u{1}INTERNAL_ERROR\0\u{1}INVALID_PARAM\0\u{1}AUTH_FAILED\0\u{1}SESSION_EXPIRED\0\u{1}USER_NOT_FOUND\0\u{1}TARGET_OFFLINE\0\u{1}SERVER_UNAVAILABLE\0\u{1}RATE_LIMITED\0\u{1}VERSION_MISMATCH\0\u{1}WORD_FILTERED\0\u{1}CONTENT_TOO_LONG\0\u{1}MUTED\0\u{1}LEVEL_REQUIRED\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0OK\0\u{1}INTERNAL_ERROR\0\u{1}INVALID_PARAM\0\u{1}AUTH_FAILED\0\u{1}SESSION_EXPIRED\0\u{1}USER_NOT_FOUND\0\u{1}TARGET_OFFLINE\0\u{1}SERVER_UNAVAILABLE\0\u{1}RATE_LIMITED\0\u{1}VERSION_MISMATCH\0\u{1}WORD_FILTERED\0\u{1}CONTENT_TOO_LONG\0\u{1}MUTED\0\u{1}LEVEL_REQUIRED\0\u{1}DM_RESTRICTED\0")
 }
 
 nonisolated extension Chirp_Common_Empty: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {

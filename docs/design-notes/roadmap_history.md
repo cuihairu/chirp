@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./roadmap_history.en.md)
+
 # Chirp 路线图历史(存档)
 
 > 2026-09 自 TODO.md 归档。本文件是早期路线图与更新日志的历史记录;勾选状态反映归档时点的仓库状态,并已与 [../CAPABILITY_MATRIX.md](../CAPABILITY_MATRIX.md) 交叉核对。当前工作请看 [TODO.md](../../TODO.md)。

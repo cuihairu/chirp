@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./server_plane.en.md)
+
 # Server Plane:游戏后端集成
 
 状态:**实验性(Experimental)**——枢纽(`chirp_game_server_gateway`)、chat 侧消费者、Redis Streams broker 回退都已实现并经单测验证(行覆盖 100%):chat 以内部 peer 身份拨入,注入消息走与玩家消息相同的存储/投递尾段。两平面拓扑见[整体架构](./architecture.md)。

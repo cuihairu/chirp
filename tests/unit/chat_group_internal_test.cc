@@ -150,6 +150,30 @@ TEST(GroupManagerInternalTest, ExpiredGroupLazilyRemovedOnRead) {
   }
 }
 
+TEST(GroupManagerInternalTest, ShareAnyGroupBasics) {
+  chirp::chat::GroupManager mgr;
+  // 同群 true；不同群 false；无群 false；本人恒 true（语义自洽）。
+  mgr.CreateGroup("alice", "g1", "", "", 0, {"alice", "bob"});
+  mgr.CreateGroup("carol", "g2", "", "", 0, {"carol"});
+  EXPECT_TRUE(mgr.ShareAnyGroup("alice", "bob"));
+  EXPECT_TRUE(mgr.ShareAnyGroup("bob", "alice"));
+  EXPECT_FALSE(mgr.ShareAnyGroup("alice", "carol"));
+  EXPECT_FALSE(mgr.ShareAnyGroup("alice", "nobody"));
+  EXPECT_FALSE(mgr.ShareAnyGroup("nobody", "stranger"));
+  EXPECT_TRUE(mgr.ShareAnyGroup("alice", "alice"));
+}
+
+TEST(GroupManagerInternalTest, ShareAnyGroupIgnoresExpiredGroup) {
+  chirp::chat::GroupManager mgr;
+  chirp::chat::GroupManagerInternalAccess::set_now_override(mgr, 10'000);
+  mgr.CreateGroup("alice", "g", "", "", 0, {"alice", "bob"}, /*expires_at_ms=*/15'000);
+  EXPECT_TRUE(mgr.ShareAnyGroup("alice", "bob"));
+
+  // 到点后共同群被惰性摘除：同群判定随即翻 false。
+  chirp::chat::GroupManagerInternalAccess::set_now_override(mgr, 15'000);
+  EXPECT_FALSE(mgr.ShareAnyGroup("alice", "bob"));
+}
+
 TEST(GroupManagerInternalTest, PermanentGroupNeverExpires) {
   chirp::chat::GroupManager mgr;
   const std::string gid = mgr.CreateGroup("alice", "g", "", "", 0, {});

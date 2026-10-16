@@ -175,6 +175,50 @@ describe('ChatPanel achievement cards (P1 ACHIEVEMENT)', () => {
   });
 });
 
+describe('ChatPanel skill cards (P1 SKILL_LINK)', () => {
+  it('renders the skill card with the level face and description', async () => {
+    renderPanel([
+      message({
+        messageId: 'sk1',
+        content: '分享技能',
+        skill: {
+          skillId: 'skill-5001',
+          skillName: '烈焰斩',
+          level: 10,
+          iconUrl: '',
+          description: '对目标造成 120% 攻击力的火焰伤害',
+        },
+      }),
+    ]);
+    await waitFor(() => expect(screen.getByText('分享技能')).toBeTruthy());
+    const card = screen.getByTestId('skill-sk1');
+    expect(card.textContent).toContain('烈焰斩');
+    expect(card.textContent).toContain('Lv.10');
+    expect(card.textContent).toContain('对目标造成 120% 攻击力的火焰伤害');
+    expect(card.textContent).toContain('skill-5001');
+  });
+
+  it('omits the level face at level zero and falls back to the id', async () => {
+    renderPanel([
+      message({
+        messageId: 'sk2',
+        skill: { skillId: 'skill-x', skillName: '', level: 0, iconUrl: '', description: '' },
+      }),
+    ]);
+    await waitFor(() => expect(screen.getByTestId('skill-sk2')).toBeTruthy());
+    const card = screen.getByTestId('skill-sk2');
+    expect(card.textContent).toContain('skill-x');
+    expect(card.textContent).not.toContain('Lv.');
+    expect(card.textContent).not.toContain('undefined');
+  });
+
+  it('renders no skill card for plain text messages', async () => {
+    renderPanel([message({ messageId: 't3', content: '纯文本' })]);
+    await waitFor(() => expect(screen.getByText('纯文本')).toBeTruthy());
+    expect(screen.queryByTestId('skill-t3')).toBeNull();
+  });
+});
+
 describe('ChatPanel trade cards (P1 TRADE_STATUS)', () => {
   it('renders the trade card with the status badge, amount and item summary', async () => {
     renderPanel([
@@ -289,5 +333,17 @@ describe('ChatPanel rich text (P1 富文本)', () => {
     await waitFor(() => expect(screen.getByTestId('msg-text-rt2')).toBeTruthy());
     const bold = screen.getByTestId('msg-text-rt2').querySelector('strong');
     expect(bold?.textContent).toBe('火🔥');
+  });
+});
+describe('ChatPanel rejection hints (P1 拒收回码)', () => {
+  it('names the mute and dm restriction reasons on failed bubbles', async () => {
+    renderPanel([
+      message({ messageId: 'f1', senderId: SELF, failed: true, failureReason: 'muted' }),
+      message({ messageId: 'f2', senderId: SELF, failed: true, failureReason: 'dm_restricted' }),
+      message({ messageId: 'f3', senderId: SELF, failed: true }),
+    ]);
+    await waitFor(() => expect(screen.getByText('禁言中，消息未发送')).toBeTruthy());
+    expect(screen.getByText('对方开启了私聊限制，仅好友/同群可私信')).toBeTruthy();
+    expect(screen.getByText('发送失败')).toBeTruthy();
   });
 });

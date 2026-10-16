@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./message_search.en.md)
+
 # 消息搜索（message search）定案与落地记录
 
 > 状态：2026-10-08 拍板（用户令：按仓决策记录自行定案并记录后实施）。本文是
