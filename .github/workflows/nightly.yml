@@ -491,7 +491,7 @@ jobs:
 
         包内容:
           chirp-protocol-<version>.tgz   pnpm pack 产物(src/ 源码 + package.json,
-                                         依赖 long / protobufjs 由安装方解析)
+                                         依赖 @bufbuild/protobuf 由安装方解析)
 
         安装: pnpm install <tgz 路径>;入口见包内 README(web/小游戏/Cocos/
         LayaAir 共用,微信小游戏配 adapters/wx_socket)。

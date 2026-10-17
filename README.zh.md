@@ -37,7 +37,7 @@ chirp 想解决的就是这件事，设计目标按优先级排列：
 chirp 基于以下开源组件构建，完整依赖清单见 `vcpkg.json`：
 
 - **网络 I/O**：[asio](https://think-async.com/) 提供 TCP/WebSocket 服务端与客户端；TLS 走 [OpenSSL](https://www.openssl.org/)（`libs/network` 的 TLS server/session，推送通道的 HTTPS 客户端同源）。
-- **线上协议**：[Protocol Buffers](https://protobuf.dev/)。`proto/` 定义，protoc 生成 C++/Go/TypeScript/C#/Java 绑定；TypeScript 运行时用 [protobufjs](https://github.com/protobufjs/protobuf.js)，Go 用 [protobuf-go](https://github.com/protocolbuffers/protobuf-go)。
+- **线上协议**：[Protocol Buffers](https://protobuf.dev/)。`proto/` 定义，protoc 生成 C++/Go/TypeScript/C#/Java 绑定；TypeScript 运行时用 [@bufbuild/protobuf](https://github.com/bufbuild/protobuf-es)（ts-proto 产物），Go 用 [protobuf-go](https://github.com/protocolbuffers/protobuf-go)。
 - **存储**：MySQL/MariaDB 档案走 [libmariadb](https://github.com/mariadb-corporation/mariadb-connector-c)；Redis 做会话、缓存与离线队列，RESP 客户端在 `libs/network` 自写，不引第三方 Redis SDK。
 - **可选加密**：libsodium（`app_auth` 的认证辅助路径）。
 - **构建与依赖**：CMake + Ninja，依赖管理用 [vcpkg](https://vcpkg.io/)；abseil 随 protobuf 运行时引入。

@@ -37,7 +37,7 @@ chirp is built to address exactly this. The design goals, in priority order:
 chirp is built on the following open-source components; see `vcpkg.json` for the full dependency list:
 
 - **Network I/O**: [asio](https://think-async.com/) provides the TCP/WebSocket server and client; TLS goes through [OpenSSL](https://www.openssl.org/) (the TLS server/session in `libs/network`, and the push channel's HTTPS client share the same source).
-- **Wire protocol**: [Protocol Buffers](https://protobuf.dev/). Defined in `proto/`, with protoc generating C++/Go/TypeScript/C#/Java bindings; the TypeScript runtime uses [protobufjs](https://github.com/protobufjs/protobuf.js), and Go uses [protobuf-go](https://github.com/protocolbuffers/protobuf-go).
+- **Wire protocol**: [Protocol Buffers](https://protobuf.dev/). Defined in `proto/`, with protoc generating C++/Go/TypeScript/C#/Java bindings; the TypeScript runtime uses [@bufbuild/protobuf](https://github.com/bufbuild/protobuf-es) (ts-proto output), and Go uses [protobuf-go](https://github.com/protocolbuffers/protobuf-go).
 - **Storage**: MySQL/MariaDB for profiles via [libmariadb](https://github.com/mariadb-corporation/mariadb-connector-c); Redis for sessions, caching, and offline queues — the RESP client in `libs/network` is written in this repository rather than pulling in a third-party Redis SDK.
 - **Optional crypto**: libsodium (the auxiliary authentication path in `app_auth`).
 - **Build & dependencies**: CMake + Ninja, with [vcpkg](https://vcpkg.io/) for dependency management; abseil comes in with the protobuf runtime.
