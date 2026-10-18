@@ -7,6 +7,7 @@
 #include <string>
 
 #include "notification_handlers.h"
+#include "caller_auth.h"
 #include "push_transport.h"
 
 using chirp::common::ErrorCode;
@@ -226,6 +227,84 @@ TEST_F(NotificationHandlersTest, UnknownMsgIdReturnsFalse) {
       MakePacket(chirp::gateway::SEND_MESSAGE_REQ, ""), &resp));
   EXPECT_FALSE(handlers_.HandlePacket(
       MakePacket(chirp::gateway::HEARTBEAT_PING, ""), &resp));  // other plane's id
+}
+
+// --- Caller authentication gate (audit 表一 P0 half) --------------------------
+
+TEST(CallerAuthGateTest, OpenPlaneServesEveryPacket) {
+  EXPECT_EQ(chirp::app_notification::GateCallerPacket(
+                false, "", MakePacket(chirp::gateway::PUSH_NOTIFICATION_REQ, "")),
+            chirp::app_notification::CallerAuthVerdict::kServe);
+  EXPECT_EQ(chirp::app_notification::GateCallerPacket(
+                false, "", MakePacket(chirp::gateway::SERVER_AUTH_REQ, "")),
+            chirp::app_notification::CallerAuthVerdict::kServe);
+}
+
+TEST(CallerAuthGateTest, TrustedConnectionBypassesHandshake) {
+  EXPECT_EQ(chirp::app_notification::GateCallerPacket(
+                true, "s3cr3t", MakePacket(chirp::gateway::PUSH_NOTIFICATION_REQ, "")),
+            chirp::app_notification::CallerAuthVerdict::kServe);
+}
+
+TEST(CallerAuthGateTest, UntrustedHandshakeRoutesToHandshake) {
+  EXPECT_EQ(chirp::app_notification::GateCallerPacket(
+                false, "s3cr3t", MakePacket(chirp::gateway::SERVER_AUTH_REQ, "")),
+            chirp::app_notification::CallerAuthVerdict::kHandshake);
+}
+
+TEST(CallerAuthGateTest, UntrustedRpcPacketIsUnauthorized) {
+  EXPECT_EQ(chirp::app_notification::GateCallerPacket(
+                false, "s3cr3t", MakePacket(chirp::gateway::PUSH_NOTIFICATION_REQ, "")),
+            chirp::app_notification::CallerAuthVerdict::kUnauthorized);
+  EXPECT_EQ(chirp::app_notification::GateCallerPacket(
+                false, "s3cr3t", MakePacket(chirp::gateway::GET_USER_DEVICES_REQ, "")),
+            chirp::app_notification::CallerAuthVerdict::kUnauthorized);
+}
+
+TEST(CallerAuthGateTest, VerifyCallerSecretAcceptsMatchingSecret) {
+  chirp::game_server_gateway::ServerAuthRequest req;
+  req.set_service_id("chirp");
+  req.set_protocol_version(1);
+  req.set_secret("s3cr3t");
+
+  Packet resp;
+  ASSERT_TRUE(chirp::app_notification::VerifyCallerSecret(
+      MakePacket(chirp::gateway::SERVER_AUTH_REQ, req.SerializeAsString()), "s3cr3t", &resp));
+  EXPECT_EQ(resp.msg_id(), chirp::gateway::SERVER_AUTH_RESP);
+  EXPECT_EQ(resp.sequence(), kSeq);
+
+  chirp::game_server_gateway::ServerAuthResponse body;
+  ASSERT_TRUE(body.ParseFromString(resp.body()));
+  EXPECT_EQ(body.code(), ErrorCode::OK);
+}
+
+TEST(CallerAuthGateTest, VerifyCallerSecretRejectsWrongSecret) {
+  chirp::game_server_gateway::ServerAuthRequest req;
+  req.set_secret("other");
+
+  Packet resp;
+  ASSERT_FALSE(chirp::app_notification::VerifyCallerSecret(
+      MakePacket(chirp::gateway::SERVER_AUTH_REQ, req.SerializeAsString()), "s3cr3t", &resp));
+  EXPECT_EQ(resp.msg_id(), chirp::gateway::SERVER_AUTH_RESP);
+  chirp::game_server_gateway::ServerAuthResponse body;
+  ASSERT_TRUE(body.ParseFromString(resp.body()));
+  EXPECT_EQ(body.code(), ErrorCode::AUTH_FAILED);
+}
+
+TEST(CallerAuthGateTest, VerifyCallerSecretRejectsMalformedAndNonHandshake) {
+  Packet garbage;
+  ASSERT_FALSE(chirp::app_notification::VerifyCallerSecret(
+      MakePacket(chirp::gateway::SERVER_AUTH_REQ, "\xff\xfe not a proto"), "s3cr3t",
+      &garbage));
+  chirp::game_server_gateway::ServerAuthResponse body;
+  ASSERT_TRUE(body.ParseFromString(garbage.body()));
+  EXPECT_EQ(body.code(), ErrorCode::AUTH_FAILED);
+
+  Packet not_auth;
+  ASSERT_FALSE(chirp::app_notification::VerifyCallerSecret(
+      MakePacket(chirp::gateway::PUSH_NOTIFICATION_REQ, ""), "s3cr3t", &not_auth));
+  EXPECT_EQ(not_auth.msg_id(), chirp::gateway::SERVER_AUTH_RESP);
+  EXPECT_FALSE(not_auth.body().empty());
 }
 
 }  // namespace

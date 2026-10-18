@@ -137,11 +137,9 @@ services:
       dockerfile: docker/Dockerfile.service
       args:
         SERVICE: app_notification
-    command: ["--port", "5006", "--ws_port", "5016", "--metrics_port", "19107"]
-    ports:
-      - "5006:5006"
-      - "5016:5016"
-      - "19107:19107"
+    # Callers must present the service secret (SERVER_AUTH_REQ); keep the raw
+    # 6xxx API on the private Compose network only.
+    command: ["--host", "0.0.0.0", "--port", "5006", "--ws_port", "5016", "--service_secret", "notify-secret", "--metrics_port", "19107"]
 
   app_sdk_gateway:
     build:
@@ -161,6 +159,7 @@ services:
         "--instance_id", "app_gw_1",
         "--notification_host", "app_notification",
         "--notification_port", "5006",
+        "--notification_secret", "notify-secret",
         "--chat_host", "chat",
         "--chat_port", "7000",
         "--chat_service_secret", "edge-secret",

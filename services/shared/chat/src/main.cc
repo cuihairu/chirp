@@ -1584,6 +1584,8 @@ int main(int argc, char** argv) {
   const int offline_ttl_seconds = chirp::chat::runtime::ParseIntArg(argc, argv, "--offline_ttl", 604800);
   const std::string notification_host = chirp::chat::runtime::GetArg(argc, argv, "--notification_host", "");
   const uint16_t notification_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--notification_port", 5006);
+  const std::string notification_secret =
+      chirp::chat::runtime::GetArg(argc, argv, "--notification_secret", "");
   // Direct-entry abuse controls: per-IP login and per-user send windows
   // (Redis-backed, fail-open). Without --redis_host the limiter is inert.
   const int login_rate_limit_per_min =
@@ -1696,7 +1698,7 @@ int main(int argc, char** argv) {
   std::shared_ptr<chirp::app_notification::NotificationClient> notification;
   if (!notification_host.empty()) {
     notification = std::make_shared<chirp::app_notification::NotificationClient>(
-        io, notification_host, notification_port);
+        io, notification_host, notification_port, notification_secret);
   }
   chirp::chat::PushBridge push(notification);
 

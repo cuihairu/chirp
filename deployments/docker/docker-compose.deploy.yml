@@ -80,7 +80,9 @@ services:
     image: *server-image
     environment:
       CHIRP_SERVICE: app_notification
-    command: ["--port", "5006", "--ws_port", "5016"]
+    # 0.0.0.0 inside the container so peers on the private network can reach
+    # it; every caller must present the shared secret.
+    command: ["--host", "0.0.0.0", "--port", "5006", "--ws_port", "5016", "--service_secret", "${NOTIFICATION_SERVICE_SECRET:?set in deploy .env}"]
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "bash", "-c", "</dev/tcp/127.0.0.1/5006"]
@@ -188,6 +190,7 @@ services:
         "--instance_id", "app_gw_1",
         "--notification_host", "app_notification",
         "--notification_port", "5006",
+        "--notification_secret", "${NOTIFICATION_SERVICE_SECRET:?set in deploy .env}",
         "--chat_host", "chat",
         "--chat_port", "7000",
         "--chat_service_secret", "edge-secret",

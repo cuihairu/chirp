@@ -19,6 +19,7 @@
 #include "proto/chat.pb.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
+#include "proto/game_server_gateway.pb.h"
 #include "push_bridge.h"
 
 using chirp::app_notification::NotificationClient;
@@ -167,6 +168,47 @@ class DroppingNotificationServer {
   std::thread thread_;
 };
 
+// Accepts one connection, drains whatever arrives, and hangs up without ever
+// answering - the "silent plane" case for the auth handshake read.
+class SilentAuthServer {
+ public:
+  SilentAuthServer()
+      : acceptor_(io_, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), 0)) {
+    port_ = static_cast<uint16_t>(acceptor_.local_endpoint().port());
+    DoAccept();
+    thread_ = std::thread([this] { io_.run(); });
+  }
+  ~SilentAuthServer() {
+    io_.stop();
+    if (thread_.joinable()) {
+      thread_.join();
+    }
+  }
+  uint16_t port() const { return port_; }
+
+ private:
+  void DoAccept() {
+    auto sock = std::make_shared<asio::ip::tcp::socket>(io_);
+    acceptor_.async_accept(*sock, [sock](const std::error_code& ec) {
+      if (ec) {
+        return;
+      }
+      sock->async_wait(asio::ip::tcp::socket::wait_read,
+                       [sock](const std::error_code&) {
+                         std::array<uint8_t, 4096> drain{};
+                         asio::error_code ignore;
+                         sock->read_some(asio::buffer(drain), ignore);
+                         asio::error_code close_ec;
+                         sock->close(close_ec);
+                       });
+    });
+  }
+  asio::io_context io_;
+  asio::ip::tcp::acceptor acceptor_;
+  uint16_t port_{0};
+  std::thread thread_;
+};
+
 // A service with one registered tokenless device (the stub transport makes
 // its sends succeed) served by the real packet handlers.
 struct Loopback {
@@ -223,6 +265,56 @@ struct RecordingPushServer {
 
   uint16_t port() const { return server.port(); }
 
+  std::mutex mu;
+  std::vector<chirp::app_notification::PushNotificationRequest> pushes;
+  FakeNotificationServer server;
+};
+
+// Serves the SERVER_AUTH_REQ handshake first (comparing the presented secret
+// against the expected one) before answering pushes, so an authenticated
+// client can be driven end to end and a mismatching secret can be observed to
+// reach no push at all.
+struct AuthenticatedPushServer {
+  explicit AuthenticatedPushServer(std::string expected_secret)
+      : expected_(std::move(expected_secret)),
+        server([this](const chirp::gateway::Packet& pkt) {
+          if (pkt.msg_id() == chirp::gateway::SERVER_AUTH_REQ) {
+            chirp::game_server_gateway::ServerAuthRequest req;
+            const bool ok =
+                req.ParseFromString(pkt.body()) && req.secret() == expected_;
+            chirp::game_server_gateway::ServerAuthResponse body;
+            body.set_code(ok ? chirp::common::OK : chirp::common::AUTH_FAILED);
+            chirp::gateway::Packet out;
+            out.set_msg_id(chirp::gateway::SERVER_AUTH_RESP);
+            out.set_sequence(pkt.sequence());
+            out.set_body(body.SerializeAsString());
+            return out;
+          }
+          if (pkt.msg_id() == chirp::gateway::PUSH_NOTIFICATION_REQ) {
+            chirp::app_notification::PushNotificationRequest req;
+            if (req.ParseFromString(pkt.body())) {
+              std::lock_guard<std::mutex> lock(mu);
+              pushes.push_back(std::move(req));
+            }
+          }
+          chirp::app_notification::PushNotificationResponse body;
+          body.set_code(chirp::common::OK);
+          body.set_server_time(1);
+          chirp::gateway::Packet out;
+          out.set_msg_id(chirp::gateway::PUSH_NOTIFICATION_RESP);
+          out.set_sequence(pkt.sequence());
+          out.set_body(body.SerializeAsString());
+          return out;
+        }) {}
+
+  uint16_t port() const { return server.port(); }
+
+  size_t PushesSeen() {
+    std::lock_guard<std::mutex> lock(mu);
+    return pushes.size();
+  }
+
+  std::string expected_;
   std::mutex mu;
   std::vector<chirp::app_notification::PushNotificationRequest> pushes;
   FakeNotificationServer server;
@@ -406,6 +498,76 @@ TEST_F(NotificationClientTest, PushRoundTripDeliversResponse) {
   const auto resp = future.get();
   EXPECT_EQ(resp.code(), chirp::common::OK);
   EXPECT_GT(resp.server_time(), 0);
+}
+
+// With a secret configured the client must present the SERVER_AUTH_REQ
+// handshake before its first RPC, and the server only then accepts pushes.
+TEST_F(NotificationClientTest, AuthenticatedHandshakeThenRoundTripDeliversResponse) {
+  AuthenticatedPushServer loop("n0tify-secret");
+  asio::io_context io;
+  NotificationClient client(io, "127.0.0.1", loop.port(), "n0tify-secret");
+
+  chirp::app_notification::PushNotificationRequest req;
+  req.set_user_id("u");
+  req.set_title("t");
+  req.set_body("b");
+
+  std::promise<chirp::app_notification::PushNotificationResponse> promise;
+  auto future = promise.get_future();
+  client.AsyncPush(req, /*seq=*/9,
+                   [&promise](const chirp::app_notification::PushNotificationResponse& resp) {
+                     promise.set_value(resp);
+                   });
+
+  ASSERT_TRUE(SpinIoFor(io, future));
+  EXPECT_EQ(future.get().code(), chirp::common::OK);
+  EXPECT_EQ(loop.PushesSeen(), 1u);
+}
+
+// A wrong secret must surface as INTERNAL_ERROR and never reach the RPC.
+TEST_F(NotificationClientTest, RejectedHandshakeReportsInternalError) {
+  AuthenticatedPushServer loop("n0tify-secret");
+  asio::io_context io;
+  NotificationClient client(io, "127.0.0.1", loop.port(), "wrong-secret");
+
+  chirp::app_notification::PushNotificationRequest req;
+  req.set_user_id("u");
+  req.set_title("t");
+  req.set_body("b");
+
+  std::promise<chirp::common::ErrorCode> promise;
+  auto future = promise.get_future();
+  client.AsyncPush(req, /*seq=*/9,
+                   [&promise](const chirp::app_notification::PushNotificationResponse& resp) {
+                     promise.set_value(resp.code());
+                   });
+
+  ASSERT_TRUE(SpinIoFor(io, future));
+  EXPECT_EQ(future.get(), chirp::common::INTERNAL_ERROR);
+  EXPECT_EQ(loop.PushesSeen(), 0u);
+}
+
+// A plane that accepts the connection but never answers the handshake must
+// also surface as INTERNAL_ERROR (no RPC is attempted).
+TEST_F(NotificationClientTest, SilentAuthServerReportsInternalError) {
+  SilentAuthServer silent;
+  asio::io_context io;
+  NotificationClient client(io, "127.0.0.1", silent.port(), "n0tify-secret");
+
+  chirp::app_notification::PushNotificationRequest req;
+  req.set_user_id("u");
+  req.set_title("t");
+  req.set_body("b");
+
+  std::promise<chirp::common::ErrorCode> promise;
+  auto future = promise.get_future();
+  client.AsyncPush(req, /*seq=*/9,
+                   [&promise](const chirp::app_notification::PushNotificationResponse& resp) {
+                     promise.set_value(resp.code());
+                   });
+
+  ASSERT_TRUE(SpinIoFor(io, future));
+  EXPECT_EQ(future.get(), chirp::common::INTERNAL_ERROR);
 }
 
 TEST_F(NotificationClientTest, DeviceRpcRoundTrips) {

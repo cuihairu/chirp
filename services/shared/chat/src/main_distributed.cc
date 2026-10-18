@@ -457,6 +457,9 @@ int main(int argc, char** argv) {
   const std::string token_secret = chirp::chat::runtime::GetArg(argc, argv, "--token_secret", "");
   const std::string notification_host = chirp::chat::runtime::GetArg(argc, argv, "--notification_host", "");
   const uint16_t notification_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--notification_port", 5006);
+  // Empty = the notification plane is left open (its default).
+  const std::string notification_secret =
+      chirp::chat::runtime::GetArg(argc, argv, "--notification_secret", "");
   // 0 disables client delivery-ack tracking entirely (kill switch).
   const int64_t ack_timeout_ms = chirp::chat::runtime::ParseIntArg(argc, argv, "--ack_timeout_ms", 10000);
 
@@ -488,7 +491,7 @@ int main(int argc, char** argv) {
   std::shared_ptr<chirp::app_notification::NotificationClient> notification;
   if (!notification_host.empty()) {
     notification = std::make_shared<chirp::app_notification::NotificationClient>(
-        io, notification_host, notification_port);
+        io, notification_host, notification_port, notification_secret);
   }
   chirp::chat::PushBridge push(notification);
 

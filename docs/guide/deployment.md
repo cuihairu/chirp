@@ -48,6 +48,8 @@ build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001 \
 
 所有带监听器的服务都支持 `--host <addr>`(默认 `0.0.0.0` 全网卡),参数直接传给 TCP/WS 监听器构造、实控绑定地址(2026-10-19 起全部服务接线完毕;此前多数服务解析了该 flag 却未传给监听器);非法地址在启动时即失败,不静默回落全网卡。收窄暴露面:只经网关触达的后台服务(`chirp_app_auth`、`chirp_chat`/`chirp_chat_distributed`、`chirp_social`、`chirp_party`、`chirp_voice`、`chirp_app_notification`、`chirp_search`)建议绑 `127.0.0.1` 或内网 IP;直接面向客户端的边缘入口(`chirp_game_sdk_gateway`、`chirp_app_sdk_gateway`)与带服务面认证的 `chirp_game_server_gateway` 保持 `0.0.0.0` 或按网络拓扑绑定。同一服务的 TCP 与 WS 监听(如 chat 的 `--port`/`--ws_port`)绑定同一 `--host` 地址。
 
+**推送平面服务间认证（2026-10-19,方案已代决为共享密钥握手）**:`chirp_app_notification` 配 `--service_secret <secret>` 后,每条新连接必须先以 `SERVER_AUTH_REQ`(共享密钥,与 `chirp_game_server_gateway` 的服务面认证同一消息族)完成握手才能调用 6xxx 设备/推送接口;密钥不符或未握手的包会被拒绝并断开。配置了 `--notification_host` 的调用方(`chirp_app_sdk_gateway`、`chirp_chat`/`chirp_chat_distributed`)用 `--notification_secret <secret>` 传同一密钥;握手失败按普通传输失败处理(回调 `INTERNAL_ERROR`,调用方不区分密钥错误与断连)。不传 `--service_secret` 时平面保持开放(兼容既有开发环境)。Compose 两份示例(`docker-compose.yml`、`deployments/docker/docker-compose.deploy.yml`)已配齐成对密钥,且不再把 5006/5016 发布到宿主机(开发 compose)。
+
 **`--allow_scaffold_login` 是开发脚手架,不是部署参数**:开启后 auth 对既非有效 JWT 也非活跃会话的 token 直接按「token 即 user_id」放行(`services/app/auth/src/main_enhanced.cc` 的 LOGIN_REQ 回退分支),任何持有该服务网络可达性的调用方都可以冒充任意用户。仅限完全隔离的本地开发演示使用,生产一律不传此参数(`docker-compose.yml` 里带它是因为那份 compose 本身是开发演示形态)。
 
 限流开关在 chat 上:`--login_rate_limit_per_min`(默认 30 次/分钟,按客户端 IP)和 `--send_rate_limit_per_min`(默认 120 次/分钟,按用户)。窗口数据放 Redis,Redis 故障时放行(fail-open);完全不配 `--redis_host` 时不启用限流。

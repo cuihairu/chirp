@@ -1245,3 +1245,20 @@ vcpkg.json
 | 推送设备持久化与重启恢复 | 当前设备注册表是进程内存容器，能力矩阵也标明设备注册表为进程内状态。`services/app/notification/src/notification_service.h:203-210`；`docs/CAPABILITY_MATRIX.md:36` | 高 |
 | APNs 原生 HTTP/2 投递传输 | 当前推送 HTTP 传输为 HTTP/1.1；文档指出 APNs 需要 HTTP/2，生产需额外协议转换代理。`services/app/notification/src/main.cc:157-160`；`TODO.md:195` | 高 |
 | WebRTC 真实媒体链路与浏览器端到端验证 | 目前有语音信令，但没有真实浏览器/音频媒体 E2E；能力矩阵将媒体面明确列为未验证。`docs/CAPABILITY_MATRIX.md:34` | 中 |
+
+## 表三评估与分期建议（2026-10-19 补齐）
+
+按 `todo.md` 表三约定只做评估与分期建议，不实现（实现需用户拍板）。**行 2 在本评审批后已落地**（`4fb8074`），其余三行的现状证据与分期建议如下；原表为 2026-10-18 时点记录，不作改写，结论以本节为准。
+
+| 能力 | 现状证据（2026-10-19） | 建议分期 | 需拍板点 |
+|---|---|---|---|
+| 管理后台审核与运营工作流 | 后台仍是 Stub：`apps/admin_dashboard` 五处 `fetch` 指向 `/api/stats`（App.tsx:57）、`/api/users`（Users.tsx:39）、`/api/channels`（Channels.tsx:32）、`/api/messages`（Messages.tsx:31）、`/api/messages/search`（Messages.tsx:51），仓内零服务端 `/api/*` 路由。举报台账已落地但**仅进程内存**：`services/shared/chat/src/message_handlers.cc:576+`（`ReportHandlers::HandleReportMessage` → `reports_.Report`，按 (message_id, reporter_id) 去重，回 `report_count`），重启即丢、多实例不共享，与 TODO:234「管理后台审核队列待全局管理员面另批」同裁决 | 一期：举报队列只读 API（列表/详情/状态流转）+ 管理员身份判定（app 平面 JWT 加角色 claim，或独立 admin 密钥），数据源先接 chat 进程内台账并接受重启丢档；二期：审核台账持久化（MySQL 或文件，与 269⑤ `DeviceStore` 同风格）+ 运营工作流（封禁/解封、审核结果广播给举报者）+ 后台前端接真实端点；三期：操作审计留痕 | 是否立项；管理员身份模型（角色 claim vs 独立 admin 密钥）；审核台账持久化目标 |
+| 推送设备持久化与重启恢复 | **已落地（`4fb8074`，2026-10-19）**：`services/app/notification/src/device_store.h`（文件持久化，临时文件 + rename 原子替换，坏行跳过）+ `--device_store_file`（缺省空 = 纯内存，不传 flag 行为与此前逐位一致）+ 监听器就绪前 `RestorePersisted()` 回灌；10 例单测，能力矩阵通知行已同步 | 无需分期。唯一可选增强是 MySQL write-through（与混合存储同库），当前非必需 | 可选：是否要 MySQL write-through（默认不立项） |
+| APNs 原生 HTTP/2 投递传输 | 传输仍为 HTTP/1.1：`push_transport.h:29` 注释明写「provider HTTP needs TLS, APNs additionally HTTP/2」，`main.cc:168` 把 h2 划在接缝外并指向前置协议转换代理；ES256 provider JWT 已实现（`apns_jwt.{h,cc}`，14 例单测，`--apns-key/-key-id/-team-id` 配齐即注入 `Authorization: Bearer`）。真实投递联调仍缺凭据（TODO:195） | 一期（零代码）：部署侧前置协议转换代理（nginx/caddy 承担 TLS + h2 → h1.1 上游），把 h2 义务交给代理；二期（仅在代理不可控时）：仓内 HTTP/2 客户端（asio 上自实现 hpack/SETTINGS 帧，或引入 h2 依赖），工程量与测试面最高 | 是否接受前置代理路线（建议：接受）；二期是否立项 |
+| WebRTC 真实媒体链路与浏览器端到端验证 | 信令面完整（74 例单测、TSan 干净，`--smoke-voice` 进程级冒烟在 CI 内），SDP/ICE/SPEAKING 中继在服务端存在（4007-4009/4021），web 客户端不订阅不驱动音频（能力矩阵语音行）；仓内无 WebRTC / Opus 依赖 | 一期：信令层契约测试补齐（浏览器侧 SDP/ICE 语义断言，验证中继正确性，不需媒体链路）；二期：单对单最小音频闭环（浏览器 `getUserMedia` + 轻量 Opus，端到端人工验收一次）；三期：需规模化再评估引入成熟框架（工作量最高，需真实浏览器设备与音频依赖） | 媒体面是否立项；一期信令契约测试建议随管理后台一期同批排期 |
+
+**分期汇总建议**：阶段一（低风险、不依赖外部凭据）= 管理后台一期 + WebRTC 一期信令契约测试；阶段二 = 管理后台二期（台账持久化 + 运营工作流 + 后台接线）；阶段三（依赖外部条件）= APNs 真实投递联调需 195 凭据，APNs h2 客户端与 WebRTC 二期媒体闭环需另拍板立项。本批仅评估，零代码改动。
+
+## 表一 P0 行 1 收口（2026-10-19）
+
+**通知服务接口无认证**的剩余半边已落地（认证机制按巡检单授权代决为共享密钥握手，标「已代决」）：`chirp_app_notification` 以 `--service_secret` 开启调用方认证——每条新连接先过 `SERVER_AUTH_REQ`/`SERVER_AUTH_RESP` 共享密钥握手（`services/app/notification/src/caller_auth.h`），密钥不符回 `AUTH_FAILED` 并断连、未握手先发 6xxx 即断连；`chirp_app_sdk_gateway` 与 chat 三形态以 `--notification_secret` 传同一密钥（`NotificationClient` 每连接自动握手，失败按普通传输失败回 `INTERNAL_ERROR`）。不配密钥则平面开放（既有开发环境不变）。表内建议的「未认证前仅绑定内网地址」过渡项同批收紧：开发 compose 不再把 5006/5016 发布到宿主机，生产 compose 从 `.env` 读成对密钥；默认绑定维持 `0.0.0.0`（`--host` 实控 + 指南建议由部署层收窄，见 `docs/guide/deployment.md`）。`--host` 半边已于 2026-10-19 早前落地（`cae395a`）。原表为时点记录，不作改写，结论以本节为准。

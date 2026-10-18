@@ -27,7 +27,12 @@ class NotificationClient {
   using UpdateTokenCallback = std::function<void(const UpdateDeviceTokenResponse&)>;
   using DevicesCallback = std::function<void(const GetUserDevicesResponse&)>;
 
-  NotificationClient(asio::io_context& main_io, std::string host, uint16_t port);
+  // With a non-empty secret, every per-job connection first completes the
+  // notification plane's SERVER_AUTH_REQ handshake (shared-secret caller
+  // auth, see caller_auth.h); a rejected handshake surfaces as a normal
+  // transport failure (INTERNAL_ERROR).
+  NotificationClient(asio::io_context& main_io, std::string host, uint16_t port,
+                     std::string secret = {});
   ~NotificationClient();  // drains queued jobs, then joins the worker
 
   NotificationClient(const NotificationClient&) = delete;

@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_set>
 #include <utility>
 
 #include <asio.hpp>
@@ -11,6 +12,7 @@
 #include "logger.h"
 #include "http_push_transport.h"
 #include "device_store.h"
+#include "caller_auth.h"
 #include "network/protobuf_framing.h"
 #include "network/tcp_server.h"
 #include "network/websocket_server.h"
@@ -32,16 +34,44 @@ void SendPacket(const std::shared_ptr<network::Session>& session,
   session->Send(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
 }
 
-// Dispatch body of the on_frame callback wired into both listeners below,
-// hoisted verbatim (the only change: the logger reference becomes the
-// singleton it aliases) so tests can drive the notification plane directly.
+// Dispatch body of the on_frame callback wired into both listeners below.
+// Caller authentication gate (audit 表一 P0 half): with a non-empty caller
+// secret every connection must complete the SERVER_AUTH_REQ handshake before
+// any 6xxx packet is served. A rejected handshake is answered AUTH_FAILED and
+// closes the connection, mirroring chat's HandleServerAuth contract; a
+// non-handshake packet on an unauthenticated connection is dropped with the
+// connection closed. Without a secret the plane stays open as before.
 void HandleNotificationPacket(app_notification::NotificationHandlers& handlers,
                               const std::shared_ptr<network::Session>& session,
+                              const std::string& caller_secret,
+                              std::unordered_set<const network::Session*>& trusted_conns,
                               std::string&& payload) {
   gateway::Packet pkt;
   if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
     chirp::common::Logger::Instance().Warn(
         "failed to parse Packet on the notification plane");
+    return;
+  }
+  const auto verdict = app_notification::GateCallerPacket(
+      trusted_conns.count(session.get()) != 0, caller_secret, pkt);
+  if (verdict != app_notification::CallerAuthVerdict::kServe) {
+    if (verdict == app_notification::CallerAuthVerdict::kHandshake) {
+      gateway::Packet auth_resp;
+      if (app_notification::VerifyCallerSecret(pkt, caller_secret, &auth_resp)) {
+        trusted_conns.insert(session.get());
+        SendPacket(session, std::move(auth_resp));
+      } else {
+        chirp::common::Logger::Instance().Warn(
+            "notification plane rejected a caller secret on a new connection");
+        auto framed = network::ProtobufFraming::Encode(auth_resp);
+        session->SendAndClose(
+            std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
+      }
+      return;
+    }
+    chirp::common::Logger::Instance().Warn(
+        "notification plane dropping a packet from an unauthenticated connection");
+    session->Close();
     return;
   }
   CHIRP_COUNTER("chirp_app_notification_packets_total", 1);
@@ -80,6 +110,9 @@ int main(int argc, char* argv[]) {
   // behavior), so integration scripts that start several instances in one
   // working directory do not fight over one file.
   std::string device_store_file;
+  // Empty = open plane (the pre-auth behavior): the dev compose stack and
+  // integration scripts keep working unchanged.
+  std::string service_secret;
 
   for (int i = 1; i < argc; ++i) {
     std::string arg = argv[i];
@@ -114,6 +147,8 @@ int main(int argc, char* argv[]) {
       push_verify_tls = std::string(argv[++i]) != "off";
     } else if (arg == "--device_store_file" && i + 1 < argc) {
       device_store_file = argv[++i];
+    } else if (arg == "--service_secret" && i + 1 < argc) {
+      service_secret = argv[++i];
     } else if (arg == "--help") {
       std::cout << "Usage: " << argv[0] << " [options]\n"
                 << "Options:\n"
@@ -138,6 +173,8 @@ int main(int argc, char* argv[]) {
                 << "                        push transport (default: on)\n"
                 << "  --device_store_file <path>  persist device registrations across\n"
                 << "                        restarts (default: off, memory-only)\n"
+                << "  --service_secret <secret>  require the SERVER_AUTH_REQ handshake\n"
+                << "                        from every caller (default: off, open plane)\n"
                 << "  --help              Show this help\n";
       return 0;
     }
@@ -204,16 +241,30 @@ int main(int argc, char* argv[]) {
 
   asio::io_context io;
 
-  auto on_frame = [handlers](std::shared_ptr<network::Session> session,
+  // Connections that completed the SERVER_AUTH_REQ handshake (audit 表一 P0
+  // half). Both listeners share the set; a disconnect erases its entry so the
+  // memory stays bounded and a recycled pointer can never authenticate.
+  std::unordered_set<const network::Session*> trusted_conns;
+
+  auto on_frame = [&trusted_conns, service_secret,
+                   handlers](std::shared_ptr<network::Session> session,
                              std::string&& payload) mutable {
-    HandleNotificationPacket(handlers, session, std::move(payload));
+    HandleNotificationPacket(handlers, session, service_secret, trusted_conns,
+                             std::move(payload));
+  };
+
+  auto on_disconnect = [&trusted_conns](const std::shared_ptr<network::Session>& session) {
+    trusted_conns.erase(session.get());
   };
 
   // --host controls the actual bind address of both listeners (literal IP).
-  // Handlers carry no caller authentication yet, so deployments should keep
-  // this off the public internet until service-to-service auth lands.
-  network::TcpServer server(io, port, on_frame, nullptr, host);
-  network::WebSocketServer ws_server(io, ws_port, on_frame, nullptr, host);
+  if (!service_secret.empty()) {
+    logger.Info("notification plane caller authentication enabled (SERVER_AUTH_REQ)");
+  } else {
+    logger.Info("notification plane caller authentication disabled: open plane");
+  }
+  network::TcpServer server(io, port, on_frame, on_disconnect, host);
+  network::WebSocketServer ws_server(io, ws_port, on_frame, on_disconnect, host);
   server.Start();
   ws_server.Start();
 

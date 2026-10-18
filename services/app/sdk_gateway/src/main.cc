@@ -650,6 +650,7 @@ int main(int argc, char** argv) {
 
   const std::string notification_host = GetArg(argc, argv, "--notification_host", "");
   const uint16_t notification_port = ParseU16Arg(argc, argv, "--notification_port", 5006);
+  const std::string notification_secret = GetArg(argc, argv, "--notification_secret", "");
 
   // Server-plane hub (WP-8 player channel subscriptions): empty --sg_host
   // leaves the subscription self-service path disabled.
@@ -735,7 +736,7 @@ int main(int argc, char** argv) {
   std::shared_ptr<chirp::app_notification::NotificationClient> notification;
   if (!notification_host.empty()) {
     notification =
-        std::make_shared<chirp::app_notification::NotificationClient>(io, notification_host, notification_port);
+        std::make_shared<chirp::app_notification::NotificationClient>(io, notification_host, notification_port, notification_secret);
   }
 
   // One long-lived authenticated connection: the hub allows exactly one live

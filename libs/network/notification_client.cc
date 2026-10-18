@@ -15,6 +15,7 @@
 #include "network/byte_order.h"
 #include "network/protobuf_framing.h"
 #include "proto/common.pb.h"
+#include "proto/game_server_gateway.pb.h"
 
 namespace chirp {
 namespace app_notification {
@@ -54,6 +55,7 @@ struct NotificationClient::Impl {
   asio::io_context& main_io;
   std::string host;
   uint16_t port{0};
+  std::string secret;
 
   std::mutex mu;
   std::condition_variable cv;
@@ -61,8 +63,8 @@ struct NotificationClient::Impl {
   bool stop{false};
   std::thread worker;
 
-  Impl(asio::io_context& io, std::string h, uint16_t p)
-      : main_io(io), host(std::move(h)), port(p) {}
+  Impl(asio::io_context& io, std::string h, uint16_t p, std::string s)
+      : main_io(io), host(std::move(h)), port(p), secret(std::move(s)) {}
 
   void Start() { worker = std::thread([this] { Run(); }); }
 
@@ -85,6 +87,34 @@ struct NotificationClient::Impl {
         asio::ip::tcp::socket sock(io);
         auto endpoints = resolver.resolve(host, std::to_string(port));
         asio::connect(sock, endpoints);
+
+        // Shared-secret caller auth: the plane rejects 6xxx from unauthenticated
+        // connections when a secret is configured, so every connection must be
+        // introduced first. A rejected handshake is a transport failure here.
+        if (!secret.empty()) {
+          chirp::game_server_gateway::ServerAuthRequest auth_req;
+          auth_req.set_service_id("chirp");
+          auth_req.set_protocol_version(1);
+          auth_req.set_secret(secret);
+          chirp::gateway::Packet auth_pkt;
+          auth_pkt.set_msg_id(chirp::gateway::SERVER_AUTH_REQ);
+          auth_pkt.set_body(auth_req.SerializeAsString());
+          auto auth_out = chirp::network::ProtobufFraming::Encode(auth_pkt);
+          asio::write(sock, asio::buffer(auth_out));
+          std::string auth_payload;
+          if (!ReadFrame(sock, &auth_payload)) {
+            throw std::runtime_error("notification auth: no response");
+          }
+          chirp::gateway::Packet auth_resp;
+          chirp::game_server_gateway::ServerAuthResponse auth_body;
+          if (!auth_resp.ParseFromArray(auth_payload.data(),
+                                        static_cast<int>(auth_payload.size())) ||
+              auth_resp.msg_id() != chirp::gateway::SERVER_AUTH_RESP ||
+              !auth_body.ParseFromString(auth_resp.body()) ||
+              auth_body.code() != chirp::common::OK) {
+            throw std::runtime_error("notification auth rejected");
+          }
+        }
 
         chirp::gateway::Packet pkt;
         pkt.set_msg_id(job.req_id);
@@ -117,8 +147,9 @@ struct NotificationClient::Impl {
   }
 };
 
-NotificationClient::NotificationClient(asio::io_context& main_io, std::string host, uint16_t port)
-    : impl_(std::make_unique<Impl>(main_io, std::move(host), port)) {
+NotificationClient::NotificationClient(asio::io_context& main_io, std::string host, uint16_t port,
+                                       std::string secret)
+    : impl_(std::make_unique<Impl>(main_io, std::move(host), port, std::move(secret))) {
   impl_->Start();
 }
 

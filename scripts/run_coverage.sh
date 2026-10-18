@@ -194,7 +194,9 @@ KNOWN_UNCOVERABLE = {
     ("libs/network/message_router.cc", 68),
     ("libs/network/redis_session_manager.cc", 97),
     ("libs/network/redis_session_manager.cc", 147),
-    ("libs/network/notification_client.cc", 108),
+    # +29-line drift: caller-secret SERVER_AUTH_REQ handshake block inserted
+    # in the per-job Run() loop above (2026-10-19, notification caller auth).
+    ("libs/network/notification_client.cc", 137),
     ("libs/network/service_bridge.cc", 274),
     ("libs/network/service_bridge.cc", 288),
     ("libs/network/server_gateway_peer.cc", 113),

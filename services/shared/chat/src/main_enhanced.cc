@@ -1266,6 +1266,8 @@ int main(int argc, char** argv) {
   // a null client makes the bridge a no-op.
   const std::string notification_host = chirp::chat::runtime::GetArg(argc, argv, "--notification_host", "");
   const uint16_t notification_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--notification_port", 5006);
+  const std::string notification_secret =
+      chirp::chat::runtime::GetArg(argc, argv, "--notification_secret", "");
   // Prometheus scrape endpoint, opt-in: 0 keeps the listening surface
   // unchanged for existing deployments.
   const uint16_t metrics_port =
@@ -1273,7 +1275,7 @@ int main(int argc, char** argv) {
   std::shared_ptr<chirp::app_notification::NotificationClient> notification;
   if (!notification_host.empty()) {
     notification = std::make_shared<chirp::app_notification::NotificationClient>(
-        io, notification_host, notification_port);
+        io, notification_host, notification_port, notification_secret);
   }
   chirp::chat::PushBridge push(notification);
 
