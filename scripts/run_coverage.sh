@@ -232,9 +232,13 @@ KNOWN_UNCOVERABLE = {
     # notification_service/handlers defensive arms: deferred by decision
     # (other session owns those files).
     ("services/app/notification/src/notification_handlers.cc", 94),
-    ("services/app/notification/src/notification_service.cc", 133),
-    ("services/app/notification/src/notification_service.cc", 228),
-    ("services/app/notification/src/notification_service.cc", 399),
+    ("services/app/notification/src/notification_service.cc", 139),
+    ("services/app/notification/src/notification_service.cc", 272),
+    ("services/app/notification/src/notification_service.cc", 443),
+    # ... 133->139, 228->272, 399->443 for the device-store persistence
+    # +6/+46/+44-line drift (ctor/store param, PersistLocked calls, the
+    # RestorePersisted/PersistLocked pair; every new line is covered by
+    # NotificationDeviceStoreTest / NotificationServicePersistenceTest).
     # ChatClient::Impl::SendRequest timeout sweep: the pending entry is
     # erased only together with timer->cancel(); a handler already dispatched
     # before the cancel exits at the timer_ec arm above, so the find-miss

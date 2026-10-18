@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -17,6 +18,8 @@
 #include <vector>
 
 #include "notification_service.h"
+
+#include "device_store.h"
 
 namespace chirp {
 namespace app_notification {
@@ -53,10 +56,12 @@ namespace {
 
 using chirp::app_notification::APNsConfig;
 using chirp::app_notification::DeviceRegistration;
+using chirp::app_notification::DeviceStore;
 using chirp::app_notification::FCMConfig;
 using chirp::app_notification::NotificationPayload;
 using chirp::app_notification::NotificationService;
 using chirp::app_notification::NotificationServiceInternalAccess;
+using chirp::app_notification::OkTransport;
 using chirp::app_notification::PushRequest;
 using chirp::app_notification::PushTransport;
 
@@ -305,4 +310,214 @@ TEST(NotificationInternalTest, ApnsBearerTokenReadsKeyFile) {
   const std::string bearer = transport->requests[0].headers.at("Authorization");
   EXPECT_EQ(bearer.substr(0, 7), "Bearer ");
   std::filesystem::remove(path);
+}
+
+
+// --- Device registry persistence (audit D3: devices_ was memory-only) -----
+// DeviceStore keeps the registry across a restart: one tab-separated line per
+// device, every text field base64url-encoded so token bytes cannot break rows.
+
+std::filesystem::path TempDeviceStorePath() {
+  return std::filesystem::temp_directory_path() / "chirp_device_store_test.tsv";
+}
+
+DeviceRegistration MakeAndroidDevice(const std::string& device_id,
+                                     const std::string& user) {
+  DeviceRegistration reg;
+  reg.device_id = device_id;
+  reg.user_id = user;
+  reg.platform = "android";
+  reg.fcm_token = "fcm-tok-" + device_id;
+  return reg;
+}
+
+TEST(NotificationDeviceStoreTest, RoundTripsAllFields) {
+  const std::filesystem::path path = TempDeviceStorePath();
+  std::error_code ec;
+  std::filesystem::remove(path, ec);
+  DeviceStore store(path.string());
+
+  DeviceRegistration reg;
+  reg.device_id = "dev\ttab\nnewline";
+  reg.user_id = "us\u00e9r with spaces";
+  reg.platform = "ios";
+  reg.app_version = "1.2.3-beta+build";
+  reg.os_version = "iOS 17_1 (21B74)";
+  reg.registered_at = 1729300000123;
+  reg.is_active = true;
+  reg.apns_token = "apns-token-url-safe_-chars123";
+  reg.apns_environment = "development";
+  reg.push_kit_token = "pk.abc/def+ghi";
+  reg.fcm_token = "";
+
+  DeviceRegistration inactive = MakeAndroidDevice("d2", "bob");
+  inactive.registered_at = 1729300099999;
+  inactive.is_active = false;
+  inactive.app_version = "";
+  inactive.os_version = "";
+
+  ASSERT_TRUE(store.SaveAll({reg, inactive}));
+
+  const std::vector<DeviceRegistration> loaded = store.LoadAll();
+  ASSERT_EQ(loaded.size(), 2u);
+  EXPECT_EQ(loaded[0].device_id, reg.device_id);
+  EXPECT_EQ(loaded[0].user_id, reg.user_id);
+  EXPECT_EQ(loaded[0].platform, reg.platform);
+  EXPECT_EQ(loaded[0].app_version, reg.app_version);
+  EXPECT_EQ(loaded[0].os_version, reg.os_version);
+  EXPECT_EQ(loaded[0].registered_at, reg.registered_at);
+  EXPECT_TRUE(loaded[0].is_active);
+  EXPECT_EQ(loaded[0].apns_token, reg.apns_token);
+  EXPECT_EQ(loaded[0].apns_environment, reg.apns_environment);
+  EXPECT_EQ(loaded[0].push_kit_token, reg.push_kit_token);
+  EXPECT_EQ(loaded[0].fcm_token, reg.fcm_token);
+  EXPECT_EQ(loaded[1].device_id, inactive.device_id);
+  EXPECT_FALSE(loaded[1].is_active);
+  EXPECT_EQ(loaded[1].app_version, "");
+  std::filesystem::remove(path, ec);
+}
+
+TEST(NotificationDeviceStoreTest, LoadMissingFileReturnsEmpty) {
+  DeviceStore store((TempDeviceStorePath() / "nope" / "missing.tsv").string());
+  // Nothing persisted yet (first boot): an empty registry, not an error.
+  EXPECT_TRUE(store.LoadAll().empty());
+}
+
+TEST(NotificationDeviceStoreTest, SkipsMalformedLinesButKeepsValid) {
+  const std::filesystem::path path = TempDeviceStorePath();
+  std::error_code ec;
+  std::filesystem::remove(path, ec);
+  DeviceStore store(path.string());
+  ASSERT_TRUE(store.SaveAll({MakeAndroidDevice("d1", "alice")}));
+
+  // Corrupt the saved copy: a non-base64 cell, a too-short row and a blank
+  // line must be skipped on load; the valid row stays.
+  {
+    std::ofstream out(path, std::ios::binary | std::ios::app);
+    out << "!!!not-base64\tcells\there\tmore\tstuff\t1\tmore\tcells\there\tand\tthere\n";
+    out << "only-three\tcells\there\n";
+    out << "\n";
+  }
+  // A CRLF-terminated row (hand-edited file on Windows) still loads: the
+  // trailing \r is trimmed before parsing.
+  {
+    std::ifstream in(path, std::ios::binary);
+    std::string body((std::istreambuf_iterator<char>(in)),
+                     std::istreambuf_iterator<char>());
+    in.close();
+    std::string crlf;
+    for (const char c : body) {
+      if (c == '\n') crlf.push_back('\r');
+      crlf.push_back(c);
+    }
+    std::ofstream out(path, std::ios::binary | std::ios::trunc);
+    out << crlf;
+  }
+  const std::vector<DeviceRegistration> crlf_loaded = store.LoadAll();
+  ASSERT_EQ(crlf_loaded.size(), 1u);
+  EXPECT_EQ(crlf_loaded[0].device_id, "d1");
+  std::filesystem::remove(path, ec);
+}
+
+TEST(NotificationDeviceStoreTest, SaveFailsWhenDirectoryMissing) {
+  DeviceStore store((TempDeviceStorePath() / "no-such-dir" / "devices.tsv").string());
+  EXPECT_FALSE(store.SaveAll({MakeAndroidDevice("d1", "alice")}));
+}
+
+TEST(NotificationDeviceStoreTest, SaveFailsWhenTargetIsADirectory) {
+  // rename(tmp, path) fails when the destination exists as a directory.
+  const std::filesystem::path dir = TempDeviceStorePath().string() + ".dir";
+  std::error_code ec;
+  std::filesystem::remove_all(dir, ec);
+  std::filesystem::create_directory(dir);
+  DeviceStore store(dir.string());
+  EXPECT_FALSE(store.SaveAll({MakeAndroidDevice("d1", "alice")}));
+  // The temp sibling from the failed rename is cleaned up, not left behind.
+  EXPECT_FALSE(std::filesystem::exists(dir.string() + ".tmp", ec));
+  std::filesystem::remove_all(dir, ec);
+}
+
+TEST(NotificationServicePersistenceTest, RegisterPersistsAndSecondInstanceRestores) {
+  const std::filesystem::path path = TempDeviceStorePath();
+  std::error_code ec;
+  std::filesystem::remove(path, ec);
+  {
+    NotificationService svc{FCMConfig{}, APNsConfig{},
+                            std::make_shared<OkTransport>(),
+                            std::make_shared<DeviceStore>(path.string())};
+    ASSERT_TRUE(svc.RegisterDevice(MakeAndroidDevice("d1", "alice")));
+  }
+  NotificationService restored{FCMConfig{}, APNsConfig{},
+                               std::make_shared<OkTransport>(),
+                               std::make_shared<DeviceStore>(path.string())};
+  // A service without a store restores nothing (persistence is opt-in).
+  NotificationService memory_only{FCMConfig{}, APNsConfig{}};
+  EXPECT_EQ(memory_only.RestorePersisted(), 0);
+  EXPECT_EQ(restored.RestorePersisted(), 1);
+
+  const std::vector<DeviceRegistration> devices = restored.GetUserDevices("alice");
+  ASSERT_EQ(devices.size(), 1u);
+  EXPECT_EQ(devices[0].device_id, "d1");
+  EXPECT_EQ(devices[0].fcm_token, "fcm-tok-d1");
+  EXPECT_TRUE(devices[0].is_active);
+  EXPECT_GT(devices[0].registered_at, 0);
+  std::filesystem::remove(path, ec);
+}
+
+TEST(NotificationServicePersistenceTest, UnregisterRemovesPersistedDevice) {
+  const std::filesystem::path path = TempDeviceStorePath();
+  std::error_code ec;
+  std::filesystem::remove(path, ec);
+  {
+    NotificationService svc{FCMConfig{}, APNsConfig{},
+                            std::make_shared<OkTransport>(),
+                            std::make_shared<DeviceStore>(path.string())};
+    ASSERT_TRUE(svc.RegisterDevice(MakeAndroidDevice("d1", "alice")));
+    ASSERT_TRUE(svc.RegisterDevice(MakeAndroidDevice("d2", "alice")));
+    EXPECT_FALSE(svc.UnregisterDevice("missing"));
+    ASSERT_TRUE(svc.UnregisterDevice("d1"));
+  }
+  NotificationService restored{FCMConfig{}, APNsConfig{},
+                               std::make_shared<OkTransport>(),
+                               std::make_shared<DeviceStore>(path.string())};
+  ASSERT_EQ(restored.RestorePersisted(), 1);
+  const std::vector<DeviceRegistration> devices = restored.GetUserDevices("alice");
+  ASSERT_EQ(devices.size(), 1u);
+  EXPECT_EQ(devices[0].device_id, "d2");
+  std::filesystem::remove(path, ec);
+}
+
+TEST(NotificationServicePersistenceTest, UpdateTokenPersists) {
+  const std::filesystem::path path = TempDeviceStorePath();
+  std::error_code ec;
+  std::filesystem::remove(path, ec);
+  {
+    NotificationService svc{FCMConfig{}, APNsConfig{},
+                            std::make_shared<OkTransport>(),
+                            std::make_shared<DeviceStore>(path.string())};
+    ASSERT_TRUE(svc.RegisterDevice(MakeAndroidDevice("d1", "alice")));
+    ASSERT_TRUE(svc.UpdateDeviceToken("d1", "fcm-tok-fresh"));
+  }
+  NotificationService restored{FCMConfig{}, APNsConfig{},
+                               std::make_shared<OkTransport>(),
+                               std::make_shared<DeviceStore>(path.string())};
+  ASSERT_EQ(restored.RestorePersisted(), 1);
+  const std::vector<DeviceRegistration> devices = restored.GetUserDevices("alice");
+  ASSERT_EQ(devices.size(), 1u);
+  EXPECT_EQ(devices[0].fcm_token, "fcm-tok-fresh");
+  std::filesystem::remove(path, ec);
+}
+
+TEST(NotificationServicePersistenceTest, SaveFailureKeepsDeviceInMemory) {
+  DeviceStore store((TempDeviceStorePath() / "no-such-dir" / "devices.tsv").string());
+  NotificationService svc{FCMConfig{}, APNsConfig{},
+                          std::make_shared<OkTransport>(),
+                          std::make_shared<DeviceStore>(store.path())};
+  // The registration still lands in memory when the file cannot be written:
+  // pushes keep working until a later save succeeds; the Error log carries
+  // the failure instead of it being silent.
+  ASSERT_TRUE(svc.RegisterDevice(MakeAndroidDevice("d1", "alice")));
+  const std::vector<DeviceRegistration> devices = svc.GetUserDevices("alice");
+  ASSERT_EQ(devices.size(), 1u);
+  EXPECT_EQ(devices[0].fcm_token, "fcm-tok-d1");
 }

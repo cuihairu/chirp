@@ -83,11 +83,15 @@ struct APNsConfig {
 };
 
 // Notification service
+// File-backed registry persistence; defined in device_store.h.
+class DeviceStore;
+
 class NotificationService {
 public:
   NotificationService(const FCMConfig& fcm_config = FCMConfig(),
                      const APNsConfig& apns_config = APNsConfig(),
-                     std::shared_ptr<PushTransport> transport = nullptr);
+                     std::shared_ptr<PushTransport> transport = nullptr,
+                     std::shared_ptr<DeviceStore> device_store = nullptr);
   ~NotificationService() = default;
 
   // Device registration
@@ -97,6 +101,10 @@ public:
 
   // Get user's devices
   std::vector<DeviceRegistration> GetUserDevices(const std::string& user_id);
+
+  // Rehydrates the registry from the configured DeviceStore; 0 (no-op) when
+  // persistence is off. Called once at startup, before the handlers go live.
+  int RestorePersisted();
 
   // Send notifications
   bool SendNotification(const std::string& user_id,
@@ -208,6 +216,15 @@ private:
 
   // Notification cooldown (user_id -> last notification time)
   std::unordered_map<std::string, int64_t> cooldowns_;
+
+  // Null when persistence is off (the default): then the registry is
+  // memory-only, exactly the previous behavior.
+  std::shared_ptr<DeviceStore> device_store_;
+
+  // Publishes the registry snapshot to the device store. Caller holds mu_.
+  // A failed save keeps the in-memory registration and logs an Error: pushes
+  // keep working until the next successful save.
+  void PersistLocked();
 
   Stats stats_;
 };

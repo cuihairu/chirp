@@ -10,6 +10,7 @@
 
 #include "logger.h"
 #include "http_push_transport.h"
+#include "device_store.h"
 #include "network/protobuf_framing.h"
 #include "network/tcp_server.h"
 #include "network/websocket_server.h"
@@ -75,6 +76,10 @@ int main(int argc, char* argv[]) {
   std::string apns_endpoint;
   std::string push_ca_file;
   bool push_verify_tls = true;
+  // Empty = persistence off: the registry stays memory-only (the previous
+  // behavior), so integration scripts that start several instances in one
+  // working directory do not fight over one file.
+  std::string device_store_file;
 
   for (int i = 1; i < argc; ++i) {
     std::string arg = argv[i];
@@ -107,6 +112,8 @@ int main(int argc, char* argv[]) {
       push_ca_file = argv[++i];
     } else if (arg == "--push_verify_tls" && i + 1 < argc) {
       push_verify_tls = std::string(argv[++i]) != "off";
+    } else if (arg == "--device_store_file" && i + 1 < argc) {
+      device_store_file = argv[++i];
     } else if (arg == "--help") {
       std::cout << "Usage: " << argv[0] << " [options]\n"
                 << "Options:\n"
@@ -129,6 +136,8 @@ int main(int argc, char* argv[]) {
                 << "                        (default: system trust store)\n"
                 << "  --push_verify_tls on|off  certificate verification for the http\n"
                 << "                        push transport (default: on)\n"
+                << "  --device_store_file <path>  persist device registrations across\n"
+                << "                        restarts (default: off, memory-only)\n"
                 << "  --help              Show this help\n";
       return 0;
     }
@@ -178,8 +187,19 @@ int main(int argc, char* argv[]) {
                 "', using logging");
   }
 
+  std::shared_ptr<app_notification::DeviceStore> device_store;
+  if (!device_store_file.empty()) {
+    device_store = std::make_shared<app_notification::DeviceStore>(device_store_file);
+  }
   auto service = std::make_shared<app_notification::NotificationService>(
-      fcm_config, apns_config, transport);
+      fcm_config, apns_config, transport, device_store);
+  if (device_store) {
+    // Before the listeners go live: a registration saved by the previous
+    // process keeps receiving pushes without waiting for a re-register.
+    const int restored = service->RestorePersisted();
+    logger.Info("restored " + std::to_string(restored) +
+                " device registrations from " + device_store_file);
+  }
   app_notification::NotificationHandlers handlers(*service);
 
   asio::io_context io;

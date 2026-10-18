@@ -3,7 +3,9 @@
 #include <chrono>
 #include <sstream>
 #include <algorithm>
+#include <utility>
 
+#include "device_store.h"
 #include "common/metrics.h"
 #include "apns_jwt.h"
 #include "logger.h"
@@ -47,11 +49,13 @@ std::string GetCallNotificationTitle() {
 
 NotificationService::NotificationService(const FCMConfig& fcm_config,
                                        const APNsConfig& apns_config,
-                                       std::shared_ptr<PushTransport> transport)
+                                       std::shared_ptr<PushTransport> transport,
+                                       std::shared_ptr<DeviceStore> device_store)
     : fcm_config_(fcm_config),
       apns_config_(apns_config),
       transport_(transport ? std::move(transport)
-                           : std::make_shared<LoggingPushTransport>()) {}
+                           : std::make_shared<LoggingPushTransport>()),
+      device_store_(std::move(device_store)) {}
 
 DeviceRegistration::DeviceRegistration(const DeviceRegistration& other)
     : device_id(other.device_id),
@@ -120,6 +124,8 @@ bool NotificationService::RegisterDevice(const DeviceRegistration& registration)
   // In-memory stats drive the exit log; the metrics registry drives scrape.
   CHIRP_COUNTER("chirp_app_notification_devices_registered_total", 1);
 
+  PersistLocked();
+
   return true;
 }
 
@@ -144,6 +150,8 @@ bool NotificationService::UnregisterDevice(const std::string& device_id) {
 
   devices_.erase(it);
 
+  PersistLocked();
+
   return true;
 }
 
@@ -165,6 +173,8 @@ bool NotificationService::UpdateDeviceToken(const std::string& device_id,
   } else if (device->platform == kPlatformIOS) {
     device->apns_token = token;
   }
+
+  PersistLocked();
 
   return true;
 }
@@ -188,6 +198,40 @@ std::vector<DeviceRegistration> NotificationService::GetUserDevices(
   }
 
   return result;
+}
+
+int NotificationService::RestorePersisted() {
+  if (!device_store_) {
+    return 0;
+  }
+  // Load without the registry lock: the store only touches its file.
+  const std::vector<DeviceRegistration> persisted = device_store_->LoadAll();
+
+  std::lock_guard<std::mutex> lock(mu_);
+  int restored = 0;
+  for (const DeviceRegistration& record : persisted) {
+    auto device = std::make_shared<DeviceRegistration>(record);
+    devices_[device->device_id] = device;
+    user_to_devices_[device->user_id].insert(device->device_id);
+    ++restored;
+  }
+  return restored;
+}
+
+void NotificationService::PersistLocked() {
+  if (!device_store_) {
+    return;
+  }
+  std::vector<DeviceRegistration> snapshot;
+  snapshot.reserve(devices_.size());
+  for (const auto& entry : devices_) {
+    snapshot.push_back(*entry.second);
+  }
+  if (!device_store_->SaveAll(snapshot)) {
+    common::Logger::Instance().Error(
+        "device store save failed; registrations kept in memory only (" +
+        device_store_->path() + ")");
+  }
 }
 
 bool NotificationService::SendNotification(const std::string& user_id,
