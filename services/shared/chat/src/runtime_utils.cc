@@ -46,16 +46,29 @@ std::string RandomHex(size_t bytes) {
 // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
 }
 
+IdGenerator::IdGenerator(uint64_t seed) : counter_(seed + 1) {}
+
+std::string IdGenerator::Next(const std::string& prefix, int64_t now_ms) {
+  return prefix + "_" + std::to_string(now_ms) + "_" + std::to_string(counter_.fetch_add(1));
+}
+
+uint64_t IdGenerator::RandomSeed() {
+  static std::mt19937_64 rng{std::random_device{}()};
+  // 48 bits: keeps ids short while making a shared counter range between two
+  // instances astronomically unlikely.
+  return std::uniform_int_distribution<uint64_t>(0, UINT64_C(1) << 48)(rng);
+}
+
 std::string GenerateMessageId() {
-  static std::atomic<uint64_t> counter{1};
-  return "msg_" + std::to_string(NowMs()) + "_" + std::to_string(counter.fetch_add(1));
+  static IdGenerator generator(IdGenerator::RandomSeed());
+  return generator.Next("msg");
 }
 
 // 离线补投副本的投递主语(ChatMessage.delivery_id):进程内单调,与
 // message_id 同型不同前缀——一次发送多次投递各自有 id(P1-5)。
 std::string GenerateDeliveryId() {
-  static std::atomic<uint64_t> counter{1};
-  return "dlv_" + std::to_string(NowMs()) + "_" + std::to_string(counter.fetch_add(1));
+  static IdGenerator generator(IdGenerator::RandomSeed());
+  return generator.Next("dlv");
 }
 
 void SendPacket(const std::shared_ptr<network::Session>& session,

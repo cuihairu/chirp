@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <set>
 #include <string>
 #include <thread>
 #include <vector>
@@ -1321,6 +1322,53 @@ TEST_F(RuntimeUtilsTest, GenerateMessageIdFormatAndUnique) {
   std::string id = GenerateMessageId();
   EXPECT_EQ(id.substr(0, 4), "msg_");
   EXPECT_NE(id, GenerateMessageId());
+}
+
+TEST_F(RuntimeUtilsTest, IdGeneratorSameSeedSameMsCollides) {
+  // Pins the multi-instance collision class: two generators on the same
+  // counter range minting in the same millisecond produce identical ids.
+  using chirp::chat::runtime::IdGenerator;
+  IdGenerator a(7);
+  IdGenerator b(7);
+  EXPECT_EQ(a.Next("msg", 1711000000000LL), b.Next("msg", 1711000000000LL));
+}
+
+TEST_F(RuntimeUtilsTest, IdGeneratorDifferentSeedsDoNotCollide) {
+  using chirp::chat::runtime::IdGenerator;
+  IdGenerator a(7);
+  IdGenerator b(888);
+  EXPECT_NE(a.Next("msg", 1711000000000LL), b.Next("msg", 1711000000000LL));
+}
+
+TEST_F(RuntimeUtilsTest, IdGeneratorSequentialIdsStayUniqueWithinOneMs) {
+  using chirp::chat::runtime::IdGenerator;
+  IdGenerator g(0);
+  std::set<std::string> seen;
+  for (int i = 0; i < 1000; ++i) {
+    seen.insert(g.Next("dlv", 1711000000000LL));
+  }
+  EXPECT_EQ(seen.size(), 1000u);
+}
+
+TEST_F(RuntimeUtilsTest, IdGeneratorKeepsPrefixMsCounterShape) {
+  using chirp::chat::runtime::IdGenerator;
+  IdGenerator g(42);
+  EXPECT_EQ(g.Next("msg", 123), "msg_123_43"); // counter starts at seed + 1
+}
+
+TEST_F(RuntimeUtilsTest, IdGeneratorRandomSeedDrawsDiffer) {
+  using chirp::chat::runtime::IdGenerator;
+  EXPECT_NE(IdGenerator::RandomSeed(), IdGenerator::RandomSeed());
+}
+
+TEST_F(RuntimeUtilsTest, IdGeneratorSeededFromRandomDrawsDoNotCollide) {
+  // Two "instances" drawing independent random seeds mint different ids even
+  // in the same millisecond - the collision window the fixed counter start
+  // closes.
+  using chirp::chat::runtime::IdGenerator;
+  IdGenerator a(IdGenerator::RandomSeed());
+  IdGenerator b(IdGenerator::RandomSeed());
+  EXPECT_NE(a.Next("msg", 1711000000000LL), b.Next("msg", 1711000000000LL));
 }
 
 TEST_F(RuntimeUtilsTest, SendPacketFramesCorrectly) {
