@@ -1,15 +1,33 @@
 #include "network/tcp_server.h"
 
 namespace chirp::network {
+namespace {
 
-TcpServer::TcpServer(asio::io_context& io, uint16_t port, FrameCallback on_frame, CloseCallback on_close)
+// bind_host must be a literal IP (no DNS): service --host flags carry IP
+// literals, and a typo must abort startup instead of falling back to the
+// wildcard address.
+asio::ip::address ResolveBindAddress(const std::string& bind_host) {
+  asio::error_code ec;
+  const asio::ip::address address = asio::ip::make_address(bind_host, ec);
+  if (ec) {
+    throw asio::system_error(ec, "invalid bind host: " + bind_host);
+  }
+  return address;
+}
+
+}  // namespace
+
+TcpServer::TcpServer(asio::io_context& io, uint16_t port, FrameCallback on_frame, CloseCallback on_close,
+                     const std::string& bind_host)
     : io_(io),
       strand_(io.get_executor()),
-      acceptor_(io_, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)),
+      acceptor_(io_, asio::ip::tcp::endpoint(ResolveBindAddress(bind_host), port)),
       on_frame_(std::move(on_frame)),
       on_close_(std::move(on_close)) {
   asio::error_code ec;
-  port_ = acceptor_.local_endpoint(ec).port();
+  const auto local = acceptor_.local_endpoint(ec);
+  port_ = local.port();
+  address_ = local.address();
 }
 
 void TcpServer::Start() { DoAccept(); }

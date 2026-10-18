@@ -1440,6 +1440,27 @@ TEST(TcpServerClientTest, EndToEndFrameEcho) {
   runner.join();
 }
 
+TEST(TcpServerBindTest, BindsWildcardV4ByDefault) {
+  asio::io_context io;
+  TcpServer server(io, 0, [](std::shared_ptr<Session>, std::string&&) {});
+  EXPECT_GT(server.Port(), 0);
+  EXPECT_EQ(server.BoundAddress().to_string(), "0.0.0.0");
+}
+
+TEST(TcpServerBindTest, HonorsLoopbackBindHost) {
+  asio::io_context io;
+  TcpServer server(io, 0, [](std::shared_ptr<Session>, std::string&&) {},
+                   nullptr, "127.0.0.1");
+  EXPECT_EQ(server.BoundAddress().to_string(), "127.0.0.1");
+}
+
+TEST(TcpServerBindTest, RejectsNonLiteralBindHost) {
+  asio::io_context io;
+  EXPECT_THROW(TcpServer(io, 0, [](std::shared_ptr<Session>, std::string&&) {},
+                         nullptr, "bogus-host"),
+               asio::system_error);
+}
+
 // ---------------------------------------------------------------------------
 // WebSocketServer / WebSocketClient
 // ---------------------------------------------------------------------------
@@ -1492,6 +1513,27 @@ TEST(WebSocketServerClientTest, HandshakeAndFrameRoundTrip) {
   server.Stop();
   io.stop();
   runner.join();
+}
+
+TEST(WebSocketServerBindTest, BindsWildcardV4ByDefault) {
+  asio::io_context io;
+  WebSocketServer server(io, 0, [](std::shared_ptr<Session>, std::string&&) {});
+  EXPECT_GT(server.Port(), 0);
+  EXPECT_EQ(server.BoundAddress().to_string(), "0.0.0.0");
+}
+
+TEST(WebSocketServerBindTest, HonorsLoopbackBindHost) {
+  asio::io_context io;
+  WebSocketServer server(io, 0, [](std::shared_ptr<Session>, std::string&&) {},
+                         nullptr, "127.0.0.1");
+  EXPECT_EQ(server.BoundAddress().to_string(), "127.0.0.1");
+}
+
+TEST(WebSocketServerBindTest, RejectsNonLiteralBindHost) {
+  asio::io_context io;
+  EXPECT_THROW(WebSocketServer(io, 0, [](std::shared_ptr<Session>, std::string&&) {},
+                               nullptr, "bogus-host"),
+               asio::system_error);
 }
 
 // ---------------------------------------------------------------------------

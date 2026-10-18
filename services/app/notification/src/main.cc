@@ -189,8 +189,11 @@ int main(int argc, char* argv[]) {
     HandleNotificationPacket(handlers, session, std::move(payload));
   };
 
-  network::TcpServer server(io, port, on_frame);
-  network::WebSocketServer ws_server(io, ws_port, on_frame);
+  // --host controls the actual bind address of both listeners (literal IP).
+  // Handlers carry no caller authentication yet, so deployments should keep
+  // this off the public internet until service-to-service auth lands.
+  network::TcpServer server(io, port, on_frame, nullptr, host);
+  network::WebSocketServer ws_server(io, ws_port, on_frame, nullptr, host);
   server.Start();
   ws_server.Start();
 
@@ -236,8 +239,10 @@ int main(int argc, char* argv[]) {
     io.stop();
   });
 
-  logger.Info("Notification service listening on " + host + " tcp/" + std::to_string(port) +
-              " ws/" + std::to_string(ws_port));
+  // Log the actually bound endpoint, not the flag: the bind can only differ
+  // from --host when the kernel picked an ephemeral port.
+  logger.Info("Notification service listening on " + server.BoundAddress().to_string() + " tcp/" +
+              std::to_string(server.Port()) + " ws/" + std::to_string(ws_server.Port()));
   logger.Info("FCM configured: " + std::string(fcm_server_key.empty() ? "no" : "yes"));
   logger.Info("APNs configured: " + std::string(apns_key_id.empty() ? "no" : "yes"));
 

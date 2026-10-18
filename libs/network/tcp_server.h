@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <string>
 
 #include <asio.hpp>
 
@@ -15,7 +16,8 @@ public:
   using FrameCallback = TcpSession::FrameCallback;
   using CloseCallback = TcpSession::CloseCallback;
 
-  TcpServer(asio::io_context& io, uint16_t port, FrameCallback on_frame, CloseCallback on_close = nullptr);
+  TcpServer(asio::io_context& io, uint16_t port, FrameCallback on_frame, CloseCallback on_close = nullptr,
+            const std::string& bind_host = "0.0.0.0");
   virtual ~TcpServer() = default;
 
   void Start();
@@ -24,6 +26,9 @@ public:
   // The bound port: the requested one, or the ephemeral port the kernel
   // picked when constructed with port 0. Valid immediately after the ctor.
   uint16_t Port() const { return port_; }
+
+  // The bound address (from bind_host). Valid immediately after the ctor.
+  const asio::ip::address& BoundAddress() const { return address_; }
 
 private:
   void DoAccept();
@@ -35,6 +40,7 @@ private:
   asio::strand<asio::io_context::executor_type> strand_;
   asio::ip::tcp::acceptor acceptor_;
   uint16_t port_ = 0;
+  asio::ip::address address_;
 
 protected:
   // Accept-loop seam: subclasses wrap the accepted socket (e.g. in an
