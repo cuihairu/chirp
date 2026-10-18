@@ -28,12 +28,12 @@ cmake --preset dev
 cmake --build --preset dev
 ```
 
-Binaries land in the build directory following their source paths, e.g. `build/services/shared/chat/chirp_chat`. Every service is configured with command-line arguments; the following two are taken verbatim from `docker-compose.yml`:
+Binaries land in the build directory following their source paths, e.g. `build/services/shared/chat/chirp_chat`. Every service is configured with command-line arguments; the following two are taken from `docker-compose.yml` (minus the dev-only `--allow_scaffold_login`):
 
 ```bash
 # App plane auth
 build/services/app/auth/chirp_app_auth \
-  --port 6000 --jwt_secret <shared secret> --allow_scaffold_login 1
+  --port 6000 --jwt_secret <shared secret>
 
 # Chat service (Redis + MySQL + full server-plane enhanced path)
 build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001 \
@@ -46,11 +46,14 @@ build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001 \
 
 The other services (`chirp_game_sdk_gateway`, `chirp_game_server_gateway`, `chirp_app_sdk_gateway`, `chirp_app_notification`, etc.) start the same way; their arguments and ports are in each service's argument parsing at the top of `main.cc` and in `docker-compose.yml`.
 
+**`--allow_scaffold_login` is a development scaffold, not a deployment argument**: with it on, auth treats a token that is neither a valid JWT nor an active session as "token equals user_id" (the LOGIN_REQ fallback branch in `services/app/auth/src/main_enhanced.cc`) — any caller with network reachability to the service can impersonate any user. Use it only in fully isolated local development demos; never pass it in production (`docker-compose.yml` carries it because that compose file is itself the dev-demo setup).
+
 The rate-limit switches are on chat: `--login_rate_limit_per_min` (default 30/minute, per client IP) and `--send_rate_limit_per_min` (default 120/minute, per user). Window data lives in Redis, and Redis failures let traffic through (fail-open); with no `--redis_host` configured at all, rate limiting is not enabled.
 
 ## Production checklist
 
 - Change MySQL and Redis away from the repo's example passwords (`chirp_pass` etc.) and replace `--jwt_secret` with a real secret
+- Do not pass `--allow_scaffold_login` to auth (it is off by default; if you copy arguments from `docker-compose.yml`, drop it)
 - Tune rate limits to your load, and note that the fail-open semantics mean rate limiting also stops working when Redis is down
 - TLS: `chirp_app_sdk_gateway` supports `--tls_port` / `--ws_tls_port` + `--tls_cert` / `--tls_key`; the other edge services are currently plaintext TCP/WS, so front them with a TLS proxy when exposing them externally
 - Adjust log levels as needed; wiring critical errors to alerting is deployment-side operations work and is not built into the repo

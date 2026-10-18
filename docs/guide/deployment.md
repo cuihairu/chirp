@@ -28,12 +28,12 @@ cmake --preset dev
 cmake --build --preset dev
 ```
 
-二进制按源码路径落在构建目录里,如 `build/services/shared/chat/chirp_chat`。每个服务的配置都是命令行参数,下面两条取自 `docker-compose.yml` 的原样参数:
+二进制按源码路径落在构建目录里,如 `build/services/shared/chat/chirp_chat`。每个服务的配置都是命令行参数,下面两条取自 `docker-compose.yml` 的参数（已剔除仅开发用的 `--allow_scaffold_login`）:
 
 ```bash
 # App 平面认证
 build/services/app/auth/chirp_app_auth \
-  --port 6000 --jwt_secret <共享密钥> --allow_scaffold_login 1
+  --port 6000 --jwt_secret <共享密钥>
 
 # 聊天服务(Redis + MySQL + 服务器平面全增强路径)
 build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001 \
@@ -46,11 +46,14 @@ build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001 \
 
 其余服务(`chirp_game_sdk_gateway`、`chirp_game_server_gateway`、`chirp_app_sdk_gateway`、`chirp_app_notification` 等)同法启动,参数与端口见各服务 `main.cc` 顶部的参数解析和 `docker-compose.yml`。
 
+**`--allow_scaffold_login` 是开发脚手架,不是部署参数**:开启后 auth 对既非有效 JWT 也非活跃会话的 token 直接按「token 即 user_id」放行(`services/app/auth/src/main_enhanced.cc` 的 LOGIN_REQ 回退分支),任何持有该服务网络可达性的调用方都可以冒充任意用户。仅限完全隔离的本地开发演示使用,生产一律不传此参数(`docker-compose.yml` 里带它是因为那份 compose 本身是开发演示形态)。
+
 限流开关在 chat 上:`--login_rate_limit_per_min`(默认 30 次/分钟,按客户端 IP)和 `--send_rate_limit_per_min`(默认 120 次/分钟,按用户)。窗口数据放 Redis,Redis 故障时放行(fail-open);完全不配 `--redis_host` 时不启用限流。
 
 ## 生产检查清单
 
 - MySQL 与 Redis 改掉仓库里的示例密码(`chirp_pass` 等),`--jwt_secret` 换成真实密钥
+- auth 不带 `--allow_scaffold_login`(默认即关;若从 `docker-compose.yml` 抄参数,删掉它)
 - 限流按负载调整,注意 fail-open 语义意味着 Redis 挂掉时限流同时失效
 - TLS:`chirp_app_sdk_gateway` 支持 `--tls_port` / `--ws_tls_port` + `--tls_cert` / `--tls_key`;其余边缘服务目前是明文 TCP/WS,外网暴露时前置 TLS 代理
 - 日志级别按需调整;关键错误接告警是部署侧运维,仓库不内置
