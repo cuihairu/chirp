@@ -41,7 +41,7 @@ chirp is built on the following open-source components; see `vcpkg.json` for the
 - **Storage**: MySQL/MariaDB for profiles via [libmariadb](https://github.com/mariadb-corporation/mariadb-connector-c); Redis for sessions, caching, and offline queues — the RESP client in `libs/network` is written in this repository rather than pulling in a third-party Redis SDK.
 - **Optional crypto**: libsodium (the auxiliary authentication path in `app_auth`).
 - **Build & dependencies**: CMake + Ninja, with [vcpkg](https://vcpkg.io/) for dependency management; abseil comes in with the protobuf runtime.
-- **Web companion app**: [React](https://react.dev/) 18 + MUI; the protocol layer is `@chirp/app-protocol`, written in this repository.
+- **Web companion app**: [React](https://react.dev/) 19 + MUI 9; the protocol layer is `@chirp/app-protocol`, written in this repository.
 
 What this repository itself contains: the protocol definitions, the gateway/auth/chat and other service implementations, the integration layers of the SDKs in each language, and all of the tests.
 
@@ -49,7 +49,7 @@ What this repository itself contains: the protocol definitions, the gateway/auth
 
 To be candid: chirp is currently a **runnable core communication skeleton plus a set of experimental extensions** — not a complete product in which every directory is equally mature.
 
-- The mature main line is `gateway + auth + chat`: login, heartbeat, session binding, direct messages, groups, history, and offline queues, covered by 44 unit test suites under `tests/unit` with 100% line coverage (CI enforces the 100% threshold as a hard gate, except for lines registered in the `KNOWN_UNCOVERABLE` exemption tables; `scripts/run_coverage.sh` reproduces this locally).
+- The mature main line is `gateway + auth + chat`: login, heartbeat, session binding, direct messages, groups, history, and offline queues, covered by 45 unit test suites under `tests/unit` with 100% line coverage (CI enforces the 100% threshold as a hard gate, except for lines registered in the `KNOWN_UNCOVERABLE` exemption tables; `scripts/run_coverage.sh` reproduces this locally).
 - The server plane `server_gateway` (game server integration) hub and the chat-side injection consumption are both implemented and fully covered (process-level end-to-end verification via `./test_services.sh --smoke-npc`); they are marked as experimental.
 - The rest (`social`, `voice`, `notification`, the multi-platform SDKs, mobile clients, admin dashboard) vary in completeness and should not be presented externally as stable capabilities. See the [capability matrix](docs/CAPABILITY_MATRIX.md) for the actual status.
 
@@ -99,7 +99,7 @@ The two planes are decoupled: on the game plane, tokens are issued by the game b
 | app_auth | TCP 6000 | Supported | App-plane authentication: issues/verifies platform user tokens (player_id JWT), serving the app plane only |
 | app_sdk_gateway | TCP 5200 / WS 5201 | Experimental | App access edge: login/heartbeat/session binding + device message forwarding to app_notification |
 | app_chat | — | Experimental | App-plane hub: accepts game_chat registrations, aggregates cross-game channels, identity binding, channel subscriptions, unread counts |
-| app_notification | TCP 5006 / WS 5016 | Experimental | Backend push: device register/unregister/token update/query (6xxx), APNs/FCM offline push |
+| app_notification | TCP 5006 / WS 5016 | Experimental | Backend push: device register/unregister/token update/query (6xxx), APNs/FCM offline push; optional shared-secret caller authentication (`--service_secret` on the plane, `--notification_secret` on callers) |
 | chirp_search | TCP 5007 | Supported | Message search service: SQLite FTS5 index, MySQL full backfill + id-cursor incremental sync, 2248/2249 composite-cursor pagination, graceful degradation without kick |
 
 ## What to Read First
@@ -158,6 +158,7 @@ Smoke tests:
 ./test_services.sh --smoke-game  # pure game plane: gateway scaffold login + chat bridge
 ./test_services.sh --smoke-voice # voice plane: real chirp_voice room lifecycle
 ./test_services.sh --smoke-party # party plane: real chirp_party snapshot lifecycle
+./test_services.sh --smoke-search # search plane: FTS5 index + gateway --search_host pipe (needs MySQL)
 ```
 
 Docker Compose (container orchestration):
@@ -195,12 +196,12 @@ Business envelopes are defined in `proto/gateway.proto`:
 
 ## Current Boundaries
 
-- When the SDK gateway is configured with `--chat_host`, client chat business packets (2xxx) are forwarded frame by frame to chat through a per-client pipe (chat replays the login for authentication on its side; a chat bridge disconnect kicks clients per the existing semantics). 2248 search packets are intercepted ahead of the 2xxx wildcard: when `--search_host` (default 5007) is configured they are forwarded to the search service, a failed search bridge degrades back to `SERVER_UNAVAILABLE` without kicking the client, and when unconfigured they fall back to the chat wildcard. social (3xxx) / voice (4xxx) are not on the forwarding path; without `--chat_host` configured, 2xxx packets are not forwarded.
+- When the SDK gateway is configured with `--chat_host`, client chat business packets (2xxx) are forwarded frame by frame to chat through a per-client pipe (chat replays the login for authentication on its side; a chat bridge disconnect kicks clients per the existing semantics). 2248 search packets are intercepted ahead of the 2xxx wildcard: when `--search_host` is configured (target port `--search_port`, default 5007) they are forwarded to the search service, a failed search bridge degrades back to `SERVER_UNAVAILABLE` without kicking the client, and when unconfigured they fall back to the chat wildcard. social (3xxx) / voice (4xxx) are not on the forwarding path; without `--chat_host` configured, 2xxx packets are not forwarded.
 - Gateway login and chat-side authentication are two independent gates — pipe forwarding replays the login on the chat side, while connecting directly to chat still requires authenticating yourself.
 - The `server_gateway` injection chain is connected at loopback level (chat consumes `InjectMessageNotify` as an internal node, through the same storage/delivery tail as player-sent messages), and supports a Redis Streams upstream fallback (for game servers that cannot hold persistent connections: `XADD` injection, ack + PEL replay, requires Redis >= 6.2). However, `OK` still only means "the server plane has accepted the request" — player-side delivery is not confirmed. The process-level E2E for the NPC dialogue loop is at `./test_services.sh --smoke-npc`.
 - `social`, `voice`, `notification`, the SDKs, mobile clients, and the admin dashboard should not be assumed production-stable by default.
 - The web companion app (`apps/web_companion`) is available, on a **direct-connection transitional topology** — the browser connects through five degradable websockets directly to chat (7001)/social (8001)/party (7501)/voice (9001)/app_gateway (5201); friends and presence are served by the server-authoritative social service. See [docs/web_companion.md](docs/web_companion.md) for details.
-- `app_sdk_gateway` and the push chain are available with clear boundaries: chat offline messages go through `PushBridge` → `app_notification` to trigger device pushes (all three chat mains are wired; enabled by configuring `--notification_host`); `app_notification` defaults to `--push_transport logging` which only logs, while `--push_transport http` performs real HTTP POST (TLS 1.2+ certificate verification for https endpoints, endpoint overridable via flag); the official APNs endpoint requires HTTP/2, production deployments put a protocol conversion proxy in front of that channel, and wiring up real credentials is left to the deployment environment.
+- `app_sdk_gateway` and the push chain are available with clear boundaries: chat offline messages go through `PushBridge` → `app_notification` to trigger device pushes (all three chat mains are wired; enabled by configuring `--notification_host`, plus the matching `--notification_secret` when the plane requires the caller handshake); `app_notification` defaults to `--push_transport logging` which only logs, while `--push_transport http` performs real HTTP POST (TLS 1.2+ certificate verification for https endpoints, endpoint overridable via flag); the official APNs endpoint requires HTTP/2, production deployments put a protocol conversion proxy in front of that channel, and wiring up real credentials is left to the deployment environment.
 - NPC dialogue is implemented as a keyword rule engine (`services/game/npc_dialog`): player messages to recipients with the `npc:` prefix are converted into `npc.player_message` events sent to the NPC service, and NPC replies travel back to chat over the injection channel (at-least-once; duplicate replies are possible within the hub redelivery window); dialogue quality is a rule table (`*` serves as the default line), with an LLM engine reserved as a swappable interface. The full NPC system described in the design documents ([docs/design-notes/](docs/design-notes/)) is still not the current state.
 
 ## Roadmap

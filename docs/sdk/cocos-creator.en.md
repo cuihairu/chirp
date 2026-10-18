@@ -15,7 +15,7 @@ ws.binaryType = "arraybuffer";
 
 Three layers you need to implement yourself (not much work, the protocol is small binary frames):
 
-1. **Frame codec**: each frame is `[uint32_be payload_size][Packet protobuf bytes]`, and `Packet` has the three fields `msg_id` / `sequence` / `body`;
+1. **Frame codec**: each frame is `[uint32_be payload_size][Packet protobuf bytes]`, and `Packet` has the four fields `msg_id` / `sequence` / `body` and the optional `request_id`;
 2. **protobuf**: use [protobuf.js](https://github.com/protobufjs/protobuf.js) (or google-protobuf) to load the compiled output of `proto/gateway.proto`;
 3. **Client state machine**: login request-response correlation, heartbeat, reconnect on disconnect, KICK terminal-state handling.
 
@@ -27,7 +27,7 @@ Three layers you need to implement yourself (not much work, the protocol is smal
 | `msg_map.ts` | Message ID <-> request/response type mapping table |
 | `chirp_client.ts` | Client state machine (connect/heartbeat/reconnect/sequence correlation) |
 
-That implementation is backed by 131 vitest unit tests (`*.test.ts`, 99.8% line coverage) and its semantics are aligned item by item with the unity client.
+That implementation is backed by 149 vitest unit tests (`*.test.ts`, line coverage gated by CI thresholds (`vitest.config.ts`: lines/branches/functions/statements ≥90%)) and its semantics are aligned item by item with the unity client.
 
 ## Lifecycle
 

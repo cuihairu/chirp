@@ -6,7 +6,7 @@ Status: **Experimental** —— 一期已交付:登录、私聊、群组、好�
 
 ## 是什么
 
-浏览器端 Discord 式伴侣 App(Vite + React 18 + TypeScript strict + MUI 5,中文界面)。与 `apps/admin_dashboard` 同栈,但数据层全真实:四条 WebSocket + Protobuf 二进制帧,无 mock。
+浏览器端 Discord 式伴侣 App(Vite + React 19 + TypeScript strict + MUI 9,中文界面)。与 `apps/admin_dashboard` 同栈,但数据层全真实:五条 WebSocket + Protobuf 二进制帧,无 mock。
 
 | 能力 | 状态 | 说明 |
 | --- | --- | --- |
@@ -20,7 +20,7 @@ Status: **Experimental** —— 一期已交付:登录、私聊、群组、好�
 | 桌面通知 | ◐ | Notification API 喂现有 chat 实时流:标签页隐藏或消息不在当前频道时弹系统通知,点击聚焦并跳转;权限手动开启不自动弹窗。真实 Web-Push(关页也达)依赖后端 Web-Push/FCM HTTP v1 传输(TODO:真实推送传输),当前推送走日志传输 |
 | 语音 | ◐ | 后端信令面已就绪(认证门/TURN 凭据/mute-deafen/超时清理,见 roadmap B);客户端 WebRTC 媒体面属三期 |
 
-四条连接彼此独立、可降级:social/party/device 任一断开时聊天完全可用,对应入口隐藏。
+五条连接彼此独立、可降级:social/party/voice/device 任一断开时聊天完全可用,对应入口隐藏。
 
 ## 运行
 
@@ -37,7 +37,7 @@ pnpm install
 cd apps/web_companion && pnpm run dev    # http://localhost:3001
 ```
 
-开发代理(`vite.config.ts`)把 `/ws/chat` → 7001、`/ws/social` → 8001、`/ws/party` → 7501、`/ws/device` → 5201,页面同源无 CORS。直连后端(生产/绕过代理)用 `VITE_CHAT_WS_URL` / `VITE_SOCIAL_WS_URL` / `VITE_PARTY_WS_URL` / `VITE_DEVICE_WS_URL` 指向真实地址;反代部署时同样以这四个变量指到 wss:// 入口。缺哪个后端就少哪块功能(可降级)。
+开发代理(`vite.config.ts`)把 `/ws/chat` → 7001、`/ws/social` → 8001、`/ws/party` → 7501、`/ws/voice` → 9001、`/ws/device` → 5201,页面同源无 CORS。直连后端(生产/绕过代理)用 `VITE_CHAT_WS_URL` / `VITE_SOCIAL_WS_URL` / `VITE_PARTY_WS_URL` / `VITE_VOICE_WS_URL` / `VITE_DEVICE_WS_URL` 指向真实地址;反代部署时同样以这五个变量指到 wss:// 入口。缺哪个后端就少哪块功能(可降级)。
 
 ### 测试
 
@@ -50,7 +50,7 @@ pnpm run build
 
 # E2E:脚本起真实 chirp_chat + chirp_social(有 app_gateway+notification 二进制时一并起,
 #    设备面 3 例才跑,否则自动跳过)再跑集成套件(18 例:chat 6 + device 3 + social 5 + voice 4)
-bash scripts/web_smoke.sh
+bash apps/web_companion/scripts/web_smoke.sh
 ```
 
 ## 分层(自底向上)

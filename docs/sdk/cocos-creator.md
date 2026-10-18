@@ -15,7 +15,7 @@ ws.binaryType = "arraybuffer";
 
 需要自己实现的三层(工作量不大,协议是二进制小帧):
 
-1. **帧编解码**:每帧是 `[uint32_be payload_size][Packet protobuf 字节]`,`Packet` 含 `msg_id` / `sequence` / `body` 三个字段;
+1. **帧编解码**:每帧是 `[uint32_be payload_size][Packet protobuf 字节]`,`Packet` 含 `msg_id` / `sequence` / `body` 与可选的 `request_id` 四个字段;
 2. **protobuf**:用 [protobuf.js](https://github.com/protobufjs/protobuf.js)(或 google-protobuf)加载 `proto/gateway.proto` 编译产物;
 3. **客户端状态机**:登录请求-响应关联、心跳、断线重连、KICK 终态处理。
 
@@ -27,7 +27,7 @@ ws.binaryType = "arraybuffer";
 | `msg_map.ts` | 消息 ID ↔ 请求/响应类型映射表 |
 | `chirp_client.ts` | 客户端状态机(连接/心跳/重连/序列号关联) |
 
-该实现有 131 例 vitest 单测(`*.test.ts`,行覆盖 99.8%)兜底,语义与 unity 端逐项对齐。
+该实现有 149 例 vitest 单测(`*.test.ts`,行覆盖按 CI 阈值门禁(`vitest.config.ts`:lines/branches/functions/statements ≥90%)兜底,语义与 unity 端逐项对齐。
 
 ## 生命周期
 

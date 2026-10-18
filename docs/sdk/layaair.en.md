@@ -15,11 +15,11 @@ ws.binaryType = "arraybuffer";
 
 Three layers you need to implement yourself:
 
-1. **Frame codec**: each frame is `[uint32_be payload_size][Packet protobuf bytes]`, and `Packet` has `msg_id` / `sequence` / `body`;
+1. **Frame codec**: each frame is `[uint32_be payload_size][Packet protobuf bytes]`, and `Packet` has `msg_id` / `sequence` / `body` (optional `request_id` for cross-plane tracing);
 2. **protobuf**: use [protobuf.js](https://github.com/protobufjs/protobuf.js) to load the compiled output of `proto/gateway.proto`;
 3. **Client state machine**: the login round trip, heartbeat, reconnect, KICK terminal state.
 
-**Reference implementation**: `sdks/ts/src/` in this repo is a complete TS protocol stack with 131 vitest unit tests (`frame.ts` frame codec, `msg_map.ts` message mapping table, `chirp_client.ts` state machine, 99.8% line coverage) that can be moved directly into a LayaAir project, with semantics aligned with the unity client; for the WeChat Mini Game target, use `createWxSocketFactory(wx)` from `@chirp/protocol/adapters/wx_socket` as the ChirpClient transport factory.
+**Reference implementation**: `sdks/ts/src/` in this repo is a complete TS protocol stack with 149 vitest unit tests (`frame.ts` frame codec, `msg_map.ts` message mapping table, `chirp_client.ts` state machine, line coverage gated by CI thresholds (`vitest.config.ts`: lines/branches/functions/statements ≥90%)) that can be moved directly into a LayaAir project, with semantics aligned with the unity client; for the WeChat Mini Game target, use `createWxSocketFactory(wx)` from `@chirp/protocol/adapters/wx_socket` as the ChirpClient transport factory.
 
 ## Lifecycle
 

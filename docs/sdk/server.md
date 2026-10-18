@@ -24,7 +24,7 @@ wire 契约见 `proto/game_server_gateway.proto`,完整接入语义(凭证、注
 - **认证握手**:首帧 `SERVER_AUTH_REQ`;被拒则固定延迟重试。
 - **心跳**:hub 在认证响应里指派节奏(静默超过 2×interval 会被关闭),未指派回落 `Config.HeartbeatInterval`(默认 30s)。
 - **RPC**:`InjectMessage`(注入消息,`inject_id` 幂等键)、`PublishEvent`(可靠事件,离线入队)、`AckEvents`(批量确认,at-least-once)、玩家身份绑定 / 频道订阅 / 未读账本三组方法(`binding_id` / `subscription_id` 幂等键)。
-- **推送 handler**:`SetInjectHandler` / `SetEventHandler` / `SetDisconnectHandler`,在内部读 goroutine 触发,**不得阻塞**。
+- **推送 handler**:`SetInjectHandler` / `SetEventHandler` / `SetDisconnectHandler` / `SetDevicePresenceHandler`(设备在线 1020),在内部读 goroutine 触发,**不得阻塞**。
 
 ```go
 c := chirp.NewClient(chirp.Config{

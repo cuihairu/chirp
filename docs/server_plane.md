@@ -146,7 +146,7 @@ chat 服务以内部 peer 身份连到枢纽(`--server_gateway_host`,默认空�
 
 ## NPC 对话服务
 
-`services/npc_dialog` 是这个平面上的第一个事件消费者:一个纯 server plane 客户端(无玩家侧监听),把 NPC 对话闭环端到端打通。
+`services/game/npc_dialog` 是这个平面上的第一个事件消费者:一个纯 server plane 客户端(无玩家侧监听),把 NPC 对话闭环端到端打通。
 
 - **上行(chat → hub → npc_dialog)。** chat 把玩家发给 `npc:` 前缀接收者的私聊改写成 `npc.player_message` 类型的 `EventPublishRequest`(payload:`chirp.chat.NpcPlayerUtterance`;`event_id` = chat 消息 id)并发完即忘——玩家的 `OK` 表示已受理,不代表会有回复。聊天历史里保留玩家的原话。
 - **回复(npc_dialog → hub → chat)。** responder 用关键词规则表(`npc_id<TAB>keyword<TAB>reply` 的 TSV,`*` = 该 NPC 的兜底台词,ASCII 大小写不敏感子串匹配,先命中先用;不给 `--rules_file` 时内置演示规则)生成回复,以 `SENDER_NPC` 走私聊频道注回玩家,`event_id` 作为 `inject_id` 幂等键。
@@ -246,4 +246,4 @@ chat 服务以内部 peer 身份连到枢纽(`--server_gateway_host`,默认空�
 
 1. ~~chat 服务以内部 peer 连入并消费 `InjectMessageNotify`~~——完成(回环端到端验证);进程级 E2E 冒烟留作后续选项。
 2. ~~为无法承载长连接客户端的集成方提供 Redis Streams 回退 broker(ack + 重放,不用裸 pub/sub)~~——完成,仅上游注入(见上文"Broker 回退");下行事件仍走长连接面。
-3. ~~chat 侧的事件生产~~——NPC 对话部分完成(`npc.player_message`,由 `services/npc_dialog` 消费,见上);敏感词处罚与交易状态流转仍开放。
+3. ~~chat 侧的事件生产~~——NPC 对话部分完成(`npc.player_message`,由 `services/game/npc_dialog` 消费,见上);敏感词处罚与交易状态流转仍开放。

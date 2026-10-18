@@ -14,11 +14,11 @@ task.onMessage((res) => { /* res.data is an ArrayBuffer: decode the frame */ });
 
 Three layers you need to implement yourself (exactly the same as Cocos/LayaAir):
 
-1. **Frame codec**: each frame is `[uint32_be payload_size][Packet protobuf bytes]`, and `Packet` has `msg_id` / `sequence` / `body`;
+1. **Frame codec**: each frame is `[uint32_be payload_size][Packet protobuf bytes]`, and `Packet` has `msg_id` / `sequence` / `body` (optional `request_id` for cross-plane tracing);
 2. **protobuf**: [protobuf.js](https://github.com/protobufjs/protobuf.js) can run in the mini-game environment (load the compiled output of `proto/gateway.proto`; note that you should bundle it as json/commonjs to avoid dynamic-loading restrictions);
 3. **Client state machine**: the login round trip, heartbeat, reconnect, KICK terminal state.
 
-**Reference implementation**: `sdks/ts/src/` in this repo is a TS protocol stack with 131 vitest unit tests (`frame.ts` / `msg_map.ts` / `chirp_client.ts`, 99.8% line coverage) that does not depend on the DOM and can be moved directly into a mini-game project. The transport adapter is already written: `sdks/ts/src/adapters/wx_socket.ts` bridges `wx.connectSocket`'s SocketTask (callback registration + a `{ data }` envelope object) to the `WebSocketLike` interface ChirpClient expects:
+**Reference implementation**: `sdks/ts/src/` in this repo is a TS protocol stack with 149 vitest unit tests (`frame.ts` / `msg_map.ts` / `chirp_client.ts`, line coverage gated by CI thresholds (`vitest.config.ts`: lines/branches/functions/statements ≥90%)) that does not depend on the DOM and can be moved directly into a mini-game project. The transport adapter is already written: `sdks/ts/src/adapters/wx_socket.ts` bridges `wx.connectSocket`'s SocketTask (callback registration + a `{ data }` envelope object) to the `WebSocketLike` interface ChirpClient expects:
 
 ```ts
 import { ChirpClient } from '@chirp/protocol/chirp_client';

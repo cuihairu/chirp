@@ -10,14 +10,14 @@
 
 | 服务 | 默认端口 | 状态 | 职责 |
 | --- | --- | --- | --- |
-| Gateway | TCP 5000 / WS 5001 | Supported | 登录、登出、心跳、会话绑定,可选的 Redis 支撑跨实例踢线 |
-| Auth | TCP 6000 | Supported | token 校验路径;增强版 auth 依赖本地库,是条件性的 |
+| game_sdk_gateway | TCP 5000 / WS 5001 | Supported | 游戏客户端边缘(`services/game/sdk_gateway/`):登录、登出、心跳、会话绑定,可选的 Redis 支撑跨实例踢线 |
+| app_auth | TCP 6000 | Supported | App 平面认证(`services/app/auth/`):token 校验路径;增强版 `chirp_app_auth_enhanced` 依赖本地库,是条件性的 |
 | Chat | TCP 7000 / WS 7001 | Supported | 私聊、群组、历史、离线队列,可选的 Redis/MySQL 增强路径 |
 | Server Gateway | TCP 8100 | Experimental | 可信服务面枢纽:游戏后端用 `service_id` + secret 认证,注入系统/NPC 消息,并接收排队到 ack 为止的事件 |
 | NPC Dialog | 无监听 | Experimental | server plane 客户端:用关键词规则回复 `npc.player_message` 事件,并把回复注回 chat(见 [server_plane.md](./server_plane.md)) |
 | Search | TCP 5007 | Supported | 消息搜索:SQLite FTS5 索引,2248/2249 复合游标分页;两个 SDK gateway 配 `--search_host`(默认 5007)转发,降级不踢 |
 | Notification | TCP 5006 / WS 5016 | Experimental | 设备注册表与推送面(6xxx);provider 投递默认记日志(`--push_transport logging`),`--push_transport http` 打开真实 HTTP(S) provider POST(`HttpPushTransport`,https 端点 TLS 1.2+ 证书校验;APNs 官方端点要求 HTTP/2,生产部署需前置协议转换) |
-| App Gateway | TCP 5200 / WS 5201 | Experimental | 伴侣应用边缘:登录/心跳/会话绑定,外加设备消息转发到 Notification(仅限已认证会话)。今天只有连接骨架——目标是**玩家聚合面**:一个玩家身份关联多个游戏(跨游戏频道订阅、聚合的游戏内聊天、跨游戏语音组队);见 [architecture.md](./architecture.md) 的"Game-facing plane vs player aggregation plane" |
+| app_sdk_gateway | TCP 5200 / WS 5201 | Experimental | App 客户端边缘(`services/app/sdk_gateway/`):登录/心跳/会话绑定,设备 6xxx 消息转发到 Notification(仅限已认证会话)、WP-8 玩家 RPC(5013-5034)与 2248 检索转发;玩家聚合逻辑(跨游戏频道/身份目录)落在 app_chat 的 PlayerDirectory,经 hub 路由;聚合面的产品化仍是 [architecture.md](./architecture.md) 描述的两平面方向 |
 
 最小可用拓扑:
 

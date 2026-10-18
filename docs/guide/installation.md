@@ -69,7 +69,7 @@ git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
 .\vcpkg\integrate install
 
 # 依赖走仓库根的 vcpkg.json manifest 模式(protobuf、abseil、libsodium、
-# libmariadb、openssl、asio、sqlite3[fts5 内建]),CMake 配置时自动安装,
+# libmariadb、openssl、pkgconf、zlib、asio、sqlite3[fts5 内建]),CMake 配置时自动安装,
 # 不需要手工 vcpkg install 清单。
 ```
 
@@ -151,7 +151,7 @@ docker compose build
 
 ### 环境变量
 
-只有 chat 的存储层读环境变量,`CHIRP_` 前缀一族(`CHIRP_REDIS_HOST` / `CHIRP_REDIS_PORT` / `CHIRP_MYSQL_HOST` / `CHIRP_MYSQL_PORT` / `CHIRP_MYSQL_DATABASE` / `CHIRP_MYSQL_USER` / `CHIRP_MYSQL_PASSWORD` / `CHIRP_MIGRATION_*` / `CHIRP_DELIVERY_TRACKING_ENABLED`),读取点在 `services/shared/chat/src/message_store_config.cc`。其余服务不读环境变量。
+只有 chat 的存储层读环境变量,`CHIRP_` 前缀一族(`CHIRP_REDIS_HOST` / `CHIRP_REDIS_PORT` / `CHIRP_MYSQL_HOST` / `CHIRP_MYSQL_PORT` / `CHIRP_MYSQL_DATABASE` / `CHIRP_MYSQL_USER` / `CHIRP_MYSQL_PASSWORD` / `CHIRP_MIGRATION_*` / `CHIRP_DELIVERY_TRACKING_ENABLED`),读取点在 `services/shared/chat/src/message_store_config.cc`。另一族是崩溃处理器读的 `CHIRP_CRASH_DIR` / `CHIRP_CRASH_UPLOAD_URL` / `CHIRP_CRASH_HANDLER`(`libs/common/crash_handler.cc`,所有服务的 main 都接线,属进程级行为而非存储层)。除这两族外,其余服务不读环境变量。
 
 ### 服务配置
 

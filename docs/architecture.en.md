@@ -2,7 +2,7 @@
 
 # Chirp Overall Architecture
 
-Last reviewed: 2026-10-08
+Last reviewed: 2026-10-19
 
 Chirp is a real-time communication backend for games. The game plane and the App plane are two independent systems, each with its own edge and its own chat service. Cross-plane communication is a native capability of chat — two `chirp_chat` instances connect directly and complete attachment through a built-in registration protocol, version negotiation, and access control.
 
@@ -70,7 +70,7 @@ Reading the diagram:
 | Edge | `game_sdk_gateway` | TCP + WS listener; login/logout/heartbeat and kicks. Stateless. |
 | Chat | `game_chat` | Deployed as the game plane's `chirp_chat`. Holds in-game channels, history, and the offline queue. Verifies tokens locally. Registers to `app_chat` as a spoke. |
 | Authentication | game_chat locally | The game backend issues an HS256 JWT (`--token_secret`), and `game_chat` verifies it locally. No external authentication service is needed. |
-| Session claim | Redis | `chirp:sess:<user>\x1F<device>` per edge instance. |
+| Session claim | Redis | `chirp:sess:<user>\x1F<platform>` per edge instance. |
 | Backend injection | `game_server_gateway` | Trusted hub; the game backend makes an outbound connection with `service_id` + secret. Responsible for message injection plus event delivery only. Optional. |
 
 Deployment shapes: `game_sdk_gateway + game_chat` is a complete deployment on its own. Add `game_server_gateway` when game backend injection is needed. When chat itself needs to scale, switch to the distributed chat build.
@@ -292,9 +292,13 @@ Any failure in the game plane leaves the App plane untouched, and vice versa (an
 | Network library | `libs/network` | ASIO TCP/WS sessions, framing protocol, Redis client, trusted-peer helpers |
 | Shared service | `services/shared/chat/` | chat service: the same `chirp_chat` binary deployed as `game_chat` / `app_chat` / the distributed form, distinguished by startup flags |
 | Search service | `services/search/` | server-side message search (`chirp_search`, SQLite FTS5, 2248/2249) |
+| Social service | `services/social/` | friends/presence/blacklist (`chirp_social`, 8000/8001, Experimental) |
+| Voice service | `services/voice/` | voice room signaling (`chirp_voice`, 9000/9001, Experimental) |
+| Party service | `services/party/` | party snapshot surface (`chirp_party`, 7500/7501, Experimental) |
 | Game plane | `services/game/` | |
 | | `services/game/sdk_gateway/` | game client edge (`game_sdk_gateway`) |
 | | `services/game/server_gateway/` | game backend injection hub (`game_server_gateway`, optional) |
+| | `services/game/npc_dialog/` | NPC keyword rule engine (`chirp_npc_dialog`, no listening port, server-plane client) |
 | App plane | `services/app/` | |
 | | `services/app/sdk_gateway/` | App client edge (`app_sdk_gateway`) |
 | | `services/app/auth/` | App plane authentication (`app_auth`) |
@@ -322,6 +326,7 @@ WebSocket: binary frame payload = [uint32_be payload_size][chirp.gateway.Packet 
 | 4xxx | game | voice |
 | 5xxx | trusted | service plane (`game_server_gateway`, chat peer registration) |
 | 6xxx | App | device / notification |
+| 7xxx | Game | party |
 
 ### Peer registration msg-ids
 

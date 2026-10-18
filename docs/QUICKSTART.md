@@ -26,6 +26,7 @@ ctest --preset dev
 ./test_services.sh --smoke-game
 ./test_services.sh --smoke-voice
 ./test_services.sh --smoke-party
+./test_services.sh --smoke-search # 检索平面:FTS5 索引 + gateway --search_host 管道(需 MySQL)
 ```
 
 启用非核心服务前,先读 [Core](./CORE.md) 和 [Capability Matrix(能力矩阵)](./CAPABILITY_MATRIX.md)。

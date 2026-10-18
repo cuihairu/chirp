@@ -22,7 +22,7 @@ Taking a Godot 4.3+ .NET project as an example, bring the Unity SDK's pure C# so
 </ItemGroup>
 ```
 
-After that the usage is the same as on the Unity side: `ChirpClient` + the five hook interfaces (MessageInterceptor / AuthProvider / MessageStore / ChatEventListener / CommandHandler in `ChirpHooks.cs`), with the login round trip, heartbeat, reconnect and KICK terminal-state semantics identical to what the unity3d documentation describes. This C# source's regression suite (`ChirpSdkTests`, 107 cases, 89.2% coverlet runtime line coverage) depends on no engine, so `dotnet test` can rerun it outside a Godot project.
+After that the usage is the same as on the Unity side: `ChirpClient` + the five hook interfaces (MessageInterceptor / AuthProvider / MessageStore / ChatEventListener / CommandHandler in `ChirpHooks.cs`), with the login round trip, heartbeat, reconnect and KICK terminal-state semantics identical to what the unity3d documentation describes. This C# source's regression suite (`ChirpSdkTests`, 141 cases, 98.5% coverlet runtime line coverage) depends on no engine, so `dotnet test` can rerun it outside a Godot project.
 
 ## Bridging to Godot nodes (pattern sketch)
 

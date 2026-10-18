@@ -41,7 +41,7 @@ chirp 基于以下开源组件构建，完整依赖清单见 `vcpkg.json`：
 - **存储**：MySQL/MariaDB 档案走 [libmariadb](https://github.com/mariadb-corporation/mariadb-connector-c)；Redis 做会话、缓存与离线队列，RESP 客户端在 `libs/network` 自写，不引第三方 Redis SDK。
 - **可选加密**：libsodium（`app_auth` 的认证辅助路径）。
 - **构建与依赖**：CMake + Ninja，依赖管理用 [vcpkg](https://vcpkg.io/)；abseil 随 protobuf 运行时引入。
-- **Web 伴侣 App**：[React](https://react.dev/) 18 + MUI；协议层是本仓库自写的 `@chirp/app-protocol`。
+- **Web 伴侣 App**：[React](https://react.dev/) 19 + MUI 9；协议层是本仓库自写的 `@chirp/app-protocol`。
 
 本仓库自己写的是协议定义、网关/认证/聊天等服务实现、各语言 SDK 的接线层，以及全部测试。
 
@@ -49,7 +49,7 @@ chirp 基于以下开源组件构建，完整依赖清单见 `vcpkg.json`：
 
 诚实地讲：chirp 目前是**可运行的核心通信骨架 + 一批实验性扩展**，不是所有目录都同等成熟的完整产品。
 
-- 成熟主线是 `gateway + auth + chat`：登录、心跳、会话绑定、私聊、群组、历史、离线队列，`tests/unit` 下 44 个单测套件覆盖，行覆盖率 100%（CI 按 100% 门槛硬卡，登记在 `KNOWN_UNCOVERABLE` 等豁免表的行除外；`scripts/run_coverage.sh` 本地可复现）。
+- 成熟主线是 `gateway + auth + chat`：登录、心跳、会话绑定、私聊、群组、历史、离线队列，`tests/unit` 下 45 个单测套件覆盖，行覆盖率 100%（CI 按 100% 门槛硬卡，登记在 `KNOWN_UNCOVERABLE` 等豁免表的行除外；`scripts/run_coverage.sh` 本地可复现）。
 - 服务器平面 `server_gateway`（游戏服务端接入）枢纽与 chat 侧注入消费均已实现并全覆盖（进程级端到端验证 `./test_services.sh --smoke-npc`），标记为实验中。
 - 其余（`social`、`voice`、`notification`、多端 SDK、移动端、管理后台）完成度不一致，不要对外当作稳定能力介绍。真实状态见[能力矩阵](docs/CAPABILITY_MATRIX.md)。
 
@@ -99,7 +99,7 @@ flowchart TB
 | app_auth | TCP 6000 | Supported | App 平面认证：签发/验证平台用户令牌（player_id JWT），只服务 App 平面 |
 | app_sdk_gateway | TCP 5200 / WS 5201 | Experimental | App 接入边缘：登录/心跳/会话绑定 + 设备消息转发到 app_notification |
 | app_chat | — | Experimental | App 平面 hub：接受 game_chat 注册，聚合跨游戏频道，身份绑定、频道订阅、未读计数 |
-| app_notification | TCP 5006 / WS 5016 | Experimental | 后台推送：设备注册/注销/token 更新/查询（6xxx）、APNs/FCM 离线推送 |
+| app_notification | TCP 5006 / WS 5016 | Experimental | 后台推送：设备注册/注销/token 更新/查询（6xxx）、APNs/FCM 离线推送；可选共享密钥调用方认证（平面侧 `--service_secret`、调用方 `--notification_secret`） |
 | chirp_search | TCP 5007 | Supported | 消息搜索服务：SQLite FTS5 索引,MySQL 全量回填+id 游标增量,2248/2249 复合游标分页,降级不踢 |
 
 ## 先读什么
@@ -158,6 +158,7 @@ smoke test（冒烟测试）：
 ./test_services.sh --smoke-game  # 纯游戏平面:gateway 脚手架登录 + chat 桥
 ./test_services.sh --smoke-voice # 语音平面:真实 chirp_voice 房间生命周期
 ./test_services.sh --smoke-party # 组队平面:真实 chirp_party 快照生命周期
+./test_services.sh --smoke-search # 检索平面:FTS5 索引 + gateway --search_host 管道(需 MySQL)
 ```
 
 Docker Compose（容器编排）：
@@ -165,6 +166,18 @@ Docker Compose（容器编排）：
 ```bash
 docker compose up --build
 ```
+
+## 本地测试口径
+
+CI 与本地开发按改动面三路分流——改一行文档不该全量编译。
+
+1. **文档改动**（`*.md`、`docs/**`、图片）：不编译。主 CI workflow 的
+   `paths-ignore` 已跳过这些路径。
+2. **代码改动**：只跑改动子集，不全量。
+   - `pnpm test -- --testPathPatterns=<改动>`
+   - `ctest -R '<改动测试>'`
+3. **全量**（`pnpm test -- --coverage + ctest`）：仅以下情形触发——package.json / pnpm-lock.yaml / CMakeLists.txt、
+   `.github/**`、Docker/Compose 配置、发布前。
 
 ## 协议要点
 
@@ -182,12 +195,12 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 
 ## 当前边界
 
-- SDK gateway 配置 `--chat_host` 后把客户端聊天业务包(2xxx)经每客户端管道逐帧转发给 chat(chat 侧重放登录鉴权;chat 桥断开按既有语义踢下线)。2248 检索包在 2xxx 通配前先行拦截:配置 `--search_host`(默认 5007)时转发给 search 服务,search 桥失败降级回 `SERVER_UNAVAILABLE` 不踢客户端,未配置时落回 chat 通配。social(3xxx)/voice(4xxx) 不在转发路径;未配置 `--chat_host` 时 2xxx 不转发。
+- SDK gateway 配置 `--chat_host` 后把客户端聊天业务包(2xxx)经每客户端管道逐帧转发给 chat(chat 侧重放登录鉴权;chat 桥断开按既有语义踢下线)。2248 检索包在 2xxx 通配前先行拦截:配置 `--search_host`(目标端口 `--search_port`,默认 5007)时转发给 search 服务,search 桥失败降级回 `SERVER_UNAVAILABLE` 不踢客户端,未配置时落回 chat 通配。social(3xxx)/voice(4xxx) 不在转发路径;未配置 `--chat_host` 时 2xxx 不转发。
 - gateway 登录与 chat 侧鉴权是两道独立的门——管道转发会在 chat 侧重放登录,直连 chat 仍需自行鉴权。
 - `server_gateway` 的注入链路已在回环级打通（chat 作为内部节点消费 `InjectMessageNotify`，走与玩家发消息相同的存储/投递尾巴），并支持 Redis Streams 上行回退（游戏服无法长连接时 `XADD` 注入，ack + PEL 重放，需 Redis >= 6.2），但 `OK` 仍只表示"服务平面已受理"，未确认玩家侧送达；NPC 对话环路的进程级 E2E 见 `./test_services.sh --smoke-npc`。
 - `social`、`voice`、`notification`、SDK、移动端、管理后台不应默认视为生产稳定能力。
 - Web 伴侣 App(`apps/web_companion`)已可用,走**直连过渡拓扑**——浏览器经五条可降级 websocket 直连 chat(7001)/social(8001)/party(7501)/voice(9001)/app_gateway(5201);好友与在线状态为服务端权威的 social 服务。详见 [docs/web_companion.md](docs/web_companion.md)。
-- `app_sdk_gateway` 与推送链路已可用但边界明确：chat 离线消息会经 `PushBridge` → `app_notification` 触发设备推送（三个 chat main 均已接线，配 `--notification_host` 即启用）；`app_notification` 默认 `--push_transport logging` 只记日志，`--push_transport http` 为真实 HTTP POST（https 端点 TLS 1.2+ 证书校验，端点可用 flag 覆写）；APNs 官方端点要求 HTTP/2，生产部署在该通道前置协议转换，真实凭据接入留待部署环境。
+- `app_sdk_gateway` 与推送链路已可用但边界明确：chat 离线消息会经 `PushBridge` → `app_notification` 触发设备推送（三个 chat main 均已接线，配 `--notification_host` 即启用，平面要求握手时再配 `--notification_secret`）；`app_notification` 默认 `--push_transport logging` 只记日志，`--push_transport http` 为真实 HTTP POST（https 端点 TLS 1.2+ 证书校验，端点可用 flag 覆写）；APNs 官方端点要求 HTTP/2，生产部署在该通道前置协议转换，真实凭据接入留待部署环境。
 - NPC 对话已落地为关键词规则引擎（`services/game/npc_dialog`）：玩家私聊 `npc:` 前缀的接收者会转为 `npc.player_message` 事件发给 NPC 服务，NPC 的回复经注入通道回到 chat（at-least-once，hub 重投窗口内可能重复回复）；对话质量是规则表（`*` 为默认台词），LLM 引擎留作接口替换。设计文档（[docs/design-notes/](docs/design-notes/)）描述的完整 NPC 系统仍不是现状。
 
 ## 路线图

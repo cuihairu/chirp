@@ -146,7 +146,7 @@ Delivery semantics:
 
 ## NPC dialogue service
 
-`services/npc_dialog` is the first event consumer on this plane: a pure server plane client (no player-side listener) that closes the NPC dialogue loop end to end.
+`services/game/npc_dialog` is the first event consumer on this plane: a pure server plane client (no player-side listener) that closes the NPC dialogue loop end to end.
 
 - **Upstream (chat → hub → npc_dialog).** chat rewrites a private chat a player sent to a `npc:`-prefixed recipient into an `EventPublishRequest` of type `npc.player_message` (payload: `chirp.chat.NpcPlayerUtterance`; `event_id` = the chat message id) and sends it fire-and-forget——the player's `OK` means accepted, not that a reply will come. The player's original words stay in the chat history.
 - **Replies (npc_dialog → hub → chat).** the responder generates a reply from a keyword rule table (`npc_id<TAB>keyword<TAB>reply` TSV, `*` = that NPC's fallback line, ASCII case-insensitive substring match, first hit wins; built-in demo rules when `--rules_file` is not given), injects it back to the player on a private channel as `SENDER_NPC`, with `event_id` as the `inject_id` idempotency key.
@@ -245,4 +245,4 @@ Test anchors: `chat_player_directory_tests` (switch default semantics, write-thr
 
 1. ~~chat connects in as an internal peer and consumes `InjectMessageNotify`~~——done (loop verified end to end); the process-level E2E smoke is left as a later option.
 2. ~~provide a Redis Streams fallback broker for integrators that cannot host long-lived connection clients (ack + replay, no raw pub/sub)~~——done, upstream injections only (see "Broker fallback" above); downstream events still use the long-connection face.
-3. ~~chat-side event production~~——NPC dialogue partially done (`npc.player_message`, consumed by `services/npc_dialog`, see above); word-filter punishment and trade status transitions remain open.
+3. ~~chat-side event production~~——NPC dialogue partially done (`npc.player_message`, consumed by `services/game/npc_dialog`, see above); word-filter punishment and trade status transitions remain open.

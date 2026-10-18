@@ -10,11 +10,11 @@ chirp 的接入面是纯协议(TCP/WebSocket + Protobuf 小帧),SDK 按"协议�
 
 | SDK | 位置 | 形态 | 测试与覆盖率现状 | 文档 |
 | --- | --- | --- | --- | --- |
-| **C++ 协议核心** | `sdks/core` | 客户端协议栈(连接/心跳/退避重连/踢线终态/钩子),Unreal 壳消费它;桌面 app 不依赖 `sdks/`(app 协议层走 `apps/shared/protocol`,见上方边界规则) | `sdk_core_tests` 130 例(10 个套件,含 59 例 `ChatClientLoopback` 环回),走 ctest;覆盖率归 C++ 主门禁(`run_coverage.sh` 100% 行覆盖硬门) | [Unreal](/sdk/unreal)(消费方)<br>[sdks/core/README](https://github.com/cuihairu/chirp/tree/main/sdks/core) |
-| **Unity (C#)** | `sdks/unity` | 纯 C# 协议栈(零 UnityEngine 依赖)+ `ChirpManager` 主线程派发壳 | `dotnet test` 107 例(帧编解码、序列号关联、重连/踢线、钩子接线、FileMessageStore、回环真实 WebSocket 传输);CI `unity-sdk.yml`(.NET 10 + proto/csharp 漂移检查);coverlet 运行时行覆盖 **89.2%**(剔除 proto 生成代码后按文件行去重,1436/1609) | [Unity3D](/sdk/unity3d) |
-| **TypeScript** | `sdks/ts`(`@chirp/protocol`) | TS 协议栈,游戏侧 JS/TS 引擎(小游戏/LayaAir/Cocos)接入面;含 `wx.connectSocket` 适配器 | vitest 131 例(9 个文件,含 wx_socket 的 fake-socket 与真实登录回路);CI `web.yml`;vitest 行覆盖 99.8% | [微信小游戏](/sdk/wechat-minigame)<br>[Cocos Creator](/sdk/cocos-creator)<br>[LayaAir](/sdk/layaair) |
-| **Go(服务端)** | `sdks/go` | 服务器平面参考客户端(dial-out、service_id+secret、注入/事件/玩家绑定) | `go test -race` 33 例(进程内 fake hub 环回);CI `go-sdk.yml`(protoc 33.4 重生成防漂移 + vet + -race);client.go 语句覆盖 **100%** | [服务端 SDK](/sdk/server) |
-| **Unreal 插件壳** | `sdks/unreal` | `UChirpClientSubsystem` 薄壳(619 行):native 回调转游戏线程 + Blueprint 化,协议全在 C++ core | 无 CI 编译位(UCLASS/Build.cs 需要 UBT 与引擎头,chirp CI 不具备);正确性契约 = C++ core 的 `sdk_core_tests` 130 例 + 极薄转发层 | [Unreal](/sdk/unreal) |
+| **C++ 协议核心** | `sdks/core` | 客户端协议栈(连接/心跳/退避重连/踢线终态/钩子),Unreal 壳消费它;桌面 app 不依赖 `sdks/`(app 协议层走 `apps/shared/protocol`,见上方边界规则) | `sdk_core_tests` 140 例(10 个套件,含 60 例 `ChatClientLoopback` 环回),走 ctest;覆盖率归 C++ 主门禁(`run_coverage.sh` 100% 行覆盖硬门) | [Unreal](/sdk/unreal)(消费方)<br>[sdks/core/README](https://github.com/cuihairu/chirp/tree/main/sdks/core) |
+| **Unity (C#)** | `sdks/unity` | 纯 C# 协议栈(零 UnityEngine 依赖)+ `ChirpManager` 主线程派发壳 | `dotnet test` 141 例(帧编解码、序列号关联、重连/踢线、钩子接线、FileMessageStore、回环真实 WebSocket 传输);CI `unity-sdk.yml`(.NET 10 + proto/csharp 漂移检查);coverlet 运行时行覆盖 **98.5%**(剔除 proto 生成代码后按文件行去重,1739/1766) | [Unity3D](/sdk/unity3d) |
+| **TypeScript** | `sdks/ts`(`@chirp/protocol`) | TS 协议栈,游戏侧 JS/TS 引擎(小游戏/LayaAir/Cocos)接入面;含 `wx.connectSocket` 适配器 | vitest 149 例(10 个文件,含 wx_socket 的 fake-socket 与真实登录回路);CI `web.yml`;vitest 行覆盖按 CI 阈值门禁(`vitest.config.ts`:lines/branches/functions/statements ≥90%) | [微信小游戏](/sdk/wechat-minigame)<br>[Cocos Creator](/sdk/cocos-creator)<br>[LayaAir](/sdk/layaair) |
+| **Go(服务端)** | `sdks/go` | 服务器平面参考客户端(dial-out、service_id+secret、注入/事件/玩家绑定/设备在线) | `go test -race` 33 例(进程内 fake hub 环回);CI `go-sdk.yml`(protoc 33.4 重生成防漂移 + vet + -race);client.go 语句覆盖 **100%** | [服务端 SDK](/sdk/server) |
+| **Unreal 插件壳** | `sdks/unreal` | `UChirpClientSubsystem` 薄壳(619 行):native 回调转游戏线程 + Blueprint 化,协议全在 C++ core | 无 CI 编译位(UCLASS/Build.cs 需要 UBT 与引擎头,chirp CI 不具备);正确性契约 = C++ core 的 `sdk_core_tests` 140 例 + 极薄转发层 | [Unreal](/sdk/unreal) |
 
 ## 按引擎选择接入方式
 
@@ -42,5 +42,5 @@ chirp 的接入面是纯协议(TCP/WebSocket + Protobuf 小帧),SDK 按"协议�
 ## 测试口径备注
 
 - 各 SDK 的数字以仓库当前为准,统计命令:`dotnet test sdks/unity/dotnet/ChirpSdkTests`、`go test -race ./sdks/go/...`、`sdks/ts` 下 `pnpm exec vitest run`、`ctest -R sdk_core_tests`;
-- 覆盖率口径:C++/Go/TS 走各自 CI 的原生覆盖管线;Unity 用 coverlet cobertura,**剔除 `proto/csharp` 生成代码后按文件行去重**(89.2%,1436/1609);
+- 覆盖率口径:C++/Go/TS 走各自 CI 的原生覆盖管线;Unity 用 coverlet cobertura,**剔除 `proto/csharp` 生成代码后按文件行去重**(98.5%,1739/1766);
 - Unreal 壳没有独立测试目标:它的行为契约就是 native 核心的行为契约(转发层无协议逻辑)。

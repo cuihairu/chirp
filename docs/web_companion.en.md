@@ -6,7 +6,7 @@ Status: **Experimental** —— phase one delivered: login, private chat, groups
 
 ## What it is
 
-A browser-based, Discord-style companion app (Vite + React 18 + TypeScript strict + MUI 5, Chinese UI). Same stack as `apps/admin_dashboard`, but with a fully real data layer: four WebSockets + Protobuf binary frames, no mocks.
+A browser-based, Discord-style companion app (Vite + React 19 + TypeScript strict + MUI 9, Chinese UI). Same stack as `apps/admin_dashboard`, but with a fully real data layer: five WebSockets + Protobuf binary frames, no mocks.
 
 | Capability | Status | Notes |
 | --- | --- | --- |
@@ -20,7 +20,7 @@ A browser-based, Discord-style companion app (Vite + React 18 + TypeScript stric
 | Desktop notifications | ◐ | the Notification API fed from the existing chat real-time stream: a system notification pops when the tab is hidden or the message is not in the current channel, and clicking it focuses and jumps to it; permission is granted manually, never auto-prompted. True Web Push (reachable with the page closed) depends on a backend Web-Push/FCM HTTP v1 transport (TODO: real push transport); pushes currently go through the logging transport |
 | Voice | ◐ | the backend signaling plane is ready (auth gate / TURN credentials / mute-deafen / timeout cleanup, see roadmap B); the client WebRTC media side is phase three |
 
-The four connections are independent and degradable: if social/party/device drop, chat stays fully usable and the corresponding entries are hidden.
+The five connections are independent and degradable: if social/party/voice/device drop, chat stays fully usable and the corresponding entries are hidden.
 
 ## Running it
 
@@ -37,7 +37,7 @@ pnpm install
 cd apps/web_companion && pnpm run dev    # http://localhost:3001
 ```
 
-The dev proxy (`vite.config.ts`) routes `/ws/chat` → 7001, `/ws/social` → 8001, `/ws/party` → 7501, `/ws/device` → 5201, so the page is same-origin with no CORS. For direct backend connection (production, or bypassing the proxy) point `VITE_CHAT_WS_URL` / `VITE_SOCIAL_WS_URL` / `VITE_PARTY_WS_URL` / `VITE_DEVICE_WS_URL` at the real addresses; when deployed behind a reverse proxy, point the same four variables at the wss:// entry points. Whichever backend is missing simply removes that block of functionality (degradable).
+The dev proxy (`vite.config.ts`) routes `/ws/chat` → 7001, `/ws/social` → 8001, `/ws/party` → 7501, `/ws/voice` → 9001, `/ws/device` → 5201, so the page is same-origin with no CORS. For direct backend connection (production, or bypassing the proxy) point `VITE_CHAT_WS_URL` / `VITE_SOCIAL_WS_URL` / `VITE_PARTY_WS_URL` / `VITE_VOICE_WS_URL` / `VITE_DEVICE_WS_URL` at the real addresses; when deployed behind a reverse proxy, point the same five variables at the wss:// entry points. Whichever backend is missing simply removes that block of functionality (degradable).
 
 ### Tests
 
@@ -51,7 +51,7 @@ pnpm run build
 # E2E: the script starts a real chirp_chat + chirp_social (and app_gateway+notification
 #    binaries when available, so the 3 device tests run, otherwise auto-skipped), then runs
 #    the integration suite (18 tests: chat 6 + device 3 + social 5 + voice 4)
-bash scripts/web_smoke.sh
+bash apps/web_companion/scripts/web_smoke.sh
 ```
 
 ## Layers (bottom-up)

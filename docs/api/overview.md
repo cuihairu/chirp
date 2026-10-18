@@ -74,7 +74,7 @@ message Packet {
 | App SDK Gateway | `chirp_app_sdk_gateway` | 5200 | 5201 | Supported | 认证/心跳 + 6xxx 设备消息转发;2xxx 转发到 app_chat |
 | App Chat(hub) | `chirp_chat`(同 `services/shared/chat` 构建,部署角色由启动参数区分) | 7000 | 7001 | Supported | App 平面聊天 hub:peer 注册、身份映射、频道订阅、跨平面 fan-out/回复、未读账本 |
 | App Auth | `chirp_app_auth` | 6000 | - | Supported | App 平面账号/token;游戏平面不依赖它 |
-| App Notification | `chirp_app_notification` | 5006 | 5016 | Supported | 设备注册表 + 推送面(6xxx);`--push_transport http` 启用真实 APNs/FCM HTTP 投递,默认 `logging` 只记日志 |
+| App Notification | `chirp_app_notification` | 5006 | 5016 | Supported | 设备注册表 + 推送面(6xxx);`--push_transport http` 启用真实 APNs/FCM HTTP 投递,默认 `logging` 只记日志;可选 `--service_secret` 调用方共享密钥握手 |
 
 ### 实验性服务
 
@@ -82,6 +82,7 @@ message Packet {
 | --- | --- | --- | --- |
 | Social | 8000 | 8001 | Experimental(好友/在线状态/黑名单,不在最小验证路径内) |
 | Voice | 9000 | 9001 | Experimental(信令面存在,尚不构成完整媒体后端保证) |
+| Party | 7500 | 7501 | Experimental(组队快照面 `chirp_party`,邀请制入队) |
 | Search | 5007 | - | Supported(SQLite FTS5 索引,per-client pipe 经 gateway,2248/2249,降级不踢) |
 
 按 [Communication Core](../design-notes/communication_core.md) 的口径,social/voice/search 是 Communication 之外的应用面/插件面,不在核心验证路径内。
@@ -111,6 +112,7 @@ message Packet {
 | 1005 | `KICK_NOTIFY` | Gateway/Chat -> 客户端 | Supported(同端型 platform 重登顶号) |
 | 1006 / 1007 | `LOGOUT_REQ` / `LOGOUT_RESP` | 客户端 <-> 服务 | Supported |
 | 1008-1019 | 注册/密码登录/刷新 token/会话管理/改密 | 客户端 <-> Auth | App 平面 auth 面 Supported(需 MySQL 增强形态 `chirp_app_auth_enhanced`;basic 形态仅 LOGIN/LOGOUT);游戏平面不走这组 |
+| 1020 | `DEVICES_PRESENCE_NOTIFY` | 服务 -> 客户端 | 多设备在线清单变更通知(body `auth.DevicesPresenceNotify`,对齐 `KICK_NOTIFY` 语义:sequence 0、只读、不要求 ACK) |
 
 两个平面都接受 `LOGIN_REQ`;游戏平面的 token 由游戏后端按 HS256 JWT 签发、chat 以 `--token_secret` 本地验签。
 
@@ -133,6 +135,8 @@ message Packet {
 | 2205 / 2206 | `GET_UNREAD_COUNT_REQ` / `RESP` | 客户端 -> Chat | 未读数 |
 | 2207 | `MESSAGE_READ_NOTIFY` | Chat -> 客户端 | 已读事件推送 |
 | 2208 | `TYPING_INDICATOR_NOTIFY` | 客户端 <-> Chat | 正在输入(裸 notify,无响应) |
+| 2209 / 2210 | `MESSAGE_ACK` / `MESSAGE_NACK` | 客户端 <-> Chat | 投递确认/否定确认(与 `TRACK_MESSAGE` 2211/2212 同族) 
+| 2213 / 2214 | `GET_HISTORY_V2_REQ` / `GET_HISTORY_V2_RESP` | 客户端 -> Chat | 增强历史 v2 |
 | 2211 / 2212 | `TRACK_MESSAGE_REQ` / `RESP` | 客户端 -> Chat | 投递跟踪 |
 | 2215-2222 | 表情回应全套 | 客户端 <-> Chat | 加/删/查 + 增删 notify |
 | 2223 / 2224 | `GET_TYPING_USERS_REQ` / `RESP` | 客户端 -> Chat | 谁在输入 |
@@ -192,8 +196,12 @@ message Packet {
 认证规则:
 
 - 在 `app_sdk_gateway` 上,6xxx 设备消息要求已认证会话(否则 `AUTH_FAILED`),且 `user_id` 永远被改写为认证用户——客户端不能替别人注册或查询设备。`UPDATE_DEVICE_TOKEN_REQ` 用 `device_id` 寻址设备,没有 `user_id` 字段,但同样要求认证。
-- 直连 `app_notification` 没有会话概念;它面向可信网络上的内部服务(比如 chat 的推送桥)。
+- 直连 `app_notification` 没有会话概念;它面向可信网络上的内部服务(比如 chat 的推送桥)。配置 `--service_secret` 后,直连调用方也必须先完成 `SERVER_AUTH_REQ`/`SERVER_AUTH_RESP` 共享密钥握手,密钥不符回 `AUTH_FAILED` 并断连,不配则平面保持开放。
 - 真实 provider 投递:`--push_transport http` 经 HTTP(S) 投递 FCM/APNs(端点 `--fcm-endpoint` / `--apns-endpoint` / `--apns-sandbox`,私有 CA `--push_ca_file`,调试豁免 `--push_verify_tls off`);无 token 的设备显式记失败,不再静默记成功。默认 `--push_transport logging` 仅记日志。APNs 官方端点要求 HTTP/2,前置协议转换或走 provider 的 HTTP/1.1 兼容 API。
+
+### 组队(7xxx)
+
+`chirp_party`(7500/7501,Experimental)提供组队快照面:7001-7027 覆盖建队/入队/离队/踢人与 PARTY_JOINED/LEFT/KICKED 等 notify(body 为 `chirp.party.*`),邀请制入队、无 join code;状态详见[能力矩阵](../CAPABILITY_MATRIX.md)。
 
 ## 登录流程
 
@@ -307,6 +315,7 @@ ws.send(concat(uint32be(packet.length), packet))
 | 11 | `CONTENT_TOO_LONG` | 内容超过频道码点上限(私聊 200 / 世界 100 / 系统公告 500) |
 | 12 | `MUTED` | 发送者在目标群被 MODERATOR+ 禁言(群频道发送被拒,其他频道不受影响) |
 | 13 | `LEVEL_REQUIRED` | 声明等级(`LoginRequest.level`)低于 `--world_channel_min_level`,世界频道发送被拒(0=门槛关闭,其他频道不受影响) |
+| 14 | `DM_RESTRICTED` | 接收方开启防骚扰私聊限制,陌生人的私聊被拒(消息不落任何存储;开关见 2255-2258) |
 
 SDK 的传输层错误(`NotConnected`/`Timeout`/`Closed`/`Kicked`/`BadResponse`)与上表互相独立:`ec == OK` 不代表业务成功,必须再读 `resp.code()`。
 

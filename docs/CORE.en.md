@@ -10,14 +10,14 @@ Chirp should currently be understood as a real-time communication backend skelet
 
 | Service | Default port | Status | Responsibility |
 | --- | --- | --- | --- |
-| Gateway | TCP 5000 / WS 5001 | Supported | Login, logout, heartbeat, session binding; optional Redis backing for cross-instance kick |
-| Auth | TCP 6000 | Supported | token verification path; the enhanced auth depends on local libraries and is conditional |
+| game_sdk_gateway | TCP 5000 / WS 5001 | Supported | Game client edge (`services/game/sdk_gateway/`): login, logout, heartbeat, session binding; optional Redis backing for cross-instance kick |
+| app_auth | TCP 6000 | Supported | App-plane authentication (`services/app/auth/`): token verification path; the enhanced `chirp_app_auth_enhanced` depends on local libraries and is conditional |
 | Chat | TCP 7000 / WS 7001 | Supported | Private chat, groups, history, offline queue; optional Redis/MySQL enhancement paths |
 | Server Gateway | TCP 8100 | Experimental | Trusted service-plane hub: the game backend authenticates with `service_id` + secret, injects system/NPC messages, and receives events queued until acked |
 | NPC Dialog | no listener | Experimental | server plane client: replies to `npc.player_message` events using keyword rules and injects the replies back into chat (see [server_plane.md](./server_plane.en.md)) |
 | Search | TCP 5007 | Supported | message search: SQLite FTS5 index, 2248/2249 composite cursor pagination; both SDK gateways with `--search_host` (default 5007) forward, degrading without a kick |
 | Notification | TCP 5006 / WS 5016 | Experimental | device registry and push face (6xxx); provider delivery logs by default (`--push_transport logging`), `--push_transport http` enables real HTTP(S) provider POST (`HttpPushTransport`, https endpoints verify TLS 1.2+ certificates; the official APNs endpoint requires HTTP/2, so production deployments need a protocol conversion in front) |
-| App Gateway | TCP 5200 / WS 5201 | Experimental | companion app edge: login/heartbeat/session binding, plus device message forwarding to Notification (authenticated sessions only). Today it is only the connection skeleton——the goal is the **player aggregation plane**: one player identity associated with multiple games (cross-game channel subscription, aggregated in-game chat, cross-game voice teaming); see "Game-facing plane vs player aggregation plane" in [architecture.md](./architecture.en.md) |
+| app_sdk_gateway | TCP 5200 / WS 5201 | Experimental | App client edge (`services/app/sdk_gateway/`): login/heartbeat/session binding, device 6xxx forwarding to Notification (authenticated sessions only), WP-8 player RPCs (5013-5034), and 2248 search forwarding; the player-aggregation logic (cross-game channels/identity directory) lives in app_chat's PlayerDirectory routed through the hub; productizing the aggregation plane remains the two-plane direction described in [architecture.md](./architecture.en.md) |
 
 Minimum viable topology:
 

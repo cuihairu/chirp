@@ -2,7 +2,7 @@
 
 # Chirp 整体架构
 
-最后审查：2026-10-08
+最后审查：2026-10-19
 
 Chirp 是面向游戏的实时通信后端。游戏平面和 App 平面是两套独立系统，各自有独立的边缘和独立的 chat 服务。跨平面通信是 chat 的原生能力——两个 chirp_chat 实例直连，通过内置的注册协议、版本协商和访问控制完成接入。
 
@@ -70,7 +70,7 @@ flowchart TB
 | 边缘 | `game_sdk_gateway` | TCP + WS 监听，登录/登出/心跳、踢出。无状态。 |
 | Chat | `game_chat` | 部署为游戏平面的 `chirp_chat`。持有游戏内频道、历史、离线队列。本地验证 token。作为 spoke 注册到 `app_chat`。 |
 | 认证 | game_chat 本地 | 游戏后端签发 HS256 JWT（`--token_secret`），game_chat 本地校验。不需要外部认证服务。 |
-| 会话 claim | Redis | `chirp:sess:<user>\x1F<device>` per 边缘实例。 |
+| 会话 claim | Redis | `chirp:sess:<user>\x1F<platform>` per 边缘实例。 |
 | 后端注入 | `game_server_gateway` | 可信枢纽；游戏后端以 `service_id` + secret 出站连接。只负责消息注入 + 事件下发。可选。 |
 
 部署形态：`game_sdk_gateway + game_chat` 即为完整部署。需要游戏后端注入时加 `game_server_gateway`。chat 本身需要扩展时，换成分布式 chat 构建。
@@ -292,9 +292,13 @@ sequenceDiagram
 | 网络库 | `libs/network` | ASIO TCP/WS 会话、帧协议、Redis 客户端、trusted-peer 辅助 |
 | 共享服务 | `services/shared/chat/` | 聊天服务：同一 `chirp_chat` 二进制按启动参数部署为 `game_chat` / `app_chat` / 分布式形态 |
 | 检索服务 | `services/search/` | 服务端消息搜索（`chirp_search`，SQLite FTS5，2248/2249） |
+| 社交服务 | `services/social/` | 好友/在线状态/黑名单（`chirp_social`，8000/8001，Experimental） |
+| 语音服务 | `services/voice/` | 语音房信令（`chirp_voice`，9000/9001，Experimental） |
+| 组队服务 | `services/party/` | 组队快照面（`chirp_party`，7500/7501，Experimental） |
 | 游戏平面 | `services/game/` | |
 | | `services/game/sdk_gateway/` | 游戏客户端边缘（`game_sdk_gateway`） |
 | | `services/game/server_gateway/` | 游戏后端注入枢纽（`game_server_gateway`，可选） |
+| | `services/game/npc_dialog/` | NPC 关键词规则引擎（`chirp_npc_dialog`，无监听口，server plane 客户端） |
 | App 平面 | `services/app/` | |
 | | `services/app/sdk_gateway/` | App 客户端边缘（`app_sdk_gateway`） |
 | | `services/app/auth/` | App 平面认证（`app_auth`） |
@@ -322,6 +326,7 @@ WebSocket: binary frame payload = [uint32_be payload_size][chirp.gateway.Packet 
 | 4xxx | 游戏 | 语音 |
 | 5xxx | 可信 | 服务平面（`game_server_gateway`、chat 对等注册） |
 | 6xxx | App | 设备 / 通知 |
+| 7xxx | 游戏 | 组队（party） |
 
 ### 对等注册新增 msg-id
 

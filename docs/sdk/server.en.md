@@ -24,7 +24,7 @@ Capability surface:
 - **Auth handshake**: the first frame is `SERVER_AUTH_REQ`; on rejection it retries after a fixed delay.
 - **Heartbeat**: the hub assigns the cadence in the auth response (silence beyond 2x interval gets the connection closed); if unassigned it falls back to `Config.HeartbeatInterval` (default 30s).
 - **RPCs**: `InjectMessage` (inject a message, `inject_id` idempotency key), `PublishEvent` (reliable event, queued while offline), `AckEvents` (batch acknowledgment, at-least-once), plus the three groups of player identity binding / channel subscription / unread ledger methods (`binding_id` / `subscription_id` idempotency keys).
-- **Push handlers**: `SetInjectHandler` / `SetEventHandler` / `SetDisconnectHandler`, fired on the internal read goroutine, and **must not block**.
+- **Push handlers**: `SetInjectHandler` / `SetEventHandler` / `SetDisconnectHandler` / `SetDevicePresenceHandler` (device presence 1020), fired on the internal read goroutine, and **must not block**.
 
 ```go
 c := chirp.NewClient(chirp.Config{

@@ -74,7 +74,7 @@ Services are organized by game plane / App plane, and the binary names carry a p
 | App SDK Gateway | `chirp_app_sdk_gateway` | 5200 | 5201 | Supported | Auth/heartbeat + 6xxx device-message forwarding; 2xxx forwarded to app_chat |
 | App Chat (hub) | `chirp_chat` (same `services/shared/chat` build, the deployment role is distinguished by startup arguments) | 7000 | 7001 | Supported | The App-plane chat hub: peer registration, identity mapping, channel subscription, cross-plane fan-out/replies, unread ledger |
 | App Auth | `chirp_app_auth` | 6000 | - | Supported | App-plane accounts/tokens; the game plane does not depend on it |
-| App Notification | `chirp_app_notification` | 5006 | 5016 | Supported | Device registry + push surface (6xxx); `--push_transport http` enables real APNs/FCM HTTP delivery, the default `logging` only writes logs |
+| App Notification | `chirp_app_notification` | 5006 | 5016 | Supported | Device registry + push surface (6xxx); `--push_transport http` enables real APNs/FCM HTTP delivery, the default `logging` only writes logs; optional `--service_secret` shared-secret caller handshake |
 
 ### Experimental services
 
@@ -82,6 +82,7 @@ Services are organized by game plane / App plane, and the binary names carry a p
 | --- | --- | --- | --- |
 | Social | 8000 | 8001 | Experimental (friends/presence/blacklist, not on the minimal validation path) |
 | Voice | 9000 | 9001 | Experimental (a signaling surface exists but does not yet constitute a complete media backend guarantee) |
+| Party | 7500 | 7501 | Experimental (party snapshot surface `chirp_party`, invite-based joining) |
 | Search | 5007 | - | Supported (SQLite FTS5 index, per-client pipe via the gateway, 2248/2249, degrades without kicking) |
 
 Per the framing in [Communication Core](../design-notes/communication_core.en.md), social/voice/search are application/plugin surfaces outside Communication and are not on the core validation path.
@@ -111,6 +112,7 @@ Connections fall into three classes by trust surface, and credential verificatio
 | 1005 | `KICK_NOTIFY` | Gateway/Chat -> client | Supported (same-platform re-login tops off the previous session) |
 | 1006 / 1007 | `LOGOUT_REQ` / `LOGOUT_RESP` | client <-> service | Supported |
 | 1008-1019 | Register / password login / refresh token / session management / change password | client <-> Auth | Supported on the App-plane auth surface (requires the enhanced MySQL form `chirp_app_auth_enhanced`; the basic form only has LOGIN/LOGOUT); the game plane does not use this group |
+| 1020 | `DEVICES_PRESENCE_NOTIFY` | server -> client | Multi-device presence roster change (body `auth.DevicesPresenceNotify`, aligned with `KICK_NOTIFY` semantics: sequence 0, read-only, no ACK required) |
 
 Both planes accept `LOGIN_REQ`; the game plane's token is issued by the game backend as an HS256 JWT and chat verifies it locally with `--token_secret`.
 
@@ -133,6 +135,8 @@ The send path passes through a set of server-side defenses in a fixed order on t
 | 2205 / 2206 | `GET_UNREAD_COUNT_REQ` / `RESP` | client -> Chat | Unread counts |
 | 2207 | `MESSAGE_READ_NOTIFY` | Chat -> client | Read-event push |
 | 2208 | `TYPING_INDICATOR_NOTIFY` | client <-> Chat | Typing (a bare notify, no response) |
+| 2209 / 2210 | `MESSAGE_ACK` / `MESSAGE_NACK` | client <-> Chat | Delivery ack/nack (same family as `TRACK_MESSAGE` 2211/2212) 
+| 2213 / 2214 | `GET_HISTORY_V2_REQ` / `GET_HISTORY_V2_RESP` | client -> Chat | Enhanced history v2 |
 | 2211 / 2212 | `TRACK_MESSAGE_REQ` / `RESP` | client -> Chat | Delivery tracking |
 | 2215-2222 | The full reaction set | client <-> Chat | Add/remove/query + add/remove notifies |
 | 2223 / 2224 | `GET_TYPING_USERS_REQ` / `RESP` | client -> Chat | Who is typing |
@@ -192,8 +196,12 @@ The IDs from 6011 onward are reserved (badges / silent mode / preferences) and a
 Authentication rules:
 
 - On `app_sdk_gateway`, 6xxx device messages require an authenticated session (otherwise `AUTH_FAILED`), and `user_id` is always rewritten to the authenticated user — a client cannot register or query devices on someone else's behalf. `UPDATE_DEVICE_TOKEN_REQ` addresses the device by `device_id` and has no `user_id` field, but likewise requires authentication.
-- A direct connection to `app_notification` has no session concept; it faces internal services on trusted networks (such as chat's push bridge).
+- A direct connection to `app_notification` has no session concept; it faces internal services on trusted networks (such as chat's push bridge). With `--service_secret` configured, direct callers must also complete the `SERVER_AUTH_REQ`/`SERVER_AUTH_RESP` shared-secret handshake first — a mismatched secret gets `AUTH_FAILED` and the connection closed; with none set the plane stays open.
 - Real provider delivery: `--push_transport http` delivers to FCM/APNs over HTTP(S) (endpoints `--fcm-endpoint` / `--apns-endpoint` / `--apns-sandbox`, private CA `--push_ca_file`, debug exemption `--push_verify_tls off`); a device with no token explicitly records a failure and is no longer silently recorded as a success. The default `--push_transport logging` only writes logs. The official APNs endpoint requires HTTP/2, so either front it with protocol conversion or use the provider's HTTP/1.1-compatible API.
+
+### Party (7xxx)
+
+`chirp_party` (7500/7501, Experimental) provides the party snapshot surface: 7001-7027 covers create/join/leave/kick plus PARTY_JOINED/LEFT/KICKED notifies (bodies are `chirp.party.*`), invite-based joining with no join codes; current status in the [capability matrix](../CAPABILITY_MATRIX.md).
 
 ## Login flows
 
@@ -307,6 +315,7 @@ The common response-code enum is defined in `proto/common.proto`.
 | 11 | `CONTENT_TOO_LONG` | The content exceeds the channel's code-point cap (private chat 200 / world 100 / system announcement 500) |
 | 12 | `MUTED` | The sender is muted in the target group by MODERATOR+ (the group-channel send is rejected; other channels are unaffected) |
 | 13 | `LEVEL_REQUIRED` | The declared level (`LoginRequest.level`) is below `--world_channel_min_level`, so the world-channel send is rejected (0 = the threshold is off; other channels are unaffected) |
+| 14 | `DM_RESTRICTED` | The receiver has anti-harassment DM restrictions on, so a stranger's direct message is rejected (nothing is stored; the switch is 2255-2258) |
 
 The SDK transport-layer errors (`NotConnected`/`Timeout`/`Closed`/`Kicked`/`BadResponse`) are independent of the table above: `ec == OK` does not mean business success — you must read `resp.code()` as well.
 

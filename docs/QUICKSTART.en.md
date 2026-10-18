@@ -26,6 +26,7 @@ Smoke tests:
 ./test_services.sh --smoke-game
 ./test_services.sh --smoke-voice
 ./test_services.sh --smoke-party
+./test_services.sh --smoke-search # search plane: FTS5 index + gateway --search_host pipe (needs MySQL)
 ```
 
 Before enabling non-core services, read [Core](./CORE.en.md) and the [Capability Matrix](./CAPABILITY_MATRIX.en.md).
