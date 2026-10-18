@@ -757,6 +757,77 @@ TEST_F(HybridStoreTest, StoreMessageAsyncDeliversCallback) {
   EXPECT_EQ(redis_->ListDirect("chirp:chat:history:ch1").size(), 1u);
 }
 
+TEST_F(HybridStoreTest, StoreMessageAsyncRetriesTransientMysqlFailure) {
+  ASSERT_TRUE(store_->Initialize());
+  fake_mysql::TakeQueries();  // drain the init DDL log
+
+  // 首次 INSERT 失败、重试落库（评审 P1-3「对持久化失败提供重试」）：回调
+  // 必须等重试成功后才报 ok，且失败痕迹（重试次数）体现在查询日志里。
+  fake_mysql::PushQueryError("transient insert failure");
+  std::promise<bool> done;
+  auto future = done.get_future();
+  store_->StoreMessageAsync(MakeMessage("m1", "ch1", 1000, "r1"),
+                            [&](bool ok) { done.set_value(ok); });
+  io_.run();
+  ASSERT_EQ(future.wait_for(std::chrono::seconds(2)), std::future_status::ready);
+  EXPECT_TRUE(future.get());
+  EXPECT_EQ(store_->persist_failures(), 0);
+
+  int inserts = 0;
+  for (const auto& query : fake_mysql::TakeQueries()) {
+    if (query.find("INSERT INTO messages") != std::string::npos) {
+      ++inserts;
+    }
+  }
+  EXPECT_EQ(inserts, 2);  // first attempt + one retry
+}
+
+TEST_F(HybridStoreTest, StoreMessageAsyncReportsFailureAfterRetriesExhausted) {
+  ASSERT_TRUE(store_->Initialize());
+  fake_mysql::TakeQueries();  // drain the init DDL log
+
+  // 冷层写彻底失败（评审 P1-3「明确区分已受理/已持久化」）：回调必须如实报
+  // false、失败计数可见，且重试次数等于配置的 attempts（缺省 3）。
+  fake_mysql::FailQueriesMatching("INSERT INTO messages");
+  std::promise<bool> done;
+  auto future = done.get_future();
+  store_->StoreMessageAsync(MakeMessage("m1", "ch1", 1000, "r1"),
+                            [&](bool ok) { done.set_value(ok); });
+  io_.run();
+  ASSERT_EQ(future.wait_for(std::chrono::seconds(5)), std::future_status::ready);
+  EXPECT_FALSE(future.get());
+  EXPECT_EQ(store_->persist_failures(), 1);
+
+  int inserts = 0;
+  for (const auto& query : fake_mysql::TakeQueries()) {
+    if (query.find("INSERT INTO messages") != std::string::npos) {
+      ++inserts;
+    }
+  }
+  EXPECT_EQ(inserts, 3);  // default attempts
+}
+
+TEST_F(HybridStoreTest, StoreMessageAsyncReportsDeadRedisHotTierMiss) {
+  // 热层写失败原先被静默忽略（评审 P1-3）：Redis 拒写时回调仍如实报冷层
+  // 结果（真值），但失败必须有日志与计数以外的可见面——这里锁「回调不受
+  // 热层失败污染」的语义（与同步 StoreMessage 同口径：冷层是真相）。
+  fake_mysql::TakeQueries();  // drain the init DDL log
+  MessageStoreConfig cfg;
+  cfg.redis_port = 1;  // nothing listens on tcpmux
+  cfg.mysql_pool_size = 1;
+  HybridMessageStore dead_redis_store(io_, cfg);
+  ASSERT_TRUE(dead_redis_store.Initialize());
+
+  std::promise<bool> done;
+  auto future = done.get_future();
+  dead_redis_store.StoreMessageAsync(MakeMessage("m1", "ch1", 1000, "r1"),
+                                     [&](bool ok) { done.set_value(ok); });
+  io_.run();
+  ASSERT_EQ(future.wait_for(std::chrono::seconds(2)), std::future_status::ready);
+  EXPECT_TRUE(future.get());
+  EXPECT_EQ(dead_redis_store.persist_failures(), 0);
+}
+
 TEST_F(HybridStoreTest, StoreMessageAsyncCarriesSenderKindToColdTier) {
   ASSERT_TRUE(store_->Initialize());
 

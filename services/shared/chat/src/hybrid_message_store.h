@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <cstdint>
 #include <deque>
 #include <functional>
@@ -82,9 +83,16 @@ public:
   /// @brief Store a message (writes to both Redis and MySQL)
   bool StoreMessage(const MessageData& message);
 
-  /// @brief Store a message asynchronously
+  /// @brief Store a message asynchronously. The callback (io thread) reports
+  /// the cold-tier outcome after the configured retries; OK responses are NOT
+  /// gated on it (OK = 受理), so failures are tracked via persist_failures().
   void StoreMessageAsync(const MessageData& message,
                         std::function<void(bool)> callback = nullptr);
+
+  /// Messages whose cold-tier write failed after all retry attempts. The send
+  /// handler answers 受理 regardless, so this counter (plus the Error log) is
+  /// what makes "accepted but not persisted" visible.
+  int64_t persist_failures() const { return persist_failures_.load(std::memory_order_relaxed); }
 
   /// @brief Get history with pagination
   std::vector<MessageData> GetHistory(const std::string& channel_id,
@@ -203,6 +211,8 @@ private:
   std::shared_ptr<network::RedisClient> redis_;
   std::shared_ptr<MySQLConnectionPool> mysql_pool_;
   std::shared_ptr<MessageStore> mysql_store_;
+  // Cold-tier writes that exhausted mysql_store_attempts (persist_failures()).
+  std::atomic<int64_t> persist_failures_{0};
 };
 
 } // namespace chirp::chat

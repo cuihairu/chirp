@@ -175,10 +175,19 @@ void HybridMessageStore::StoreMessageAsync(const MessageData& message,
   std::string history_key = HistoryKey(message.channel_id);
   std::string msg_data = message.SerializeAsString();
 
-  redis_->RPush(history_key, msg_data);
+  // 热层写结果原先被静默忽略（评审 P1-3）：拒写时消息只剩冷层一条命，
+  // 至少要在日志留下痕迹。结果不并入 callback——与同步 StoreMessage 同
+  // 口径，冷层结果才是 source of truth。
+  if (!redis_->RPush(history_key, msg_data)) {
+    Logger::Instance().Warn("Redis history push failed for message " +
+                            message.message_id + " (hot tier miss, cold tier still pending)");
+  }
 
-  // Post MySQL write to background thread
-  asio::post(io_, [this, message, callback]() {
+  // Post MySQL write to the background thread. Bounded retry so a transient
+  // MySQL blip no longer means a silently dropped history row (评审 P1-3).
+  const int attempts = config_.mysql_store_attempts > 0 ? config_.mysql_store_attempts : 1;
+  const int delay_ms = config_.mysql_store_retry_delay_ms;
+  asio::post(io_, [this, message, callback, attempts, delay_ms]() {
     StoredMessage mysql_msg;
     mysql_msg.message_id = message.message_id;
     mysql_msg.sender_id = message.sender_id;
@@ -197,7 +206,23 @@ void HybridMessageStore::StoreMessageAsync(const MessageData& message,
     // 同上：漏 metadata 会让 COORD_LINK 的坐标只活在热层。
     mysql_msg.metadata = message.metadata;
 
-    bool result = mysql_store_->StoreMessage(mysql_msg);
+    bool result = false;
+    for (int attempt = 1; attempt <= attempts; ++attempt) {
+      result = mysql_store_->StoreMessage(mysql_msg);
+      if (result || attempt == attempts) {
+        break;
+      }
+      if (delay_ms > 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+      }
+    }
+
+    if (!result) {
+      ++persist_failures_;
+      Logger::Instance().Error("Message " + message.message_id +
+                               " not persisted after " + std::to_string(attempts) +
+                               " cold-tier attempts (OK was already accepted)");
+    }
 
     if (callback) {
       callback(result);

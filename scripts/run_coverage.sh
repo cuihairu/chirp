@@ -752,7 +752,7 @@ KNOWN_UNCOVERABLE_ARMS = {
     # exempted arms are the residual edges that stayed 0 under every input:
     # post-inline dead blocks / allocation-failure unwind paths that no
     # argument shape can reach.
-    ("services/shared/chat/src/hybrid_message_store.cc", 548): ((8, 9),
+    ("services/shared/chat/src/hybrid_message_store.cc", 573): ((8, 9),
         "GetDeliveryStatus: dead post-inline duplicate of the second "
         "ParseI64 entry block (46->47/46->48 with the never-returning call); "
         "every live edge of both parses is taken across empty, non-numeric, "
@@ -763,16 +763,18 @@ KNOWN_UNCOVERABLE_ARMS = {
         "per-device split's upstream line drift; block layout unchanged. "
         "Line re-pinned 524->528 for the ActorKind sender_kind +4-line "
         "upstream drift; 528->542 for the redis-probe retry +14-line "
-        "upstream drift; block layout unchanged.)"),
-    ("services/shared/chat/src/hybrid_message_store.cc", 580): ((3,),
+        "upstream drift; 542->573 for the persist-retry +25-line upstream "
+        "drift; block layout unchanged.)"),
+    ("services/shared/chat/src/hybrid_message_store.cc", 605): ((3,),
         "GetPendingDeliveries expiry parse: structurally dead edge in the "
         "inlined ParseI64/substr block layout (12->14); empty, non-numeric, "
         "17-digit heap, overflow and INT64_MAX-exact expiry inputs all "
         "exercise the other five arms. (Line re-pinned 546->556 for the "
         "P1-5 per-device split's upstream line drift; 556->560 for the "
         "ActorKind sender_kind +4-line upstream drift; 560->574 for the "
-        "redis-probe retry +14-line upstream drift.)"),
-    ("services/shared/chat/src/hybrid_message_store.cc", 605): ((14, 15, 16, 17),
+        "redis-probe retry +14-line upstream drift; 574->605 for the "
+        "persist-retry +25-line upstream drift.)"),
+    ("services/shared/chat/src/hybrid_message_store.cc", 630): ((14, 15, 16, 17),
         "PrivateChannelId string-concat fragments attributed to the "
         "push_back line: operator+ allocation-failure blocks (calls with "
         "returned=0, bad_alloc unwind); the live SSO and heap-concat edges "
@@ -782,7 +784,8 @@ KNOWN_UNCOVERABLE_ARMS = {
         "re-pinned 571->581 for the P1-5 per-device split's upstream "
         "line drift; 581->585 for the ActorKind sender_kind +4-line "
         "upstream drift; 585->599 for the redis-probe retry +14-line "
-        "upstream drift.)"),
+        "upstream drift; 599->630 for the persist-retry +25-line upstream "
+        "drift.)"),
     ("services/shared/chat/src/player_directory.cc", 194): ((20, 21, 22, 23, 24, 25),
         "Unsubscribe log line: internal arcs of the bad_alloc landing pads "
         "(blocks 72/76/80, the unwind targets of the log-concat operator+ "

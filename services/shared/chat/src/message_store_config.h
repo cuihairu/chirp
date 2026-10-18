@@ -21,6 +21,10 @@ struct MessageStoreConfig {
   std::string mysql_user = "chirp";
   std::string mysql_password = "chirp_password";
   size_t mysql_pool_size = 10;
+  // Async cold-tier writes (StoreMessageAsync) retry this many total attempts
+  // with mysql_store_retry_delay_ms between them before reporting failure.
+  int mysql_store_attempts = 3;
+  int mysql_store_retry_delay_ms = 100;
 
   // Migration configuration
   bool enable_migration = true;

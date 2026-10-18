@@ -398,10 +398,15 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
   // Store in hybrid store (Redis + MySQL)
   chirp::chat::MessageData msg_data = ToMessageData(msg);
 
-  // Store asynchronously for better performance
-  store->StoreMessageAsync(msg_data, [](bool success) {
+  // Store asynchronously for better performance. The RESP has already been
+  // sent as 受理 (OK) by the time this callback fires; retries happened inside
+  // the store, so a failure here means the message is accepted-but-not-
+  // persisted (hot tier + counter are what remain of it) — Error, not Warn
+  // (评审 P1-3).
+  store->StoreMessageAsync(msg_data, [msg](bool success) {
     if (!success) {
-      Logger::Instance().Warn("Message storage to MySQL failed");
+      Logger::Instance().Error("Send " + msg.message_id() +
+                               " accepted but not persisted after cold-tier retries");
     }
   });
 
@@ -1312,9 +1317,10 @@ int main(int argc, char** argv) {
     hooks.store_message =
         [&store](const chirp::chat::ChatMessage& msg) {
           chirp::chat::MessageData data = ToMessageData(msg);
-          store->StoreMessageAsync(data, [](bool ok) {
+          store->StoreMessageAsync(data, [msg](bool ok) {
             if (!ok) {
-              Logger::Instance().Warn("injected message storage to MySQL failed");
+              Logger::Instance().Error("Inject " + msg.message_id() +
+                                       " not persisted after cold-tier retries");
             }
           });
         };
@@ -1460,9 +1466,10 @@ int main(int argc, char** argv) {
         // 成玩家（proto 扇入承诺即 SENDER_SERVICE 副本）；玩家上行走默认 USER。
         copy.set_sender_kind(notify.message().sender_kind());
         chirp::chat::MessageData data = ToMessageData(copy);
-        store->StoreMessageAsync(data, [](bool ok) {
+        store->StoreMessageAsync(data, [copy](bool ok) {
           if (!ok) {
-            Logger::Instance().Warn("fan-out copy storage to MySQL failed");
+            Logger::Instance().Error("Fan-out copy " + copy.message_id() +
+                                     " not persisted after cold-tier retries");
           }
         });
         auto healthy = HealthyLocalSessions(state, player_id);
@@ -1587,9 +1594,10 @@ int main(int argc, char** argv) {
             msg.set_timestamp(chirp::chat::runtime::NowMs());
             msg.set_sender_kind(chirp::chat::SENDER_USER);
             chirp::chat::MessageData data = ToMessageData(msg);
-            store->StoreMessageAsync(data, [](bool ok) {
+            store->StoreMessageAsync(data, [msg](bool ok) {
               if (!ok) {
-                Logger::Instance().Warn("peer inject storage to MySQL failed");
+                Logger::Instance().Error("Peer inject " + msg.message_id() +
+                                         " not persisted after cold-tier retries");
               }
             });
             auto healthy = HealthyLocalSessions(state, inject.channel_id());
