@@ -1577,6 +1577,7 @@ int main(int argc, char** argv) {
   Logger::Instance().SetLevel(Logger::Level::kInfo);
   const uint16_t port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--port", 7000);
   const uint16_t ws_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--ws_port", static_cast<uint16_t>(port + 1));
+  const std::string host = chirp::chat::runtime::GetArg(argc, argv, "--host", "0.0.0.0");
   const uint16_t metrics_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--metrics_port", 0);
   const std::string redis_host = chirp::chat::runtime::GetArg(argc, argv, "--redis_host", "");
   const uint16_t redis_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--redis_port", 6379);
@@ -2149,7 +2150,8 @@ int main(int argc, char** argv) {
       },
       [state, &features](std::shared_ptr<chirp::network::Session> session) {
         HandleDisconnect(state, features.acks, features.trusted_conns, session);
-      });
+      },
+      host);
 
   chirp::network::WebSocketServer ws_server(
       io, ws_port,
@@ -2158,7 +2160,8 @@ int main(int argc, char** argv) {
       },
       [state, &features](std::shared_ptr<chirp::network::Session> session) {
         HandleDisconnect(state, features.acks, features.trusted_conns, session);
-      });
+      },
+      host);
 
   server.Start();
   ws_server.Start();

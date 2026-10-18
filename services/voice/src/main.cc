@@ -1158,6 +1158,8 @@ int main(int argc, char** argv) {
 
   Logger::Instance().SetLevel(Logger::Level::kInfo);
   const uint16_t port = ParseU16Arg(argc, argv, "--port", 9000);
+  const std::string host = GetArg(argc, argv, "--host", "0.0.0.0");
+
   const uint16_t ws_port = ParseU16Arg(argc, argv, "--ws_port", static_cast<uint16_t>(port + 1));
   const std::string token_secret = GetArg(argc, argv, "--token_secret", "");
   const std::string turn_uri = GetArg(argc, argv, "--turn_uri", "");
@@ -1196,14 +1198,16 @@ int main(int argc, char** argv) {
       [state](std::shared_ptr<chirp::network::Session> session, std::string&& payload) {
         HandlePacket(state, session, std::move(payload));
       },
-      [state](std::shared_ptr<chirp::network::Session> session) { HandleDisconnect(state, session); });
+      [state](std::shared_ptr<chirp::network::Session> session) { HandleDisconnect(state, session); },
+      host);
 
   chirp::network::WebSocketServer ws_server(
       io, ws_port,
       [state](std::shared_ptr<chirp::network::Session> session, std::string&& payload) {
         HandlePacket(state, session, std::move(payload));
       },
-      [state](std::shared_ptr<chirp::network::Session> session) { HandleDisconnect(state, session); });
+      [state](std::shared_ptr<chirp::network::Session> session) { HandleDisconnect(state, session); },
+      host);
 
   server.Start();
   ws_server.Start();

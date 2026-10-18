@@ -187,6 +187,7 @@ int main(int argc, char** argv) {
   }
   const uint16_t metrics_port =
       static_cast<uint16_t>(std::atoi(GetArg(argc, argv, "--metrics_port", "0").c_str()));
+  const std::string host = GetArg(argc, argv, "--host", "0.0.0.0");
   Logger::Instance().Info("chirp_auth starting on port " + std::to_string(port));
 
   asio::io_context io;
@@ -195,7 +196,7 @@ int main(int argc, char** argv) {
       io, port,
       [jwt_secret](std::shared_ptr<chirp::network::Session> session, std::string&& payload) {
         HandleAuthPacket(jwt_secret, session, std::move(payload));
-      });
+      }, nullptr, host);
 
   server.Start();
 

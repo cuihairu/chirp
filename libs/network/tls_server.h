@@ -22,7 +22,8 @@ namespace chirp::network {
 class TlsTcpServer final : public TcpServer {
 public:
   TlsTcpServer(asio::io_context& io, uint16_t port, std::shared_ptr<asio::ssl::context> ssl,
-               FrameCallback on_frame, CloseCallback on_close = nullptr);
+               FrameCallback on_frame, CloseCallback on_close = nullptr,
+               const std::string& bind_host = "0.0.0.0");
 
 protected:
   std::shared_ptr<Session> MakeSession(asio::ip::tcp::socket socket) override;
@@ -34,7 +35,8 @@ private:
 class TlsWebSocketServer final : public WebSocketServer {
 public:
   TlsWebSocketServer(asio::io_context& io, uint16_t port, std::shared_ptr<asio::ssl::context> ssl,
-                     FrameCallback on_frame, CloseCallback on_close = nullptr);
+                     FrameCallback on_frame, CloseCallback on_close = nullptr,
+                     const std::string& bind_host = "0.0.0.0");
 
 protected:
   std::shared_ptr<Session> MakeSession(asio::ip::tcp::socket socket) override;

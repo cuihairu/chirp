@@ -379,6 +379,8 @@ int main(int argc, char** argv) {
 
   Logger::Instance().SetLevel(Logger::Level::kInfo);
   const uint16_t port = ParseU16Arg(argc, argv, "--port", 5000);
+  const std::string host = GetArg(argc, argv, "--host", "0.0.0.0");
+
   const uint16_t ws_port = ParseU16Arg(argc, argv, "--ws_port", static_cast<uint16_t>(port + 1));
   const std::string auth_host = GetArg(argc, argv, "--auth_host", "");
   const uint16_t auth_port = ParseU16Arg(argc, argv, "--auth_port", 6000);
@@ -486,9 +488,9 @@ int main(int argc, char** argv) {
     }
   };
 
-  chirp::network::TcpServer server(io, port, on_frame, on_close);
+  chirp::network::TcpServer server(io, port, on_frame, on_close, host);
 
-  chirp::network::WebSocketServer ws_server(io, ws_port, on_frame, on_close);
+  chirp::network::WebSocketServer ws_server(io, ws_port, on_frame, on_close, host);
 
   server.Start();
   ws_server.Start();

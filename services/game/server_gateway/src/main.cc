@@ -329,6 +329,8 @@ int main(int argc, char** argv) {
   Logger::Instance().SetLevel(Logger::Level::kInfo);
 
   const uint16_t port = ParseU16Arg(argc, argv, "--port", 8100);
+  const std::string host = GetArg(argc, argv, "--host", "0.0.0.0");
+
   const int auth_timeout = std::atoi(GetArg(argc, argv, "--auth_timeout", "10").c_str());
   const uint16_t metrics_port = ParseU16Arg(argc, argv, "--metrics_port", 0);
 
@@ -403,7 +405,8 @@ int main(int argc, char** argv) {
       [&rt](std::shared_ptr<Session> session, std::string&& payload) {
         rt.OnFrame(std::move(session), std::move(payload));
       },
-      [&rt](std::shared_ptr<Session> session) { rt.OnClose(session); });
+      [&rt](std::shared_ptr<Session> session) { rt.OnClose(session); },
+      host);
   server.Start();
 
   // Minimal metrics endpoint, opt-in via --metrics_port (0 = off; default

@@ -629,6 +629,8 @@ int main(int argc, char** argv) {
 
   Logger::Instance().SetLevel(Logger::Level::kInfo);
   const uint16_t port = ParseU16Arg(argc, argv, "--port", 5200);
+  const std::string host = GetArg(argc, argv, "--host", "0.0.0.0");
+
   const uint16_t ws_port = ParseU16Arg(argc, argv, "--ws_port", 5201);
   // Optional TLS/wss edges: 0 = off. Enabling either requires the PEM pair.
   const uint16_t tls_port = ParseU16Arg(argc, argv, "--tls_port", 0);
@@ -780,8 +782,8 @@ int main(int argc, char** argv) {
     HandleDisconnect(session, state, redis_mgr, bridge_raw, search_bridge_raw);
   };
 
-  chirp::network::TcpServer server(io, port, on_frame, on_close);
-  chirp::network::WebSocketServer ws_server(io, ws_port, on_frame, on_close);
+  chirp::network::TcpServer server(io, port, on_frame, on_close, host);
+  chirp::network::WebSocketServer ws_server(io, ws_port, on_frame, on_close, host);
   server.Start();
   ws_server.Start();
 
@@ -807,12 +809,12 @@ int main(int argc, char** argv) {
   std::unique_ptr<chirp::network::TlsWebSocketServer> wss_server;
   if (ssl) {
     if (tls_port != 0) {
-      tls_server = std::make_unique<chirp::network::TlsTcpServer>(io, tls_port, ssl, on_frame, on_close);
+      tls_server = std::make_unique<chirp::network::TlsTcpServer>(io, tls_port, ssl, on_frame, on_close, host);
       tls_server->Start();
     }
     if (ws_tls_port != 0) {
-      wss_server =
-          std::make_unique<chirp::network::TlsWebSocketServer>(io, ws_tls_port, ssl, on_frame, on_close);
+      wss_server = std::make_unique<chirp::network::TlsWebSocketServer>(io, ws_tls_port, ssl,
+                                                                       on_frame, on_close, host);
       wss_server->Start();
     }
   }

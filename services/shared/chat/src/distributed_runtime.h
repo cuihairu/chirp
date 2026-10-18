@@ -20,12 +20,14 @@ using ShutdownHandler = std::function<void()>;
 std::unique_ptr<network::TcpServer> MakeDistributedTcpServer(asio::io_context& io,
                                                              uint16_t port,
                                                              PacketHandler on_packet,
-                                                             DisconnectHandler on_disconnect);
+                                                             DisconnectHandler on_disconnect,
+                                                             const std::string& bind_host = "0.0.0.0");
 
 std::unique_ptr<network::WebSocketServer> MakeDistributedWsServer(asio::io_context& io,
                                                                   uint16_t port,
                                                                   PacketHandler on_packet,
-                                                                  DisconnectHandler on_disconnect);
+                                                                  DisconnectHandler on_disconnect,
+                                                                  const std::string& bind_host = "0.0.0.0");
 
 void InstallSignalStop(asio::io_context& io, ShutdownHandler on_shutdown);
 

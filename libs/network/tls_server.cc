@@ -8,8 +8,9 @@ namespace chirp::network {
 
 TlsTcpServer::TlsTcpServer(asio::io_context& io, uint16_t port,
                            std::shared_ptr<asio::ssl::context> ssl, FrameCallback on_frame,
-                           CloseCallback on_close)
-    : TcpServer(io, port, std::move(on_frame), std::move(on_close)), ssl_(std::move(ssl)) {}
+                           CloseCallback on_close, const std::string& bind_host)
+    : TcpServer(io, port, std::move(on_frame), std::move(on_close), bind_host),
+      ssl_(std::move(ssl)) {}
 
 std::shared_ptr<Session> TlsTcpServer::MakeSession(asio::ip::tcp::socket socket) {
   asio::ssl::stream<asio::ip::tcp::socket> stream(std::move(socket), *ssl_);
@@ -18,8 +19,9 @@ std::shared_ptr<Session> TlsTcpServer::MakeSession(asio::ip::tcp::socket socket)
 
 TlsWebSocketServer::TlsWebSocketServer(asio::io_context& io, uint16_t port,
                                        std::shared_ptr<asio::ssl::context> ssl, FrameCallback on_frame,
-                                       CloseCallback on_close)
-    : WebSocketServer(io, port, std::move(on_frame), std::move(on_close)), ssl_(std::move(ssl)) {}
+                                       CloseCallback on_close, const std::string& bind_host)
+    : WebSocketServer(io, port, std::move(on_frame), std::move(on_close), bind_host),
+      ssl_(std::move(ssl)) {}
 
 std::shared_ptr<Session> TlsWebSocketServer::MakeSession(asio::ip::tcp::socket socket) {
   asio::ssl::stream<asio::ip::tcp::socket> stream(std::move(socket), *ssl_);

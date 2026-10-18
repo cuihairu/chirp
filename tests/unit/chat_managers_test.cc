@@ -1423,6 +1423,28 @@ TEST_F(DistributedRuntimeTest, MakeTcpServerAndStop) {
   EXPECT_FALSE(called);
 }
 
+TEST_F(DistributedRuntimeTest, MakeTcpServerHonorsBindHost) {
+  asio::io_context io;
+  auto server = MakeDistributedTcpServer(
+      io, /*port=*/0,
+      [](const std::shared_ptr<Session>&, const chirp::gateway::Packet&) {},
+      [](const std::shared_ptr<Session>&) {}, "127.0.0.1");
+  ASSERT_NE(server, nullptr);
+  EXPECT_EQ(server->BoundAddress().to_string(), "127.0.0.1");
+  server->Stop();
+}
+
+TEST_F(DistributedRuntimeTest, MakeWsServerHonorsBindHost) {
+  asio::io_context io;
+  auto server = MakeDistributedWsServer(
+      io, /*port=*/0,
+      [](const std::shared_ptr<Session>&, const chirp::gateway::Packet&) {},
+      [](const std::shared_ptr<Session>&) {}, "127.0.0.1");
+  ASSERT_NE(server, nullptr);
+  EXPECT_EQ(server->BoundAddress().to_string(), "127.0.0.1");
+  server->Stop();
+}
+
 TEST_F(DistributedRuntimeTest, MakeWsServerAndStop) {
   asio::io_context io;
   auto server = MakeDistributedWsServer(

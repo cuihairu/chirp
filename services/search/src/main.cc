@@ -103,7 +103,8 @@ int main(int argc, char** argv) {
                 std::string&& payload) { server.HandleFrame(session, std::move(payload)); },
       [&server](const std::shared_ptr<chirp::network::Session>& session) {
         server.HandleClose(session);
-      });
+      },
+      host);
   tcp.Start();
 
   // tail 泵：100ms 一次，把 id 游标之上的新消息推进索引。失败只记日志，

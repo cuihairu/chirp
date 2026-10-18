@@ -1156,6 +1156,7 @@ int main(int argc, char** argv) {
 
   const uint16_t port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--port", 7000);
   const uint16_t ws_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--ws_port", static_cast<uint16_t>(port + 1));
+  const std::string host = chirp::chat::runtime::GetArg(argc, argv, "--host", "0.0.0.0");
   const std::string redis_host = chirp::chat::runtime::GetArg(argc, argv, "--redis_host", "127.0.0.1");
   const uint16_t redis_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--redis_port", 6379);
 
@@ -2140,8 +2141,8 @@ int main(int argc, char** argv) {
     state->RemoveSession(session);
   };
 
-  auto server = chirp::chat::runtime::MakeDistributedTcpServer(io, port, on_packet, tcp_disconnect);
-  auto ws_server = chirp::chat::runtime::MakeDistributedWsServer(io, ws_port, on_packet, ws_disconnect);
+  auto server = chirp::chat::runtime::MakeDistributedTcpServer(io, port, on_packet, tcp_disconnect, host);
+  auto ws_server = chirp::chat::runtime::MakeDistributedWsServer(io, ws_port, on_packet, ws_disconnect, host);
 
   server->Start();
   ws_server->Start();

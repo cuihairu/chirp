@@ -457,6 +457,38 @@ TEST_F(TlsEdgeTest, TlsSessionBindsInSessionRegistry) {
 // TLS-WebSocket edge (wss)
 // ---------------------------------------------------------------------------
 
+// --host plumbing (271): both TLS listeners must accept and honor a literal
+// bind host, defaulting to the wildcard like the plain listeners do.
+TEST_F(TlsEdgeTest, TlsTcpServerBindsConfiguredHost) {
+  asio::io_context io;
+  chirp::network::TlsTcpServer server(
+      io, /*port=*/0, ssl_,
+      [](std::shared_ptr<Session>, std::string&&) {}, nullptr, "127.0.0.1");
+  EXPECT_EQ(server.BoundAddress().to_string(), "127.0.0.1");
+}
+
+TEST_F(TlsEdgeTest, TlsTcpServerDefaultsToWildcard) {
+  asio::io_context io;
+  chirp::network::TlsTcpServer server(
+      io, /*port=*/0, ssl_, [](std::shared_ptr<Session>, std::string&&) {});
+  EXPECT_EQ(server.BoundAddress().to_string(), "0.0.0.0");
+}
+
+TEST_F(TlsEdgeTest, TlsWebSocketServerBindsConfiguredHost) {
+  asio::io_context io;
+  chirp::network::TlsWebSocketServer server(
+      io, /*port=*/0, ssl_,
+      [](std::shared_ptr<Session>, std::string&&) {}, nullptr, "127.0.0.1");
+  EXPECT_EQ(server.BoundAddress().to_string(), "127.0.0.1");
+}
+
+TEST_F(TlsEdgeTest, TlsWebSocketServerDefaultsToWildcard) {
+  asio::io_context io;
+  chirp::network::TlsWebSocketServer server(
+      io, /*port=*/0, ssl_, [](std::shared_ptr<Session>, std::string&&) {});
+  EXPECT_EQ(server.BoundAddress().to_string(), "0.0.0.0");
+}
+
 TEST_F(TlsEdgeTest, TlsWebSocketServerHandshakeAndEcho) {
   asio::io_context io;
   LockedFrames got;

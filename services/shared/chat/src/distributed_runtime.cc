@@ -25,7 +25,8 @@ void DispatchPacket(std::string&& payload,
 std::unique_ptr<network::TcpServer> MakeDistributedTcpServer(asio::io_context& io,
                                                              uint16_t port,
                                                              PacketHandler on_packet,
-                                                             DisconnectHandler on_disconnect) {
+                                                             DisconnectHandler on_disconnect,
+                                                             const std::string& bind_host) {
   return std::make_unique<network::TcpServer>(
       io, port,
       [on_packet = std::move(on_packet)](std::shared_ptr<network::Session> session, std::string&& payload) {
@@ -33,13 +34,15 @@ std::unique_ptr<network::TcpServer> MakeDistributedTcpServer(asio::io_context& i
       },
       [on_disconnect = std::move(on_disconnect)](std::shared_ptr<network::Session> session) {
         on_disconnect(session);
-      });
+      },
+      bind_host);
 }
 
 std::unique_ptr<network::WebSocketServer> MakeDistributedWsServer(asio::io_context& io,
                                                                   uint16_t port,
                                                                   PacketHandler on_packet,
-                                                                  DisconnectHandler on_disconnect) {
+                                                                  DisconnectHandler on_disconnect,
+                                                                  const std::string& bind_host) {
   return std::make_unique<network::WebSocketServer>(
       io, port,
       [on_packet = std::move(on_packet)](std::shared_ptr<network::Session> session, std::string&& payload) {
@@ -47,7 +50,8 @@ std::unique_ptr<network::WebSocketServer> MakeDistributedWsServer(asio::io_conte
       },
       [on_disconnect = std::move(on_disconnect)](std::shared_ptr<network::Session> session) {
         on_disconnect(session);
-      });
+      },
+      bind_host);
 }
 
 void InstallSignalStop(asio::io_context& io, ShutdownHandler on_shutdown) {

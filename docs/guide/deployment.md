@@ -46,6 +46,8 @@ build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001 \
 
 其余服务(`chirp_game_sdk_gateway`、`chirp_game_server_gateway`、`chirp_app_sdk_gateway`、`chirp_app_notification` 等)同法启动,参数与端口见各服务 `main.cc` 顶部的参数解析和 `docker-compose.yml`。
 
+所有带监听器的服务都支持 `--host <addr>`(默认 `0.0.0.0` 全网卡),参数直接传给 TCP/WS 监听器构造、实控绑定地址(2026-10-19 起全部服务接线完毕;此前多数服务解析了该 flag 却未传给监听器);非法地址在启动时即失败,不静默回落全网卡。收窄暴露面:只经网关触达的后台服务(`chirp_app_auth`、`chirp_chat`/`chirp_chat_distributed`、`chirp_social`、`chirp_party`、`chirp_voice`、`chirp_app_notification`、`chirp_search`)建议绑 `127.0.0.1` 或内网 IP;直接面向客户端的边缘入口(`chirp_game_sdk_gateway`、`chirp_app_sdk_gateway`)与带服务面认证的 `chirp_game_server_gateway` 保持 `0.0.0.0` 或按网络拓扑绑定。同一服务的 TCP 与 WS 监听(如 chat 的 `--port`/`--ws_port`)绑定同一 `--host` 地址。
+
 **`--allow_scaffold_login` 是开发脚手架,不是部署参数**:开启后 auth 对既非有效 JWT 也非活跃会话的 token 直接按「token 即 user_id」放行(`services/app/auth/src/main_enhanced.cc` 的 LOGIN_REQ 回退分支),任何持有该服务网络可达性的调用方都可以冒充任意用户。仅限完全隔离的本地开发演示使用,生产一律不传此参数(`docker-compose.yml` 里带它是因为那份 compose 本身是开发演示形态)。
 
 限流开关在 chat 上:`--login_rate_limit_per_min`(默认 30 次/分钟,按客户端 IP)和 `--send_rate_limit_per_min`(默认 120 次/分钟,按用户)。窗口数据放 Redis,Redis 故障时放行(fail-open);完全不配 `--redis_host` 时不启用限流。
@@ -56,6 +58,7 @@ build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001 \
 - `--jwt_secret` 用高熵随机值(建议 ≥32 字节,如 `openssl rand -hex 32`),auth 现已拒绝无密钥启动;轮换时同步更新所有共享该密钥的服务(auth 与边缘网关的 `--token_secret` 同源)
 - auth 不带 `--allow_scaffold_login`(默认即关;若从 `docker-compose.yml` 抄参数,删掉它)
 - 限流按负载调整,注意 fail-open 语义意味着 Redis 挂掉时限流同时失效
+- 后台服务用 `--host` 收窄绑定面:只经网关触达的服务绑 `127.0.0.1` 或内网 IP,边缘网关保持 `0.0.0.0`(见上文绑定说明)
 - TLS:`chirp_app_sdk_gateway` 支持 `--tls_port` / `--ws_tls_port` + `--tls_cert` / `--tls_key`;其余边缘服务目前是明文 TCP/WS,外网暴露时前置 TLS 代理
 - 日志级别按需调整;关键错误接告警是部署侧运维,仓库不内置
 - Redis 内存与 MySQL 连接数纳入常规监控

@@ -1374,6 +1374,8 @@ int main(int argc, char** argv) {
 
   Logger::Instance().SetLevel(Logger::Level::kInfo);
   const uint16_t port = ParseU16Arg(argc, argv, "--port", 8000);
+  const std::string host = GetArg(argc, argv, "--host", "0.0.0.0");
+
   const uint16_t ws_port = ParseU16Arg(argc, argv, "--ws_port", static_cast<uint16_t>(port + 1));
   const std::string redis_host = GetArg(argc, argv, "--redis_host", "");
   const uint16_t redis_port = ParseU16Arg(argc, argv, "--redis_port", 6379);
@@ -1423,8 +1425,8 @@ int main(int argc, char** argv) {
     HandleDisconnect(state, redis, session);
   };
 
-  chirp::network::TcpServer server(io, port, on_packet, on_disconnect);
-  chirp::network::WebSocketServer ws_server(io, ws_port, on_packet, on_disconnect);
+  chirp::network::TcpServer server(io, port, on_packet, on_disconnect, host);
+  chirp::network::WebSocketServer ws_server(io, ws_port, on_packet, on_disconnect, host);
 
   server.Start();
   ws_server.Start();

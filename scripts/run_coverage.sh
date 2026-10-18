@@ -479,7 +479,9 @@ KNOWN_UNCOVERABLE = {
     # InstallSignalStop async_wait registration: untaken arms are asio
     # internal signal_set/error_code paths (and the shared_ptr capture's
     # throw edge); the handler itself is covered by the SIGINT probe.
-    ("services/shared/chat/src/distributed_runtime.cc", 55),
+    # +4-line drift: bind_host param + forwarding added to both
+    # MakeDistributed*Server helpers above (2026-10-19, --host roll-out).
+    ("services/shared/chat/src/distributed_runtime.cc", 59),
     # IdentityRegistry Load clash lookup + Bind idempotency tuple equality +
     # game_user_index/by_id stale finds + GetByPlayer/Resolve/Unbind by_id_
     # finds: all by_id_/index maps are written together under mu_, so the

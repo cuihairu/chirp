@@ -382,6 +382,7 @@ int main(int argc, char** argv) {
   // unchanged for existing deployments.
   const uint16_t metrics_port =
       static_cast<uint16_t>(ParseIntArg(argc, argv, "--metrics_port", 0));
+  const std::string host = GetArg(argc, argv, "--host", "0.0.0.0");
 
   // MySQL configuration
   config.user_store_config.host = GetArg(argc, argv, "--mysql_host", "127.0.0.1");
@@ -441,7 +442,8 @@ int main(int argc, char** argv) {
       },
       [auth_service](std::shared_ptr<chirp::network::Session>) {
         Logger::Instance().Debug("Client disconnected");
-      });
+      },
+      host);
 
   server.Start();
 
