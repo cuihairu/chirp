@@ -9,6 +9,7 @@
 
 #include "jwt.h"
 #include "logger.h"
+#include "required_arg.h"
 #include "common/metrics.h"
 #include "common/metrics_http_server.h"
 #include "common/crash_handler.h"
@@ -174,7 +175,16 @@ int main(int argc, char** argv) {
 
   Logger::Instance().SetLevel(Logger::Level::kInfo);
   const uint16_t port = ParsePort(argc, argv);
-  const std::string jwt_secret = GetArg(argc, argv, "--jwt_secret", "dev_secret");
+  // No built-in default: every unconfigured deployment would share the same
+  // signing secret and any of them could forge any user's token.
+  std::string jwt_secret;
+  {
+    std::string err;
+    if (!chirp::common::RequireArg(argc, argv, "--jwt_secret", &jwt_secret, &err)) {
+      Logger::Instance().Error("chirp_auth refusing to start: " + err);
+      return 1;
+    }
+  }
   const uint16_t metrics_port =
       static_cast<uint16_t>(std::atoi(GetArg(argc, argv, "--metrics_port", "0").c_str()));
   Logger::Instance().Info("chirp_auth starting on port " + std::to_string(port));

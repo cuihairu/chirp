@@ -12,6 +12,7 @@
 
 #include "auth_service.h"
 #include "logger.h"
+#include "required_arg.h"
 #include "network/protobuf_framing.h"
 #include "network/session.h"
 #include "network/tcp_server.h"
@@ -353,7 +354,15 @@ int main(int argc, char** argv) {
   AuthService::Config config;
 
   // JWT configuration
-  config.jwt_secret = GetArg(argc, argv, "--jwt_secret", "chirp_jwt_secret_change_in_production");
+  // No built-in default: every unconfigured deployment would share the same
+  // signing secret and any of them could forge any user's token.
+  {
+    std::string err;
+    if (!chirp::common::RequireArg(argc, argv, "--jwt_secret", &config.jwt_secret, &err)) {
+      Logger::Instance().Error("chirp_app_auth refusing to start: " + err);
+      return 1;
+    }
+  }
   config.access_token_ttl_seconds = ParseIntArg(argc, argv, "--access_token_ttl", 3600);
   config.refresh_token_ttl_seconds = ParseIntArg(argc, argv, "--refresh_token_ttl", 2592000);
   config.session_ttl_seconds = ParseIntArg(argc, argv, "--session_ttl", 86400);

@@ -53,6 +53,7 @@ The rate-limit switches are on chat: `--login_rate_limit_per_min` (default 30/mi
 ## Production checklist
 
 - Change MySQL and Redis away from the repo's example passwords (`chirp_pass` etc.) and replace `--jwt_secret` with a real secret
+- Use a high-entropy random `--jwt_secret` (32+ bytes, e.g. `openssl rand -hex 32`); auth now refuses to start without one. When rotating, update every service sharing that secret in lockstep (auth and the edge gateways' `--token_secret` derive from the same source)
 - Do not pass `--allow_scaffold_login` to auth (it is off by default; if you copy arguments from `docker-compose.yml`, drop it)
 - Tune rate limits to your load, and note that the fail-open semantics mean rate limiting also stops working when Redis is down
 - TLS: `chirp_app_sdk_gateway` supports `--tls_port` / `--ws_tls_port` + `--tls_cert` / `--tls_key`; the other edge services are currently plaintext TCP/WS, so front them with a TLS proxy when exposing them externally

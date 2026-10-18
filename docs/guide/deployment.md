@@ -53,6 +53,7 @@ build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001 \
 ## 生产检查清单
 
 - MySQL 与 Redis 改掉仓库里的示例密码(`chirp_pass` 等),`--jwt_secret` 换成真实密钥
+- `--jwt_secret` 用高熵随机值(建议 ≥32 字节,如 `openssl rand -hex 32`),auth 现已拒绝无密钥启动;轮换时同步更新所有共享该密钥的服务(auth 与边缘网关的 `--token_secret` 同源)
 - auth 不带 `--allow_scaffold_login`(默认即关;若从 `docker-compose.yml` 抄参数,删掉它)
 - 限流按负载调整,注意 fail-open 语义意味着 Redis 挂掉时限流同时失效
 - TLS:`chirp_app_sdk_gateway` 支持 `--tls_port` / `--ws_tls_port` + `--tls_cert` / `--tls_key`;其余边缘服务目前是明文 TCP/WS,外网暴露时前置 TLS 代理

@@ -15,6 +15,7 @@
 #include "common/config.h"
 #include "common/logger.h"
 #include "jwt.h"
+#include "required_arg.h"
 #include "sha256.h"
 
 namespace chirp::common {
@@ -627,6 +628,45 @@ TEST(LoggerTest, ConcurrentLoggingIsThreadSafe) {
 
   EXPECT_EQ(logger.GetLevel(), Logger::Level::kTrace);
   logger.SetLevel(original);
+}
+
+TEST(RequiredArgTest, ReturnsValueWhenPresent) {
+  char arg0[] = "prog";
+  char arg1[] = "--jwt_secret";
+  char arg2[] = "s3cr3t";
+  char* argv[] = {arg0, arg1, arg2};
+  std::string out, err;
+  EXPECT_TRUE(RequireArg(3, argv, "--jwt_secret", &out, &err));
+  EXPECT_EQ(out, "s3cr3t");
+  EXPECT_TRUE(err.empty());
+}
+
+TEST(RequiredArgTest, MissingFlagFails) {
+  char arg0[] = "prog";
+  char* argv[] = {arg0};
+  std::string out = "untouched", err;
+  EXPECT_FALSE(RequireArg(1, argv, "--jwt_secret", &out, &err));
+  EXPECT_EQ(out, "untouched"); // no partial write on failure
+  EXPECT_NE(err.find("--jwt_secret is required"), std::string::npos);
+}
+
+TEST(RequiredArgTest, EmptyValueFails) {
+  char arg0[] = "prog";
+  char arg1[] = "--jwt_secret";
+  char arg2[] = "";
+  char* argv[] = {arg0, arg1, arg2};
+  std::string out, err;
+  EXPECT_FALSE(RequireArg(3, argv, "--jwt_secret", &out, &err));
+  EXPECT_NE(err.find("must not be empty"), std::string::npos);
+}
+
+TEST(RequiredArgTest, FlagWithoutValueFails) {
+  char arg0[] = "prog";
+  char arg1[] = "--jwt_secret";
+  char* argv[] = {arg0, arg1};
+  std::string out, err;
+  EXPECT_FALSE(RequireArg(2, argv, "--jwt_secret", &out, &err));
+  EXPECT_NE(err.find("--jwt_secret is required"), std::string::npos);
 }
 
 } // namespace
