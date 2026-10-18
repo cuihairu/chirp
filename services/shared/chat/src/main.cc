@@ -22,6 +22,7 @@
 #include "chat_validation.h"
 #include "group_handlers.h"
 #include "inject_consumer.h"
+#include "inject_idempotency.h"
 #include "logger.h"
 #include "common/metrics.h"
 #include "common/metrics_http_server.h"
@@ -2117,7 +2118,14 @@ int main(int argc, char** argv) {
         argc, argv, "--server_gateway_reconnect", 3);
 
     const std::string hub_service = hub_options.service_id;
-    auto consumer = std::make_shared<chirp::chat::InjectConsumer>(std::move(hooks));
+    // inject_id 幂等窗（表一 P1-4）：hub 在收到 ack 前重投同一个
+    // INJECT_MESSAGE_NOTIFY 时，回吐首次落库的 message_id，不重复落库/投递。
+    const int64_t inject_idempotency_ttl_ms =
+        chirp::chat::runtime::ParseIntArg(argc, argv, "--inject_idempotency_ttl_ms",
+                                          chirp::chat::TtlInjectIdempotency::kDefaultTtlMs);
+    auto consumer = std::make_shared<chirp::chat::InjectConsumer>(
+        std::move(hooks),
+        std::make_shared<chirp::chat::TtlInjectIdempotency>(inject_idempotency_ttl_ms));
     hub_peer = chirp::network::ServerGatewayPeer::Create(
         io, std::move(hub_options),
         [consumer](const chirp::game_server_gateway::InjectMessageNotify& notify) {

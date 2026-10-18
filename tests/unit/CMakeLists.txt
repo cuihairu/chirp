@@ -214,6 +214,7 @@ add_executable(chat_managers_tests
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/mention_manager.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/report_ledger.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/inject_consumer.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/inject_idempotency.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/npc_uplink.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/runtime_utils.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/typing_manager.cc

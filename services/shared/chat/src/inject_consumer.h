@@ -2,9 +2,11 @@
 #define CHIRP_CHAT_INJECT_CONSUMER_H_
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
+#include "inject_idempotency.h"
 #include "proto/chat.pb.h"
 #include "proto/common.pb.h"
 #include "proto/game_server_gateway.pb.h"
@@ -47,12 +49,17 @@ struct InjectOutcome {
 // trusted, but malformed payloads still must not enter history.
 class InjectConsumer {
  public:
-  explicit InjectConsumer(InjectHooks hooks);
+  // idempotency is optional: null keeps the legacy per-notify behavior (a
+  // fresh message per injection), which is what the tests use when they want
+  // to observe the tail on every call.
+  explicit InjectConsumer(InjectHooks hooks,
+                          std::shared_ptr<InjectIdempotency> idempotency = nullptr);
 
   InjectOutcome HandleInject(const chirp::game_server_gateway::InjectMessageNotify& notify);
 
  private:
   InjectHooks hooks_;
+  std::shared_ptr<InjectIdempotency> idempotency_;
 };
 
 }  // namespace chirp::chat

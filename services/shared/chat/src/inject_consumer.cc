@@ -4,7 +4,8 @@
 
 namespace chirp::chat {
 
-InjectConsumer::InjectConsumer(InjectHooks hooks) : hooks_(std::move(hooks)) {}
+InjectConsumer::InjectConsumer(InjectHooks hooks, std::shared_ptr<InjectIdempotency> idempotency)
+    : hooks_(std::move(hooks)), idempotency_(std::move(idempotency)) {}
 
 InjectOutcome InjectConsumer::HandleInject(
     const chirp::game_server_gateway::InjectMessageNotify& notify) {
@@ -23,6 +24,19 @@ InjectOutcome InjectConsumer::HandleInject(
       !valid_channel_type || !has_target) {
     outcome.code = chirp::common::INVALID_PARAM;
     return outcome;
+  }
+
+  // inject_id 是契约上的幂等键（game_server_gateway.proto）：hub 在收到 ack
+  // 之前重投同一个 INJECT_MESSAGE_NOTIFY 时，第二次进来直接回吐首次落库的
+  // message_id，不再重复落库/投递。空 inject_id 视为不带幂等语义（旧游戏侧
+  // 调用零感知），不参与去重。
+  const std::string& inject_id = req.inject_id();
+  if (idempotency_ && !inject_id.empty()) {
+    const std::optional<std::string> replay = idempotency_->Lookup(inject_id);
+    if (replay) {
+      outcome.message_id = *replay;
+      return outcome;
+    }
   }
 
   chirp::chat::ChatMessage msg;
@@ -61,6 +75,9 @@ InjectOutcome InjectConsumer::HandleInject(
   }
 
   outcome.message_id = msg.message_id();
+  if (idempotency_ && !inject_id.empty()) {
+    idempotency_->Remember(inject_id, outcome.message_id);
+  }
   return outcome;
 }
 

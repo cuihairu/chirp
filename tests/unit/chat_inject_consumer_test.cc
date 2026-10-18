@@ -4,6 +4,8 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -15,6 +17,7 @@ using chirp::chat::ChatMessage;
 using chirp::chat::InjectConsumer;
 using chirp::chat::InjectHooks;
 using chirp::chat::InjectOutcome;
+using chirp::chat::TtlInjectIdempotency;
 using chirp::common::ErrorCode;
 using chirp::game_server_gateway::InjectMessageNotify;
 
@@ -66,6 +69,14 @@ InjectMessageNotify MakeNotify(const std::string& sender_id, const std::string& 
   req->set_receiver_id("player_1");
   req->set_content(content);
   return notify;
+}
+
+// Idempotency guard wired into the consumer; the clock is test-owned so the
+// TTL can be fast-forwarded without sleeping.
+std::shared_ptr<TtlInjectIdempotency> Guard(int64_t ttl_ms, int64_t* clock_ms) {
+  auto guard = std::make_shared<TtlInjectIdempotency>(ttl_ms);
+  guard->SetNow([clock_ms] { return *clock_ms; });
+  return guard;
 }
 
 TEST(InjectConsumerTest, DeliversPrivateToOnlineReceiver) {
@@ -295,6 +306,161 @@ TEST(InjectConsumerTest, RejectsEmptyNotify) {
 
   EXPECT_EQ(out.code, ErrorCode::INVALID_PARAM);
   EXPECT_TRUE(rec.stored.empty());
+}
+
+// InjectConsumerIdempotencyTest: hub 在收到 ack 前可能重投同一个 notify，
+// inject_id 是契约上的幂等键——重投必须回吐首次落库的 message_id，并且不再
+// 落库/投递/离线排队。
+TEST(InjectConsumerIdempotencyTest, ReplayReturnsFirstMessageIdWithoutStoringAgain) {
+  RecordingHooks rec;
+  int64_t now = 1000;
+  InjectConsumer consumer(rec.MakeHooks(), Guard(60 * 1000, &now));
+
+  const InjectOutcome first = consumer.HandleInject(MakeNotify("npc:a", "hello"));
+  const InjectOutcome replay = consumer.HandleInject(MakeNotify("npc:a", "hello"));
+
+  EXPECT_EQ(first.code, ErrorCode::OK);
+  EXPECT_EQ(replay.code, ErrorCode::OK);
+  EXPECT_FALSE(first.message_id.empty());
+  EXPECT_EQ(replay.message_id, first.message_id);
+  ASSERT_EQ(rec.stored.size(), 1u);
+  ASSERT_EQ(rec.delivered.size(), 1u);
+  EXPECT_TRUE(rec.queued.empty());
+}
+
+TEST(InjectConsumerIdempotencyTest, PayloadDoesNotOverrideCachedMessageId) {
+  RecordingHooks rec;
+  int64_t now = 1000;
+  InjectConsumer consumer(rec.MakeHooks(), Guard(60 * 1000, &now));
+
+  const InjectOutcome first = consumer.HandleInject(MakeNotify("npc:a", "hello"));
+  InjectMessageNotify tampered = MakeNotify("npc:a", "TAMPERED");  // same inject_id
+  const InjectOutcome out = consumer.HandleInject(tampered);
+
+  EXPECT_EQ(out.code, ErrorCode::OK);
+  EXPECT_EQ(out.message_id, first.message_id);
+  ASSERT_EQ(rec.stored.size(), 1u);
+  EXPECT_EQ(rec.stored[0].content(), "hello");
+}
+
+TEST(InjectConsumerIdempotencyTest, InvalidPayloadIsRejectedEvenIfInjectIdWasSeen) {
+  RecordingHooks rec;
+  int64_t now = 1000;
+  InjectConsumer consumer(rec.MakeHooks(), Guard(60 * 1000, &now));
+
+  const InjectOutcome first = consumer.HandleInject(MakeNotify("npc:a", "hello"));
+  InjectMessageNotify bad = MakeNotify("npc:a", "");  // empty content, same inject_id
+  const InjectOutcome out = consumer.HandleInject(bad);
+
+  EXPECT_EQ(out.code, ErrorCode::INVALID_PARAM);
+  EXPECT_TRUE(out.message_id.empty());
+  EXPECT_FALSE(first.message_id.empty());
+  ASSERT_EQ(rec.stored.size(), 1u);
+}
+
+TEST(InjectConsumerIdempotencyTest, DistinctInjectIdsProduceDistinctMessages) {
+  RecordingHooks rec;
+  int64_t now = 1000;
+  InjectConsumer consumer(rec.MakeHooks(), Guard(60 * 1000, &now));
+
+  const InjectOutcome a = consumer.HandleInject(MakeNotify("npc:a", "one"));
+  InjectMessageNotify b = MakeNotify("npc:b", "two");
+  b.mutable_message()->set_inject_id("inj-2");
+  const InjectOutcome out_b = consumer.HandleInject(b);
+
+  EXPECT_EQ(a.code, ErrorCode::OK);
+  EXPECT_EQ(out_b.code, ErrorCode::OK);
+  EXPECT_NE(a.message_id, out_b.message_id);
+  ASSERT_EQ(rec.stored.size(), 2u);
+  ASSERT_EQ(rec.delivered.size(), 2u);
+}
+
+TEST(InjectConsumerIdempotencyTest, EmptyInjectIdIsNotDeduplicated) {
+  RecordingHooks rec;
+  int64_t now = 1000;
+  InjectConsumer consumer(rec.MakeHooks(), Guard(60 * 1000, &now));
+
+  InjectMessageNotify a = MakeNotify("npc:a", "one");
+  a.mutable_message()->clear_inject_id();
+  InjectMessageNotify b = MakeNotify("npc:a", "two");
+  b.mutable_message()->clear_inject_id();
+
+  const InjectOutcome out_a = consumer.HandleInject(a);
+  const InjectOutcome out_b = consumer.HandleInject(b);
+
+  EXPECT_NE(out_a.message_id, out_b.message_id);
+  ASSERT_EQ(rec.stored.size(), 2u);
+}
+
+TEST(InjectConsumerIdempotencyTest, ReplayDoesNotQueueAgainWhenReceiverIsOffline) {
+  RecordingHooks rec;
+  rec.receiver_online = false;
+  int64_t now = 1000;
+  InjectConsumer consumer(rec.MakeHooks(), Guard(60 * 1000, &now));
+
+  const InjectOutcome first = consumer.HandleInject(MakeNotify("npc:a", "hello"));
+  const InjectOutcome replay = consumer.HandleInject(MakeNotify("npc:a", "hello"));
+
+  EXPECT_EQ(replay.message_id, first.message_id);
+  ASSERT_EQ(rec.stored.size(), 1u);
+  EXPECT_TRUE(rec.delivered.empty());
+  ASSERT_EQ(rec.queued.size(), 1u);
+}
+
+// TtlInjectIdempotencyTest: 守卫自身的簿记——命中/失配/过期/容量封顶，时钟
+// 全部可拨快，不依赖真实等待。
+TEST(TtlInjectIdempotencyTest, MissesOnUnknownKey) {
+  int64_t now = 1000;
+  auto guard = Guard(60 * 1000, &now);
+
+  EXPECT_EQ(guard->Lookup("inj-unknown"), std::nullopt);
+}
+
+TEST(TtlInjectIdempotencyTest, RemembersAndReturnsMessageId) {
+  int64_t now = 1000;
+  auto guard = Guard(60 * 1000, &now);
+  guard->Remember("inj-1", "msg_a");
+
+  ASSERT_TRUE(guard->Lookup("inj-1").has_value());
+  EXPECT_EQ(*guard->Lookup("inj-1"), "msg_a");
+  EXPECT_EQ(guard->Size(), 1u);
+
+  // 同一 inject_id 重记：覆盖旧值，尺寸不变。
+  guard->Remember("inj-1", "msg_b");
+  ASSERT_TRUE(guard->Lookup("inj-1").has_value());
+  EXPECT_EQ(*guard->Lookup("inj-1"), "msg_b");
+  EXPECT_EQ(guard->Size(), 1u);
+}
+
+TEST(TtlInjectIdempotencyTest, ForgetsEntriesAfterTtl) {
+  int64_t now = 1000;
+  auto guard = Guard(1000, &now);
+  guard->Remember("inj-1", "msg_a");
+  now = 1999;
+  ASSERT_TRUE(guard->Lookup("inj-1").has_value());
+
+  now = 2000;  // expires_at <= now → 过期
+  EXPECT_EQ(guard->Lookup("inj-1"), std::nullopt);
+  EXPECT_EQ(guard->Size(), 0u);
+}
+
+TEST(TtlInjectIdempotencyTest, KeepsWithinCapByDroppingClosestToExpiry) {
+  int64_t now = 0;
+  auto guard = std::make_shared<TtlInjectIdempotency>(1000, /*max_entries=*/2);
+  guard->SetNow([&now] { return now; });
+
+  guard->Remember("inj-a", "msg_a");  // expires 1000
+  now = 100;
+  guard->Remember("inj-b", "msg_b");  // expires 1100
+  now = 200;
+  guard->Remember("inj-c", "msg_c");  // 最旧（inj-a）被挤出
+
+  EXPECT_EQ(guard->Size(), 2u);
+  EXPECT_EQ(guard->Lookup("inj-a"), std::nullopt);
+  ASSERT_TRUE(guard->Lookup("inj-b").has_value());
+  EXPECT_EQ(*guard->Lookup("inj-b"), "msg_b");
+  ASSERT_TRUE(guard->Lookup("inj-c").has_value());
+  EXPECT_EQ(*guard->Lookup("inj-c"), "msg_c");
 }
 
 }  // namespace
