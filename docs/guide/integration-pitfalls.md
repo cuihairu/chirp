@@ -173,7 +173,7 @@ client.SendMessage(opts, "gg", [](const std::error_code& ec,
 
 - 拨**两个**连接:`chirp_game_server_gateway`(8100,注入/事件)与 app_chat 主端口(7000,身份绑定/频道订阅/未读)。RPC 发错目标会因对端不处理而**超时**,不是报错——这也是"卡 10 秒才失败"的最常见原因。
 - 事件投递是 **at-least-once**:处理完 `EVENT_DELIVER_NOTIFY` 必须回 `EVENT_ACK_REQ`,否则 hub 重连后重投——消费逻辑要按 `event_id` 幂等。
-- 注入消息带 `inject_id` 幂等键:同 id 重发不会产生重复消息,重试安全。
+- 注入消息带 `inject_id` 幂等键:同 id 重发不会产生重复消息,重试安全(2026-10-19 起 chat 消费端按进程内 TTL 窗去重,缺省 5 分钟、`--inject_idempotency_ttl_ms` 可调;窗过期或部署多实例时同 id 仍会各落一条——跨实例真幂等待共享表拍板)。
 - 注入回 `OK` 只表示服务平面受理,不确认玩家侧送达;离线玩家走离线队列。
 - 认证被拒表现为周期性重试告警(固定延迟,无限重试),不会主动退出——凭据配错要盯启动日志。
 - Go SDK 语义与 C++ 参考实现逐项对齐,细节见 [服务端 SDK](../sdk/server.md)。

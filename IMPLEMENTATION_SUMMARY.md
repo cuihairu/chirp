@@ -4,7 +4,7 @@
 
 ## 仓库构成
 
-- `proto/`:协议定义(`gateway.proto`、`server_gateway.proto` 等),MsgID 按 1xxx 认证 / 2xxx 聊天 / 3xxx 社交 / 4xxx 语音 / 5xxx 服务器平面 / 6xxx 推送分段
+- `proto/`:协议定义(`gateway.proto`、`game_server_gateway.proto` 等),MsgID 按 1xxx 认证 / 2xxx 聊天 / 3xxx 社交 / 4xxx 语音 / 5xxx 服务器平面 / 6xxx 推送分段
 - `libs/common`:日志、JWT/HS256、base64、sha256、指标原语、metrics HTTP server
 - `libs/network`:ASIO TCP/WS server/session、长度前缀 framing、Redis RESP 客户端与 Pub/Sub 路由、chat peer 注册协议(hub/link)、server gateway peer
 - `services/game/sdk_gateway`:游戏客户端边缘(登录/心跳/会话绑定/跨实例 kick,`game_sdk_gateway`)
@@ -17,11 +17,11 @@
 - `services/social` / `services/voice` / `services/search` / `services/party`:实验性能力面
 - `sdks/core`:C++ 客户端 SDK(`chirp::sdk::ChatClient`,进程级 smoke 覆盖)
 - `apps/`、`tools/`:CLI、benchmark、移动端协议核与管理台雏形
-- `tests/`:40 个单测套件 + `test_services.sh` 十条进程级 smoke
+- `tests/`:45 个单测套件 + `test_services.sh` 十条进程级 smoke
 
 ## 验证现状
 
-- 全部被测后端包行覆盖 100%(`scripts/run_coverage.sh`,CI 卡 98% 包门槛)
+- 全部被测后端包行覆盖 100%(`scripts/run_coverage.sh` 缺省 `--fail-under 100`,CI coverage job 无参调用即卡 100%)
 - 测试基建:C API 影子 fake(`fake_mysql`/`fake_sodium`)、`InMemoryRedis` + 回环 `FakeRedisServer`,单测不依赖外部服务
 - 冒烟路径:`--smoke` / `--smoke-chat` / `--smoke-sdk` / `--smoke-game` / `--smoke-npc` / `--smoke-edge` / `--smoke-jwt` / `--smoke-redis` / `--smoke-voice` / `--smoke-party`,CI smoke job 全量覆盖
 

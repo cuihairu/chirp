@@ -76,8 +76,8 @@ Message  ── 发送 ──► Accepted ──► Persisted ──► (Queued 
 | --- | --- | --- |
 | BEST_EFFORT | 尽力而为，不保证送达 | 推送桥发完即忘（app_notification 默认 logging 传输只记日志；`--push_transport http` 为真实 HTTP POST，仍无送达回执） |
 | AT_LEAST_ONCE | 至少一次，重投直到确认 | 服务面注入：hub ack + Redis Streams PEL 重放 |
-| AT_MOST_ONCE | 至多一次，重复会被丢弃 | 消费端 dedup 已落地（2026-10-04）：`ChatMessage.delivery_id`（补投副本由服务端铸造，ack 回队重投保原值——同一次投递的重投同 id），SDK `MemoryMessageStore` 按 `message_id` 幂等入库；服务面注入幂等键 `inject_id` |
-| DURABLE | 持久化到历史面，重启不丢 | 聊天消息落 MySQL 历史（`messages` 表） |
+| AT_MOST_ONCE | 至多一次，重复会被丢弃 | 消费端 dedup 已落地（2026-10-04）：`ChatMessage.delivery_id`（补投副本由服务端铸造，ack 回队重投保原值——同一次投递的重投同 id），SDK `MemoryMessageStore` 按 `message_id` 幂等入库；服务面注入幂等键 `inject_id`——chat 消费端按进程内 TTL 窗去重（2026-10-19 落地：缺省 5 分钟窗 `--inject_idempotency_ttl_ms` 可调、容量封顶 1 万条，同 id 重放回吐首次落库的 `message_id`；窗为进程内：重启丢窗、多实例不共享，跨实例真幂等留待共享表拍板） |
+| DURABLE | 持久化到历史面，重启不丢 | 聊天消息写 Redis 热层 + MySQL `messages` 表；MySQL 为后台异步写——2026-10-19 起有界重试（缺省 3 次/间隔 100ms，`--mysql_store_attempts`/`--mysql_store_retry_delay_ms` 可调），穷尽后 `persist_failures()` 计数 + Error 日志。**尽力而为口径**：`OK` 只回答受理，Redis+MySQL 双故障时该条不落库（可见不静默），「重启不丢」只对已落库消息成立；契约分档（OK=受理 vs OK=已持久化）仍待拍板 |
 
 对应关系必须写清：**`OK` 只回答 Accepted**。玩家侧是否 Delivered/Acknowledged 由补投与已读回执回答，两者都是「受理」之外的第二条链。当前「OK 仅服务面受理」一句话，升格为上述状态机在协议文档中的正式表述。
 

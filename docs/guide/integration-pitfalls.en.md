@@ -173,7 +173,7 @@ client.SendMessage(opts, "gg", [](const std::error_code& ec,
 
 - Dial **two** connections: `chirp_game_server_gateway` (8100, injection/events) and the app_chat main port (7000, identity binding/channel subscription/unreads). Sending an RPC to the wrong target **times out** rather than erroring — the most common reason for "it hangs 10 seconds before failing".
 - Event delivery is **at-least-once**: after handling `EVENT_DELIVER_NOTIFY` you must reply `EVENT_ACK_REQ`, otherwise the hub redelivers after reconnect — make consumer logic idempotent by `event_id`.
-- Injected messages carry the `inject_id` idempotency key: a resend with the same id produces no duplicate message, so retries are safe.
+- Injected messages carry the `inject_id` idempotency key: a resend with the same id produces no duplicate message, so retries are safe (as of 2026-10-19 the chat consumer dedups over an in-process TTL window — 5 minutes by default, `--inject_idempotency_ttl_ms`; after the window expires, or across multiple instances, the same id still lands once per consumer — a true cross-instance key awaits a shared-table decision).
 - An injection returning `OK` only means the server plane accepted it; it does not confirm delivery on the player's side; offline players go through the offline queue.
 - Authentication rejection shows up as periodic retry warnings (fixed delay, unlimited retries) and never exits on its own — when credentials are misconfigured, watch the startup log.
 - The Go SDK's semantics align item by item with the C++ reference implementation; for details see [Server SDK](../sdk/server.en.md).
