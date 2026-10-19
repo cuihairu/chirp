@@ -444,6 +444,25 @@ TEST(TtlInjectIdempotencyTest, ForgetsEntriesAfterTtl) {
   EXPECT_EQ(guard->Size(), 0u);
 }
 
+TEST(TtlInjectIdempotencyTest, RememberSweepsExpiredEntriesKeepsLive) {
+  int64_t now = 1000;
+  auto guard = Guard(1000, &now);
+  guard->Remember("inj-old", "msg_a");  // expires 2000
+  now = 1500;
+  guard->Remember("inj-new", "msg_b");  // expires 2500
+
+  // Remember 先做过期清扫:inj-old 已过期整条 erase,inj-new 原样保留
+  // (容量封顶测试只覆盖按最近到期挤出的那条路径,这里补的是 TTL 清扫)。
+  now = 2100;
+  guard->Remember("inj-fresh", "msg_c");
+  EXPECT_EQ(guard->Size(), 2u);
+  EXPECT_EQ(guard->Lookup("inj-old"), std::nullopt);
+  ASSERT_TRUE(guard->Lookup("inj-new").has_value());
+  EXPECT_EQ(*guard->Lookup("inj-new"), "msg_b");
+  ASSERT_TRUE(guard->Lookup("inj-fresh").has_value());
+  EXPECT_EQ(*guard->Lookup("inj-fresh"), "msg_c");
+}
+
 TEST(TtlInjectIdempotencyTest, KeepsWithinCapByDroppingClosestToExpiry) {
   int64_t now = 0;
   auto guard = std::make_shared<TtlInjectIdempotency>(1000, /*max_entries=*/2);
