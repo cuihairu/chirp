@@ -105,6 +105,14 @@ jobs:
           # 部署机上的旧随机值自然收敛;轮换后的首次部署由 ensure 步重置账号。
           sed -i '/^DEMO_PASSWORD=/d' "$deploy_dir/.env"
           printf 'DEMO_PASSWORD=%s\n' "$DEMO_PASSWORD_PINNED" >> "$deploy_dir/.env"
+          # compose 必填的通知面共享密钥(app_sdk_gateway --notification_secret 与
+          # app_notification --service_secret 读同一变量,两端必须同值):首建于该
+          # 变量引入前的部署机 .env 缺它,compose 插值会整体拒跑。缺则随机生成
+          # 一次并保持稳定(重部署只补缺不轮换,与 MYSQL_PASSWORD 等同策略)。
+          if ! grep -qE '^NOTIFICATION_SERVICE_SECRET=' "$deploy_dir/.env"; then
+            printf 'NOTIFICATION_SERVICE_SECRET=%s\n' "$(openssl rand -hex 32)" >> "$deploy_dir/.env"
+            echo "::warning::deploy .env lacked NOTIFICATION_SERVICE_SECRET; generated one"
+          fi
           echo "--- deploy_dir/$deploy_dir ---"
           sed -E 's/(PASSWORD|SECRET)=.*/\1=<redacted>/' "$deploy_dir/.env"
 
