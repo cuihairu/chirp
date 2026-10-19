@@ -192,7 +192,7 @@
 - [x] Android M4 — chat 管线
 - [x] Android M3.5 — 推送接入（80/0）
 - [x] Android 接收侧（103/103）
-- [ ] iOS 推送（APNs）——真投递凭据项（保持挂起不代决；解锁条件：用户给 APNs 凭据——Team ID / Key ID / .p8 私钥 / Bundle ID——到位后落地 iOS 端真实投递联调。**2026-10-15 分批落地：ES256 provider JWT 签名侧已补**（`services/app/notification/src/apns_jwt.{h,cc}`——`.p8` PEM 载入（inline bytes 或 `--apns-key` 文件）、P-256 曲线校验、DER→JWS raw 签名转换；`NotificationService::ApnsBearerToken` 50 分钟窗口缓存 + `Authorization: Bearer` 注入；notification 单测 14 例含往返验签/拒 RSA/P-384/坏 PEM/缓存窗口/无凭据免头）**。余下卡点：真投递凭据（Team ID / Key ID / .p8 / Bundle ID，用户项）与 APNs 必需 HTTP/2（HTTP/1.1 传输，生产需前置协议转换）——凭据到位即可联调，无待补实现
+- [ ] iOS 推送（APNs）——真投递凭据项（保持挂起不代决；解锁条件：用户给 APNs 凭据——Team ID / Key ID / .p8 私钥 / Bundle ID——到位后落地 iOS 端真实投递联调。**2026-10-15 分批落地：ES256 provider JWT 签名侧已补**（`services/app/notification/src/apns_jwt.{h,cc}`——`.p8` PEM 载入（inline bytes 或 `--apns-key` 文件）、P-256 曲线校验、DER→JWS raw 签名转换；`NotificationService::ApnsBearerToken` 50 分钟窗口缓存 + `Authorization: Bearer` 注入；notification 单测 14 例含往返验签/拒 RSA/P-384/坏 PEM/缓存窗口/无凭据免头）**。余下卡点：真投递凭据（Team ID / Key ID / .p8 / Bundle ID，用户项）与 APNs 必需 HTTP/2（HTTP/1.1 传输，生产需前置协议转换）——凭据到位即可联调，无待补实现。**2026-10-19 预备半边补齐（docs-only）**：权威部署指南补推送出向 runbook（`docs/guide/deployment.md`+`.en.md` 新增「推送出向与提供方凭据」段）——`--push_transport logging|http` 两态与两份 compose 默认不外发、FCM/APNs 全部凭据旗标清单（含 `--apns-key/.key-id/.team-id/.bundle-id/.sandbox/.endpoint` 与 `--push_ca_file/--push_verify_tls`）、APNs HTTP/2 约束与前置协议转换路径（本地 envoy/haproxy 类 h2 上游反代 + `--apns-endpoint` 指该入口）、单次尝试无重试的失败语义与计数口径、`CMakeLists` 的 `find_package(CURL)` 确证为残留（vcpkg 无 curl、源码零引用 USE_CURL）。凭据到位照单接线即可，卡点不变：Team ID / Key ID / .p8 / Bundle ID 为用户项
 - [x] iOS — Swift 协议包
 - [x] iOS — Swift 协议包（70/70）
 - [x] iOS — Swift 协议包（M3.5 核：DeviceRegistrar + 推送 token 缝，2026-09-29）（77/77）
