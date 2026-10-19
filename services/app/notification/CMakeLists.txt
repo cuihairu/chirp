@@ -22,9 +22,6 @@ target_link_libraries(chirp_app_notification
 
 target_include_directories(chirp_app_notification PRIVATE src)
 
-# Optional: libcurl for HTTP requests
-find_package(CURL)
-if(CURL_FOUND)
-    target_link_libraries(chirp_app_notification PRIVATE CURL::libcurl)
-    target_compile_definitions(chirp_app_notification PRIVATE USE_CURL=1)
-endif()
+# Provider HTTP goes through the in-tree asio/OpenSSL transport
+# (http_push_transport.h); there is deliberately no libcurl dependency.
+
