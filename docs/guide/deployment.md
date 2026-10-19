@@ -52,6 +52,8 @@ build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001 \
 
 **`--allow_scaffold_login` 是开发脚手架,不是部署参数**:开启后 auth 对既非有效 JWT 也非活跃会话的 token 直接按「token 即 user_id」放行(`services/app/auth/src/main_enhanced.cc` 的 LOGIN_REQ 回退分支),任何持有该服务网络可达性的调用方都可以冒充任意用户。仅限完全隔离的本地开发演示使用,生产一律不传此参数(`docker-compose.yml` 里带它是因为那份 compose 本身是开发演示形态)。
 
+**设备注册表持久化(2026-10-19)**:`chirp_app_notification` 支持 `--device_store_file <path>`(缺省空 = 纯内存,行为与不传时逐位一致):注册/注销/换 token 在注册表锁内快照写盘,启动时先回灌再开监听,重启不丢推送目标。演示站部署 compose(`deployments/docker/docker-compose.deploy.yml`)已将该 flag 指到命名卷 `notification_data` 内的 `/var/lib/chirp/notification/devices.json`,容器重建不再静默清空设备表;裸机部署传一个可写路径即可,开发 compose 保持无状态(整栈重置即干净)。
+
 限流开关在 chat 上:`--login_rate_limit_per_min`(默认 30 次/分钟,按客户端 IP)和 `--send_rate_limit_per_min`(默认 120 次/分钟,按用户)。窗口数据放 Redis,Redis 故障时放行(fail-open);完全不配 `--redis_host` 时不启用限流。
 
 ## 生产检查清单

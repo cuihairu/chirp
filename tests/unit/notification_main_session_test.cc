@@ -8,6 +8,7 @@
 
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -57,13 +58,18 @@ class NotificationMainSessionTest : public ::testing::Test {
       std::make_shared<chirp::app_notification::LoggingPushTransport>()};
   chirp::app_notification::NotificationHandlers handlers_{svc_};
   std::shared_ptr<MockSession> session_ = std::make_shared<MockSession>();
+  // Empty = the plane stays open (the pre-handshake behaviour), which is what
+  // the dispatch cases below assume; the gate cases opt in by setting this.
+  std::string secret_;
+  std::unordered_set<const chirp::network::Session*> trusted_;
 
   void RunFrame(chirp::gateway::MsgID id, int64_t seq, const std::string& body) {
     chirp::gateway::Packet pkt;
     pkt.set_msg_id(id);
     pkt.set_sequence(seq);
     pkt.set_body(body);
-    HandleNotificationPacket(handlers_, session_, pkt.SerializeAsString());
+    HandleNotificationPacket(handlers_, session_, secret_, trusted_,
+                             pkt.SerializeAsString());
   }
 };
 
@@ -90,7 +96,8 @@ TEST_F(NotificationMainSessionTest, RegisterDeviceRoundTripsFramed) {
 }
 
 TEST_F(NotificationMainSessionTest, GarbagePacketPayloadIsSilent) {
-  HandleNotificationPacket(handlers_, session_, std::string("\xff\xff\xff\xff", 4));
+  HandleNotificationPacket(handlers_, session_, secret_, trusted_,
+                           std::string("\xff\xff\xff\xff", 4));
   EXPECT_TRUE(session_->sent.empty());
   EXPECT_FALSE(session_->closed);  // a bad frame never tears down the listener
 }
@@ -134,6 +141,71 @@ TEST_F(NotificationMainSessionTest, UnregisterThroughSeamRemovesDevice) {
   ASSERT_TRUE(body.ParseFromString(pkt.body()));
   EXPECT_EQ(body.code(), chirp::common::OK);
   EXPECT_TRUE(svc_.GetUserDevices("u9").empty());
+}
+
+TEST_F(NotificationMainSessionTest, HandshakeGrantsTrustThenServesDeviceRpc) {
+  secret_ = "n0tify-secret";
+
+  chirp::game_server_gateway::ServerAuthRequest auth;
+  auth.set_service_id("chirp");
+  auth.set_secret("n0tify-secret");
+  RunFrame(chirp::gateway::SERVER_AUTH_REQ, /*seq=*/41, auth.SerializeAsString());
+
+  ASSERT_EQ(session_->sent.size(), 1u);
+  chirp::gateway::Packet resp;
+  ASSERT_TRUE(DecodeFramed(session_->sent[0], &resp));
+  EXPECT_EQ(resp.msg_id(), chirp::gateway::SERVER_AUTH_RESP);
+  EXPECT_EQ(resp.sequence(), 41);
+  chirp::game_server_gateway::ServerAuthResponse body;
+  ASSERT_TRUE(body.ParseFromString(resp.body()));
+  EXPECT_EQ(body.code(), chirp::common::OK);
+
+  // The same connection is trusted now: a 6xxx RPC goes straight through
+  // without another handshake.
+  chirp::app_notification::RegisterDeviceRequest reg;
+  reg.set_user_id("u1");
+  reg.set_device_id("dev-1");
+  reg.set_platform("android");
+  reg.set_fcm_token("tok");
+  RunFrame(chirp::gateway::REGISTER_DEVICE_REQ, /*seq=*/42, reg.SerializeAsString());
+
+  ASSERT_EQ(session_->sent.size(), 2u);
+  ASSERT_TRUE(DecodeFramed(session_->sent[1], &resp));
+  EXPECT_EQ(resp.msg_id(), chirp::gateway::REGISTER_DEVICE_RESP);
+  EXPECT_EQ(resp.sequence(), 42);
+  EXPECT_EQ(svc_.GetUserDevices("u1").size(), 1u);
+}
+
+TEST_F(NotificationMainSessionTest, WrongSecretAnswersAuthFailedAndCloses) {
+  secret_ = "n0tify-secret";
+
+  chirp::game_server_gateway::ServerAuthRequest auth;
+  auth.set_service_id("chirp");
+  auth.set_secret("not-the-secret");
+  RunFrame(chirp::gateway::SERVER_AUTH_REQ, /*seq=*/43, auth.SerializeAsString());
+
+  ASSERT_EQ(session_->sent.size(), 1u);
+  chirp::gateway::Packet resp;
+  ASSERT_TRUE(DecodeFramed(session_->sent[0], &resp));
+  EXPECT_EQ(resp.msg_id(), chirp::gateway::SERVER_AUTH_RESP);
+  chirp::game_server_gateway::ServerAuthResponse body;
+  ASSERT_TRUE(body.ParseFromString(resp.body()));
+  EXPECT_EQ(body.code(), chirp::common::AUTH_FAILED);
+  EXPECT_TRUE(session_->close_after_send);
+}
+
+TEST_F(NotificationMainSessionTest, UntrustedDeviceRpcIsDroppedAndConnectionClosed) {
+  secret_ = "n0tify-secret";
+
+  chirp::app_notification::RegisterDeviceRequest reg;
+  reg.set_user_id("u-drop");
+  reg.set_device_id("dev-x");
+  reg.set_platform("android");
+  RunFrame(chirp::gateway::REGISTER_DEVICE_REQ, /*seq=*/44, reg.SerializeAsString());
+
+  EXPECT_TRUE(session_->sent.empty());
+  EXPECT_TRUE(session_->closed);
+  EXPECT_TRUE(svc_.GetUserDevices("u-drop").empty());
 }
 
 }  // namespace

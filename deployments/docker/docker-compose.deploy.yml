@@ -81,8 +81,11 @@ services:
     environment:
       CHIRP_SERVICE: app_notification
     # 0.0.0.0 inside the container so peers on the private network can reach
-    # it; every caller must present the shared secret.
-    command: ["--host", "0.0.0.0", "--port", "5006", "--ws_port", "5016", "--service_secret", "${NOTIFICATION_SERVICE_SECRET:?set in deploy .env}"]
+    # it; every caller must present the shared secret. The device registry is
+    # persisted to a named volume so a container restart keeps push targets.
+    command: ["--host", "0.0.0.0", "--port", "5006", "--ws_port", "5016", "--service_secret", "${NOTIFICATION_SERVICE_SECRET:?set in deploy .env}", "--device_store_file", "/var/lib/chirp/notification/devices.json"]
+    volumes:
+      - notification_data:/var/lib/chirp/notification
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "bash", "-c", "</dev/tcp/127.0.0.1/5006"]
@@ -227,3 +230,4 @@ services:
 
 volumes:
   mysql_data:
+  notification_data:

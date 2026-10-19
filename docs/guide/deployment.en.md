@@ -52,6 +52,8 @@ Every service with a listener accepts `--host <addr>` (default `0.0.0.0`, all in
 
 **`--allow_scaffold_login` is a development scaffold, not a deployment argument**: with it on, auth treats a token that is neither a valid JWT nor an active session as "token equals user_id" (the LOGIN_REQ fallback branch in `services/app/auth/src/main_enhanced.cc`) — any caller with network reachability to the service can impersonate any user. Use it only in fully isolated local development demos; never pass it in production (`docker-compose.yml` carries it because that compose file is itself the dev-demo setup).
 
+**Device registry persistence (2026-10-19)**: `chirp_app_notification` accepts `--device_store_file <path>` (default empty = memory-only, bit-for-bit the behavior without the flag): register/unregister/token-update snapshot to disk under the registry lock, and startup refills from the file before the listeners go live, so a restart keeps its push targets. The demo deployment compose (`deployments/docker/docker-compose.deploy.yml`) now points the flag at `/var/lib/chirp/notification/devices.json` inside the named volume `notification_data`, so container recreation no longer silently empties the device table; bare-metal deployments pass any writable path, and the dev compose stays stateless (a full stack reset starts clean).
+
 The rate-limit switches are on chat: `--login_rate_limit_per_min` (default 30/minute, per client IP) and `--send_rate_limit_per_min` (default 120/minute, per user). Window data lives in Redis, and Redis failures let traffic through (fail-open); with no `--redis_host` configured at all, rate limiting is not enabled.
 
 ## Production checklist
