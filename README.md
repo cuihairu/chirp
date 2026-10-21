@@ -8,6 +8,7 @@
 
 <p align="center">
 
+[![Status](https://img.shields.io/badge/status-in%20development-orange)](https://github.com/cuihairu/chirp/releases)
 [![CI](https://github.com/cuihairu/chirp/actions/workflows/ci.yml/badge.svg)](https://github.com/cuihairu/chirp/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/cuihairu/chirp/branch/main/graph/badge.svg)](https://codecov.io/gh/cuihairu/chirp)
 ![C++](https://img.shields.io/badge/C%2B%2B-23-00599C?logo=cplusplus&logoColor=white)
