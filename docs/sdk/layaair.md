@@ -1,47 +1,47 @@
-> 🌐 Language: **中文** (this page) | [English](./layaair.en.md)
+> 🌐 Language: [中文](../zh/sdk/layaair.md)) | **English** (this page)
 
 # LayaAir
 
-**LayaAir 暂无官方 SDK**,接入方式与 Cocos Creator 完全同构:TS/JS 工程 + 引擎原生 `WebSocket` 直连 chirp 的 WS 边缘。chirp 的接入面是纯协议(TCP/WebSocket + Protobuf),与引擎无关。
+**There is no official SDK for LayaAir yet.** The integration path is exactly isomorphic to Cocos Creator: a TS/JS project + the engine's native `WebSocket` connecting directly to Chirp's WS edge. Chirp's integration surface is a pure protocol (TCP/WebSocket + Protobuf), independent of any engine.
 
-## 接入方式
+## How to integrate
 
-LayaAir 3.x(TS 项目)直接用浏览器标准的 `WebSocket`(LayaAir 的 `Laya.Browser.window.WebSocket` 或原生全局均可):
+LayaAir 3.x (a TS project) can use the browser-standard `WebSocket` directly (either LayaAir's `Laya.Browser.window.WebSocket` or the native global):
 
 ```ts
-const ws = new WebSocket("ws://127.0.0.1:7001");   // chat WS 边缘(开发拓扑)
+const ws = new WebSocket("ws://127.0.0.1:7001");   // chat WS edge (development topology)
 ws.binaryType = "arraybuffer";
 ```
 
-需要自己实现的三层:
+Three layers you need to implement yourself:
 
-1. **帧编解码**:每帧是 `[uint32_be payload_size][Packet protobuf 字节]`,`Packet` 含 `msg_id` / `sequence` / `body`(可选 `request_id` 跨平面追踪);
-2. **protobuf**:用 [protobuf.js](https://github.com/protobufjs/protobuf.js) 加载 `proto/gateway.proto` 编译产物;
-3. **客户端状态机**:登录往返、心跳、重连、KICK 终态。
+1. **Frame codec**: each frame is `[uint32_be payload_size][Packet protobuf bytes]`, and `Packet` has `msg_id` / `sequence` / `body` (optional `request_id` for cross-plane tracing);
+2. **protobuf**: use [protobuf.js](https://github.com/protobufjs/protobuf.js) to load the compiled output of `proto/gateway.proto`;
+3. **Client state machine**: the login round trip, heartbeat, reconnect, KICK terminal state.
 
-**参考实现**:仓库 `sdks/ts/src/` 是一份带 149 例 vitest 单测的完整 TS 协议栈(`frame.ts` 帧编解码、`msg_map.ts` 消息映射表、`chirp_client.ts` 状态机,行覆盖按 CI 阈值门禁(`vitest.config.ts`:lines/branches/functions/statements ≥90%),可直接搬进 LayaAir 工程,语义与 unity 端对齐;微信小游戏目标用 `@chirp/protocol/adapters/wx_socket` 的 `createWxSocketFactory(wx)` 作为 ChirpClient 的传输工厂。
+**Reference implementation**: `sdks/ts/src/` in this repo is a complete TS protocol stack with 149 vitest unit tests (`frame.ts` frame codec, `msg_map.ts` message mapping table, `chirp_client.ts` state machine, line coverage gated by CI thresholds (`vitest.config.ts`: lines/branches/functions/statements ≥90%)) that can be moved directly into a LayaAir project, with semantics aligned with the unity client; for the WeChat Mini Game target, use `createWxSocketFactory(wx)` from `@chirp/protocol/adapters/wx_socket` as the ChirpClient transport factory.
 
-## 生命周期
+## Lifecycle
 
 ```text
-connect → LOGIN(1003/1004) → 收发(2001 发送 / 2005 推送) → 心跳(1001/1002)
-        ↓ 断线                  ↓ 收到 KICK(1005)
-      自动重连 + 重新登录      踢线终态:停止重连,需玩家重新登录
+connect → LOGIN(1003/1004) → send/receive (2001 send / 2005 push) → heartbeat (1001/1002)
+        ↓ disconnect              ↓ KICK received (1005)
+      auto reconnect + re-login   kick terminal state: stop reconnecting, the player must log in again
 ```
 
-- `sequence` 递增,响应按 sequence 关联回请求;
-- 收到离线消息后要发 ack,否则服务端重复投递;
-- 被顶号(KICK)是终态,不要对它做自动重连。
+- `sequence` increments, and responses are correlated back to requests by sequence;
+- after receiving an offline message you must send an ack, otherwise the server redelivers it;
+- being replaced (KICK) is a terminal state, so do not auto-reconnect after it.
 
-## 协议 / API 参考
+## Protocol / API reference
 
-- 协议总览:[API 概述](/api/overview)(Packet 帧、消息 ID 分段、核心流程)——接入前先读这份
-- 消息 ID 全表:`proto/gateway.proto` 的 `MsgID` 枚举(1xxx 认证/会话、2xxx 聊天、3xxx 社交、4xxx 语音、7xxx 组队)
-- TS 参考实现:[sdks/ts](https://github.com/cuihairu/chirp/tree/main/sdks/ts)
-- C# 版语义对照(消息面覆盖表):[Unity3D](/sdk/unity3d)
-- 服务端接入(游戏后端):[服务端 SDK](/sdk/server) 与[服务器平面](/server_plane)
+- Protocol overview: [API Overview](/api/overview) (Packet frames, message ID ranges, core flows) — read this first before integrating
+- Full message ID table: the `MsgID` enum in `proto/gateway.proto` (1xxx auth/session, 2xxx chat, 3xxx social, 4xxx voice, 7xxx party)
+- TS reference implementation: [sdks/ts](https://github.com/cuihairu/chirp/tree/main/sdks/ts)
+- C# semantics comparison (message-plane coverage table): [Unity3D](/sdk/unity3d)
+- Server integration (game backend): [Server SDK](/sdk/server) and [Server Plane](/server_plane)
 
-## 现状与边界
+## Current state and boundaries
 
-- 与 Cocos Creator 同:官方 SDK 只有 Unity/Unreal/Go/C++ 核心,LayaAir 按协议接入,TS 层复用 `sdks/ts` 协议栈。
-- 聊天主链路只需要 chat 一条连接;社交(WS 8001)、语音(WS 9001)、组队(WS 7501)独立服务,按需再接。
+- Same as Cocos Creator: the only official SDKs are Unity/Unreal/Go/the C++ core; LayaAir integrates over the protocol, with the TS layer reusing the `sdks/ts` protocol stack.
+- The main chat path needs only the one chat connection; social (WS 8001), voice (WS 9001) and party (WS 7501) are separate services to add as needed.

@@ -1,18 +1,19 @@
-> 🌐 Language: **中文** (this page) | [English](./godot.en.md)
+> 🌐 Language: [中文](../zh/sdk/godot.md)) | **English** (this page)
 
 # Godot
 
-**Godot 暂无官方 SDK**。Godot 4.x 的 .NET(C#)运行时可以直接复用 [Unity SDK](/sdk/unity3d) 的**纯 C# 部分**——`sdks/unity/Runtime/Chirp/` 从一开始就按零引擎依赖设计(`Chirp.Sdk.asmdef` 的 `noEngineReferences` 在 Unity 侧把这条约束固化成编译期检查),传输层用 `System.Net.WebSockets.ClientWebSocket`,这是 .NET 标准库,Godot .NET 自带,无需任何适配代码。
+**There is no official SDK for Godot yet.** Godot 4.x's .NET (C#) runtime can reuse the **pure C# portion** of the [Unity SDK](/sdk/unity3d) directly — `sdks/unity/Runtime/Chirp/` was designed with zero engine dependencies from the start (`Chirp.Sdk.asmdef`'s `noEngineReferences` hardens that constraint into a compile-time check on the Unity side), and the transport layer uses `System.Net.WebSockets.ClientWebSocket`, a .NET standard library that Godot .NET ships with, requiring no adapter code at all.
 
-GDScript 版没有路线:`GDScript` 缺少成熟的 protobuf 库,复用 C# 是唯一现实的路径。
+There is no GDScript route: `GDScript` lacks a mature protobuf library, so reusing C# is the only realistic path.
 
-## 接入方式
+## How to integrate
 
-以 Godot 4.3+ .NET 工程为例,把 Unity SDK 的纯 C# 源文件引入工程:
+Taking a Godot 4.3+ .NET project as an example, bring the Unity SDK's pure C# sources into the project:
 
 ```xml
-<!-- 你的 .csproj:直接编译引用源文件(跟随仓库更新),或
-     预编译成类库 dll 后 <Reference> 引用,二选一 -->
+<!-- Your .csproj: either compile-reference the source files directly
+     (following repo updates), or precompile them into a class library dll
+     and reference it with <Reference> - pick one -->
 <ItemGroup>
   <Compile Include="../../sdks/unity/Runtime/Chirp/**/*.cs" />
 </ItemGroup>
@@ -21,27 +22,27 @@ GDScript 版没有路线:`GDScript` 缺少成熟的 protobuf 库,复用 C# 是�
 </ItemGroup>
 ```
 
-之后与 Unity 侧同一套用法:`ChirpClient` + 五钩子接口(`ChirpHooks.cs` 的 MessageInterceptor / AuthProvider / MessageStore / ChatEventListener / CommandHandler),登录往返、心跳、重连、KICK 终态语义与 unity3d 文档描述一致。这套 C# 源码的回归测试(`ChirpSdkTests`,141 例,coverlet 运行时行覆盖 98.5%)不依赖任何引擎,Godot 工程外 `dotnet test` 即可复跑。
+After that the usage is the same as on the Unity side: `ChirpClient` + the five hook interfaces (MessageInterceptor / AuthProvider / MessageStore / ChatEventListener / CommandHandler in `ChirpHooks.cs`), with the login round trip, heartbeat, reconnect and KICK terminal-state semantics identical to what the unity3d documentation describes. This C# source's regression suite (`ChirpSdkTests`, 141 cases, 98.5% coverlet runtime line coverage) depends on no engine, so `dotnet test` can rerun it outside a Godot project.
 
-## 桥到 Godot 节点(模式示意)
+## Bridging to Godot nodes (pattern sketch)
 
-SDK 的回调都发生在其内部线程,桥到 Godot 场景树时注意用 `CallDeferred` / `SynchronizationContext.Post` 切回主线程,再发 Godot signal:
+The SDK's callbacks all happen on its internal thread; when bridging to the Godot scene tree, remember to switch back to the main thread with `CallDeferred` / `SynchronizationContext.Post` before emitting a Godot signal:
 
 ```csharp
-// 模式示意(未进仓库测试范围):把 C# listener 回调转发成 Godot signal
+// Pattern sketch (not part of the repo's tested surface): forward a C# listener callback as a Godot signal
 public partial class ChatBridge : Node, IChatEventListener
 {
     [Signal] public delegate void MessageReceivedEventHandler(string text);
 
     private readonly ChirpClient _client =
-        new("ws://127.0.0.1:7001");   // 传输缺省即 System.Net.WebSockets 适配
+        new("ws://127.0.0.1:7001");   // the default transport is the System.Net.WebSockets adapter
 
     public override void _Ready()
     {
         _client.AddListener(this);
     }
 
-    // IChatEventListener:SDK 在内部线程回调,切回主线程再发 signal
+    // IChatEventListener: the SDK calls back on an internal thread, switch to the main thread before emitting
     public void OnMessageReceived(Chirp.Chat.ChatMessage message)
     {
         var text = message.Content.ToStringUtf8();
@@ -50,16 +51,16 @@ public partial class ChatBridge : Node, IChatEventListener
 }
 ```
 
-官方的 ChatClient node 封装(内置 signal 转发、场景可实例化)仍在待开发清单,需要真实 Godot 工程验证后交付。
+The official ChatClient node wrapper (built-in signal forwarding, instantiable from a scene) is still on the to-do list and will be delivered after verification against a real Godot project.
 
-## 平台边界
+## Platform boundaries
 
-- **桌面/移动导出**:复用路径与 Unity 相同(Mono/IL2CPP 同源于 .NET 标准库)。
-- **Web 导出**:与 Unity WebGL 同样**不可用**——浏览器沙箱里 `System.Net.WebSockets` 无法工作;Web 目标请走 [Cocos/LayaAir](/sdk/cocos-creator) 的 TS 路线。
-- 心跳间隔、重连退避等参数语义见 [API 概述](/api/overview)。
+- **Desktop/mobile exports**: the reuse path is the same as Unity (Mono/IL2CPP both derive from the .NET standard library).
+- **Web export**: **unavailable**, exactly as with Unity WebGL — `System.Net.WebSockets` cannot work inside the browser sandbox; for a web target use the TS route of [Cocos/LayaAir](/sdk/cocos-creator).
+- For the semantics of heartbeat interval, reconnect backoff and similar parameters, see [API Overview](/api/overview).
 
-## 协议 / API 参考
+## Protocol / API reference
 
-- 消息 ID 全表:`proto/gateway.proto` 的 `MsgID` 枚举
-- C# 语义对照(消息面覆盖表):[Unity3D](/sdk/unity3d)
-- 服务端接入(游戏后端):[服务端 SDK](/sdk/server)
+- Full message ID table: the `MsgID` enum in `proto/gateway.proto`
+- C# semantics comparison (message-plane coverage table): [Unity3D](/sdk/unity3d)
+- Server integration (game backend): [Server SDK](/sdk/server)

@@ -1,30 +1,30 @@
-> 🌐 Language: **中文** (this page) | [English](./game_chat_architecture.en.md)
+> 🌐 Language: [中文](../zh/design-notes/game_chat_architecture.md)) | **English** (this page)
 
-# 游戏聊天架构笔记
+# Game chat architecture notes
 
-本页作为游戏聊天场景的设计笔记(design-notes)保留。应用聊天 UI 的当前原型线框与游戏内集成图,见[应用聊天原型](app_chat_prototype.md)。
+This page is kept as a design note (design-notes) for the game chat scenario. For the current prototype wireframes of the app chat UI and the in-game integration diagrams, see [App chat prototype](app_chat_prototype.md).
 
-当前的仓库架构、服务边界、协议基线与架构合理性评审,请先读 [Overall Architecture](../architecture.md)。
+For the current repository architecture, service boundaries, protocol baseline, and the architecture soundness review, read [Overall Architecture](../architecture.md)) first.
 
-## 当前位置
+## Current position
 
-当前受支持的后端路径是 `gateway + auth + chat`。
+The currently supported backend path is `gateway + auth + chat`.
 
-- `gateway` 是登录/会话边缘,目前处理登录、登出、心跳和可选的 Redis 支撑跨实例踢线。
-- `chat` 目前是独立的 TCP/WebSocket 服务,是当前聊天冒烟测试的实际入口。
-- Social、voice、notification、search、SDK 包装层、移动应用和管理后台,除非 [Capability Matrix](../CAPABILITY_MATRIX.md) 另有说明,均为实验性或演示面。
+- `gateway` is the login/session edge; it currently handles login, logout, heartbeat, and optional Redis backing for cross-instance kicks.
+- `chat` is currently a standalone TCP/WebSocket service and the actual entry point for the current chat smoke tests.
+- Social, voice, notification, search, the SDK wrapper layer, the mobile apps, and the admin dashboard are experimental or demo surfaces unless [Capability Matrix](../CAPABILITY_MATRIX.md)) says otherwise.
 
-## 设计意图
+## Design intent
 
-长期方向仍是面向游戏和伴侣应用的统一实时通信平台:
+The long-term direction is still a unified real-time communication platform for games and companion apps:
 
-- 游戏客户端可以用 TCP 做可预期的二进制协议集成。
-- Web 和移动伴侣客户端可以用 WebSocket。
-- 将来的 gateway 可以成为唯一公网边缘,把业务包路由给内部服务。
-- Redis 可以继续作为会话归属、Pub/Sub、近期/离线缓冲、分布式路由的快速共享协调层。
-- MySQL 可以继续作为增强构建启用时的持久化历史与账号/会话存储。
+- Game clients can do predictable binary protocol integration over TCP.
+- Web and mobile companion clients can use WebSocket.
+- A future gateway can become the single public edge, routing business packets to internal services.
+- Redis can continue as the fast shared coordination layer for session ownership, Pub/Sub, recent/offline buffering, and distributed routing.
+- MySQL can continue as the persistent history and account/session storage when the enhanced build is enabled.
 
-## 合理的目标形态
+## A reasonable target shape
 
 ```mermaid
 graph TD
@@ -40,22 +40,22 @@ graph TD
     Chat --> MySQL[(MySQL)]
 ```
 
-这个目标是合理的,但它不是今天实现的运行时。缺的架构环节是网关到业务服务的路由,以及统一的会话/认证契约。
+This target is reasonable, but it is not today's implemented runtime. The missing architectural pieces are gateway-to-business-service routing and a unified session/auth contract.
 
-## 协议选择
+## Protocol choice
 
-当前代码在 TCP 和 WebSocket 上用同一套二进制协议:
+The current code uses the same binary protocol over TCP and WebSocket:
 
 ```
 [uint32_be payload_size][chirp.gateway.Packet protobuf bytes]
 ```
 
-`Packet.msg_id` 标识业务消息,`Packet.body` 装序列化的 protobuf 请求或响应。
+`Packet.msg_id` identifies the business message, and `Packet.body` carries the serialized protobuf request or response.
 
-对游戏客户端来说这是个好选择:紧凑、跨语言稳定、TCP 和 WebSocket 通吃。KCP/QUIC 和完整 WebRTC 媒体路径应该留作独立的未来决策,而不应由当前核心隐含承诺。
+For game clients this is a good choice: compact, stable across languages, and covering both TCP and WebSocket. KCP/QUIC and a full WebRTC media path should be left as separate future decisions rather than implicitly promised by the current core.
 
-## 实操建议
+## Practical advice
 
-- 本地验证用 [Overall Architecture](../architecture.md) 描述的当前直连 `chat` 路径。
-- 产品架构上,等网关路由实现后优先收敛到单一公网边缘。
-- social、voice、search、推送或高级聊天功能,在有配套测试和明确的运行时拓扑之前,不要写成"受支持"。
+- For local verification, use the current direct `chat` path described in [Overall Architecture](../architecture.md)).
+- For product architecture, once gateway routing is implemented, converge on a single public edge first.
+- Do not write social, voice, search, push, or advanced chat features up as "supported" until they have matching tests and a clear runtime topology.

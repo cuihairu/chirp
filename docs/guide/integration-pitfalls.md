@@ -1,134 +1,134 @@
-> 🌐 Language: **中文** (this page) | [English](./integration-pitfalls.en.md)
+> 🌐 Language: [中文](../zh/guide/integration-pitfalls.md)) | **English** (this page)
 
-# 接入避坑指南
+# Integration Pitfall Guide
 
-面向第一次接入 chirp 的游戏客户端/服务端团队。这里的每一条都是**服务端会拒收或静默改变行为**的语义,客户端不处理就会表现成"消息丢了""发不出去""莫名被踢"。阈值与默认值以代码为准,本文标注对应默认值;部署侧可用启动参数覆盖,见各服务 `--help`。
+Aimed at game client/server teams integrating chirp for the first time. Every item here is a behavior where **the server rejects the message or silently changes its behavior**; if the client does not handle it, the symptom shows up as "the message was lost", "it won't send", or "I got kicked for no reason". Thresholds and defaults follow the code; this page marks the corresponding defaults; deployments can override them via startup arguments, see each service's `--help`.
 
-消息帧格式、msg-id 总表与错误码总表见 [API 总览](../api/overview.md)。
+For the message frame format, the msg-id table and the error code table, see [API Overview](../api/overview.md)).
 
-## 发送侧:六道防线一条链
+## Send side: six defenses, one chain
 
-`SEND_MESSAGE_REQ` 在服务端按固定顺序过防线,任何一道拒收都会回专码。**拒收的消息不会投递,也不会进离线队列**;客户端按码决定重试策略。
+`SEND_MESSAGE_REQ` passes through the defenses in a fixed order on the server, and any rejection returns a dedicated code. **A rejected message is neither delivered nor enqueued into the offline queue**; the client picks its retry strategy from the code.
 
 ```
 登录校验 → 内容长度 → 世界频道等级门槛 → 模糊闸 → 频道节奏 → 重复禁言 → 敏感词 → 投递
 ```
 
-投递段还有一道群频道门:命中群台账的频道,非成员回 `AUTH_FAILED`(消息不落任何存储),被 MODERATOR+ 禁言的成员回 `MUTED`;台账外频道(Redis 扇出路径)不经此门。向群发消息前先确认自己还在群里,被移除后旧频道 id 不可继续发送。
+The delivery stage also has a group-channel gate: channels present in the group ledger reject non-members with `AUTH_FAILED` (the message lands in no storage), and members muted by MODERATOR+ with `MUTED`; channels outside the ledger (the Redis fan-out path) do not go through this gate. Before sending to a group, confirm you are still in it; after being removed, the old channel id can no longer be used to send.
 
-### 1. 模糊限流:`RATE_LIMITED`
+### 1. Coarse rate limiting: `RATE_LIMITED`
 
-- 默认**每用户 120 条/分钟**(发送)、**每 IP 30 次登录/分钟**(登录),basic 形态默认开启;`--send_rate_limit_per_min` / `--login_rate_limit_per_min` 可调,0 = 关闭。
-- 这是"总量闸":不区分频道、不区分内容。多实例部署 + Redis 时是全局口径。
-- 压测和机器人脚本最容易撞上这条。收到 `RATE_LIMITED` 应指数退避,不要立刻重发:重发同样计数,会一直被拒。
+- Default **120 messages/minute per user** (sending) and **30 logins/minute per IP** (login); enabled by default in the basic form; adjustable via `--send_rate_limit_per_min` / `--login_rate_limit_per_min`, 0 = disabled.
+- This is a "total-volume gate": it does not distinguish channels or content. With multiple instances + Redis it is a global measurement.
+- Load tests and bot scripts hit this most often. On receiving `RATE_LIMITED`, back off exponentially and do not resend immediately: resends count the same way and will keep being rejected.
 
-### 2. 内容长度:`CONTENT_TOO_LONG`
+### 2. Content length: `CONTENT_TOO_LONG`
 
-按**频道类型**限码点数(UTF-8 字符数,不是字节数;CJK 3 字节算 1 个字):
+Limited by **channel type** in code points (UTF-8 characters, not bytes; a 3-byte CJK character counts as 1):
 
-| 频道 | 上限 |
+| Channel | Limit |
 | --- | --- |
-| 私聊 PRIVATE | 200 |
-| 世界 WORLD | 100 |
-| 系统公告 SYSTEM | 500 |
-| TEAM / GUILD / MARQUEE | 不限 |
+| Private PRIVATE | 200 |
+| World WORLD | 100 |
+| System announcement SYSTEM | 500 |
+| TEAM / GUILD / MARQUEE | Unlimited |
 
-- 服务端**不做截断**,超长直接拒。客户端要在输入框层面限制,或收到 `CONTENT_TOO_LONG` 后提示用户精简。
-- 计数按码点不按字节:`content.size()` 判断会误伤中文,200 个汉字就是 600 字节。
+- The server **does not truncate**; oversized messages are rejected outright. The client must enforce limits at the input box, or tell the user to shorten the text after receiving `CONTENT_TOO_LONG`.
+- Counting is by code point, not byte: judging by `content.size()` mangles Chinese text — 200 Chinese characters are already 600 bytes.
 
-### 3. 世界频道等级门槛:`LEVEL_REQUIRED`
+### 3. World channel level requirement: `LEVEL_REQUIRED`
 
-- 游戏部署可设 `--world_channel_min_level N`:登录时声明等级(`LoginRequest.level`)低于 N 的玩家,**世界频道**发送被拒(回 `LEVEL_REQUIRED`),其他频道不受影响。**缺省 0 = 关闭**,app/companion 部署零感知。
-- 门槛在 auth/param 档:不达标的发送**不消耗**发送预算、节奏窗口、重复禁言计数,也不做敏感词匹配——客户端收到 `LEVEL_REQUIRED` 应引导升级,不要重试。
-- 等级是**登录声明**的(聊天面无等级数据源),与登录身份同一可信级别;需要实时准确时由游戏平面透传(设计文档形态②,未启)。
+- Game deployments can set `--world_channel_min_level N`: players whose declared level at login (`LoginRequest.level`) is below N are rejected on **world channel** sends (`LEVEL_REQUIRED`); other channels are unaffected. **Default 0 = disabled**, so app/companion deployments feel nothing.
+- The gate lives in the auth/param tier: a send that fails the gate does **not consume** the send budget, the pacing window, the repeat-mute counter, and gets no word-filter matching — on receiving `LEVEL_REQUIRED` the client should guide the player to level up, not retry.
+- The level is **declared at login** (the chat plane has no level data source), at the same trust level as the login identity; when real-time accuracy is needed, the game plane passes it through (design document form ②, not enabled).
 
-### 4. 频道发送节奏:`RATE_LIMITED`
+### 4. Channel send pacing: `RATE_LIMITED`
 
-同一用户在同一频道有最小发送间隔:
+The same user in the same channel has a minimum send interval:
 
-| 频道 | 最小间隔 |
+| Channel | Minimum interval |
 | --- | --- |
-| 世界 WORLD | 5 秒 |
-| 公会 GUILD | 2 秒 |
-| 私聊 PRIVATE | 1 秒 |
-| TEAM / MARQUEE / 系统公告 | 不限 |
+| World WORLD | 5 seconds |
+| Guild GUILD | 2 seconds |
+| Private PRIVATE | 1 second |
+| TEAM / MARQUEE / System announcement | Unlimited |
 
-- 窗口锚定在**最后一次成功放行**的发送:窗口内被拒的重试**不会**延长等待时间。所以正确姿势是:被 `RATE_LIMITED` 拒后等剩余窗口再发,而不是连续重试。
-- 这是**进程内**计数:多实例部署下每个实例独立计时(模糊闸才是全局口径)。
+- The window is anchored to the **last send that was actually let through**: rejected retries inside the window do **not** extend the wait. So the right move is: after being rejected with `RATE_LIMITED`, wait out the remaining window, instead of retrying continuously.
+- This is an **in-process** counter: in a multi-instance deployment each instance times independently (only the coarse gate is global).
 
-### 5. 重复消息禁言:`RATE_LIMITED`
+### 5. Repeat-message mute: `RATE_LIMITED`
 
-- 同一用户**连续第 3 条内容完全相同**的消息触发 **5 分钟禁言**,且触发的那条本身也被拒收(不让刷屏的第三条到达任何人)。
-- 禁言期内**任何内容**都拒(同码 `RATE_LIMITED`);发送不同内容立即重置连击计数。
-- 客户端"重发"按钮连点三次同文案就是禁言。要么禁用重试,要么提示用户改文案。
+- The user's **third consecutive message with identical content** triggers a **5-minute mute**, and the triggering message itself is also rejected (so the spammy third copy reaches no one).
+- During the mute, **any content** is rejected (same code `RATE_LIMITED`); sending different content immediately resets the streak counter.
+- Triple-clicking a client "resend" button with the same text is exactly this mute. Either disable retries or prompt the user to change the text.
 
-### 6. 敏感词:`WORD_FILTERED`(或静默替换)
+### 6. Banned words: `WORD_FILTERED` (or silent replacement)
 
-- 服务端策略三选一(`--word_filter_policy`):`replace`(默认,命中区段折叠为 `**` 后放行)/ `reject`(拒收回 `WORD_FILTERED`)/ `record`(放行,仅记 Warn 日志)。
-- 词库 `--word_filter_file` 每行一词、`#` 注释、大小写归一,文件 mtime 变化 5 秒内热更新;词库缺失/不可读时 **fail-open**(不挡聊天)。
-- `replace` 策略下客户端回显的内容可能和发送的不一样(被折叠),这是预期行为,不要当成 bug 回报。
-- C++ SDK 侧 `WordFilterInterceptor` + `ParseWordLexicon` 提供同一套词库格式与语义,客户端可与服务端共用一份词库文件做本地预检,省一次往返。
+- Three server policies (`--word_filter_policy`): `replace` (default; the matched segment is collapsed to `**` and let through) / `reject` (rejected with `WORD_FILTERED`) / `record` (let through, only a Warn log is written).
+- The lexicon file `--word_filter_file` is one word per line, `#` comments, case-normalized; it hot-reloads within 5 seconds of an mtime change; if the file is missing or unreadable it **fail-open** (does not block chat).
+- Under the `replace` policy, what the client echoes back can differ from what was sent (collapsed); that is expected behavior, not a bug to report.
+- On the C++ SDK side, `WordFilterInterceptor` + `ParseWordLexicon` provide the same lexicon format and semantics; a client can share one lexicon file with the server for local pre-checking and save a round trip.
 
-## 接收侧:静默语义
+## Receive side: silent semantics
 
-这几条**不回错误码**,是服务端的静默过滤/静默成功。排查"消息没收到"先看这里:
+These return **no error code**; they are the server's silent filtering / silent success. When troubleshooting "the message never arrived", look here first:
 
-- **消息黑名单**(2239-2244):A 拉黑 B 后,B 发给 A 的私聊**回 `OK`**(B 侧看起来发送成功)、B 的群/世界消息按成员过滤,A 收不到。拉黑前已入离线队列的消息照发。解除幂等。与社交面好友黑名单(3011)互相独立,只影响消息投递。
-- **频道屏蔽**(2235-2238):屏蔽世界/公会/队伍频道后,实时推送跳过、离线队列不再入队,但**历史仍然可以拉取**(GET_HISTORY 不过滤)。MARQUEE/系统公告是服务端广播,不可屏蔽;对这些频道发 SET_CHANNEL_MUTE 回 `INVALID_PARAM`。
-- **离线队列**:私聊接收方不在线时 `SEND_MESSAGE_RESP` 回 `TARGET_OFFLINE`(不是错误——消息已入队),接收方下次登录补投。内存兜底**每用户 200 条**,超出丢最旧;Redis/MySQL 形态容量见部署配置。把 `TARGET_OFFLINE` 当失败提示给用户是错的,消息其实已经收下了。
+- **Message blacklist** (2239-2244): after A blocks B, private messages from B to A still **return `OK`** (B's side looks like the send succeeded), B's group/world messages are filtered per member, and A never receives them. Messages already in the offline queue before the block are still delivered. Unblocking is idempotent. Independent of the social-plane friend blacklist (3011), and only affects message delivery.
+- **Channel muting** (2235-2238): after muting world/guild/team channels, real-time pushes are skipped and the offline queue no longer enqueues them, but **history is still fetchable** (GET_HISTORY does not filter). MARQUEE/system announcements are server broadcasts and cannot be muted; sending SET_CHANNEL_MUTE for those channels returns `INVALID_PARAM`.
+- **Offline queue**: when a private-message recipient is offline, `SEND_MESSAGE_RESP` returns `TARGET_OFFLINE` (not an error — the message is already queued) and is delivered on the recipient's next login. The in-memory fallback caps at **200 messages per user**, dropping the oldest beyond that; capacity for the Redis/MySQL form is in the deployment configuration. Treating `TARGET_OFFLINE` as a failure shown to the user is wrong; the message was actually accepted.
 
-## 撤回(消息编辑/删除面,2225-2232)
-`DELETE_MESSAGE_REQ`(`is_hard_delete = false`)对**发送者本人**就是"撤回":服务端在撤回窗口内把它软删,向频道成员广播 `MESSAGE_DELETED_NOTIFY`(客户端据此把气泡换成"消息已撤回"墓碑),并回收接收方离线队列里已入队的副本。
+## Recall (message edit/delete plane, 2225-2232)
+`DELETE_MESSAGE_REQ` (`is_hard_delete = false`) is "recall" for **the sender themselves**: the server soft-deletes it within the recall window, broadcasts `MESSAGE_DELETED_NOTIFY` to channel members (the client uses this to swap the bubble for a "message recalled" tombstone), and reclaims copies already in recipients' offline queues.
 
-| 项 | 默认值 | 启动参数 |
+| Item | Default | Startup argument |
 | --- | --- | --- |
-| 撤回窗口 | 120 秒 | `--recall_window_sec`(秒,0 = 不限) |
-| 可撤回频道 | 私聊 PRIVATE + 公会 GUILD | `--recall_channels`(逗号分隔,空 = 全频道不可撤回) |
+| Recall window | 120 seconds | `--recall_window_sec` (seconds, 0 = unlimited) |
+| Recallable channels | Private PRIVATE + Guild GUILD | `--recall_channels` (comma-separated, empty = no channel is recallable) |
 
-回码语义(`DELETE_MESSAGE_RESP.code`):
+Response code semantics (`DELETE_MESSAGE_RESP.code`):
 
-| 回码 | 含义 | 客户端应对 |
+| Code | Meaning | Client action |
 | --- | --- | --- |
-| `OK` | 已撤回,已广播 delete notify | 把本地气泡换成墓碑 |
-| `AUTH_FAILED` | 不是发送者本人;或请求 `is_hard_delete` 但没有版主权限;或 `user_id` 与认证身份不符 | 隐藏撤回入口,别重试 |
-| `INVALID_PARAM` | 超窗 / 该频道不可撤回 / 已经撤回过 | 提示"超过撤回时间",**不要重试**(重复撤回不会二次广播) |
-| `USER_NOT_FOUND` | 本进程没有这条消息的台账(例如消息早于本进程存在) | 同上,按"撤回失败"处理 |
+| `OK` | Recalled, delete notify already broadcast | Swap the local bubble for a tombstone |
+| `AUTH_FAILED` | Not the sender; or the request had `is_hard_delete` but no moderator permission; or `user_id` does not match the authenticated identity | Hide the recall entry, do not retry |
+| `INVALID_PARAM` | Past the window / channel not recallable / already recalled | Tell the user "recall window expired", **do not retry** (a repeat recall does not broadcast twice) |
+| `USER_NOT_FOUND` | This process has no ledger entry for the message (e.g. it predates this process) | Same, treat as "recall failed" |
 
-- **版主删除不是撤回**:频道版主(`is_hard_delete`,公会角色 ≥ MODERATOR)走治理路径,**不受窗口和频道限制**,`is_hard_delete=true` 会永久擦除台账。运营要放开某频道的撤回请改 `--recall_channels`,不要靠版主通道。
-- **渲染墓碑而不是删气泡**:`is_hard_delete=false` 且 `deleted_by == 该消息的 sender_id` → 显示"消息已撤回"灰色占位(保留行高,否则聊天列表会跳);`deleted_by` 不是作者 → 版主删除,按"消息已删除"渲染。
-- C++ SDK 用 `RecallMessage(message_id, cb)`(`DeleteMessage(id, false, cb)` 的语义别名,名字更贴游戏侧"撤回"按钮);服务端回 `OK` 才更新 UI。
-- 撤回只作用于**实时链路 + 离线队列**,存档层(Redis 历史/MySQL)没有撤回墓碑,重新 `GET_HISTORY` 仍会拿到原文。要做到"撤回后原文不可再被拉回",客户端自己维护 `message_id` 撤回名单并在拉历史时过滤(服务端墓碑已在后续批次排期)。
-- 撤回(或版主删除)会**顺手回收**接收方离线队列里已入队的副本(按 `message_id`),所以对方下次登录不会再收到这条原文;需要给"已撤回但对方从未见过"的消息留痕的客户端,得自己在撤回成功时记账。
-- `BULK_DELETE` 不受窗口约束:它是治理接口(只删自己的或版主有权删的),不查撤回窗口、也不回收离线副本。需要严格窗口语义的客户端不要用它做撤回。
-- **形态差异**:编辑/删除/撤回(2225-2228/2231-2232)已随 2026-10-02 批补进 **enhanced 形态**(`main_enhanced.cc`);仍只在 **basic 分发表**(`services/shared/chat/src/main.cc` 的直连入口)接线的是 `BULK_DELETE`(2229)——enhanced 侧没有该 handler,请求会**静默悬死**。跑 MySQL/Redis 的增强部署前先确认这一点(或把批量删除挪到别的 RPC 面)。
+- **Moderator deletion is not recall**: a channel moderator (`is_hard_delete`, guild role ≥ MODERATOR) goes through the governance path, **not subject to the window or channel limits**, and `is_hard_delete=true` permanently erases the ledger entry. To open recall for a channel in operations, change `--recall_channels`; do not lean on the moderator path.
+- **Render a tombstone instead of deleting the bubble**: `is_hard_delete=false` and `deleted_by` == the sender_id of that message → show a gray "message recalled" placeholder (keep the line height, otherwise chat lists jump); if `deleted_by` is not the author → moderator deletion, render as "message deleted".
+- The C++ SDK exposes `RecallMessage(message_id, cb)` (a semantic alias of `DeleteMessage(id, false, cb)`, named for the game-side "recall" button); update the UI only when the server returns `OK`.
+- Recall only affects the **real-time path + offline queue**; the archive layer (Redis history/MySQL) has no recall tombstone, so a fresh `GET_HISTORY` still returns the original text. For "the original must no longer be fetchable after recall", the client maintains its own recall list by `message_id` and filters it when pulling history (the server-side tombstone is scheduled in a later batch).
+- Recall (or a moderator deletion) also **reclaims** copies already in recipients' offline queues (by `message_id`), so the other side will not receive the original on their next login; a client that needs a trace of "recalled but never seen" messages must record it itself when the recall succeeds.
+- `BULK_DELETE` is not bound by the window: it is a governance interface (only deletes your own or what a moderator may delete), does not check the recall window and does not reclaim offline copies. Clients needing strict window semantics must not use it for recall.
+- **Form difference**: edit/delete/recall (2225-2228/2231-2232) were added to the **enhanced form** (`main_enhanced.cc`) in the 2026-10-02 batch; still wired only in the **basic dispatch table** (the direct entry in `services/shared/chat/src/main.cc`) is `BULK_DELETE` (2229) — the enhanced side has no such handler, so the request **hangs silently**. Before running an enhanced deployment on MySQL/Redis, confirm this (or move bulk deletes to another RPC plane).
 
-## 会话与连接
+## Sessions and connections
 
-### 心跳是客户端的责任
+### Heartbeats are the client's responsibility
 
-- 服务端**不会**主动踢静默连接(chat 平面当前没有连接级 idle 计时器):不发 ping 也能挂着,TCP 半开连接要等到内核 keepalive/写失败才暴露。
-- 官方 SDK 的默认:25 秒发 `HEARTBEAT_PING`,pong 必须回显 ping 的非零 sequence 才算已答;连续 2 次未答判定连接死亡 → 进入自动重连。
-- **裸协议接入方必须自己实现等价逻辑**,否则断网后客户端会停留在"假在线"状态收不到任何消息,直到下一次写失败。
+- The server **never** proactively kicks a silent connection (the chat plane currently has no connection-level idle timer): you can hang without sending a pings, and a TCP half-open connection is only exposed by kernel keepalive or a write failure.
+- The official SDK's defaults: send `HEARTBEAT_PING` every 25 seconds; the pong must echo the ping's non-zero sequence to count as answered; 2 consecutive unanswered pings mark the connection dead → auto-reconnect kicks in.
+- **Raw-protocol integrators must implement equivalent logic**, otherwise after a network loss the client sits in a "fake online" state receiving nothing until the next write failure.
 
-### 顶号(KICK)语义
+### Kick (KICK) semantics
 
-- 2026-09-27 起顶号键是 `(user_id, platform)`:同 platform 重新登录会顶掉旧会话,旧连接收到 `KICK_NOTIFY`(reason 如 "logged in on another ios";不上报 platform 的 legacy 客户端归一为 "default",保持旧的一用户一会话行为,reason 回退 "logged in on another device"),新连接 `LOGIN_RESP.kick_previous = true`。
-- 同用户**不同 platform** 共存,各自收消息(多端语义);`device_id` 只是会话元数据,不参与顶号判定。
-- 收到 `KICK_NOTIFY` 后不要再重连:顶号是终态,重连再重登会无限互顶。官方 SDK 对 KICK 不再自动重连,自行开发客户端要遵守同一约定。
-- web 多标签页共享同一 platform(如都是 "web"),新标签登录会顶掉旧标签,这是平台级顶号的直接后果,不另开特例。需要多标签并存的接入方给每个标签发不同 platform,或者接受互顶。
-- 在线端可见性:登录响应 `LoginResponse.online_devices` 带其余在线端初始清单;之后登录/断开/被顶经 `DEVICES_PRESENCE_NOTIFY`(1020) 广播 `[{platform, device_id, online, ts}]`(registry 本地,不含接收方自身;多节点部署其他实例听不到)。
+- Since 2026-09-27 the kick key is `(user_id, platform)`: logging in again on the same platform kicks the old session, the old connection receives `KICK_NOTIFY` (reason like "logged in on another ios"; legacy clients that do not report a platform normalize to "default", keeping the old one-user-one-session behavior with the reason falling back to "logged in on another device"), and the new connection gets `LOGIN_RESP.kick_previous = true`.
+- The same user **across different platforms** coexists and receives messages on each (multi-device semantics); `device_id` is only session metadata and plays no part in the kick decision.
+- After receiving `KICK_NOTIFY`, do not reconnect: a kick is terminal, and reconnecting + logging in again kicks each other forever. The official SDK no longer auto-reconnects on KICK; self-developed clients must honor the same convention.
+- Multiple web tabs share the same platform (e.g. all "web"), so a new tab's login kicks the old tab — a direct consequence of platform-level kicking, with no special case. Integrators needing concurrent tabs should give each tab a different platform, or accept mutual kicking.
+- Online-device visibility: the login response `LoginResponse.online_devices` carries the initial list of the other online devices; afterwards, logins/disconnects/kicks are broadcast via `DEVICES_PRESENCE_NOTIFY` (1020) as `[{platform, device_id, online, ts}]` (local to the registry, excluding the recipient itself; in a multi-node deployment other instances do not hear it).
 
-### 断线重连(官方 SDK 默认)
+### Disconnect reconnection (official SDK defaults)
 
-- 指数退避 500ms → 15s,±20% 抖动,默认无限重试(`max_reconnect_attempts = -1`);显式 `Disconnect()`/`Logout()` 取消重连。
-- 重连成功后**必须重新 LOGIN**——连接与认证是两个状态(`Connected` ≠ `LoggedIn`),重连只回到 `Connected`。
-- 重连窗口内发出的请求立刻失败(`NotConnected`/`Closed`);SDK 单请求默认 10 秒超时,业务侧要有"重连后补发"的语义(本地队列或 UI 重试),SDK 不代发。
+- Exponential backoff 500ms → 15s, ±20% jitter, unlimited retries by default (`max_reconnect_attempts = -1`); explicit `Disconnect()`/`Logout()` cancels reconnects.
+- After a successful reconnect you **must LOGIN again** — connection and authentication are two states (`Connected` ≠ `LoggedIn`); reconnect only returns to `Connected`.
+- Requests issued during the reconnect window fail immediately (`NotConnected`/`Closed`); SDK single requests default to a 10-second timeout, so the business side needs "resend after reconnect" semantics (a local queue or UI retry); the SDK does not resend for you.
 
-### fire-and-forget 发送后不要立刻断开
+### Don't disconnect right after a fire-and-forget send
 
-- 便捷版 `SendMessage(receiver, content)` 是 fire-and-forget:发送被 post 到 SDK 内部 io 线程,**不等到回执**。
-- 发送后马上 `Disconnect()`(或进程退出)会停掉 io_context,还排在队列里的发送 lambda 被直接丢弃,消息在**客户端侧无声消失**,服务端零痕迹、零日志。高负载或慢机器上这个窗口更容易被踩中,表现为"偶现丢消息"且无法复现。
-- 需要确认送达或即将退出时,用带回执的类型化重载,等 `SEND_MESSAGE_RESP` 回调到达后再断开:
+- The convenience overload `SendMessage(receiver, content)` is fire-and-forget: the send is posted to the SDK's internal io thread and does **not wait for the receipt**.
+- Calling `Disconnect()` right after the send (or exiting the process) stops the io_context, queued send lambdas are dropped outright, and the message **silently vanishes on the client side**, leaving zero trace or log on the server. High load or slow machines widen this window, showing up as "occasional message loss" that cannot be reproduced.
+- When delivery confirmation is needed or you are about to exit, use the typed overload with a receipt and wait for the `SEND_MESSAGE_RESP` callback before disconnecting:
 
 ```cpp
 SendOptions opts;                      // channel_type/receiver_id/...
@@ -138,16 +138,16 @@ client.SendMessage(opts, content,
   });
 ```
 
-- 别忘了 `resp.code()` 的两形态分歧:私聊发给离线用户时 basic 形态回 `TARGET_OFFLINE`(6,已入离线队列),enhanced 形态回 `OK`——两者都算发送完成。
+- Do not forget the two forms' divergence in `resp.code()`: a private message to an offline user returns `TARGET_OFFLINE` (6, already in the offline queue) in the basic form but `OK` in the enhanced form — both count as a completed send.
 
-### 回调线程
+### Callback threads
 
-- C++ SDK 所有回调在**内部 io 线程**触发。回调里直接碰 UI/引擎对象会崩;引擎适配层负责派发回游戏线程(Unreal 壳用 `AsyncTask`,Unity 壳内已 marshal)。
+- All C++ SDK callbacks fire on the **internal io thread**. Touching UI/engine objects directly inside a callback crashes; the engine adapter layer dispatches back to the game thread (the Unreal shell uses `AsyncTask`; the Unity shell marshals internally).
 
-## 业务码与传输错误是两回事
+## Business codes and transport errors are different things
 
-- SDK 的 `ec`(传输层:`NotConnected`/`Timeout`/`Closed`/`Kicked`/`BadResponse`)== OK **不代表业务成功**;必须再读 `resp.code()`(上表错误码)。
-- 反过来,`resp.code() != OK` 时 `ec` 也是 OK——传输没问题,是服务端业务拒绝。
+- The SDK's `ec` (transport layer: `NotConnected`/`Timeout`/`Closed`/`Kicked`/`BadResponse`) being OK **does not mean business success**; you must also read `resp.code()` (the error codes in the tables above).
+- Conversely, when `resp.code() != OK`, `ec` is also OK — the transport was fine; the server's business logic rejected it.
 
 ```cpp
 client.SendMessage(opts, "gg", [](const std::error_code& ec,
@@ -163,39 +163,39 @@ client.SendMessage(opts, "gg", [](const std::error_code& ec,
 });
 ```
 
-## 跨平面回复(伴侣 App 与游戏)
+## Cross-plane replies (companion app and game)
 
-- App 玩家回复游戏频道:向 app_chat 发消息时,目标频道写成 **`<game_id>:<裸频道id>`**(如 `game_zx:world`),hub 会路由到对应游戏的 game_chat 注入。前缀写错 → `INVALID_PARAM`(玩家没绑定该游戏)或 `SERVER_UNAVAILABLE`(该游戏无在线 spoke)。
-- 该路径**消耗发送预算**(在发送限流之后拦截),与普通发送共享模糊闸/节奏。
-- 扇回 App 玩家的是无前缀私聊副本,不会构成回环。
+- When an app player replies to a game channel: the message to app_chat must target the channel as **`<game_id>:<bare channel id>`** (e.g. `game_zx:world`), and the hub routes it to the corresponding game's game_chat injection. A wrong prefix → `INVALID_PARAM` (the player has no binding for that game) or `SERVER_UNAVAILABLE` (that game has no online spoke).
+- This path **consumes send budget** (it is intercepted after the send rate limit) and shares the coarse gate/pacing with normal sends.
+- What fans back to the app player is an unprefixed private copy, so no loop forms.
 
-## 服务端接入(游戏后端,5xxx)
+## Server integration (game backend, 5xxx)
 
-- 拨**两个**连接:`chirp_game_server_gateway`(8100,注入/事件)与 app_chat 主端口(7000,身份绑定/频道订阅/未读)。RPC 发错目标会因对端不处理而**超时**,不是报错——这也是"卡 10 秒才失败"的最常见原因。
-- 事件投递是 **at-least-once**:处理完 `EVENT_DELIVER_NOTIFY` 必须回 `EVENT_ACK_REQ`,否则 hub 重连后重投——消费逻辑要按 `event_id` 幂等。
-- 注入消息带 `inject_id` 幂等键:同 id 重发不会产生重复消息,重试安全(2026-10-19 起 chat 消费端按进程内 TTL 窗去重,缺省 5 分钟、`--inject_idempotency_ttl_ms` 可调;窗过期或部署多实例时同 id 仍会各落一条——跨实例真幂等待共享表拍板)。
-- 注入回 `OK` 只表示服务平面受理,不确认玩家侧送达;离线玩家走离线队列。
-- 认证被拒表现为周期性重试告警(固定延迟,无限重试),不会主动退出——凭据配错要盯启动日志。
-- Go SDK 语义与 C++ 参考实现逐项对齐,细节见 [服务端 SDK](../sdk/server.md)。
+- Dial **two** connections: `chirp_game_server_gateway` (8100, injection/events) and the app_chat main port (7000, identity binding/channel subscription/unreads). Sending an RPC to the wrong target **times out** rather than erroring — the most common reason for "it hangs 10 seconds before failing".
+- Event delivery is **at-least-once**: after handling `EVENT_DELIVER_NOTIFY` you must reply `EVENT_ACK_REQ`, otherwise the hub redelivers after reconnect — make consumer logic idempotent by `event_id`.
+- Injected messages carry the `inject_id` idempotency key: a resend with the same id produces no duplicate message, so retries are safe (as of 2026-10-19 the chat consumer dedups over an in-process TTL window — 5 minutes by default, `--inject_idempotency_ttl_ms`; after the window expires, or across multiple instances, the same id still lands once per consumer — a true cross-instance key awaits a shared-table decision).
+- An injection returning `OK` only means the server plane accepted it; it does not confirm delivery on the player's side; offline players go through the offline queue.
+- Authentication rejection shows up as periodic retry warnings (fixed delay, unlimited retries) and never exits on its own — when credentials are misconfigured, watch the startup log.
+- The Go SDK's semantics align item by item with the C++ reference implementation; for details see [Server SDK](../sdk/server.md)).
 
-## 快速自查清单
+## Quick self-check checklist
 
-接入联调时按这个顺序过一遍,常见的"消息莫名丢失"基本都能对上号:
+When integrating and debugging, go through this list in order — most cases of "messages mysteriously lost" match one of these:
 
-1. `LOGIN_RESP.code == 0` 了吗?(token 签发方/密钥/算法一致吗——游戏平面 HS256,`--token_secret` 两端同值)
-2. 心跳在发吗?pong 的 sequence 回显校验了吗?
-3. 发送失败读的是 `resp.code()` 还是只看了 `ec`?
-4. `RATE_LIMITED` 是节奏(等窗口)还是模糊闸(退避)?重试逻辑区分了吗?
-5. `TARGET_OFFLINE` 被当成失败处理了吗?
-6. 拉黑/屏蔽了对方吗?(`GET_BLOCKED_SENDERS` / `GET_CHANNEL_MUTES` 查一下)
-7. 频道前缀 `<game_id>:` 写对了吗?玩家绑定关系建了吗?
-8. 服务端事件 ack 了吗?`inject_id` 幂等键带了吗?
-9. 撤回入口的可见性按服务端规则算了吗(发送者本人 + 窗口内 + 可撤回频道),失败回码区分了吗?
+1. Is `LOGIN_RESP.code == 0`? (token issuer/secret/algorithm all consistent — HS256 on the game plane, `--token_secret` the same value on both ends)
+2. Are heartbeats being sent? Is the pong's sequence echo verified?
+3. On a send failure, are you reading `resp.code()` or only looking at `ec`?
+4. Is a `RATE_LIMITED` pacing (wait out the window) or the coarse gate (back off)? Does the retry logic distinguish them?
+5. Is `TARGET_OFFLINE` being treated as a failure?
+6. Have you blocked/muted the other side? (check `GET_BLOCKED_SENDERS` / `GET_CHANNEL_MUTES`)
+7. Is the `<game_id>:` channel prefix written correctly? Is the player binding in place?
+8. Are server events acked? Is the `inject_id` idempotency key attached?
+9. Is the recall entry's visibility computed from the server rules (sender themselves + within the window + recallable channel), and are the failure codes distinguished?
 
-## 相关文档
+## Related documents
 
-- [API 总览](../api/overview.md):帧格式、msg-id 总表、错误码总表
-- [服务器平面](../server_plane.md):5xxx 契约与语义
-- [peer 注册协议](../api/peer_protocol.md):跨平面 spoke/hub 握手
-- [SDK 钩子接口](../design-notes/sdk_hooks.md):拦截器/存储/认证提供方
-- [游戏聊天功能清单](../design-notes/game_chat_features.md):功能设计原案
+- [API Overview](../api/overview.md)): frame format, msg-id table, error code table
+- [Server Plane](../server_plane.md)): the 5xxx contracts and semantics
+- [Peer registration protocol](../api/peer_protocol.md)): cross-plane spoke/hub handshake
+- [SDK hooks interface](../design-notes/sdk_hooks.md)): interceptors/storage/auth providers
+- [Game chat feature list](../design-notes/game_chat_features.md)): the original feature design

@@ -1,77 +1,77 @@
-> 🌐 Language: **中文** (this page) | [English](./unreal.en.md)
+> 🌐 Language: [中文](../zh/sdk/unreal.md)) | **English** (this page)
 
 # Unreal Engine
 
-Unreal 侧的官方支持形态是**插件壳 + native 核心**:`sdks/unreal` 提供 `UChirpClientSubsystem`(GameInstance Subsystem)与 Blueprint 化的事件,协议逻辑(帧、心跳、指数退避重连、KICK 终态、请求超时)全部在 native 核心 `chirp::sdk::ChatClient`(`sdks/core`;桌面 app 不依赖 `sdks/`,app 协议层走 `apps/shared/protocol`)里,由 chirp CI 的 `sdk_core_tests` 覆盖(140 例,其中 60 例环回,`tests/unit/sdk_core_test.cc`;走 ctest 与 100% 行覆盖门禁)。
+The official Unreal support takes the form of **plugin shell + native core**: `sdks/unreal` provides `UChirpClientSubsystem` (a GameInstance Subsystem) and Blueprint-exposed events, while all protocol logic (frames, heartbeat, exponential-backoff reconnect, KICK terminal state, request timeouts) lives in the native core `chirp::sdk::ChatClient` (`sdks/core`; the desktop app does not depend on `sdks/`, its app protocol layer lives in `apps/shared/protocol`) and is covered by chirp CI's `sdk_core_tests` (130 cases, 59 of them loopback, in `tests/unit/sdk_core_test.cc`; run via ctest with the 100% line coverage gate).
 
-插件只做两件事:
+The plugin does only two things:
 
-1. **游戏线程派发**:native 回调在 SDK 内部 io 线程触发,Subsystem 用 `AsyncTask(ENamedThreads::GameThread, ...)` 转发——回调里可以直接碰 `UWorld`/`UWidget`;
-2. **Blueprint 化**:连接状态枚举、可绑定事件、BlueprintCallable 方法。
+1. **Game-thread dispatch**: native callbacks fire on the SDK's internal io thread, and the Subsystem forwards them with `AsyncTask(ENamedThreads::GameThread, ...)` — so callbacks can touch `UWorld`/`UWidget` directly;
+2. **Blueprint exposure**: a connection-state enum, bindable events, and BlueprintCallable methods.
 
-完整源码见 [sdks/unreal/README.md](https://github.com/cuihairu/chirp/tree/main/sdks/unreal)。
+See [sdks/unreal/README.md](https://github.com/cuihairu/chirp/tree/main/sdks/unreal) for the complete source.
 
-## 接入方式
+## How to integrate
 
-1. **编译 native 核心**(宿主机上,一次性):
+1. **Build the native core** (on the host machine, one-time):
 
    ```bash
-   cd <chirp 仓库>
+   cd <chirp repo>
    cmake -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=ON \
          -DCMAKE_TOOLCHAIN_FILE=<vcpkg>/scripts/buildsystems/vcpkg.cmake -G Ninja
    cmake --build build --target chirp_core_sdk_static
    ```
 
-2. **拷贝插件**:把 `sdks/unreal/` 整目录拷进工程的 `Plugins/ChirpSDK/`(或作为引擎插件)。
-3. **指向 native 产物**:设置环境变量 `CHIRP_SDK_NATIVE_DIR=<chirp 仓库路径>` 后再启动 UBT(`ChirpSDK.Build.cs` 检查该目录并链接 `libchirp_core_sdk.a`;Windows 链接 `chirp_core_sdk.lib`,并把 protobuf/abseil 导入库一并加进 `PublicAdditionalLibraries`)。
-4. 编辑器里启用 ChirpSDK 插件,Blueprint 里 `Get Chirp Client`(GameInstance Subsystem)。
+2. **Copy the plugin**: copy the whole `sdks/unreal/` directory into the project's `Plugins/ChirpSDK/` (or install it as an engine plugin).
+3. **Point at the native artifacts**: set the environment variable `CHIRP_SDK_NATIVE_DIR=<chirp repo path>` before launching UBT (`ChirpSDK.Build.cs` checks that directory and links `libchirp_core_sdk.a`; on Windows it links `chirp_core_sdk.lib` and adds the protobuf/abseil import libraries to `PublicAdditionalLibraries`).
+4. Enable the ChirpSDK plugin in the editor and call `Get Chirp Client` (GameInstance Subsystem) from Blueprint.
 
-> Unreal 侧代码无法在 chirp 的 CI 里编译(需要 UBT/引擎头);它的正确性契约 = native 核心的单测 + 极薄转发层。UE 集成后首次编译如有 API 版本差异,按报错调整即可。
+> The Unreal-side code cannot be compiled in chirp's CI (it needs UBT/engine headers); its correctness contract is the native core's unit tests + a very thin forwarding layer. If the first compile after UE integration hits API version differences, just adjust per the errors.
 
-## 生命周期
+## Lifecycle
 
 ```text
-Connect("127.0.0.1", 5000) → Login("user-42") → 事件回调(游戏线程)
-        ↓ 断线(核心自动指数退避重连)
-OnDisconnected → (重连成功) → 重新 Login
-        ↓ 收到 KICK
-OnKicked:终态,核心不再自动重连,需重新 Connect + Login
+Connect("127.0.0.1", 5000) → Login("user-42") → event callbacks (game thread)
+        ↓ disconnect (the core auto-reconnects with exponential backoff)
+OnDisconnected → (reconnect succeeds) → Login again
+        ↓ KICK received
+OnKicked: terminal state, the core no longer auto-reconnects, requires Connect + Login again
 ```
 
-要点:
+Key points:
 
-- **没有 OnConnected 事件**(故意的):用 `GetState()` 轮询或等 `OnLoginResult`。
-- **KICK 是终态**:核心不再自动重连,`GetState() == Kicked`,需要重新 `Connect` + `Login`。
-- **端口**:开发拓扑游戏面网关(game_sdk_gateway)TCP **5000**;WS 5001 是同一网关的 WS 边缘,web/Unity 不走这条(它们连 chat WS 7001)。Unreal 用 TCP 帧——帧协议与 WS 消息体一致。
-- 事件都在游戏线程。
+- **There is no OnConnected event** (deliberate): poll `GetState()` or wait for `OnLoginResult`.
+- **KICK is terminal**: the core no longer auto-reconnects, `GetState() == Kicked`, and you need to `Connect` + `Login` again.
+- **Ports**: the development-topology game-plane gateway (game_sdk_gateway) is TCP **5000**; WS 5001 is the same gateway's WS edge, which web/Unity do not use (they connect to chat WS 7001). Unreal uses TCP frames — the frame protocol is identical to the WS message body.
+- All events are on the game thread.
 
-## Blueprint 用法
+## Blueprint usage
 
 ```text
 Get Chirp Client
-├─ OnChatMessage   → (Sender, Content)  实时私聊推送
-├─ OnKicked        → (Reason)           顶号,终态
-├─ OnDisconnected  → (Reason)           断线(核心会自动重连)
-├─ OnLoginResult   → (UserId)           登录往返结果,失败为空
-└─ WatchNotify(6001) → OnRawNotify(MsgId, Body)  通用 notify 订阅
+├─ OnChatMessage   → (Sender, Content)  real-time private chat push
+├─ OnKicked        → (Reason)           replaced, terminal
+├─ OnDisconnected  → (Reason)           disconnected (the core auto-reconnects)
+├─ OnLoginResult   → (UserId)           login round-trip result, empty on failure
+└─ WatchNotify(6001) → OnRawNotify(MsgId, Body)  generic notify subscription
 
 Connect("127.0.0.1", 5000)
-Login("user-42")          // scaffold 模式 token 即 user id
+Login("user-42")          // in scaffold mode the token is the user id
 SendChatMessage("peer-7", "hello")
 ```
 
-`WatchNotify` 是通用出口:任意 `MsgID` 的推送(聊天 2005、设备 6xxx 等)都能订阅,拿原始 body 自行解析。
+`WatchNotify` is the generic escape hatch: pushes for any `MsgID` (chat 2005, device 6xxx, etc.) can be subscribed, and you parse the raw body yourself.
 
-## 协议 / API 参考
+## Protocol / API reference
 
-- 协议总览:[API 概述](/api/overview)(Packet 帧、消息 ID 分段、核心流程)
-- C++ 核心头文件:`sdks/core/include/chirp/sdk_client.h`(`ChatClient` 公开 API 面)
-- 钩子接口(拦截器/命令/存储/鉴权/监听):[SDK 钩子接口](/design-notes/sdk_hooks)
-- 引擎兼容性 checklist:[SDK 引擎兼容性](/design-notes/sdk_compatibility)
-- 服务端接入(游戏后端):[服务端 SDK](/sdk/server) 与[服务器平面](/server_plane)
+- Protocol overview: [API Overview](/api/overview) (Packet frames, message ID ranges, core flows)
+- C++ core header: `sdks/core/include/chirp/sdk_client.h` (the `ChatClient` public API surface)
+- Hook interfaces (interceptor/command/storage/auth/listener): [SDK Hooks](/design-notes/sdk_hooks)
+- Engine compatibility checklist: [SDK Engine Compatibility](/design-notes/sdk_compatibility)
+- Server integration (game backend): [Server SDK](/sdk/server) and [Server Plane](/server_plane)
 
-## 现状与边界
+## Current state and boundaries
 
-- Unreal 插件壳消费 native 核心(`sdks/core`,140 例单测);桌面 app 不依赖 `sdks/`,app 协议层在 `apps/shared/protocol`(`@chirp/app-protocol`)。其余客户端实现为 Unity C#(141 例)与 TS 协议栈(web/小游戏/Cocos/Laya/Godot 经 C#,149 例),移动端为原生双包(Android Kotlin / iOS Swift 壳)。各端语义(sequence 关联、心跳、退避、踢线)逐一对齐,测试矩阵见 [sdks/core/README.md](https://github.com/cuihairu/chirp/tree/main/sdks/core)。
-- 每日构建:Actions nightly 的 `daily-build` artifact 打包含 `libchirp_core_sdk` 多平台库与头文件(即本页接入步骤 1/3 需要的 native 产物,未签名),入口见 [SDK 总览](/sdk/)。
-- 语音/组队/社交平面在 Unreal 侧暂无现成封装;可经 native 核心的通用请求接口或 `WatchNotify` 自行扩展。
+- The Unreal plugin shell consumes the native core (`sdks/core`, 140 unit tests); the desktop app does not depend on `sdks/`, its app protocol layer is in `apps/shared/protocol` (`@chirp/app-protocol`). The other client implementations are Unity C# (141 cases) and the TS protocol stack (web/mini games/Cocos/Laya/Godot via C#, 149 cases), with mobile as native twin packages (Android Kotlin / iOS Swift shells). Semantics across clients (sequence correlation, heartbeat, backoff, kick) are aligned one by one; the test matrix is in [sdks/core/README.md](https://github.com/cuihairu/chirp/tree/main/sdks/core).
+- Nightly builds: the Actions nightly `daily-build` artifact bundle includes `libchirp_core_sdk` multi-platform libraries and headers (the native artifacts needed by steps 1/3 on this page, unsigned); see [SDK Overview](/sdk/) for the entry point.
+- The voice/party/social planes have no ready-made Unreal wrappers yet; extend them yourself via the native core's generic request interface or `WatchNotify`.

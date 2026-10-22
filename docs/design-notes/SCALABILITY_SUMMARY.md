@@ -1,24 +1,24 @@
-> 🌐 Language: **中文** (this page) | [English](./SCALABILITY_SUMMARY.en.md)
+> 🌐 Language: [中文](../zh/design-notes/SCALABILITY_SUMMARY.md)) | **English** (this page)
 
-# Chirp 分布式扩展总结
+# Chirp Distributed Scaling Summary
 
-> 状态说明：本文是扩展性设计总结，包含容量估算和演进计划。当前默认支持路径、实验性能力和未完成边界请以 [整体架构](../architecture.md) 与 [能力矩阵](../CAPABILITY_MATRIX.md) 为准。
+> Status note: this document is a scalability design summary including capacity estimates and an evolution plan. For the current default supported paths, experimental capabilities and unfinished boundaries, defer to [Overall Architecture](../architecture.md)) and [Capability Matrix](../CAPABILITY_MATRIX.md)).
 
-## 架构扩展能力分析
+## Architecture scaling capability analysis
 
-| 组件 | 单机限制 | 扩展方案 | 扩展类型 |
+| Component | Single-server limit | Scaling approach | Scaling type |
 |------|----------|----------|----------|
-| **Gateway** | ~50K 连接 | ✅ 已支持 Redis 分布式会话 | 水平扩展 |
-| **Auth** | ~20K QPS | ✅ 无状态设计 | 水平扩展 |
-| **Chat** | 本地状态瓶颈 | ⚠️ 已有实验性分布式实现，默认路径仍需收敛 | 水平扩展 |
-| **Social** | 本地状态瓶颈 | ⚠️ 需改造（消息路由器） | 水平扩展 |
-| **Voice** | 本地状态瓶颈 | ⚠️ 需改造（消息路由器） | 水平扩展 |
-| **Redis** | 单点故障 | Redis Cluster / 主从 | 水平扩展 |
-| **MySQL** | 单点写入 | 主从复制 / 分库分表 | 垂直+水平 |
+| **Gateway** | ~50K connections | ✅ Redis distributed sessions already supported | Horizontal |
+| **Auth** | ~20K QPS | ✅ Stateless design | Horizontal |
+| **Chat** | Local-state bottleneck | ⚠️ Experimental distributed implementation exists; the default path still needs to converge | Horizontal |
+| **Social** | Local-state bottleneck | ⚠️ Needs refactoring (message router) | Horizontal |
+| **Voice** | Local-state bottleneck | ⚠️ Needs refactoring (message router) | Horizontal |
+| **Redis** | Single point of failure | Redis Cluster / master-slave | Horizontal |
+| **MySQL** | Single-writer | Master-slave replication / sharding | Vertical + horizontal |
 
 ---
 
-## 目标分布式架构
+## Target distributed architecture
 
 ```
                         ┌─────────────────────────────────────────────────┐
@@ -100,37 +100,37 @@
 
 ---
 
-## 关键设计决策
+## Key design decisions
 
-### 1. Gateway 层 - 无状态
-- [通过 Redis 共享会话状态]
-- [每个实例有唯一 `instance_id`]
-- [Redis Pub/Sub 跨实例踢人]
-- [可水平扩展至 N 个实例]
+### 1. Gateway layer - stateless
+- [Session state shared through Redis]
+- [Each instance has a unique `instance_id`]
+- [Cross-instance kicks via Redis Pub/Sub]
+- [Horizontally scalable to N instances]
 
-### 2. 业务服务层 - 本地状态 + 消息路由
-- 本地维护 `user_id -> Session` 映射（热数据）
-- 新增 `MessageRouter` 组件
-- 消息发送逻辑：
-  1. 检查接收者是否在本地 → 直接投递
-  2. 否则 → 通过 Redis Pub/Sub 转发到其他实例
-- 接收者登录时订阅自己的 Redis 频道
+### 2. Business service layer - local state + message routing
+- Maintains the `user_id -> Session` mapping locally (hot data)
+- Adds the `MessageRouter` component
+- Message send logic:
+  1. Check whether the receiver is local → deliver directly
+  2. Otherwise → forward to other instances via Redis Pub/Sub
+- On login, a receiver subscribes to their own Redis channel
 
-### 3. 负载均衡策略
-- **Gateway**: 使用 `least_conn` 算法（适合长连接）
-- **Session Affinity**: 同一客户端保持连接到同一实例（减少 Redis 查询）
-- **Health Check**: 主动检测实例健康状态
+### 3. Load balancing strategy
+- **Gateway**: use the `least_conn` algorithm (suitable for long connections)
+- **Session Affinity**: keep the same client connected to the same instance (fewer Redis lookups)
+- **Health Check**: actively probe instance health
 
-### 4. 数据一致性
-- Redis: 使用 Pub/Sub 实现最终一致性
-- MySQL: 写主库，读从库
-- 离线消息: Redis 缓存 + MySQL 持久化
+### 4. Data consistency
+- Redis: eventual consistency via Pub/Sub
+- MySQL: write to the primary, read from replicas
+- Offline messages: Redis cache + MySQL persistence
 
 ---
 
-## 扩容步骤
+## Scale-out steps
 
-### 新增 Gateway 实例
+### Adding a Gateway instance
 ```bash
 # 方式1：Docker Compose 扩展
 docker compose -f docker-compose.cluster.yml up -d --scale gateway=5
@@ -142,7 +142,7 @@ kubectl autoscale deployment chirp-gateway --min=3 --max=20 --cpu-percent=70
 ./deploy-cluster.sh scale gateway 5
 ```
 
-### 新增 Chat 实例
+### Adding a Chat instance
 ```bash
 # Docker Compose
 docker compose -f docker-compose.cluster.yml up -d --scale chat=5
@@ -153,49 +153,49 @@ kubectl scale deployment chirp-chat --replicas=5
 
 ---
 
-## 容量规划参考
+## Capacity planning reference
 
-| 在线用户 | Gateway 实例 | Chat 实例 | Redis 节点 | MySQL 节点 | 预估成本/月 |
+| Online users | Gateway instances | Chat instances | Redis nodes | MySQL nodes | Est. cost/month |
 |----------|--------------|-----------|------------|------------|-------------|
-| 1K 在线 | 1 | 1 | 1 | 1 | $50 |
-| 10K | 2-3 | 2-3 | 3 (1主2从) | 1 (主) + 1 (从) | $200-500 |
-| 100K | 5-10 | 5-10 | 3-6 | 1 (主) + 2 (从) | $1000-2000 |
-| 1M | 20-50 | 20-50 | 6-12 | 1 (主) + 3 (从) + 分库分表 | $5000-10000 |
+| 1K online | 1 | 1 | 1 | 1 | $50 |
+| 10K | 2-3 | 2-3 | 3 (1 primary, 2 replicas) | 1 (primary) + 1 (replica) | $200-500 |
+| 100K | 5-10 | 5-10 | 3-6 | 1 (primary) + 2 (replicas) | $1000-2000 |
+| 1M | 20-50 | 20-50 | 6-12 | 1 (primary) + 3 (replicas) + sharding | $5000-10000 |
 
 ---
 
-## 下一步工作
+## Next work
 
-### 立即可做
-1. [x] 添加 `MessageRouter` 组件——已落地（2026-10-08 核实：`libs/network/message_router.{h,cc}`）
-2. [x] 改造 Chat 服务支持分布式——已落地（2026-10-08 核实：`services/shared/chat/src/main_distributed.cc`，CMake target `chirp_chat_distributed`）
-3. [x] 创建 HAProxy 负载均衡配置——已落地（2026-10-08 核实：`deploy/haproxy.cfg`）
-4. [x] 创建 Kubernetes 部署文件——已落地（2026-10-08 核实：`deploy/k8s/`）
+### Immediately doable
+1. [x] Add the `MessageRouter` component - done (verified 2026-10-08: `libs/network/message_router.{h,cc}`)
+2. [x] Refactor the Chat service for distribution - done (verified 2026-10-08: `services/shared/chat/src/main_distributed.cc`, CMake target `chirp_chat_distributed`)
+3. [x] Create the HAProxy load balancing configuration - done (verified 2026-10-08: `deploy/haproxy.cfg`)
+4. [x] Create the Kubernetes deployment files - done (verified 2026-10-08: `deploy/k8s/`)
 
-### 短期优化
-1. [Social/Voice 服务改造]
-2. [添加服务健康检查和自动故障转移]
-3. [实现连接迁移（实例重启时保持连接）]
-4. [添加监控指标（Prometheus）]
+### Short-term optimization
+1. [Refactor the Social/Voice services]
+2. [Add service health checks and automatic failover]
+3. [Implement connection migration (keep connections across instance restarts)]
+4. [Add monitoring metrics (Prometheus)]
 
-### 长期规划
-1. [Redis Cluster 支持（自动分片）]
-2. [MySQL 分库分表方案]
-3. [多机房部署（跨地域容灾）]
-4. [服务网格（Istio/Linkerd）]
-5. [自动化扩缩容策略]
+### Long-term planning
+1. [Redis Cluster support (automatic sharding)]
+2. [MySQL sharding plan]
+3. [Multi-datacenter deployment (cross-region disaster recovery)]
+4. [Service mesh (Istio/Linkerd)]
+5. [Automated scale-up/down policies]
 
 ---
 
-## 文件清单
+## File inventory
 
-| 文件 | 说明 |
+| File | Description |
 |------|------|
-| `docs/design-notes/SCALABILITY.md` | 扩展性设计文档 |
-| `docs/design-notes/SCALABILITY_CHAT_IMPLEMENTATION.md` | Chat 服务改造实现 |
-| `libs/network/message_router.h/cc` | 消息路由器组件 |
-| `deploy/haproxy.cfg` | HAProxy 负载均衡配置 |
-| `deploy/k8s/gateway-deployment.yaml` | Gateway K8s 部署 |
-| `deploy/k8s/chat-deployment.yaml` | Chat K8s 部署 |
-| `deploy/k8s/redis-cluster.yaml` | Redis 集群部署 |
-| `deploy/deploy-cluster.sh` | 集群部署脚本 |
+| `docs/design-notes/SCALABILITY.md` | Scalability design document |
+| `docs/design-notes/SCALABILITY_CHAT_IMPLEMENTATION.md` | Chat service refactoring implementation |
+| `libs/network/message_router.h/cc` | Message router component |
+| `deploy/haproxy.cfg` | HAProxy load balancing configuration |
+| `deploy/k8s/gateway-deployment.yaml` | Gateway K8s deployment |
+| `deploy/k8s/chat-deployment.yaml` | Chat K8s deployment |
+| `deploy/k8s/redis-cluster.yaml` | Redis cluster deployment |
+| `deploy/deploy-cluster.sh` | Cluster deployment script |

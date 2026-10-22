@@ -1,30 +1,30 @@
-> 🌐 Language: **中文** (this page) | [English](./server.en.md)
+> 🌐 Language: [中文](../zh/sdk/server.md)) | **English** (this page)
 
-# 服务端 SDK(游戏后端接入)
+# Server SDK (game backend integration)
 
-游戏后端(trade、matchmaking、NPC 引擎等)不扮演玩家,而是以**服务身份**接入 chirp 的服务器平面:出站长连接(dial-out,游戏服不暴露端口)、`service_id` + 共享 secret 过信任门,然后向 chat 注入非玩家消息(SYSTEM/NPC/SERVICE)、向其他服务发布可靠事件。
+A game backend (trade, matchmaking, NPC engines, etc.) does not act as a player; it joins Chirp's server plane **as a service**: it dials out a persistent connection (dial-out, so the game server exposes no port), passes the trust gate with `service_id` + a shared secret, and then injects non-player messages (SYSTEM/NPC/SERVICE) into chat and publishes reliable events to other services.
 
-wire 契约见 `proto/game_server_gateway.proto`,完整接入语义(凭证、注入、事件、幂等键)见[服务器平面](/server_plane)。
+The wire contract is in `proto/game_server_gateway.proto`, and the full integration semantics (credentials, injection, events, idempotency keys) are in [Server Plane](/server_plane).
 
-## 连接拓扑(重要)
+## Connection topology (important)
 
 ```text
-游戏后端 ──dial-out──▶ chirp_server_gateway(TCP 8100)     注入/事件/ack
-游戏后端 ──dial-out──▶ chirp_chat 主端口(TCP 7000)         玩家身份绑定/频道订阅/未读账本
+game backend ──dial-out──▶ chirp_server_gateway (TCP 8100)     injection/events/ack
+game backend ──dial-out──▶ chirp_chat main port (TCP 7000)     player identity binding/channel subscription/unread ledger
 ```
 
-玩家身份绑定、频道订阅、未读账本(5013-5030)已从 `chirp_server_gateway` 迁入 `chirp_chat` 的 app_chat 实例(PlayerDirectory)。这两个目标要用**两个 Client 实例**分别拨;向已迁走的 id 发 RPC 会因对端不处理而超时。
+Player identity binding, channel subscriptions and the unread ledger (5013-5030) have moved out of `chirp_server_gateway` into `chirp_chat`'s app_chat instance (PlayerDirectory). These two targets must be dialed with **two separate Client instances**; sending an RPC to an id that has moved away times out because the peer no longer handles it.
 
-## Go(官方 SDK)
+## Go (official SDK)
 
-`sdks/go` 是官方维护的 Go 参考客户端,语义逐项对齐 C++ 参考实现 `libs/network/server_gateway_peer.cc`,CI(`go-sdk.yml`)用 33 例进程内 fake-hub 环回单测 + proto/go 重生成漂移检查 + `go vet` + `-race` 兜底;client.go 语句覆盖 100%(批 3026896 后,不可自然触发的 2 臂经注入/竞态用例覆盖)。
+`sdks/go` is the officially maintained Go reference client, with semantics aligned item by item with the C++ reference implementation `libs/network/server_gateway_peer.cc`; CI (`go-sdk.yml`) backs it with 33 in-process fake-hub loopback unit tests + a proto/go regeneration drift check + `go vet` + `-race`; client.go has 100% statement coverage (after batch 3026896, the 2 arms that cannot be triggered naturally are covered by injection/race cases).
 
-能力面:
+Capability surface:
 
-- **认证握手**:首帧 `SERVER_AUTH_REQ`;被拒则固定延迟重试。
-- **心跳**:hub 在认证响应里指派节奏(静默超过 2×interval 会被关闭),未指派回落 `Config.HeartbeatInterval`(默认 30s)。
-- **RPC**:`InjectMessage`(注入消息,`inject_id` 幂等键)、`PublishEvent`(可靠事件,离线入队)、`AckEvents`(批量确认,at-least-once)、玩家身份绑定 / 频道订阅 / 未读账本三组方法(`binding_id` / `subscription_id` 幂等键)。
-- **推送 handler**:`SetInjectHandler` / `SetEventHandler` / `SetDisconnectHandler` / `SetDevicePresenceHandler`(设备在线 1020),在内部读 goroutine 触发,**不得阻塞**。
+- **Auth handshake**: the first frame is `SERVER_AUTH_REQ`; on rejection it retries after a fixed delay.
+- **Heartbeat**: the hub assigns the cadence in the auth response (silence beyond 2x interval gets the connection closed); if unassigned it falls back to `Config.HeartbeatInterval` (default 30s).
+- **RPCs**: `InjectMessage` (inject a message, `inject_id` idempotency key), `PublishEvent` (reliable event, queued while offline), `AckEvents` (batch acknowledgment, at-least-once), plus the three groups of player identity binding / channel subscription / unread ledger methods (`binding_id` / `subscription_id` idempotency keys).
+- **Push handlers**: `SetInjectHandler` / `SetEventHandler` / `SetDisconnectHandler` / `SetDevicePresenceHandler` (device presence 1020), fired on the internal read goroutine, and **must not block**.
 
 ```go
 c := chirp.NewClient(chirp.Config{
@@ -32,52 +32,52 @@ c := chirp.NewClient(chirp.Config{
     ServiceID: "trade-service", Secret: "<shared secret>",
 })
 c.SetEventHandler(func(n *pbsg.EventDeliverNotify) {
-    c.AckEvents(context.Background(), n.GetEventId())  // 处理完 ack,否则 hub 重投
+    c.AckEvents(context.Background(), n.GetEventId())  // ack after handling, otherwise the hub redelivers
 })
 c.Start()
 defer c.Stop()
 
 c.InjectMessage(ctx, &pbsg.MessageInjectRequest{
-    InjectId:   "raid-5678",                    // 调用方幂等键
+    InjectId:   "raid-5678",                    // caller-supplied idempotency key
     SenderKind: pbsg.SenderKind_SENDER_SERVICE,
     SenderId:   "raid-boss",
     ChannelType: 3,                             // WORLD
     ChannelId:  "world-boss",
-    Content:    []byte("世界 Boss 已刷新"),
+    Content:    []byte("world boss has spawned"),
 })
 ```
 
-细节与完整示例:[sdks/go/README.md](https://github.com/cuihairu/chirp/tree/main/sdks/go)。
+Details and complete examples: [sdks/go/README.md](https://github.com/cuihairu/chirp/tree/main/sdks/go).
 
 ## Node.js
 
-**暂无官方 SDK**,按 `game_server_gateway.proto` 直接接入:Node 的 `net` 模块建 TCP 长连接,自己实现三层——帧编解码(`[uint32_be][Packet]`)、protobuf(`protobufjs` 加载 `proto/game_server_gateway.proto`)、状态机(首帧 `SERVER_AUTH_REQ`、心跳、sequence 关联、断线重连、事件 ack)。
+**No official SDK yet**; integrate directly against `game_server_gateway.proto`: use Node's `net` module to open a persistent TCP connection and implement the three layers yourself — frame codec (`[uint32_be][Packet]`), protobuf (`protobufjs` loading `proto/game_server_gateway.proto`), and the state machine (first frame `SERVER_AUTH_REQ`, heartbeat, sequence correlation, reconnect on disconnect, event ack).
 
-要点:
+Key points:
 
-- 事件投递是 at-least-once:处理完必须回 `AckEvents`,否则 hub 重连后重投;
-- 注入消息用 `inject_id` 幂等键防重;认证被拒后按固定延迟重试即可(C++/Go 参考实现同款,无退避上限);
-- Node 侧暂无进程级 E2E,同一 wire 契约由 `./test_services.sh --smoke-npc` 的 C++ 链路覆盖。
+- Event delivery is at-least-once: you must reply `AckEvents` after handling, otherwise the hub redelivers on reconnect;
+- Injection messages use the `inject_id` idempotency key to prevent duplicates; after an auth rejection just retry at a fixed delay (same as the C++/Go reference implementations, with no backoff cap);
+- There is no process-level E2E on the Node side; the same wire contract is covered by the C++ path of `./test_services.sh --smoke-npc`.
 
 ## Lua
 
-**暂无官方 SDK**。skynet 等常见游戏服框架按协议接入,要点与 Node.js 相同:TCP 长连接 + `SERVER_AUTH_REQ` 首帧 + 帧编解码 + 心跳 + ack。Lua 侧可用 `lua-protobuf` / `pb` 库处理 `game_server_gateway.proto`。
+**No official SDK yet.** Common game server frameworks such as skynet integrate over the protocol, with the same key points as Node.js: persistent TCP connection + `SERVER_AUTH_REQ` first frame + frame codec + heartbeat + ack. On the Lua side, `lua-protobuf` / `pb` can handle `game_server_gateway.proto`.
 
 ## Python
 
-**暂无官方 SDK**。用标准库 `socket` + `google.protobuf` 按协议接入,要点同上。适合工具链、运营后台、GM 脚本这类对吞吐不敏感的接入方;高频注入建议用 Go SDK 或 C++ 参考实现。
+**No official SDK yet.** Integrate over the protocol using the standard-library `socket` + `google.protobuf`, with the same key points as above. Suitable for integration points that are not throughput-sensitive, such as tooling, operations backends and GM scripts; for high-frequency injection prefer the Go SDK or the C++ reference implementation.
 
-## 协议 / API 参考
+## Protocol / API reference
 
-- 服务器平面契约(凭证模型、注入语义、事件、跨平面回复):[服务器平面](/server_plane)
-- 玩家身份绑定 / 频道订阅 / 统一未读的 RPC 全表:`docs/server_plane.md` 对应章节
-- `proto/game_server_gateway.proto`(仓内)定义全部请求/响应消息
-- NPC 对话(注入通道的消费方示例):[NPC 对话系统](/design-notes/npc_dialog_system)
+- Server plane contract (credential model, injection semantics, events, cross-plane reply): [Server Plane](/server_plane)
+- Full RPC tables for player identity binding / channel subscriptions / unified unread: the corresponding sections of `docs/server_plane.md`
+- `proto/game_server_gateway.proto` (in-repo) defines all request/response messages
+- NPC dialog (an example consumer of the injection channel): [NPC Dialog System](/design-notes/npc_dialog_system)
 
-## 现状与边界
+## Current state and boundaries
 
-- hub 平面为**纯 TCP 长连接**,无 WS/TLS 传输;
-- 事件只在已认证连接断开时触发 disconnect handler;凭据配错表现为周期性告警日志(固定延迟无限重试);
-- 注入的 `OK` 只表示"服务平面已受理",未确认玩家侧送达;
-- Go SDK 对真 `chirp_server_gateway` 的进程级 E2E 未建立,同一 wire 契约由 C++ 链路的 `--smoke-npc` 覆盖;
-- 每日构建:Actions nightly 的 `daily-build` artifact 打包含 Go SDK 源码包(未签名),入口见 [SDK 总览](/sdk/)。
+- The hub plane is a **pure TCP persistent connection**, with no WS/TLS transport;
+- Events only trigger the disconnect handler when an authenticated connection drops; wrong credentials show up as periodic warning logs (fixed-delay infinite retries);
+- An injected `OK` only means "the server plane has accepted it", not that delivery to the player side is confirmed;
+- There is no process-level E2E from the Go SDK against a real `chirp_server_gateway`; the same wire contract is covered by `--smoke-npc` on the C++ path;
+- Nightly builds: the Actions nightly `daily-build` artifact bundle includes the Go SDK source package (unsigned); see [SDK Overview](/sdk/) for the entry point.

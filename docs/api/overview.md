@@ -1,16 +1,16 @@
-> 🌐 Language: **中文** (this page) | [English](./overview.en.md)
+> 🌐 Language: [中文](../zh/api/overview.md)) | **English** (this page)
 
-# API 总览
+# API Overview
 
-Chirp 在 TCP 或 WebSocket 上跑 Protocol Buffers。当前受支持的协议面围绕 `chirp.gateway.Packet` 展开。
+Chirp runs Protocol Buffers over TCP or WebSocket. The currently supported protocol surface is built around `chirp.gateway.Packet`.
 
-实现状态请看 [能力矩阵](../CAPABILITY_MATRIX.md)。部分 proto 消息为路线图或实验性服务而存在,不要默认它们受默认运行时支持。
+For implementation status see the [capability matrix](../CAPABILITY_MATRIX.md)). Some proto messages exist for roadmap or experimental services — do not assume they are covered by the default runtime.
 
-接入前建议先读 [接入避坑指南](../guide/integration-pitfalls.md)——发送节奏、消息长度、重复禁言、敏感词等服务端防线都会以专码拒收,裸协议接入方最容易在这些地方踩坑。
+Before integrating, read the [integration pitfalls guide](../guide/integration-pitfalls.md)) — server-side defenses such as send cadence, message length, repeat-mute and sensitive words all reject with dedicated codes, and raw-protocol integrators are most likely to trip on exactly these.
 
-## 包格式
+## Packet format
 
-TCP 和 WebSocket 承载同一份应用载荷:
+TCP and WebSocket carry the same application payload:
 
 ```
 TCP stream:
@@ -20,208 +20,208 @@ WebSocket binary frame payload:
   [uint32_be payload_size][chirp.gateway.Packet protobuf bytes]
 ```
 
-`payload_size` 是序列化后的 `chirp.gateway.Packet` 的字节数。
+`payload_size` is the byte length of the serialized `chirp.gateway.Packet`.
 
-`MsgID` 不是独立的网络帧头,它在 `Packet` 里面:
+`MsgID` is not a standalone network frame header; it lives inside `Packet`:
 
 ```protobuf
 message Packet {
   MsgID msg_id = 1;
   int64 sequence = 2;
   bytes body = 3;
-  int64 request_id = 4;  // 分布式关联 id,0 = 未提供(见下)
+  int64 request_id = 4;  // distributed correlation id, 0 = not provided (see below)
 }
 ```
 
-`body` 装的是所选 `msg_id` 对应的序列化 protobuf 消息。
+`body` carries the serialized protobuf message selected by `msg_id`.
 
-`sequence` 与 `request_id` 语义分离(见 [Communication Core 设计笔记](../design-notes/communication_core.md) 4.3):
+`sequence` and `request_id` have separated semantics (see §4.3 of the [Communication Core design note](../design-notes/communication_core.md))):
 
-- `sequence`:连接内单调序号,请求-响应配对的本地关联键。响应与通知以请求同值返回,客户端用它把 `RESP`/`NOTIFY` 对回请求。**0 = 服务端发起(踢人、通知),不要求配对**。
-- `request_id`:分布式关联 id,跨平面/跨服务日志追踪用,与配对无关。**0 = 调用方未提供**——缺省生成沿全链补齐:网关 `ServiceBridge` 对客户端出站的 2xxx 包与服务面出站包按「连接内生成」兜底(单调自增);chat 直连入口(裸协议客户端)按进程级单调兜底;peer 面(`ChatPeerHub`/`ChatPeerLink`)出站各自连接内单调生成(hub→spoke 与 spoke→hub 双向);SDK 发送侧(`sdks/core` `MakePacket`、`sdks/ts` 与 `apps/shared/protocol` `rawSend`)自动生成。显式给出的值沿转发链路原样透传、不改写,网关不重写客户端已带的 `request_id`,SDK/接入方可直接携带自己的关联键(如游戏服请求单号)。
+- `sequence`: a monotonic sequence number within a connection, the local correlation key for request-response pairing. Responses and notifications come back with the same value as the request, and the client uses it to match `RESP`/`NOTIFY` back to the request. **0 = server-initiated (kicks, notifications), pairing not required**.
+- `request_id`: a distributed correlation id for cross-plane / cross-service log tracing, unrelated to pairing. **0 = not provided by the caller** — the default generation is filled in across the chain: the gateway's `ServiceBridge` falls back to "generated within the connection" (monotonically increasing) for client outbound 2xxx packets and service-plane outbound packets; the chat direct entry point (bare-protocol clients) falls back to a process-level monotonic value; the peer surface (`ChatPeerHub`/`ChatPeerLink`) generates monotonically within each of its own connections on outbound (both directions, hub→spoke and spoke→hub); the SDK send side (`MakePacket` in `sdks/core`, `rawSend` in `sdks/ts` and `apps/shared/protocol`) generates it automatically. Explicitly supplied values are passed through verbatim along the forwarding chain and never rewritten; the gateway does not rewrite a `request_id` the client already carries, and SDKs / integrators may bring their own correlation key (such as a game-server request ticket).
 
-映射示例:
+Mapping example:
 
-| Packet 的 `msg_id` | Packet 的 `body` protobuf |
+| The Packet's `msg_id` | The Packet's `body` protobuf |
 | --- | --- |
-| `LOGIN_REQ` | `chirp.auth.LoginRequest`(登录请求) |
-| `LOGIN_RESP` | `chirp.auth.LoginResponse`(登录应答) |
-| `HEARTBEAT_PING` | `chirp.gateway.HeartbeatPing`(心跳请求) |
-| `HEARTBEAT_PONG` | `chirp.gateway.HeartbeatPong`(心跳应答) |
-| `SEND_MESSAGE_REQ` | `chirp.chat.SendMessageRequest`(发送消息请求) |
-| `SEND_MESSAGE_RESP` | `chirp.chat.SendMessageResponse`(发送消息应答) |
-| `GET_HISTORY_REQ` | `chirp.chat.GetHistoryRequest`(拉取历史请求) |
-| `GET_HISTORY_RESP` | `chirp.chat.GetHistoryResponse`(拉取历史应答) |
-| `CHAT_MESSAGE_NOTIFY` | `chirp.chat.ChatMessage`(聊天消息通知) |
+| `LOGIN_REQ` | `chirp.auth.LoginRequest` (login request) |
+| `LOGIN_RESP` | `chirp.auth.LoginResponse` (login response) |
+| `HEARTBEAT_PING` | `chirp.gateway.HeartbeatPing` (heartbeat request) |
+| `HEARTBEAT_PONG` | `chirp.gateway.HeartbeatPong` (heartbeat response) |
+| `SEND_MESSAGE_REQ` | `chirp.chat.SendMessageRequest` (send-message request) |
+| `SEND_MESSAGE_RESP` | `chirp.chat.SendMessageResponse` (send-message response) |
+| `GET_HISTORY_REQ` | `chirp.chat.GetHistoryRequest` (fetch-history request) |
+| `GET_HISTORY_RESP` | `chirp.chat.GetHistoryResponse` (fetch-history response) |
+| `CHAT_MESSAGE_NOTIFY` | `chirp.chat.ChatMessage` (chat-message notification) |
 
-## 当前端点
+## Current endpoints
 
-服务按游戏平面 / App 平面组织,二进制命名带平面前缀(完整对照见 [能力矩阵](../CAPABILITY_MATRIX.md) 的二进制命名约定段)。
+Services are organized by game plane / App plane, and the binary names carry a plane prefix (see the binary-naming convention section of the [capability matrix](../CAPABILITY_MATRIX.md)) for the complete mapping).
 
-### 游戏平面(游戏客户端/游戏后端接入这里)
+### Game plane (game clients / game backends integrate here)
 
-| 服务 | 二进制 | TCP | WebSocket | 状态 | 说明 |
+| Service | Binary | TCP | WebSocket | Status | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Game SDK Gateway | `chirp_game_sdk_gateway` | 5000 | 5001 | Supported | 登录、心跳、踢出、会话 claim;2xxx 聊天包经 ServiceBridge 转发到 game_chat |
-| Game Chat | `chirp_chat`(由 `services/shared/chat` 构建,部署角色由启动参数区分) | 7000 | 7001 | Supported | 聊天服务端;游戏后端签发 token + `--token_secret` 本地验签,自足闭环 |
-| Game Server Gateway | `chirp_game_server_gateway` | 8100 | - | Supported | 游戏后端注入枢纽:消息注入 + 事件下发,`service_id` + secret 信任门 |
-| Chat Peer 口 | (game_chat 的 `--hub_peer_port`) | 8200 | - | Supported | game_chat 作为 spoke 注册到 app_chat hub 的出站目标;见 [peer 协议](./peer_protocol.md) |
+| Game SDK Gateway | `chirp_game_sdk_gateway` | 5000 | 5001 | Supported | Login, heartbeat, kick-out, session claim; 2xxx chat packets are forwarded to game_chat via ServiceBridge |
+| Game Chat | `chirp_chat` (built from `services/shared/chat`, the deployment role is distinguished by startup arguments) | 7000 | 7001 | Supported | The chat server; the game backend issues tokens and chat verifies signatures locally with `--token_secret`, a self-contained loop |
+| Game Server Gateway | `chirp_game_server_gateway` | 8100 | - | Supported | The game backend's injection hub: message injection + event delivery, `service_id` + secret trust gate |
+| Chat Peer port | (game_chat's `--hub_peer_port`) | 8200 | - | Supported | The outbound target for game_chat registering as a spoke to the app_chat hub; see the [peer protocol](peer_protocol.md)) |
 
-### App 平面(伴侣 App / 平台侧)
+### App plane (companion App / platform side)
 
-| 服务 | 二进制 | TCP | WebSocket | 状态 | 说明 |
+| Service | Binary | TCP | WebSocket | Status | Notes |
 | --- | --- | --- | --- | --- | --- |
-| App SDK Gateway | `chirp_app_sdk_gateway` | 5200 | 5201 | Supported | 认证/心跳 + 6xxx 设备消息转发;2xxx 转发到 app_chat |
-| App Chat(hub) | `chirp_chat`(同 `services/shared/chat` 构建,部署角色由启动参数区分) | 7000 | 7001 | Supported | App 平面聊天 hub:peer 注册、身份映射、频道订阅、跨平面 fan-out/回复、未读账本 |
-| App Auth | `chirp_app_auth` | 6000 | - | Supported | App 平面账号/token;游戏平面不依赖它 |
-| App Notification | `chirp_app_notification` | 5006 | 5016 | Supported | 设备注册表 + 推送面(6xxx);`--push_transport http` 启用真实 APNs/FCM HTTP 投递,默认 `logging` 只记日志;可选 `--service_secret` 调用方共享密钥握手 |
+| App SDK Gateway | `chirp_app_sdk_gateway` | 5200 | 5201 | Supported | Auth/heartbeat + 6xxx device-message forwarding; 2xxx forwarded to app_chat |
+| App Chat (hub) | `chirp_chat` (same `services/shared/chat` build, the deployment role is distinguished by startup arguments) | 7000 | 7001 | Supported | The App-plane chat hub: peer registration, identity mapping, channel subscription, cross-plane fan-out/replies, unread ledger |
+| App Auth | `chirp_app_auth` | 6000 | - | Supported | App-plane accounts/tokens; the game plane does not depend on it |
+| App Notification | `chirp_app_notification` | 5006 | 5016 | Supported | Device registry + push surface (6xxx); `--push_transport http` enables real APNs/FCM HTTP delivery, the default `logging` only writes logs; optional `--service_secret` shared-secret caller handshake |
 
-### 实验性服务
+### Experimental services
 
-| 服务 | TCP | WebSocket | 状态 |
+| Service | TCP | WebSocket | Status |
 | --- | --- | --- | --- |
-| Social | 8000 | 8001 | Experimental(好友/在线状态/黑名单,不在最小验证路径内) |
-| Voice | 9000 | 9001 | Experimental(信令面存在,尚不构成完整媒体后端保证) |
-| Party | 7500 | 7501 | Experimental(组队快照面 `chirp_party`,邀请制入队) |
-| Search | 5007 | - | Supported(SQLite FTS5 索引,per-client pipe 经 gateway,2248/2249,降级不踢) |
+| Social | 8000 | 8001 | Experimental (friends/presence/blacklist, not on the minimal validation path) |
+| Voice | 9000 | 9001 | Experimental (a signaling surface exists but does not yet constitute a complete media backend guarantee) |
+| Party | 7500 | 7501 | Experimental (party snapshot surface `chirp_party`, invite-based joining) |
+| Search | 5007 | - | Supported (SQLite FTS5 index, per-client pipe via the gateway, 2248/2249, degrades without kicking) |
 
-按 [Communication Core](../design-notes/communication_core.md) 的口径,social/voice/search 是 Communication 之外的应用面/插件面,不在核心验证路径内。
+Per the framing in [Communication Core](../design-notes/communication_core.md)), social/voice/search are application/plugin surfaces outside Communication and are not on the core validation path.
 
-## Pipe 分类
+## Pipe classification
 
-连接按信任面分三类,凭证校验、限流与日志按类别分流(概念收敛见 [Communication Core 设计笔记](../design-notes/communication_core.md) §4.4):
+Connections fall into three classes by trust surface, and credential verification, rate limiting and logging all branch on the class (see §4.4 of the [Communication Core design note](../design-notes/communication_core.md)) for the concept convergence):
 
-| Pipe | 连接 | 凭证 | 承担 |
+| Pipe | Connection | Credential | Carries |
 | --- | --- | --- | --- |
-| Client Pipe | 客户端 → 网关(5000/5200 系) | 用户 token/会话 | 登录、心跳、2xxx 转发 |
-| Service Pipe | 游戏服 → server_gateway(8100) | service_id + secret | 注入、事件、玩家目录 RPC(5013-5030 在 app_chat 主端口) |
-| Peer Pipe | game_chat ⇄ app_chat、chat ⇄ chat | 白名单 + 版本协商 | 跨平面注册/上行/注入(5050-5053) |
+| Client Pipe | Client → gateway (the 5000/5200 family) | user token / session | Login, heartbeat, 2xxx forwarding |
+| Service Pipe | Game server → server_gateway (8100) | service_id + secret | Injection, events, player-directory RPCs (5013-5030 live on the app_chat main port) |
+| Peer Pipe | game_chat ⇄ app_chat, chat ⇄ chat | allowlist + version negotiation | Cross-plane registration/uplink/injection (5050-5053) |
 
-**Gateway = Transport Edge**:网关负责连接管理、登录/登出、心跳、踢人、限流、协议适配与转发,不承担 Chat/Social/NPC 业务路由;「聊天包发去 chat」是边界约束,不是待补缺口——网关不会演进为业务路由中心。
+**Gateway = Transport Edge**: the gateway owns connection management, login/logout, heartbeat, kicks, rate limiting, protocol adaptation and forwarding; it does not take on Chat/Social/NPC business routing. "Chat packets go to chat" is a boundary constraint, not a gap waiting to be filled — the gateway will never evolve into a business routing hub.
 
-## 核心消息 ID
+## Core message IDs
 
-### 网关与认证(Gateway/Auth,1xxx)
+### Gateway and auth (Gateway/Auth, 1xxx)
 
-| MsgID | 名称 | 方向 | 当前状态 |
+| MsgID | Name | Direction | Current status |
 | --- | --- | --- | --- |
-| 1001 | `HEARTBEAT_PING` | 客户端 -> Gateway/Chat | Supported |
-| 1002 | `HEARTBEAT_PONG` | Gateway/Chat -> 客户端 | Supported |
-| 1003 | `LOGIN_REQ` | 客户端 -> Gateway/Chat | Supported |
-| 1004 | `LOGIN_RESP` | Gateway/Chat -> 客户端 | Supported |
-| 1005 | `KICK_NOTIFY` | Gateway/Chat -> 客户端 | Supported(同端型 platform 重登顶号) |
-| 1006 / 1007 | `LOGOUT_REQ` / `LOGOUT_RESP` | 客户端 <-> 服务 | Supported |
-| 1008-1019 | 注册/密码登录/刷新 token/会话管理/改密 | 客户端 <-> Auth | App 平面 auth 面 Supported(需 MySQL 增强形态 `chirp_app_auth_enhanced`;basic 形态仅 LOGIN/LOGOUT);游戏平面不走这组 |
-| 1020 | `DEVICES_PRESENCE_NOTIFY` | 服务 -> 客户端 | 多设备在线清单变更通知(body `auth.DevicesPresenceNotify`,对齐 `KICK_NOTIFY` 语义:sequence 0、只读、不要求 ACK) |
+| 1001 | `HEARTBEAT_PING` | client -> Gateway/Chat | Supported |
+| 1002 | `HEARTBEAT_PONG` | Gateway/Chat -> client | Supported |
+| 1003 | `LOGIN_REQ` | client -> Gateway/Chat | Supported |
+| 1004 | `LOGIN_RESP` | Gateway/Chat -> client | Supported |
+| 1005 | `KICK_NOTIFY` | Gateway/Chat -> client | Supported (same-platform re-login tops off the previous session) |
+| 1006 / 1007 | `LOGOUT_REQ` / `LOGOUT_RESP` | client <-> service | Supported |
+| 1008-1019 | Register / password login / refresh token / session management / change password | client <-> Auth | Supported on the App-plane auth surface (requires the enhanced MySQL form `chirp_app_auth_enhanced`; the basic form only has LOGIN/LOGOUT); the game plane does not use this group |
+| 1020 | `DEVICES_PRESENCE_NOTIFY` | server -> client | Multi-device presence roster change (body `auth.DevicesPresenceNotify`, aligned with `KICK_NOTIFY` semantics: sequence 0, read-only, no ACK required) |
 
-两个平面都接受 `LOGIN_REQ`;游戏平面的 token 由游戏后端按 HS256 JWT 签发、chat 以 `--token_secret` 本地验签。
+Both planes accept `LOGIN_REQ`; the game plane's token is issued by the game backend as an HS256 JWT and chat verifies it locally with `--token_secret`.
 
-### 聊天(Chat,2xxx)
+### Chat (Chat, 2xxx)
 
-发送链路在服务端经过一组顺序固定的防线(细节与默认阈值见 [接入避坑指南](../guide/integration-pitfalls.md)):登录校验 → 内容长度(`CONTENT_TOO_LONG`)→ 世界频道等级门槛(`LEVEL_REQUIRED`,`--world_channel_min_level` 缺省 0 关闭)→ 模糊限流(`RATE_LIMITED`)→ 发送节奏(`RATE_LIMITED`)→ 重复禁言(`RATE_LIMITED`)→ 敏感词(`WORD_FILTERED` 或静默替换)→ 群频道门(命中群台账的频道:非成员 `AUTH_FAILED`、被禁言成员 `MUTED`;台账外频道不经此门)。
+The send path passes through a set of server-side defenses in a fixed order on the server (for details and default thresholds see the [integration pitfalls guide](../guide/integration-pitfalls.md))): login check → content length (`CONTENT_TOO_LONG`) → world channel level threshold (`LEVEL_REQUIRED`, `--world_channel_min_level` defaults to 0 = off) → fuzzy rate limit (`RATE_LIMITED`) → send cadence (`RATE_LIMITED`) → repeat message mute (`RATE_LIMITED`) → sensitive words (`WORD_FILTERED` or silent replacement) → group channel gate (channels hit by the group ledger: non-members get `AUTH_FAILED`, muted members get `MUTED`; channels outside the ledger do not pass through this gate).
 
-| MsgID | 名称 | 方向 | 说明 |
+| MsgID | Name | Direction | Notes |
 | --- | --- | --- | --- |
-| 2001 / 2002 | `SEND_MESSAGE_REQ` / `RESP` | 客户端 -> Chat | 发送消息;`RESP` 带服务端 `message_id` 与业务码 |
-| 2003 / 2004 | `GET_HISTORY_REQ` / `RESP` | 客户端 -> Chat | 拉取频道历史 |
-| 2005 | `CHAT_MESSAGE_NOTIFY` | Chat -> 客户端 | 实时消息推送 |
-| 2101-2116 | 群组全套 | 客户端 <-> Chat | 建/进/出/邀/踢/查 + 群事件 notify(2117-2121) |
-| 2122-2124 | 群昵称 alias | 客户端 <-> Chat | `SET_MEMBER_ALIAS_REQ/RESP` + `GROUP_MEMBER_ALIAS_UPDATED_NOTIFY`;本人或 MODERATOR+ 设他人;别名随 `GroupMember.alias` 下发,渲染消费成员列表与消息发送者名两处 |
-| 2250-2252 | 群管理员禁言 | 客户端 <-> Chat | `SET_GROUP_MUTE_REQ/RESP` + `GROUP_MEMBER_MUTED_NOTIFY`;MODERATOR+ 禁言/解禁本群成员(秒数,0=解禁,上限 30 天);禁言中成员群频道发言被拒 `MUTED`,禁言态随 `GroupMember.muted_until_ts` 下发 |
-| 2253-2254 | 举报 | 客户端 <-> Chat | `REPORT_MESSAGE_REQ/RESP`;玩家举报消息,内存台账按 (message_id, reporter_id) 去重幂等,回去重后累计 `report_count`;被举报消息须在本实例编辑台账(与撤回台账外同语义 `USER_NOT_FOUND`);理由可选上限 500 码点,超限/空 message_id 回 `INVALID_PARAM`,未登录回 `AUTH_FAILED` |
-| 2255-2258 | 防骚扰私聊限制 | 客户端 <-> Chat | `SET/GET_DM_RESTRICTION_REQ/RESP`;接收方开关(缺省关,io 线程内存态,进程重启复位),开启后陌生人的私聊被拒 `DM_RESTRICTED`(消息不落任何存储);陌生人 = 非 social 平面好友快照(`chirp:social:friends:<receiver>`)且无共同群;好友/同群/本人/NPC 接收方豁免;Redis 缺失按非好友收紧(只剩同群半边生效);未登录回 `AUTH_FAILED`,body 损坏回 `INVALID_PARAM` |
-| 2201 / 2202 | `MARK_READ_REQ` / `RESP` | 客户端 -> Chat | 标记已读(服务端游标) |
-| 2203 / 2204 | `GET_READ_RECEIPTS_REQ` / `RESP` | 客户端 -> Chat | 消息已读回执查询 |
-| 2205 / 2206 | `GET_UNREAD_COUNT_REQ` / `RESP` | 客户端 -> Chat | 未读数 |
-| 2207 | `MESSAGE_READ_NOTIFY` | Chat -> 客户端 | 已读事件推送 |
-| 2208 | `TYPING_INDICATOR_NOTIFY` | 客户端 <-> Chat | 正在输入(裸 notify,无响应) |
-| 2209 / 2210 | `MESSAGE_ACK` / `MESSAGE_NACK` | 客户端 <-> Chat | 投递确认/否定确认(与 `TRACK_MESSAGE` 2211/2212 同族) 
-| 2213 / 2214 | `GET_HISTORY_V2_REQ` / `GET_HISTORY_V2_RESP` | 客户端 -> Chat | 增强历史 v2 |
-| 2211 / 2212 | `TRACK_MESSAGE_REQ` / `RESP` | 客户端 -> Chat | 投递跟踪 |
-| 2215-2222 | 表情回应全套 | 客户端 <-> Chat | 加/删/查 + 增删 notify |
-| 2223 / 2224 | `GET_TYPING_USERS_REQ` / `RESP` | 客户端 -> Chat | 谁在输入 |
-| 2225-2232 | 编辑/删除全套 | 客户端 <-> Chat | 编辑、删除、批量删除 + 事件 notify;`DELETE`(`is_hard_delete=false`)对发送者本人即**撤回**(默认私聊/公会 120 秒窗口内的软删,超窗/非撤回频道/重复撤回回 `INVALID_PARAM`),版主删除不受窗口约束 |
-| 2233 / 2234 | `GET_MENTION_SUGGESTIONS_REQ` / `RESP` | 客户端 -> Chat | @提及候选 |
-| 2235-2238 | 频道屏蔽(免打扰) | 客户端 <-> Chat | `SET_CHANNEL_MUTE` / `GET_CHANNEL_MUTES`;仅 WORLD/GUILD/TEAM 可屏蔽 |
-| 2239-2244 | 消息黑名单 | 客户端 <-> Chat | `BLOCK/UNBLOCK_MESSAGE_SENDER`、`GET_BLOCKED_SENDERS`;只作用于消息投递,与社交面 3011 黑名单互相独立 |
-| 2245-2247 | 词库下发 | 客户端 <-> Chat | `WORD_FILTER_FETCH` 条件 GET + `WORD_FILTER_UPDATE_NOTIFY` 热更新;body 见 chat.proto `WordFilter*` |
-| 2248 / 2249 | 服务端消息搜索 | 客户端 <-> search | `SEARCH_MESSAGE_REQ` / `RESP`;经 gateway per-client pipe 转发 `chirp_search`(5007),SQLite FTS5 索引,复合游标分页;决策记录见 [design-notes/message_search](../design-notes/message_search.md) |
+| 2001 / 2002 | `SEND_MESSAGE_REQ` / `RESP` | client -> Chat | Send a message; the `RESP` carries the server-side `message_id` and the business code |
+| 2003 / 2004 | `GET_HISTORY_REQ` / `RESP` | client -> Chat | Fetch channel history |
+| 2005 | `CHAT_MESSAGE_NOTIFY` | Chat -> client | Real-time message push |
+| 2101-2116 | The full group set | client <-> Chat | Create/join/leave/invite/kick/query + group event notifies (2117-2121) |
+| 2122-2124 | Group nickname alias | client <-> Chat | `SET_MEMBER_ALIAS_REQ/RESP` + `GROUP_MEMBER_ALIAS_UPDATED_NOTIFY`; set another member's alias as yourself or MODERATOR+; the alias ships in `GroupMember.alias` and is consumed in two places: the member list and the message sender name |
+| 2250-2252 | Group moderator mute | client <-> Chat | `SET_GROUP_MUTE_REQ/RESP` + `GROUP_MEMBER_MUTED_NOTIFY`; MODERATOR+ mutes/unmutes members of this group (seconds, 0 = unmute, cap 30 days); a muted member's group-channel send is rejected with `MUTED`, and the mute state ships in `GroupMember.muted_until_ts` |
+| 2253-2254 | Report | client <-> Chat | `REPORT_MESSAGE_REQ/RESP`; a player reports a message, the in-memory ledger is deduplicated idempotently by (message_id, reporter_id) and accumulates `report_count` after dedup; the reported message must be in this instance's edit ledger (same `USER_NOT_FOUND` semantics as a recall outside the ledger); the reason is optional with a 500 code-point cap, over-cap/empty message_id returns `INVALID_PARAM`, not-logged-in returns `AUTH_FAILED` |
+| 2255-2258 | Anti-harassment DM restriction | client <-> Chat | `SET/GET_DM_RESTRICTION_REQ/RESP`; a receiver-side switch (off by default, in-memory state on the io thread, reset on process restart), once on, DMs from strangers are rejected with `DM_RESTRICTED` (the message is not stored anywhere); a stranger = not a friend in the social plane's friend snapshot (`chirp:social:friends:<receiver>`) and no shared group; friends / same-group / yourself / NPC receivers are exempt; a missing Redis tightens to "not a friend" (only the shared-group half still takes effect); not-logged-in returns `AUTH_FAILED`, a corrupt body returns `INVALID_PARAM` |
+| 2201 / 2202 | `MARK_READ_REQ` / `RESP` | client -> Chat | Mark as read (server-side cursor) |
+| 2203 / 2204 | `GET_READ_RECEIPTS_REQ` / `RESP` | client -> Chat | Query message read receipts |
+| 2205 / 2206 | `GET_UNREAD_COUNT_REQ` / `RESP` | client -> Chat | Unread counts |
+| 2207 | `MESSAGE_READ_NOTIFY` | Chat -> client | Read-event push |
+| 2208 | `TYPING_INDICATOR_NOTIFY` | client <-> Chat | Typing (a bare notify, no response) |
+| 2209 / 2210 | `MESSAGE_ACK` / `MESSAGE_NACK` | client <-> Chat | Delivery ack/nack (same family as `TRACK_MESSAGE` 2211/2212)
+| 2213 / 2214 | `GET_HISTORY_V2_REQ` / `GET_HISTORY_V2_RESP` | client -> Chat | Enhanced history v2 |
+| 2211 / 2212 | `TRACK_MESSAGE_REQ` / `RESP` | client -> Chat | Delivery tracking |
+| 2215-2222 | The full reaction set | client <-> Chat | Add/remove/query + add/remove notifies |
+| 2223 / 2224 | `GET_TYPING_USERS_REQ` / `RESP` | client -> Chat | Who is typing |
+| 2225-2232 | The full edit/delete set | client <-> Chat | Edit, delete, bulk delete + event notifies; `DELETE` (`is_hard_delete=false`) on one's own message is a **recall** (a soft delete inside the default 120-second window for private chat/guild; out-of-window / non-recall channel / repeat recall returns `INVALID_PARAM`), and a moderator delete is not bound by the window |
+| 2233 / 2234 | `GET_MENTION_SUGGESTIONS_REQ` / `RESP` | client -> Chat | @mention candidates |
+| 2235-2238 | Channel block (do not disturb) | client <-> Chat | `SET_CHANNEL_MUTE` / `GET_CHANNEL_MUTES`; only WORLD/GUILD/TEAM can be blocked |
+| 2239-2244 | Message sender blocklist | client <-> Chat | `BLOCK/UNBLOCK_MESSAGE_SENDER`, `GET_BLOCKED_SENDERS`; acts only on message delivery and is fully independent of the social-plane 3011 blocklist |
+| 2245-2247 | Word-list push | client <-> Chat | `WORD_FILTER_FETCH` conditional GET + `WORD_FILTER_UPDATE_NOTIFY` hot update; bodies see chat.proto `WordFilter*` |
+| 2248 / 2249 | Server-side message search | client <-> search | `SEARCH_MESSAGE_REQ` / `RESP`; forwarded via the gateway's per-client pipe to `chirp_search` (5007), a SQLite FTS5 index with composite-cursor pagination; the decision record is in [design-notes/message_search](../design-notes/message_search.md)) |
 
-经 `chirp_game_sdk_gateway` / `chirp_app_sdk_gateway` 接入的客户端,2xxx 消息由 ServiceBridge(原 ChatBridge,search 接线起更名)按目的地转发:业务包到对应 chat 实例,2248 到 search 实例(--search_host 接入;search 桥失败降级不踢客户端),语义与直连相同;游戏平面的跨平面拦截(内容前缀)与防线阈值同样生效。
+For clients integrating through `chirp_game_sdk_gateway` / `chirp_app_sdk_gateway`, 2xxx messages are forwarded by ServiceBridge (formerly ChatBridge, renamed when search was wired in) by destination: business packets go to the matching chat instance, 2248 goes to the search instance (accessed via `--search_host`; a search-bridge failure degrades without kicking the client), with semantics identical to a direct connection; the game plane's cross-plane interception (content prefix) and defense thresholds take effect the same way.
 
-### 社交/语音/实验面(3xxx/4xxx)
+### Social / voice / experimental surfaces (3xxx/4xxx)
 
-3001-3029(社交:好友/黑名单/在线状态/上线通知)与 4001+(语音房)由实验性服务提供,不在受支持路径内;接入前先核对 [能力矩阵](../CAPABILITY_MATRIX.md)。
+3001-3029 (social: friends/blacklist/presence/come-online notifications) and 4001+ (voice rooms) are provided by experimental services and are not on a supported path; check the [capability matrix](../CAPABILITY_MATRIX.md)) before integrating.
 
-| MsgID | 名称 | 方向 | 语义 |
+| MsgID | Name | Direction | Semantics |
 | --- | --- | --- | --- |
-| 3025 / 3026 | `SET_NOTIFY_PREFS_REQ` / `RESP` | 客户端 <-> Social | 好友上线通知开关(按用户存,缺省全开);`prefs` 子消息必带,缺省回 `INVALID_PARAM` |
-| 3027 / 3028 | `GET_NOTIFY_PREFS_REQ` / `RESP` | 客户端 <-> Social | 读取开关;无记录时回全开 |
-| 3029 | `FRIEND_ONLINE_NOTIFY` | Social -> 客户端 | 好友有效状态 OFFLINE→非 OFFLINE 跃迁时的显式上线通知(body 复用 `PresenceNotify`),逐收件人过 3025 开关;花名册 `PRESENCE_NOTIFY`(3021)不受开关影响,登录/SET_PRESENCE/游戏断言三条链路都会触发 |
+| 3025 / 3026 | `SET_NOTIFY_PREFS_REQ` / `RESP` | client <-> Social | Friend come-online notification switch (stored per user, all-on by default); the `prefs` submessage is mandatory, missing returns `INVALID_PARAM` |
+| 3027 / 3028 | `GET_NOTIFY_PREFS_REQ` / `RESP` | client <-> Social | Read the switch; returns all-on when there is no record |
+| 3029 | `FRIEND_ONLINE_NOTIFY` | Social -> client | An explicit come-online notification when a friend transitions from OFFLINE to a non-OFFLINE state (the body reuses `PresenceNotify`), filtered per recipient by the 3025 switch; the roster `PRESENCE_NOTIFY` (3021) is not affected by the switch and fires on all three paths: login, SET_PRESENCE, and game assertions |
 
-### 服务面(Server plane,5xxx)
+### Service plane (Server plane, 5xxx)
 
-`chirp_game_server_gateway`(TCP 8100)在另一个信任面上用同一套 Packet 帧。peer 是游戏后端和内部服务,以 `service_id` + 共享 secret 认证——从来不是用户账号。
+`chirp_game_server_gateway` (TCP 8100) uses the same Packet framing on a different trust surface. Peers are game backends and internal services, authenticated with `service_id` + a shared secret — never a user account.
 
-| MsgID | 名称 | 方向 |
+| MsgID | Name | Direction |
 | --- | --- | --- |
-| 5001 / 5002 | `SERVER_AUTH_REQ` / `SERVER_AUTH_RESP` | 服务 <-> 枢纽 |
-| 5003 / 5004 | `SERVER_HEARTBEAT_PING` / `PONG` | 服务 <-> 枢纽 |
-| 5005 / 5006 / 5007 | `INJECT_MESSAGE_REQ` / `RESP` / `NOTIFY` | 服务 -> 枢纽;NOTIFY 转发给 chat |
-| 5008 / 5009 | `EVENT_PUBLISH_REQ` / `RESP` | 服务 -> 枢纽 |
-| 5010 | `EVENT_DELIVER_NOTIFY` | 枢纽 -> 目标服务 |
-| 5011 / 5012 | `EVENT_ACK_REQ` / `RESP` | 服务 <-> 枢纽 |
-| 5013-5030 | 玩家身份绑定 / 频道订阅 / 未读账本 | 服务 <-> app_chat 主端口(已从 server_gateway 迁出,注意拨对端口) |
-| 5031-5034 | 游戏在线状态开关(`SET_GAME_PRESENCE_ENABLED` / `GET_GAME_PRESENCE`) | 服务 <-> app_chat 主端口(与 5013-5030 同链,经 app gateway 边缘分发) |
-| 5050 / 5051 | `PEER_REGISTER_REQ` / `RESP` | game_chat(spoke)-> app_chat(hub) |
-| 5052 | `CHANNEL_MESSAGE_NOTIFY` | spoke -> hub 频道消息上行 |
-| 5053 | `PEER_INJECT_MESSAGE_NOTIFY` | hub -> spoke 跨平面回复注入 |
+| 5001 / 5002 | `SERVER_AUTH_REQ` / `SERVER_AUTH_RESP` | service <-> hub |
+| 5003 / 5004 | `SERVER_HEARTBEAT_PING` / `PONG` | service <-> hub |
+| 5005 / 5006 / 5007 | `INJECT_MESSAGE_REQ` / `RESP` / `NOTIFY` | service -> hub; the NOTIFY is forwarded to chat |
+| 5008 / 5009 | `EVENT_PUBLISH_REQ` / `RESP` | service -> hub |
+| 5010 | `EVENT_DELIVER_NOTIFY` | hub -> target service |
+| 5011 / 5012 | `EVENT_ACK_REQ` / `RESP` | service <-> hub |
+| 5013-5030 | Player identity binding / channel subscription / unread ledger | service <-> the app_chat main port (moved out of server_gateway, so mind the port you dial) |
+| 5031-5034 | Game presence switch (`SET_GAME_PRESENCE_ENABLED` / `GET_GAME_PRESENCE`) | service <-> the app_chat main port (same chain as 5013-5030, distributed via the app gateway edge) |
+| 5050 / 5051 | `PEER_REGISTER_REQ` / `RESP` | game_chat (spoke) -> app_chat (hub) |
+| 5052 | `CHANNEL_MESSAGE_NOTIFY` | spoke -> hub channel-message uplink |
+| 5053 | `PEER_INJECT_MESSAGE_NOTIFY` | hub -> spoke cross-plane reply injection |
 
-状态:5xxx 契约 Supported;5013-5030 应答在 **app_chat 主端口**(TCP 7000),不在 8100。完整契约(拨出、至少一次事件投递、注入校验、peer 协议)在[服务器平面](../server_plane.md)与 [peer 协议](./peer_protocol.md);完整的 msg-id 到 body 映射在 [核心文档](../CORE.md)。
+Status: the 5xxx contract is Supported; the 5013-5030 responses land on the **app_chat main port** (TCP 7000), not on 8100. The full contract (dial-out, at-least-once event delivery, injection validation, peer protocol) is in [Server plane](../server_plane.md)) and the [peer protocol](peer_protocol.md)); the complete msg-id to body mapping is in the [core doc](../CORE.md)).
 
-### Notification / 设备面(6xxx)
+### Notification / device plane (6xxx)
 
-由 `chirp_app_notification`(TCP 5006 / WS 5016)提供服务,经 `chirp_app_sdk_gateway`(TCP 5200 / WS 5201)转发。body 是 `chirp.app_notification.*` 消息。
+Served by `chirp_app_notification` (TCP 5006 / WS 5016), forwarded via `chirp_app_sdk_gateway` (TCP 5200 / WS 5201). Bodies are `chirp.app_notification.*` messages.
 
-| MsgID | 名称 | Body |
+| MsgID | Name | Body |
 | --- | --- | --- |
-| 6001 / 6002 | `REGISTER_DEVICE_REQ` / `RESP` | `RegisterDeviceRequest` / `RegisterDeviceResponse`(设备注册请求/应答) |
-| 6003 / 6004 | `UNREGISTER_DEVICE_REQ` / `RESP` | `UnregisterDeviceRequest` / `UnregisterDeviceResponse`(设备注销请求/应答) |
-| 6005 / 6006 | `UPDATE_DEVICE_TOKEN_REQ` / `RESP` | `UpdateDeviceTokenRequest` / `UpdateDeviceTokenResponse`(推送 token 更新请求/应答) |
-| 6007 / 6008 | `GET_USER_DEVICES_REQ` / `RESP` | `GetUserDevicesRequest` / `GetUserDevicesResponse`(用户设备列表查询请求/应答) |
-| 6009 / 6010 | `PUSH_NOTIFICATION_REQ` / `RESP` | `PushNotificationRequest` / `PushNotificationResponse`(推送请求/应答) |
+| 6001 / 6002 | `REGISTER_DEVICE_REQ` / `RESP` | `RegisterDeviceRequest` / `RegisterDeviceResponse` (device registration request/response) |
+| 6003 / 6004 | `UNREGISTER_DEVICE_REQ` / `RESP` | `UnregisterDeviceRequest` / `UnregisterDeviceResponse` (device deregistration request/response) |
+| 6005 / 6006 | `UPDATE_DEVICE_TOKEN_REQ` / `RESP` | `UpdateDeviceTokenRequest` / `UpdateDeviceTokenResponse` (push token update request/response) |
+| 6007 / 6008 | `GET_USER_DEVICES_REQ` / `RESP` | `GetUserDevicesRequest` / `GetUserDevicesResponse` (user device list query request/response) |
+| 6009 / 6010 | `PUSH_NOTIFICATION_REQ` / `RESP` | `PushNotificationRequest` / `PushNotificationResponse` (push request/response) |
 
-6011+ 的 id 预留(角标 / 静默 / 偏好设置),尚未实现。
+The IDs from 6011 onward are reserved (badges / silent mode / preferences) and are not yet implemented.
 
-认证规则:
+Authentication rules:
 
-- 在 `app_sdk_gateway` 上,6xxx 设备消息要求已认证会话(否则 `AUTH_FAILED`),且 `user_id` 永远被改写为认证用户——客户端不能替别人注册或查询设备。`UPDATE_DEVICE_TOKEN_REQ` 用 `device_id` 寻址设备,没有 `user_id` 字段,但同样要求认证。
-- 直连 `app_notification` 没有会话概念;它面向可信网络上的内部服务(比如 chat 的推送桥)。配置 `--service_secret` 后,直连调用方也必须先完成 `SERVER_AUTH_REQ`/`SERVER_AUTH_RESP` 共享密钥握手,密钥不符回 `AUTH_FAILED` 并断连,不配则平面保持开放。
-- 真实 provider 投递:`--push_transport http` 经 HTTP(S) 投递 FCM/APNs(端点 `--fcm-endpoint` / `--apns-endpoint` / `--apns-sandbox`,私有 CA `--push_ca_file`,调试豁免 `--push_verify_tls off`);无 token 的设备显式记失败,不再静默记成功。默认 `--push_transport logging` 仅记日志。APNs 官方端点要求 HTTP/2,前置协议转换或走 provider 的 HTTP/1.1 兼容 API。
+- On `app_sdk_gateway`, 6xxx device messages require an authenticated session (otherwise `AUTH_FAILED`), and `user_id` is always rewritten to the authenticated user — a client cannot register or query devices on someone else's behalf. `UPDATE_DEVICE_TOKEN_REQ` addresses the device by `device_id` and has no `user_id` field, but likewise requires authentication.
+- A direct connection to `app_notification` has no session concept; it faces internal services on trusted networks (such as chat's push bridge). With `--service_secret` configured, direct callers must also complete the `SERVER_AUTH_REQ`/`SERVER_AUTH_RESP` shared-secret handshake first — a mismatched secret gets `AUTH_FAILED` and the connection closed; with none set the plane stays open.
+- Real provider delivery: `--push_transport http` delivers to FCM/APNs over HTTP(S) (endpoints `--fcm-endpoint` / `--apns-endpoint` / `--apns-sandbox`, private CA `--push_ca_file`, debug exemption `--push_verify_tls off`); a device with no token explicitly records a failure and is no longer silently recorded as a success. The default `--push_transport logging` only writes logs. The official APNs endpoint requires HTTP/2, so either front it with protocol conversion or use the provider's HTTP/1.1-compatible API.
 
-### 组队(7xxx)
+### Party (7xxx)
 
-`chirp_party`(7500/7501,Experimental)提供组队快照面:7001-7027 覆盖建队/入队/离队/踢人与 PARTY_JOINED/LEFT/KICKED 等 notify(body 为 `chirp.party.*`),邀请制入队、无 join code;状态详见[能力矩阵](../CAPABILITY_MATRIX.md)。
+`chirp_party` (7500/7501, Experimental) provides the party snapshot surface: 7001-7027 covers create/join/leave/kick plus PARTY_JOINED/LEFT/KICKED notifies (bodies are `chirp.party.*`), invite-based joining with no join codes; current status in the [capability matrix](../zh/CAPABILITY_MATRIX.md)).
 
-## 登录流程
+## Login flows
 
-### Gateway 登录(游戏平面)
+### Gateway login (game plane)
 
 ```mermaid
 sequenceDiagram
-    participant C as 客户端
+    participant C as Client
     participant G as game_sdk_gateway
     participant S as game_chat
 
     C->>G: Packet(LOGIN_REQ, LoginRequest)
     G-->>C: Packet(LOGIN_RESP, LoginResponse)
-    G->>S: ServiceBridge 重放 LOGIN_REQ(chat 侧 token_secret 本地验签)
-    Note over C,G: 登录后 2xxx 消息经 ServiceBridge 转发到 game_chat;chat 侧验签拒绝则随后 KICK(chat session rejected)
+    G->>S: ServiceBridge replays LOGIN_REQ (chat verifies the signature locally with token_secret)
+    Note over C,G: After login, 2xxx messages are forwarded by ServiceBridge to game_chat; if chat-side signature verification rejects, a KICK follows (chat session rejected)
 ```
 
-同 `(user_id, platform)` 重复登录会顶掉旧会话:旧连接收到 `KICK_NOTIFY`,新连接的 `LOGIN_RESP.kick_previous = true`;跨 platform 多端共存并互发上下线事件。
+A repeat login with the same `(user_id, platform)` tops off the old session: the old connection receives `KICK_NOTIFY`, and the new connection's `LOGIN_RESP.kick_previous = true`; across platforms, multiple devices coexist and exchange come-online/offline events.
 
-### 直连 Chat 登录
+### Direct Chat login
 
 ```mermaid
 sequenceDiagram
@@ -232,9 +232,9 @@ sequenceDiagram
     S-->>C: Packet(LOGIN_RESP, LoginResponse)
 ```
 
-Gateway 登录与直连 Chat 登录是**两个独立的会话概念**:SDK(`sdks/core`)默认连 gateway(`gateway_port` 默认 5000)走网关登录,登录一次即完成连接与认证;直连 chat 主端口(7000)需显式配置端口,属可选路径。自行开发客户端选一种路径接入,不要叠加。
+Gateway login and direct Chat login are **two independent session concepts**: the SDK (`sdks/core`) connects to the gateway by default (`gateway_port` default 5000) and uses gateway login, so one login completes both connection and authentication; connecting directly to the chat main port (7000) requires explicitly configuring the port and is an optional path. A self-developed client picks one path — do not stack them.
 
-## 聊天消息流程
+## Chat message flow
 
 ```mermaid
 sequenceDiagram
@@ -247,35 +247,35 @@ sequenceDiagram
     S-->>B: Packet(CHAT_MESSAGE_NOTIFY, ChatMessage)
 ```
 
-接收方离线时,Chat 把消息存进离线队列(内存兜底 200 条/桶,可选 Redis)并在 `SEND_MESSAGE_RESP` 回 `TARGET_OFFLINE`;接收方下次登录后补投。以 `--notification_host` 启动 chat 时,离线消息还会经 app_notification 触发一次设备推送(发完即忘;见上文 6xxx 一节)。
+When the receiver is offline, Chat stores the message in the offline queue (an in-memory fallback of 200 per bucket, Redis optional) and returns `TARGET_OFFLINE` in `SEND_MESSAGE_RESP`; the copy is redelivered after the receiver's next login. When chat is started with `--notification_host`, offline messages also trigger one device push through app_notification (fire-and-forget; see the 6xxx section above).
 
-离线队列按设备拆桶(slot = 登录 `platform` 归一化,空设备归 `default` 共享桶,键形与拆分前的 user 级队列一致):发送时接收方无任何在线端,副本落 `default` 桶、任何端的登录先到先得;登录补投弹本设备桶 ∪ `default` 桶(本槽优先);ack 超时回队的副本落当初认领补投的那只设备桶,重投不被其他端的登录截走。纯服务端路由语义,协议与客户端无感。
+The offline queue is bucketed per device (slot = the normalized login `platform`, a device with an empty platform falls into the shared `default` bucket, and the key shape matches the pre-split user-level queue): at send time, when the receiver has no online client at all, the copy lands in the `default` bucket and whichever client logs in first wins; login-time redelivery pops this device's bucket ∪ the `default` bucket (this slot first); a copy requeued after an ack timeout lands in the device bucket that originally claimed the redelivery, so a redelivery is not intercepted by another device's login. This is purely a server-side routing semantic; the protocol and the client feel nothing.
 
-## 投递语义 (Delivery Semantics)
+## Delivery Semantics
 
-发送回码只回答「已受理」,不回答「已送达」。消息生命周期:
+The send response code answers only "accepted", not "delivered". The message lifecycle:
 
 ```text
-Message ──发送──► Accepted ──► Persisted ──► (Queued | Delivered) ──► Acknowledged
+Message ──send──► Accepted ──► Persisted ──► (Queued | Delivered) ──► Acknowledged
 ```
 
-| 语义 | 含义 | 当前对应 |
+| Semantic | Meaning | Current counterpart |
 | --- | --- | --- |
-| BEST_EFFORT | 尽力而为,不保证送达 | 离线的设备推送桥(发完即忘);`TARGET_OFFLINE` 入队后仅下次登录补投,不保证推送送达 |
-| AT_LEAST_ONCE | 至少一次,重投直到确认 | 服务面注入:hub ack + Redis Streams PEL 重放(NPC/系统消息,见 [服务器平面](../server_plane.md)) |
-| DURABLE | 持久化,重启不丢 | 聊天消息落 MySQL 历史(`messages` 表),补投与历史同源 |
+| BEST_EFFORT | Best effort, no delivery guarantee | The offline device push bridge (fire-and-forget); after `TARGET_OFFLINE` is enqueued the only redelivery is at the next login, with no delivery guarantee for the push itself |
+| AT_LEAST_ONCE | At least once, redeliver until acknowledged | Service-plane injection: hub ack + Redis Streams PEL replay (NPC/system messages, see [Server plane](../server_plane.md))) |
+| DURABLE | Persisted, survives a restart | Chat messages are archived to MySQL history (the `messages` table); redelivery and history share the same source |
 
-各回码含义:`OK` = 服务面已受理(可能已持久化,不一定送达);`TARGET_OFFLINE` = 受理并进入离线队列;`KICK`/`RATE_LIMITED` 等 = 未受理。玩家侧是否真正 Delivered/Acknowledged 由离线补投与已读回执(`read_receipts`)回答,与发送回码是两条独立链。
+What the response codes mean: `OK` = accepted by the service plane (possibly already persisted, not necessarily delivered); `TARGET_OFFLINE` = accepted and entered the offline queue; `KICK`/`RATE_LIMITED` and the like = not accepted. Whether the player side really reached Delivered/Acknowledged is answered by offline redelivery and read receipts (`read_receipts`) — two chains independent of the send response code.
 
-投递去重(P1-5):`ChatMessage.delivery_id` 是单次投递的主语——空 = 首次在线投递(与 `message_id` 同义);离线补投副本由服务端铸造独立值;ack 超时回队重投**保留原值**(同一次投递的重投同 id)。消费端分工:UI 幂等按 `message_id`,传输层去重按 `delivery_id`;已读回执是消息级(`message_id` 主语),不随投递次数变化。**投递 ack 显式携带投递主语**:`MessageAck.delivery_id`(及 `MessageNack.delivery_id`)——非空时服务端按投递主语精确匹配在途投递(同一 `message_id` 的多笔投递互不干扰);空 = 旧客户端/首投场景,按 `message_id` 兼容匹配首投。概念模型出处:[Communication Core 设计笔记](../design-notes/communication_core.md)。
+Delivery dedup (P1-5): `ChatMessage.delivery_id` is the subject of a single delivery — empty = the first online delivery (identical in meaning to `message_id`); offline-redelivery copies get an independently minted server value; an ack-timeout requeue redelivery **preserves the original value** (redeliveries of the same delivery share one id). Division of labor on the consumer side: the UI dedupes idempotently by `message_id`, the transport layer dedupes by `delivery_id`; read receipts are message-level (subjected to `message_id`) and do not change with the delivery count. **Delivery acks explicitly carry the delivery subject**: `MessageAck.delivery_id` (and `MessageNack.delivery_id`) — when non-empty the server matches the in-flight delivery exactly by delivery subject (several deliveries of the same `message_id` do not interfere with each other); empty = old clients / first-delivery scenario, matching the first delivery by `message_id` for compatibility. The conceptual model's origin: the [Communication Core design note](../design-notes/communication_core.md)).
 
-发送者类型(ActorKind 收敛):`ChatMessage.sender_kind`(字段 12)区分 `SENDER_USER`(0,普通玩家)/`SENDER_SYSTEM`(1)/`SENDER_NPC`(2)/`SENDER_SERVICE`(3),值域与 `game_server_gateway.SenderKind` 对齐。**客户端不可伪造**:`SendMessageRequest` 无此字段,玩家发送恒为 USER;非玩家身份只能走服务面注入(见 [服务器平面](../server_plane.md)),注入校验拒 UNKNOWN 并按契约直传。该值全链保真:存储(`messages.sender_kind` 列 + Redis 镜像)、离线补投、历史下发、跨平面扇出副本都带原值。BOT/GM 两类身份未实现(无生产者,协议面未预留枚举值)。
+Sender kind (the ActorKind convergence): `ChatMessage.sender_kind` (field 12) distinguishes `SENDER_USER` (0, an ordinary player) / `SENDER_SYSTEM` (1) / `SENDER_NPC` (2) / `SENDER_SERVICE` (3), with the value domain aligned to `game_server_gateway.SenderKind`. **Clients cannot forge it**: `SendMessageRequest` has no such field, so a player's send is always USER; non-player identities can only go through service-plane injection (see [Server plane](../server_plane.md))), and injection validation rejects UNKNOWN and passes the value through per the contract. The value is faithful across the whole chain: storage (a `messages.sender_kind` column + the Redis mirror), offline redelivery, history dispatch and cross-plane fan-out copies all carry the original value. The BOT and GM identities are not implemented (no producer, and no reserved enum value on the protocol surface).
 
-## WebSocket 用法
+## WebSocket usage
 
-用二进制帧,不要发 JSON。
+Use binary frames, do not send JSON.
 
-伪代码:
+Pseudocode:
 
 ```ts
 const loginBody = LoginRequest.encode({
@@ -293,36 +293,36 @@ const packet = Packet.encode({
 ws.send(concat(uint32be(packet.length), packet))
 ```
 
-服务端响应同样是 WebSocket 二进制帧,载荷以 4 字节大端长度前缀开头。
+Server responses are WebSocket binary frames too, with the payload prefixed by a 4-byte big-endian length.
 
-## 错误码
+## Error codes
 
-通用响应码枚举定义在 `proto/common.proto`。
+The common response-code enum is defined in `proto/common.proto`.
 
-| 码 | 名称 | 含义 |
+| Code | Name | Meaning |
 | --- | --- | --- |
-| 0 | `OK` | 成功 |
-| 1 | `INTERNAL_ERROR` | 服务端错误 |
-| 2 | `INVALID_PARAM` | 请求无效(缺字段、频道码非法、不可屏蔽频道等) |
-| 3 | `AUTH_FAILED` | 认证失败(未登录、token 无效) |
-| 4 | `SESSION_EXPIRED` | 会话已失效 |
-| 5 | `USER_NOT_FOUND` | 用户不存在 |
-| 6 | `TARGET_OFFLINE` | 接收方当前不在线(消息已入离线队列) |
-| 7 | `SERVER_UNAVAILABLE` | 服务面目标服务未连接,或其事件队列已满;跨平面回复无在线 spoke 时同码 |
-| 8 | `RATE_LIMITED` | 触发限流:登录/发送模糊闸、频道发送节奏、重复消息禁言 |
-| 9 | `VERSION_MISMATCH` | peer 注册协议版本低于 hub 的 `min_peer_version` |
-| 10 | `WORD_FILTERED` | 敏感词策略为 reject 时拒收(replace 策略静默替换后放行) |
-| 11 | `CONTENT_TOO_LONG` | 内容超过频道码点上限(私聊 200 / 世界 100 / 系统公告 500) |
-| 12 | `MUTED` | 发送者在目标群被 MODERATOR+ 禁言(群频道发送被拒,其他频道不受影响) |
-| 13 | `LEVEL_REQUIRED` | 声明等级(`LoginRequest.level`)低于 `--world_channel_min_level`,世界频道发送被拒(0=门槛关闭,其他频道不受影响) |
-| 14 | `DM_RESTRICTED` | 接收方开启防骚扰私聊限制,陌生人的私聊被拒(消息不落任何存储;开关见 2255-2258) |
+| 0 | `OK` | Success |
+| 1 | `INTERNAL_ERROR` | Server error |
+| 2 | `INVALID_PARAM` | Invalid request (missing field, illegal channel code, non-blockable channel, etc.) |
+| 3 | `AUTH_FAILED` | Authentication failed (not logged in, invalid token) |
+| 4 | `SESSION_EXPIRED` | The session has expired |
+| 5 | `USER_NOT_FOUND` | The user does not exist |
+| 6 | `TARGET_OFFLINE` | The receiver is not online right now (the message has entered the offline queue) |
+| 7 | `SERVER_UNAVAILABLE` | The service-plane target service is not connected, or its event queue is full; the same code is used when a cross-plane reply has no online spoke |
+| 8 | `RATE_LIMITED` | A rate limit was triggered: login/send fuzzy gate, channel send cadence, repeat-message mute |
+| 9 | `VERSION_MISMATCH` | The peer registration protocol version is below the hub's `min_peer_version` |
+| 10 | `WORD_FILTERED` | Rejected when the sensitive-word strategy is reject (the replace strategy silently substitutes and then lets it through) |
+| 11 | `CONTENT_TOO_LONG` | The content exceeds the channel's code-point cap (private chat 200 / world 100 / system announcement 500) |
+| 12 | `MUTED` | The sender is muted in the target group by MODERATOR+ (the group-channel send is rejected; other channels are unaffected) |
+| 13 | `LEVEL_REQUIRED` | The declared level (`LoginRequest.level`) is below `--world_channel_min_level`, so the world-channel send is rejected (0 = the threshold is off; other channels are unaffected) |
+| 14 | `DM_RESTRICTED` | The receiver has anti-harassment DM restrictions on, so a stranger's direct message is rejected (nothing is stored; the switch is 2255-2258) |
 
-SDK 的传输层错误(`NotConnected`/`Timeout`/`Closed`/`Kicked`/`BadResponse`)与上表互相独立:`ec == OK` 不代表业务成功,必须再读 `resp.code()`。
+The SDK transport-layer errors (`NotConnected`/`Timeout`/`Closed`/`Kicked`/`BadResponse`) are independent of the table above: `ec == OK` does not mean business success — you must read `resp.code()` as well.
 
-## 相关文档
+## Related documents
 
-- [接入避坑指南](../guide/integration-pitfalls.md)——服务端防线的阈值、触发条件与客户端应对
-- [整体架构](../architecture.md)
-- [能力矩阵](../CAPABILITY_MATRIX.md)
-- [核心文档](../CORE.md)
-- [peer 注册协议](./peer_protocol.md)
+- [Integration pitfalls guide](../guide/integration-pitfalls.md)) — the thresholds, trigger conditions and client-side responses for the server-side defenses
+- [Overall architecture](../architecture.md))
+- [Capability matrix](../CAPABILITY_MATRIX.md))
+- [Core doc](../CORE.md))
+- [Peer registration protocol](peer_protocol.md))

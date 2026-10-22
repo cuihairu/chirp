@@ -1,10 +1,10 @@
-> 🌐 Language: **中文** (this page) | [English](./QUICKSTART.en.md)
+> 🌐 Language: [中文](zh/QUICKSTART.md)) | **English** (this page)
 
-# Chirp 快速上手
+# Chirp Quickstart
 
-受维护的快速上手指南已迁移到 [guide/getting-started.md](./guide/getting-started.md)。
+The maintained getting-started guide has moved to [guide/getting-started.md](guide/getting-started.md)).
 
-本地最小路径:
+Minimal local path:
 
 ```bash
 ./gen_proto.sh
@@ -13,7 +13,7 @@ cmake --build --preset dev
 ctest --preset dev
 ```
 
-冒烟测试(smoke test):
+Smoke tests:
 
 ```bash
 ./test_services.sh --smoke
@@ -26,7 +26,7 @@ ctest --preset dev
 ./test_services.sh --smoke-game
 ./test_services.sh --smoke-voice
 ./test_services.sh --smoke-party
-./test_services.sh --smoke-search # 检索平面:FTS5 索引 + gateway --search_host 管道(需 MySQL)
+./test_services.sh --smoke-search # search plane: FTS5 index + gateway --search_host pipe (needs MySQL)
 ```
 
-启用非核心服务前,先读 [Core](./CORE.md) 和 [Capability Matrix(能力矩阵)](./CAPABILITY_MATRIX.md)。
+Before enabling non-core services, read [Core](CORE.md)) and the [Capability Matrix](CAPABILITY_MATRIX.md)).

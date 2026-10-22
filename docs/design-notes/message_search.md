@@ -1,185 +1,183 @@
-> 🌐 Language: **中文** (this page) | [English](./message_search.en.md)
+> 🌐 Language: [中文](../zh/design-notes/message_search.md)) | **English** (this page)
 
-# 消息搜索（message search）定案与落地记录
+# Message Search — Decision Record and Delivery Notes
 
-> 状态：2026-10-08 拍板（用户令：按仓决策记录自行定案并记录后实施）。本文是
-> search 面从「进程内索引壳」转正为「服务端搜索服务」的决策记录。落地形态以
-> 本文为准；文中的「拍板原文」指 2026-10-07 TODO 记录的定案建议（野火 IM 参考
-> 件调研后给出），「落地修订」指实施时依代码事实做出的调整——修订处均写明
-> 理由，不回改拍板原文。
+> Status: decided on 2026-10-08 (user instruction: settle it myself per the repo's decision-record convention and record the rationale, then implement). This file is the
+> decision record for the search surface graduating from "an in-process index shell" to "a server-side search service". The delivery shape is
+> authoritative as written here; "decided text" in this file refers to the decision proposal recorded in the 2026-10-07 TODO (written after
+> surveying the Wildfire IM reference), and "delivery revision" refers to adjustments made during implementation on the strength of code facts — every
+> revision states its reason, and the decided text is not rewritten back.
 
-## 1. 背景
+## 1. Background
 
-- `chirp_search`（services/search）转正前是一个 100ms 睡眠壳：io_context 从不
-  run、无监听器，却打印 "listening"；`MessageSearchService` 是进程内倒排索引
-  库（有单测），全仓没有 search 的 wire 协议——无 proto、无客户端、无任何
-  进程拨 5007。
-- 参考件调研（2026-10-07，野火 IM）：野火**没有服务端消息搜索协议**
-  （`t_messages._searchable_key` 写时落库但社区版从不查询），真搜索 = 客户端
-  本地 SQLite。该路线对 chirp 不可达：web / app 客户端均无本地持久化消息库。
+- `chirp_search` (services/search) was a 100 ms sleep shell before it was promoted: the io_context never
+  ran, there was no listener, yet it printed "listening"; `MessageSearchService` was an in-process inverted-index
+  library (with unit tests), and there was no search wire protocol anywhere in the repo — no proto, no client, and no
+  process dialing 5007.
+- Reference survey (2026-10-07, Wildfire IM): Wildfire has **no server-side message search protocol**
+  (`t_messages._searchable_key` is written on insert but the community edition never queries it); real search = client-side
+  local SQLite. That route is unreachable for chirp: neither the web nor the app client has a local persisted message store.
 
-## 2. 定案
+## 2. Decision
 
-### ① 拓扑：客户端 → gateway → search 5007
+### ① Topology: client → gateway → search 5007
 
-- search 服务监听 TCP 5007（端口归位，与 docs/api/overview.md 端口表一致）。
-- 两个客户端边缘（`chirp_game_sdk_gateway` / `chirp_app_sdk_gateway`）各以
-  `--search_host` 接入；接线复用 ServiceBridge 的 per-client pipe 机制（见
-  ⑤）：每客户端一条内部连接，SERVER_AUTH_REQ 服务信任门 + LOGIN_REQ 原样
-  重放，2248 原样转发、应答原样回流。**已落地（2026-10-08，✅）**：两个
-  gateway 的默认分支在 chat 2xxx 通配之前拦截
-  2248（`id == SEARCH_MESSAGE_REQ` 优先判 search 桥），`--search_host` 留空
-  时落回 chat 通配，与接 search 之前的边界行为字节一致；service_id/secret
-  与 chat 桥同门（复用 `--chat_service_id`/`--chat_service_secret` 配置，
-  search 侧 `--gateway_service_secret` 配同值即可）。
-- **与 chat 桥的一个行为差异**：chat 桥失败 = 踢客户端（chat 流量全死，踢了
-  重连最干净）；search 桥失败 = **降级不踢**——客户端保持在线，2248 得到
-  `SERVER_UNAVAILABLE`，search 恢复后下一条查询自动重建管道。搜索是可选增强
-  能力，不允许它的可用性牵连聊天主路径。
+- The search service listens on TCP 5007 (port realigned, consistent with the port table in docs/api/overview.md).
+- Both client edges (`chirp_game_sdk_gateway` / `chirp_app_sdk_gateway`) attach via
+  `--search_host` each; the wiring reuses ServiceBridge's per-client pipe mechanism (see
+  ⑤): one internal connection per client, with the SERVER_AUTH_REQ service trust gate + LOGIN_REQ replayed verbatim,
+  2248 forwarded as-is and replies flowing back as-is. **Delivered (2026-10-08, ✅)**: the default branch of both
+  gateways intercepts
+  2248 before the chat 2xxx catch-all
+  (`id == SEARCH_MESSAGE_REQ` is checked against the search bridge first); when `--search_host` is left empty
+  it falls back to the chat catch-all, byte-identical to the pre-search-attachment boundary behavior; service_id/secret
+  share the chat bridge's gate (reusing the `--chat_service_id`/`--chat_service_secret` configuration; on the search side just
+  set `--gateway_service_secret` to the same value).
+- **One behavioral difference from the chat bridge**: a failed chat bridge = kick the client (all chat traffic dies, so kicking
+  and reconnecting is cleanest); a failed search bridge = **degrade without kicking** — the client stays online, 2248 returns
+  `SERVER_UNAVAILABLE`, and after search recovers the next query rebuilds the pipe automatically. Search is an optional enhancement
+  capability and its availability must not be allowed to drag down the main chat path.
 
-### ② 协议：2248 / 2249（body 在 chat.proto）
+### ② Protocol: 2248 / 2249 (body in chat.proto)
 
-- `SEARCH_MESSAGE_REQ = 2248` / `SEARCH_MESSAGE_RESP = 2249`（2247 词库批之后
-  的自由 id 对）。
-- `SearchMessageRequest{keyword, channel_id?, content_types[], 复合游标
-  before_timestamp+before_message_id, limit≤50}`；`channel_id` 缺省 = 请求者
-  全可见面。
-- `SearchMessageResponse{code, matches[], has_more}`；match 含
+- `SEARCH_MESSAGE_REQ = 2248` / `SEARCH_MESSAGE_RESP = 2249` (the free id pair after the 2247 word-list batch).
+- `SearchMessageRequest{keyword, channel_id?, content_types[], composite cursor
+  before_timestamp+before_message_id, limit≤50}`; a missing `channel_id` = the requester's entire visible surface.
+- `SearchMessageResponse{code, matches[], has_more}`; a match carries
   message_id/channel/channel_type/sender/sender_kind/msg_type/timestamp/content
-  **原文**——高亮由客户端做，服务端不回 snippet（避免服务端截断语义进协议）。
-- 游标语义：`(before_timestamp, before_message_id)` 复合键，排序
-  `timestamp DESC, message_id DESC`，与既有 GET_HISTORY 的方向一致。
+  **verbatim** — highlighting is done client-side, and the server does not return a snippet (to avoid pushing server-side truncation semantics into the protocol).
+- Cursor semantics: a `(before_timestamp, before_message_id)` composite key, ordered by
+  `timestamp DESC, message_id DESC`, consistent in direction with the existing GET_HISTORY.
 
-### ③ 索引：search 进程内 SQLite FTS5 持久索引
+### ③ Index: search-side in-process SQLite FTS5 persistent index
 
-- vcpkg `sqlite3[fts5]`，零新运维件（无 ES、无独立索引进程）。
-- 启动时 MySQL `messages` 表全量回填 + 100ms 壳循环改为 `id` 游标 tail 增量
-  （转正前打印假 listening 的睡眠循环正好改造成 tail 泵）。
-- **召回/撤回消息不索引**：chat 的撤回墓碑写 `is_recalled=1, content=''`，回
-  填与 tail 都跳过 `is_recalled=1`；对「先索引后撤回」的窗口，查询时按候选
-  message_id 批量核对 MySQL（单条 `IN` 查询），命中撤回即从结果剔除并顺手从
-  索引删除（自愈）。MySQL 不可达 ⇒ 查询失败关闭（INTERNAL_ERROR），不降级为
-  「按索引裸答」。
+- vcpkg `sqlite3[fts5]`, with zero new operational components (no ES, no separate index process).
+- Full backfill from the MySQL `messages` table at startup, plus the 100 ms shell loop turned into an incremental
+  `id`-cursor tail pump (the sleep loop that used to print a fake "listening" was perfectly repurposed into a tail pump).
+- **Recalled/deleted messages are not indexed**: chat writes the recall tombstone as `is_recalled=1, content=''`, and both
+  backfill and tail pump skip `is_recalled=1`; for the "indexed first, recalled later" window, queries cross-check candidates in batch
+  against MySQL by message_id (a single `IN` query), drop recalled hits from the results and incidentally delete them from the
+  index (self-healing). MySQL unreachable ⇒ the query fails closed (INTERNAL_ERROR); it does not degrade into
+  "answer raw from the index".
 
-### ④ 可见性：同库直读 MySQL 判定
+### ④ Visibility: direct MySQL read for the decision
 
-**落地修订（如实记录）**：拍板原文写「DM sender/receiver + 群 group_members
-判定」。实施时核实：chat 的群（2101-2121，`GroupManager`）是**纯进程内存**
-态——`groups`/`group_members` 两张 MySQL 表在 init_db.sql 里建了但全仓无一行
-代码读写，群成员判定无从「同库直读」。而既有的 `GET_HISTORY` 对群/公会/队伍
-频道本就无成员门槛（`ValidateGetHistoryRequest` 只对 PRIVATE 校验
-`userA|userB` 包含关系）。让 search 比 GET_HISTORY 更严会让两个读路径权限倒
-挂。故本批落地为：
+**Delivery revision (recorded honestly)**: the decided text said "DM sender/receiver + group group_members
+checks". On implementation it was verified: chat's groups (2101-2121, `GroupManager`) are **pure in-process memory**
+state — the two MySQL tables `groups`/`group_members` are created in init_db.sql but not a single line of code
+in the whole repo reads or writes them, so there is no way to do group-membership checks by "direct same-DB read". And the existing `GET_HISTORY` already has no membership gate for
+group/guild/team channels (`ValidateGetHistoryRequest` only validates the
+`userA|userB` containment relation for PRIVATE). Making search stricter than GET_HISTORY would invert the
+permissions of the two read paths. So this batch delivered as:
 
-- **PRIVATE**：请求者必须是频道 `userA|userB` 的一侧（与 GET_HISTORY 同规
-  则），由 MySQL `messages` 行的 sender/receiver 直读判定（权威事实，索引列
-  只是镜像）；
-- **其余频道**（WORLD/GUILD/TEAM/SYSTEM/MARQUEE 与 chat 群频道）：对齐
-  GET_HISTORY 现行基线——已认证即可见；
-- 群成员门槛收紧列为 chat 群持久化落地时的后续项（届时 group_members 表成为
-  真数据源，search 判定切过去即可，协议不变）。
+- **PRIVATE**: the requester must be one side of the channel's `userA|userB` (same rule as
+  GET_HISTORY), decided by a direct read of the sender/receiver on the MySQL `messages` row (the authoritative fact; the index columns
+  are only a mirror);
+- **All other channels** (WORLD/GUILD/TEAM/SYSTEM/MARQUEE and chat group channels): aligned to
+  GET_HISTORY's current baseline — visible to anyone authenticated;
+- Tightening the group-membership gate is listed as a follow-up for when chat group persistence lands (at that point the group_members table becomes
+  real data, search can switch its check over, and the protocol does not change).
 
-**实施补充（2026-10-08，服务端落地时定）**：过滤发生在查询时（撤回剔除 +
-PRIVATE 门槛），而 2248 的翻页游标按「返回的命中」推进——若一页候选全被过
-滤，客户端拿不到任何命中就没有游标可推进，重发同查询会原地打转。故服务端
-在**内部翻页**：攒满 limit 条可见命中或索引扫尽才应答，`has_more` = 原始候
-选未扫尽。下一页候选至少还有原始命中，客户端游标（ts,id 复合）单调前进，
-必然收敛；被过滤最多的那页之后可能是 0 命中 + has_more=false，语义仍是
-「确实没有了」。
+**Implementation supplement (2026-10-08, settled when the server side landed)**: filtering happens at query time (recall removal +
+PRIVATE gate), while 2248's pagination cursor advances on "the hits that were returned" — if every candidate on a page is
+filtered out, the client gets no hits and therefore has no cursor to advance, so resending the same query spins in place. So the server
+**paginates internally**: it only replies once it has gathered `limit` visible hits or exhausted the index scan, with `has_more` = the original candidates
+not yet exhausted. The next page's candidates have at least some original hits, so the client cursor (composite ts,id) advances monotonically
+and is guaranteed to converge; the page after the most-filtered one may be 0 hits + has_more=false, and the semantics are still
+"there really is nothing left".
 
-否决记录：客户端本地搜（无可达成本，见 §1）、ES 外置（运维面不匹配）、经
-hub 事件面查询（req/resp 语义不符）。
+Rejection record: client-side local search (no attainable cost profile, see §1), externalized ES (operations surface does not match), querying via the
+hub's event surface (does not fit req/resp semantics).
 
-### ⑤ 顺手把 ChatBridge 更名 ServiceBridge ✅（2026-10-08 落地）
+### ⑤ Renamed ChatBridge to ServiceBridge along the way ✅ (delivered 2026-10-08)
 
-search 复用 per-client pipe 机制后，「ChatBridge」这个名字对 search 管道就
-是错的。更名 `ServiceBridge`（`libs/network/service_bridge.{h,cc}`），chat
-与 search 各一个实例；chat 实例保持既有踢人语义（`kKickClient`），search 实
-例用降级语义（`kDegrade`）。协议语义零变化。
+Once search reused the per-client pipe mechanism, the name "ChatBridge" was
+wrong for the search pipe. Renamed to `ServiceBridge` (`libs/network/service_bridge.{h,cc}`), with one instance each
+for chat and for search; the chat instance keeps the existing kick semantics (`kKickClient`), and the search instance
+uses degrade semantics (`kDegrade`). Zero change in protocol semantics.
 
-**落地补充（按实际实现记录）**：两种失败语义由同一个类的构造开关
-`search_degrade`（bool，非枚举）区分。降级的完整链路全部收在桥内，gateway
-边缘零合成逻辑：
+**Delivery supplement (recorded as actually implemented)**: the two failure semantics are distinguished by the same class's
+constructor switch
+`search_degrade` (a bool, not an enum). The entire degrade chain is contained inside the bridge, with
+zero synthesizing logic on the gateway edge:
 
-- `Attach` 留存每客户端登录凭据（token/device + 客户端弱引用）；
-- 无管道的 2248 → 当场合成 `SEARCH_MESSAGE_RESP(SERVER_UNAVAILABLE)`（sequence
-  沿用请求）发回客户端，不触碰连接，并按凭据就地重拨；
-- 握手期间 2248 进有界挂起队列（64），队列打满 = 后端持续无响应 → 整管降级
-  （挂起查询逐条补降级回码），当前这条也回码；
-- 管道中途断开（含握手被拒/超时）→ 挂起查询逐条补 `SERVER_UNAVAILABLE`、
-  凭据留存，客户端下一条查询自动重拨（重放原 token/device）；
-- chat 实例路径逐字节保持旧行为（踢人 reason 字符串含在内：`chat
-  unavailable`/`chat session lost`/`chat session rejected`）。
+- `Attach` retains each client's login credentials (token/device + a weak reference to the client);
+- a 2248 with no pipe → synthesize `SEARCH_MESSAGE_RESP(SERVER_UNAVAILABLE)` on the spot (sequence
+  reusing the request's) and send it back to the client, without touching the connection, and redial on the spot with the credentials;
+- a 2248 during the handshake enters a bounded pending queue (64); queue full = the backend keeps not responding → the whole pipe degrades
+  (each pending query is backfilled with a degraded return code), and the current one also gets a code;
+- the pipe drops mid-stream (including a rejected/timed-out handshake) → each pending query is backfilled with `SERVER_UNAVAILABLE`,
+  credentials are retained, and the client's next query redials automatically (replaying the original token/device);
+- the chat instance's path is preserved byte for byte (including the kick reason strings: `chat
+  unavailable`/`chat session lost`/`chat session rejected`).
 
-单测：`tests/unit/service_bridge_test.cc`（29 例，含降级四态：不可达回码、
-断管排空挂起+重拨、队列满整管降级、握手被拒不踢），原 chat 桥用例原样迁入。
+Unit tests: `tests/unit/service_bridge_test.cc` (29 cases, including the four degrade states: unreachable returns a code,
+dropped pipe drains pending + redials, full queue degrades the whole pipe, a rejected handshake does not kick); the original chat bridge cases were moved over verbatim.
 
-## 3. 同批项：群昵称 alias（与 search 同批，同属检索/展示面）
+## 3. Same-batch item: group nickname alias (same batch as search, both belonging to the retrieval/presentation surface)
 
-- 野火 `t_group_member._alias` 同款：群成员可设自己在群内的显示别名。
-- 落地三件套：
-  - **schema**：`group_members.alias` 列（init_db.sql 新库 + 存量库升级脚本；
-    现状该表无代码读写，本批仍不改这一点——列先行，持久化写入随 chat 群持久
-    化走，见 ④ 修订）；
-  - **设置面**：`SET_MEMBER_ALIAS_REQ/RESP = 2122/2123` + 全群通知
-    `GROUP_MEMBER_ALIAS_UPDATED_NOTIFY = 2124`；权限 = 本人，或 MODERATOR+
-    设他人；
-  - **渲染两处消费**：成员列表（`GET_GROUP_MEMBERS_RESP` 的 `GroupMember.alias`）
-    与群聊消息发送者名（客户端按成员列表映射，协议零改动）。
-- 别名存 `GroupManager` 内存态（与群本体同一生命周期——群在重启后本就丢失，
-  这是既有边界，不因 alias 假装更持久）。
+- Same shape as Wildfire's `t_group_member._alias`: a group member can set their own display alias inside the group.
+- Three-piece delivery:
+  - **schema**: the `group_members.alias` column (new DB in init_db.sql + an upgrade script for existing DBs;
+    currently there is no code reading or writing that table, and this batch still does not change that — the column comes first, and persisted writes come with chat group persistence
+    delivery, see the ④ revision);
+  - **setting surface**: `SET_MEMBER_ALIAS_REQ/RESP = 2122/2123` + a whole-group notification
+    `GROUP_MEMBER_ALIAS_UPDATED_NOTIFY = 2124`; permission = the person themselves, or a MODERATOR+ setting someone else's;
+  - **two consumption points in rendering**: the member list (`GroupMember.alias` in `GET_GROUP_MEMBERS_RESP`)
+    and the sender name of group-chat messages (the client maps from the member list, zero protocol change).
+- The alias is stored in `GroupManager`'s in-memory state (same lifecycle as the group itself — a group is already lost after a restart,
+  which is the existing boundary, and alias does not make it look more durable than it is).
 
-## 4. 不并批项
+## 4. Not batched in
 
-- **桌面在线抑制手机推送**（野火 MessagesPublisher isPcOnline 同款）：不随本
-  批，留 search 落地后单独排批（用户令 2026-10-08）。
-- 原型 03 修订稿二审维持挂起等用户审核，不代审、不动（用户令 2026-10-08）。
+- **Suppressing mobile push when desktop is online** (same shape as Wildfire's MessagesPublisher isPcOnline): not part of this
+  batch, to be scheduled separately after search lands (user instruction 2026-10-08).
+- The second review of prototype 03's revision draft remains pending user review; not reviewed on the user's behalf, not touched (user instruction 2026-10-08).
 
-## 5. SDK 接线（word_filter 批先例：proto → 三端 SDK → 服务端链路）✅（2026-10-08 落地）
+## 5. SDK wiring (word_filter batch precedent: proto → three SDKs → server chain) ✅ (delivered 2026-10-08)
 
-| 端 | 落地 |
+| End | Delivery |
 |---|---|
-| C++ core（sdks/core） | `ChatClient::SearchMessages`（keyword 必填 + channel_id/content_types/复合游标/limit 全选项）+ `SetMemberAlias`（ca1bf4b）；未连接报 `NotConnected`、空 keyword 短路 `InvalidParam` 不发包、全选项线往返用例（0fca589） |
-| TS 双包 | 游戏面 sdks/ts（ca1bf4b）与伴侣面 apps/shared/protocol `@chirp/app-protocol`（0fca589，sdks/ 与 apps/ 边界裁决要求两份协议包同步）各落地 `searchMessages`/`setMemberAlias` + 2124 `onGroupMemberAliasUpdated` 通知扇出（含不可解码体忽略与抛错监听隔离）+ `SEARCH_MESSAGE`/`SET_MEMBER_ALIAS` 规格，并各补同形锁定测试向量（全选项往返与解码、连接态先于 keyword 的校验序、alias 清除回显、通知扇出、规格编解码往返） |
-| C#（sdks/unity） | `SearchMessagesAsync`/`SetMemberAliasAsync` + `Specs.SearchMessage`/`SetMemberAlias`（ca1bf4b；contentTypes 可空标注修正 0fca589，Nullable enable + TreatWarningsAsErrors 下原写法不可编译） |
+| C++ core (sdks/core) | `ChatClient::SearchMessages` (keyword required + all of channel_id/content_types/composite cursor/limit optional) + `SetMemberAlias` (ca1bf4b); returns `NotConnected` when not connected, short-circuits an empty keyword as `InvalidParam` without sending a packet, and has an all-options wire round-trip case (0fca589) |
+| TS dual packages | The game side in sdks/ts (ca1bf4b) and the companion side in apps/shared/protocol as `@chirp/app-protocol` (0fca589, required by the sdks/ vs apps/ boundary ruling to keep the two protocol packages in sync) each delivered `searchMessages`/`setMemberAlias` + the 2124 `onGroupMemberAliasUpdated` notify fan-out (including ignoring undecodable bodies and isolating throwing listeners) + the `SEARCH_MESSAGE`/`SET_MEMBER_ALIAS` specs, and each added the same-shape lock-test vectors (all-options round-trip and decode, the validation order where connection state comes before keyword, alias clear echo, notify fan-out, spec encode/decode round-trip) |
+| C# (sdks/unity) | `SearchMessagesAsync`/`SetMemberAliasAsync` + `Specs.SearchMessage`/`SetMemberAlias` (ca1bf4b; the nullable annotation fix for contentTypes in 0fca589 — the original form would not compile with Nullable enabled + TreatWarningsAsErrors) |
 
-Android / iOS / 鸿蒙不在本批（iOS/鸿蒙按 2026-10-05 令只写代码有空闲才做；
-Android 原生管线另有节奏）。web/desktop 消费侧（ChatApi + alias 设置面 +
-渲染两处消费）为下一增量：ChatApi 层两端已就位（desktop 226d912；
-web 补齐 `searchMessages`/`setMemberAlias` + start() 订阅 2124 扇出
-`onGroupMemberAliasUpdated` 刷新群列表，畸形体静默丢弃，vitest 7 例——
-搜索三态短路/透传、alias 短路回显、2124 合法刷新/畸形忽略）。**web 搜索
-界面已落地（2026-10-09）**：`SearchDialog`（侧栏入口）——关键词必填、
-「加载更多」携带本页末条 (timestamp, message_id) 游标；私聊命中本地补会话
-后跳转、群命中本地有会话才可跳、其余频道（世界/系统等 web 无会话面）只读
-展示；SERVER_UNAVAILABLE 显示「搜索服务未连接」；高亮按决策记录客户端做，
-首版从简未做。vitest 5 例（空态禁用/命中渲染与私聊跳转/游标翻页/降级文案/
-空结果）。desktop 搜索界面（9310b7f）与 2248 端到端 smoke 腿均已落地；
-alias 设置面与渲染两处亦收口（2026-10-10）：两端 ChatApi 增群昵称快照
-（`groupAliasOf` + `subscribeGroupAlias`；名册拉取与 2124 通知双路维护，
-空串=清除移出）；设置面——web 群设置成员行 prompt（本人随时可设、
-MODERATOR+ 设他人，权限口径同禁言；预填当前值、空串清除），desktop 行内
-输入（wry WebView 无 prompt，同禁言时长输入先例）；渲染两处——成员列表行
-昵称优先（web 真实名作从属行、desktop 括注本名），群聊消息发送者名按快照
-映射、回退本名，2124 即时重渲。web vitest 258/258、双端 typecheck 绿。
-search 批的 web/desktop 消费链至此全部收口。
+Android / iOS / HarmonyOS are not in this batch (per the 2026-10-05 instruction, iOS/HarmonyOS only get code written when there is free time;
+the Android native pipeline runs on a separate rhythm). The web/desktop consumption side (ChatApi + the alias setting surface +
+the two consumption points in rendering) is the next increment: the ChatApi layer is in place on both ends (desktop 226d912;
+web filled in `searchMessages`/`setMemberAlias` + start() subscribing to the 2124 fan-out
+`onGroupMemberAliasUpdated` to refresh the group list, with malformed bodies silently dropped, 7 vitest cases —
+the three search short-circuit/transparent cases, the alias short-circuit echo, 2124 valid refresh/malformed ignore). **The web search
+UI has landed (2026-10-09)**: `SearchDialog` (sidebar entry) — keyword required,
+"load more" carrying the (timestamp, message_id) cursor of the last item on the page; a private-chat hit jumps after locally backfilling the
+conversation, a group hit jumps only if a local conversation exists, and other channels (world/system etc., which have no conversation surface on web) are read-only
+display; SERVER_UNAVAILABLE shows "search service not connected"; highlighting per the decision record is done client-side,
+and the first version kept it simple by not doing it. 5 vitest cases (empty state disabled/hit rendering and private-chat jump/cursor paging/degraded copy/
+empty result). The desktop search UI (9310b7f) and the 2248 end-to-end smoke leg have both landed;
+the alias setting surface and the two rendering points are also closed (2026-10-10): both ends' ChatApi gained a group-nickname snapshot
+(`groupAliasOf` + `subscribeGroupAlias`; maintained both by roster pulls and 2124 notifications,
+empty string = clear and remove); the setting surface — a prompt on web's group settings member row (the person can set theirs at any time,
+MODERATOR+ can set others', same permission line as mute; prefilled with the current value, empty string clears), and inline
+input on desktop (wry WebView has no prompt, same precedent as mute-duration input); the two rendering points — the member list row
+prefers the nickname (web shows the real name as a subordinate line, desktop annotates the real name in brackets), the sender name of group-chat messages maps via the snapshot
+with a fallback to the real name, and 2124 re-renders immediately. web vitest 258/258, typecheck green on both ends.
+The web/desktop consumption chain for the search batch is now fully closed.
 
-## 6. 验收口径
+## 6. Acceptance criteria
 
-- ✅ 双树构建 0 warning、全量 ctest（44 套件）、既有 smoke 腿全绿；
-  search 新增单测覆盖分词、FTS 索引、可见性过滤（含 DM 权限剔除）、
-  游标、二连接篡改防线与降级合成；alias 新增单测覆盖权限与通知
-  （1ab9c02；service_bridge 28 例含降级四态 0bd1ded）。
-- ✅ `chirp_search` 起服真实监听 5007（SERVER_AUTH_REQ 信任门 +
-  LOGIN 重放 + 检索 + 100ms tail 泵 + 可选 metrics，1ab9c02），
-  gateway `--search_host` 接入就位；**客户端 2248 端到端往返 smoke 腿已立
-  （2026-10-09）**：`--smoke-search`（test_services.sh）——chat(MySQL) +
-  chirp_search + game_sdk_gateway 双桥真实进程，种子私聊消息经 chat 桥落
-  MySQL，`chirp_chat_send_client --act search` 经 gateway search 桥发 2248
-  重试命中（tail 泵延迟吸收，上限 10s）；MySQL 按生效坐标探测不可达即跳过
-  （CI service 容器走二进制默认值接入）；CI smoke job 增同名步骤；本地实跑
-  命中 `code=0 matches=1`。注意：存量库需 `scripts/upgrade_db_messages.sql`
-  补 sender_kind 列，否则 StoreMessage 静默失败（本地库踩过）。
-- ✅ 文档对账：本文件 §5、docs/api/overview.md（2122-2124 行、
-  2248/2249 行、5007 状态行）、CAPABILITY_MATRIX（两边缘行）、
-  TODO.md（search 拍板条目）随各增量同步。
+- ✅ Both trees build with 0 warnings, full ctest (44 suites), and all existing smoke legs green;
+  search's new unit tests cover tokenization, the FTS index, visibility filtering (including DM permission removal),
+  the cursor, the two-connection tampering defense line and degrade synthesis; alias's new unit tests cover permissions and notifications
+  (1ab9c02; service_bridge 28 cases including the four degrade states 0bd1ded).
+- ✅ `chirp_search` starts and really listens on 5007 (SERVER_AUTH_REQ trust gate +
+  LOGIN replay + retrieval + 100 ms tail pump + optional metrics, 1ab9c02),
+  and gateway `--search_host` attachment is in place; **the client 2248 end-to-end round-trip smoke leg is now standing
+  (2026-10-09)**: `--smoke-search` (test_services.sh) — chat(MySQL) +
+  chirp_search + game_sdk_gateway as real processes with both bridges, a seeded private-chat message lands in MySQL via the chat bridge, and `chirp_chat_send_client --act search` sends 2248 via the gateway search bridge
+  and hits after retrying (tail pump latency absorbed, capped at 10 s); MySQL is probed at the effective coordinates and skipped when unreachable
+  (CI service containers connect via the binary defaults); a same-named step was added to the CI smoke job; a local real run
+  hit `code=0 matches=1`. Note: existing DBs need `scripts/upgrade_db_messages.sql`
+  to add the sender_kind column, otherwise StoreMessage fails silently (hit this locally).
+- ✅ Documentation reconciliation: this file §5, docs/api/overview.md (the 2122-2124 rows,
+  the 2248/2249 rows, the 5007 status row), CAPABILITY_MATRIX (the two edge rows),
+  and TODO.md (the search decision entry) were kept in sync with each increment.

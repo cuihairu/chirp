@@ -1,61 +1,61 @@
-> 🌐 Language: **中文** (this page) | [English](./INTEGRATION_TEST_FIXES.en.md)
+> 🌐 Language: [中文](../zh/design-notes/INTEGRATION_TEST_FIXES.md)) | **English** (this page)
 
-# 集成测试修复总结
+# Integration Test Fix Summary
 
-## 概览
+## Overview
 
-集成测试的搭建围绕当前仓库现状做了稳定化:
+The integration test setup was stabilized around the current state of the repository:
 
-- 集成目标干净构建
-- 默认测试路径跑一次 protobuf/帧格式冒烟检查
-- 可选的连接路径做一次真实的网关登录冒烟
-- 包装脚本现在可以脱离 Docker 直接拉起本地 `auth` 和 `gateway` 二进制
+- The integration target builds cleanly
+- The default test path runs a protobuf/frame-format smoke check once
+- The optional connection path performs a real gateway login smoke
+- The wrapper script can now bring up the local `auth` and `gateway` binaries directly, without Docker
 
-## 当前行为
+## Current behavior
 
-`tests/integration/integration_test.cc` 现在提供:
+`tests/integration/integration_test.cc` now provides:
 
 1. `Protobuf Encoding`
-2. 带 `--connect` 时的 `Basic Connection`
+2. `Basic Connection` when `--connect` is passed
 
-连接测试:
+The connection test:
 
-- 打开到网关的 TCP 连接
-- 发送 `LOGIN_REQ`
-- 等待 `LOGIN_RESP`
-- 失败时以非零码退出
+- Opens a TCP connection to the gateway
+- Sends `LOGIN_REQ`
+- Waits for `LOGIN_RESP`
+- Exits with a non-zero code on failure
 
-## 当前入口
+## Current entry points
 
-默认冒烟:
+Default smoke:
 
 ```bash
 bash tests/run_integration_tests.sh
 ```
 
-Docker 支撑的连接冒烟:
+Docker-backed connection smoke:
 
 ```bash
 bash tests/run_integration_tests.sh --docker --connect
 ```
 
-本地二进制的连接冒烟:
+Connection smoke with local binaries:
 
 ```bash
 bash tests/run_integration_tests.sh --local-services --gateway-port 5500 --auth-port 6500
 ```
 
-## 脚本改动
+## Script changes
 
-`tests/run_integration_tests.sh` 现在:
+`tests/run_integration_tests.sh` now:
 
-- 优先复用已经能用的系统依赖
-- 不强制 `vcpkg install`
-- 明确想要该行为时接受 `--use-vcpkg`
-- 可以启动 Docker 服务
-- 可以启动本地 `chirp_auth` 和 `chirp_gateway`
-- 退出时清理本地子进程
+- Prefers reusing system dependencies that already work
+- Does not force `vcpkg install`
+- Accepts `--use-vcpkg` when that behavior is explicitly wanted
+- Can start Docker services
+- Can start local `chirp_auth` and `chirp_gateway`
+- Cleans up local child processes on exit
 
-## 备注
+## Notes
 
-这仍然是冒烟覆盖,不是对全部 chat、social、voice 流程的服务间完整验证。
+This is still smoke coverage, not a complete service-to-service verification of every chat, social and voice flow.

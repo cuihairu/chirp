@@ -1,26 +1,26 @@
-> 🌐 Language: **中文** (this page) | [English](./installation.en.md)
+> 🌐 Language: [中文](../zh/guide/installation.md)) | **English** (this page)
 
-# 安装指南
+# Installation Guide
 
-> 状态说明:本页是环境搭建指引,但当前受支持的运行时目标仍是核心 `gateway + auth + chat` 路径。最基本的本地构建可以不要 Redis 和 MySQL;增强版 auth/chat 路径需要额外的本地依赖。
+> Status note: this page is an environment setup guide, but the currently supported runtime target is still the core `gateway + auth + chat` path. The most basic local build needs neither Redis nor MySQL; the enhanced auth/chat path needs extra local dependencies.
 
-本指南覆盖从源码安装 Chirp 和搭建开发环境。
+This guide covers installing Chirp from source and setting up the development environment.
 
-## 系统要求
+## System requirements
 
-### Linux 系统(Ubuntu 22.04+)
+### Linux (Ubuntu 22.04+)
 
-**必需:**
-- GCC 13+ 或 Clang 17+
-- CMake 3.21 或更新
-- Ninja 构建系统
-- Protocol Buffers 编译器
+**Required:**
+- GCC 13+ or Clang 17+
+- CMake 3.21 or newer
+- The Ninja build system
+- The Protocol Buffers compiler
 
-**扩展运行时路径可选:**
-- Redis(缓存与会话存储)
-- MySQL(数据库服务)
+**Optional, for the extended runtime path:**
+- Redis (cache and session storage)
+- MySQL (database service)
 
-**安装:**
+**Installation:**
 ```bash
 sudo apt-get update
 sudo apt-get install -y \
@@ -37,13 +37,13 @@ sudo apt-get install -y \
     pkg-config
 ```
 
-### macOS 系统(12+)
+### macOS (12+)
 
-**必需:**
-- Xcode Command Line Tools(Apple 命令行工具)
-- Homebrew(macOS 包管理器)
+**Required:**
+- Xcode Command Line Tools
+- Homebrew (macOS package manager)
 
-**安装:**
+**Installation:**
 ```bash
 # Install dependencies
 brew install cmake protobuf abseil openssl mysql redis
@@ -54,14 +54,14 @@ brew services start redis
 brew services start mysql
 ```
 
-### Windows 系统(11+)
+### Windows (11+)
 
-**必需:**
-- Visual Studio 2022 17.10 或更新
-- vcpkg(C++ 依赖管理器)
-- CMake(构建工具)
+**Required:**
+- Visual Studio 2022 17.10 or newer
+- vcpkg (C++ dependency manager)
+- CMake (build tool)
 
-**安装:**
+**Installation:**
 ```powershell
 # Install vcpkg
 git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
@@ -73,25 +73,25 @@ git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
 # 不需要手工 vcpkg install 清单。
 ```
 
-## 从源码构建
+## Building from source
 
-### 1. 克隆仓库
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/cuihairu/chirp.git
 cd chirp
 ```
 
-### 2. 生成 Protocol Buffer 文件
+### 2. Generate the Protocol Buffer files
 
 ```bash
 chmod +x gen_proto.sh
 ./gen_proto.sh
 ```
 
-这会从 `proto/` 下的 `.proto` 定义生成 C++ 文件到 `proto/cpp/proto/` 目录。
+This generates C++ files from the `.proto` definitions under `proto/` into the `proto/cpp/proto/` directory.
 
-### 3. 用 CMake 配置
+### 3. Configure with CMake
 
 ```bash
 mkdir build && cd build
@@ -107,35 +107,35 @@ cmake -G Ninja -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake ..
 ```
 
-### 4. 构建
+### 4. Build
 
 ```bash
 cmake --build . --parallel
 ```
 
-macOS 上用 vcpkg 时,还要加:
+On macOS with vcpkg, also add:
 
 ```bash
 -DCMAKE_OSX_ARCHITECTURES="$(uname -m)"
 ```
 
-### 5. 跑测试(可选)
+### 5. Run the tests (optional)
 
 ```bash
 ctest --output-on-failure
 ```
 
-## Docker 构建
+## Docker build
 
-### 用 Docker Compose(推荐)
+### Using Docker Compose (recommended)
 
 ```bash
 docker compose up -d
 ```
 
-### 手动 Docker 构建
+### Manual Docker build
 
-单服务镜像走 `docker/Dockerfile.service`,`SERVICE` 构建参数选目标(可用值见 `docker-compose.yml`,如 `game_sdk_gateway`、`chat_enhanced`、`app_auth`):
+Single-service images go through `docker/Dockerfile.service`; pick the target with the `SERVICE` build argument (valid values are listed in `docker-compose.yml`, e.g. `game_sdk_gateway`, `chat_enhanced`, `app_auth`):
 
 ```bash
 docker build --build-arg SERVICE=game_sdk_gateway -t chirp/gateway:latest -f docker/Dockerfile.service .
@@ -147,19 +147,19 @@ docker build --build-arg SERVICE=chat_enhanced -t chirp/chat:latest -f docker/Do
 docker compose build
 ```
 
-## 配置
+## Configuration
 
-### 环境变量
+### Environment variables
 
-只有 chat 的存储层读环境变量,`CHIRP_` 前缀一族(`CHIRP_REDIS_HOST` / `CHIRP_REDIS_PORT` / `CHIRP_MYSQL_HOST` / `CHIRP_MYSQL_PORT` / `CHIRP_MYSQL_DATABASE` / `CHIRP_MYSQL_USER` / `CHIRP_MYSQL_PASSWORD` / `CHIRP_MIGRATION_*` / `CHIRP_DELIVERY_TRACKING_ENABLED`),读取点在 `services/shared/chat/src/message_store_config.cc`。另一族是崩溃处理器读的 `CHIRP_CRASH_DIR` / `CHIRP_CRASH_UPLOAD_URL` / `CHIRP_CRASH_HANDLER`(`libs/common/crash_handler.cc`,所有服务的 main 都接线,属进程级行为而非存储层)。除这两族外,其余服务不读环境变量。
+Only the chat storage layer reads environment variables, the `CHIRP_`-prefixed family (`CHIRP_REDIS_HOST` / `CHIRP_REDIS_PORT` / `CHIRP_MYSQL_HOST` / `CHIRP_MYSQL_PORT` / `CHIRP_MYSQL_DATABASE` / `CHIRP_MYSQL_USER` / `CHIRP_MYSQL_PASSWORD` / `CHIRP_MIGRATION_*` / `CHIRP_DELIVERY_TRACKING_ENABLED`); the read points are in `services/shared/chat/src/message_store_config.cc`. Another family is read by the crash handler — `CHIRP_CRASH_DIR` / `CHIRP_CRASH_UPLOAD_URL` / `CHIRP_CRASH_HANDLER` (`libs/common/crash_handler.cc`, wired into every service main; a process-level behavior, not a storage-layer one). Outside these two families, the other services read no environment variables.
 
-### 服务配置
+### Service configuration
 
-所有服务用命令行参数配置,完整样例见 `docker-compose.yml` 各 `command:`;参数清单以各服务 `main.cc` 的解析代码为准。仓库没有 JSON/配置文件机制。
+All services are configured with command-line arguments; complete examples are in the `command:` entries of `docker-compose.yml`; the authoritative list of arguments is each service's `main.cc` parsing code. There is no JSON/config-file mechanism in the repository.
 
-## 数据库准备
+## Database preparation
 
-### MySQL schema(表结构)
+### MySQL schema
 
 ```bash
 # Create database
@@ -173,13 +173,11 @@ mysql -u root -p -e "GRANT ALL PRIVILEGES ON chirp.* TO 'chirp'@'localhost';"
 mysql -u chirp -pchirp123 chirp < scripts/init_db.sql
 ```
 
-> 存量库升级：`init_db.sql` 只在首次建表时生效；已有库补消息引用/撤回墓碑/
-> 发送者类型三列（`reply_to` / `is_recalled` / `sender_kind`，缺失时写入
-> `StoreMessage` 会失败）执行：
+> Upgrading an existing database: `init_db.sql` only takes effect when it first creates the tables; to add the three columns for message references / recall tombstones / sender kind (`reply_to` / `is_recalled` / `sender_kind`, without which `StoreMessage` fails) in an existing database, run:
 > `mysql -u chirp -pchirp123 chirp < scripts/upgrade_db_messages.sql`
-> （脚本非幂等，重复执行会报 duplicate column；执行前先核对表结构。）
+> (The script is not idempotent; re-running it reports duplicate column — check the table structure first.)
 
-### Redis 准备
+### Redis preparation
 
 ```bash
 # Start Redis
@@ -190,21 +188,21 @@ redis-cli ping
 # Should return: PONG
 ```
 
-## 验证
+## Verification
 
-### 测试 Gateway
+### Testing the Gateway
 
 ```bash
 ./build/services/game/sdk_gateway/chirp_game_sdk_gateway --port 5000 --ws_port 5001
 ```
 
-### 测试 CLI 客户端
+### Testing the CLI client
 
 ```bash
 ./build/apps/cli_client/chirp_cli
 ```
 
-### 测试服务
+### Testing the services
 
 ```bash
 # Test all services at once
@@ -214,19 +212,19 @@ redis-cli ping
     --duration 60
 ```
 
-## 故障排查
+## Troubleshooting
 
-### Protobuf 问题
+### Protobuf problems
 
-**问题**:找不到 Protobuf
+**Problem**: Protobuf cannot be found
 ```bash
 export CMAKE_PREFIX_PATH=/usr/local
 cmake ..
 ```
 
-### MySQL 链接错误
+### MySQL link errors
 
-**问题**:找不到 MySQL 客户端库(libmariadb)
+**Problem**: The MySQL client library (libmariadb) cannot be found
 ```bash
 # Linux
 export MYSQL_DIR=/usr
@@ -237,19 +235,19 @@ cmake -DMYSQL_INCLUDE_DIR=/usr/include/mysql \
 cmake -DMYSQL_DIR=$(brew --prefix mysql) ..
 ```
 
-### Redis 连接
+### Redis connectivity
 
-**问题**:连不上 Redis
+**Problem**: Cannot connect to Redis
 ```bash
 # Check Redis status
 redis-cli ping
 
-# Check if port is open
+# Check if the port is open
 netstat -an | grep 6379
 ```
 
-## 下一步
+## Next steps
 
-- [快速上手](./getting-started.md)
-- [架构总览](../architecture.md)
-- [部署指南](./deployment.md)
+- [Getting Started](getting-started.md))
+- [Overall Architecture](../architecture.md))
+- [Deployment Guide](deployment.md))

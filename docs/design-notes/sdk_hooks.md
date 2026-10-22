@@ -1,19 +1,19 @@
-> 🌐 Language: **中文** (this page) | [English](./sdk_hooks.en.md)
+> 🌐 Language: [中文](../zh/design-notes/sdk_hooks.md)) | **English** (this page)
 
-# SDK 钩子接口设计
+# SDK Hook Interface Design
 
-最后更新：2026-09-21
+Last updated: 2026-09-21
 
-本文档定义游戏 SDK 的可扩展钩子接口。所有引擎 SDK 实现相同的接口，按语言惯用方式命名。
+This document defines the extensible hook interfaces of the game SDK. All engine SDKs implement the same interfaces, named in each language's idiomatic style.
 
-## 设计原则
+## Design principles
 
-1. **SDK 定义接口，游戏实现行为**。SDK 不预设游戏的具体逻辑（敏感词、UI、音效），只提供插入点。
-2. **所有回调在 SDK 内部 io 线程触发**。引擎适配层（Unity ChirpManager、Unreal AsyncTask）负责派发回游戏线程。
-3. **钩子可选**。不设置钩子时 SDK 行为不变（默认放行、默认不存储）。
-4. **接口数量克制**。只在消息生命周期、连接生命周期、命令扩展三个维度提供钩子。
+1. **The SDK defines the interfaces; the game implements the behavior.** The SDK does not prescribe game-specific logic (word filtering, UI, sound effects) — it only provides insertion points.
+2. **All callbacks fire on the SDK's internal io thread.** The engine adapter layer (Unity ChirpManager, Unreal AsyncTask) is responsible for dispatching back to the game thread.
+3. **Hooks are optional.** When no hook is set, SDK behavior is unchanged (allow by default, no storage by default).
+4. **The interface count is kept restrained.** Hooks are provided only in three dimensions: message lifecycle, connection lifecycle, and command extension.
 
-## 消息生命周期钩子
+## Message lifecycle hooks
 
 ```
 玩家输入消息
@@ -29,18 +29,18 @@
 
 ### MessageInterceptor
 
-在消息发送前/接收后插入自定义逻辑。
+Insert custom logic before a message is sent / after it is received.
 
-| 回调 | 触发时机 | 可做什么 | 返回值 |
+| Callback | When it fires | What it can do | Return value |
 |---|---|---|---|
-| `OnBeforeSend(msg)` | 消息发送前 | 修改内容、添加 metadata、敏感词过滤 | `false` = 阻止发送 |
-| `OnAfterSend(msg)` | 消息已发送 | 统计、日志、发送特效 | 无 |
-| `OnBeforeReceive(msg)` | 消息接收前 | 修改内容、丢弃垃圾消息 | `false` = 丢弃消息 |
-| `OnAfterReceive(msg)` | 消息即将展示 | 音效、振动、桌面通知、未读计数 | 无 |
+| `OnBeforeSend(msg)` | before the message is sent | modify content, add metadata, word filtering | `false` = block the send |
+| `OnAfterSend(msg)` | after the message is sent | statistics, logging, send effects | none |
+| `OnBeforeReceive(msg)` | before the message is received | modify content, drop spam messages | `false` = drop the message |
+| `OnAfterReceive(msg)` | just before the message is displayed | sound effects, vibration, desktop notification, unread count | none |
 
-**C++ 定义**：`sdks/core/include/chirp/message_interceptor.h`
+**C++ definition**: `sdks/core/include/chirp/message_interceptor.h`
 
-**游戏用法示例**：
+**Game usage example**:
 
 ```cpp
 // 敏感词过滤 + VIP 消息颜色
@@ -75,7 +75,7 @@ class GameMessageInterceptor : public chirp::sdk::MessageInterceptor {
 };
 ```
 
-## 连接生命周期钩子
+## Connection lifecycle hooks
 
 ```
 Connect → Connecting → Connected
@@ -87,25 +87,25 @@ Connect → Connecting → Connected
 
 ### ChatEventListener
 
-SDK 在关键生命周期节点通知游戏。
+The SDK notifies the game at key lifecycle nodes.
 
-| 回调 | 触发时机 | 典型用途 |
+| Callback | When it fires | Typical use |
 |---|---|---|
-| `OnConnectionStateChanged(state)` | 连接状态变化 | UI 状态指示器 |
-| `OnLoginResult(code, user_id)` | 登录结果 | 成功→显示聊天 UI；失败→提示 |
-| `OnKicked(reason)` | 被踢下线 | 弹窗提示原因，引导重新登录 |
-| `OnReconnecting(attempt, delay_ms)` | 重连中 | 显示"重连中..."提示 |
-| `OnReconnected()` | 重连成功 | 恢复 UI，刷新未读 |
-| `OnMessageReceived(msg)` | 收到新消息 | 更新聊天窗口 |
-| `OnUnreadChanged(type, channel_id, count)` | 未读数变化 | 更新 badge |
-| `OnPresenceChanged(user_id, status)` | 好友在线状态变化 | 更新好友列表 |
-| `OnTypingIndicator(user_id, channel_id, is_typing)` | 正在输入 | 显示"对方正在输入..." |
-| `OnMarqueeMessage(msg, ttl_seconds)` | 走马灯消息 | 屏幕顶部滚动 |
-| `OnSystemAnnouncement(msg)` | 系统公告 | 弹窗或高亮展示 |
+| `OnConnectionStateChanged(state)` | connection state change | UI status indicator |
+| `OnLoginResult(code, user_id)` | login result | on success -> show the chat UI; on failure -> show a prompt |
+| `OnKicked(reason)` | kicked offline | popup showing the reason, guiding re-login |
+| `OnReconnecting(attempt, delay_ms)` | reconnecting | show a "reconnecting..." prompt |
+| `OnReconnected()` | reconnect succeeded | restore the UI, refresh unread |
+| `OnMessageReceived(msg)` | new message received | update the chat window |
+| `OnUnreadChanged(type, channel_id, count)` | unread count changed | update the badge |
+| `OnPresenceChanged(user_id, status)` | friend presence changed | update the friend list |
+| `OnTypingIndicator(user_id, channel_id, is_typing)` | typing | show "the other party is typing..." |
+| `OnMarqueeMessage(msg, ttl_seconds)` | marquee message | scrolling across the top of the screen |
+| `OnSystemAnnouncement(msg)` | system announcement | popup or highlighted display |
 
-**C++ 定义**：`sdks/core/include/chirp/chat_event_listener.h`
+**C++ definition**: `sdks/core/include/chirp/chat_event_listener.h`
 
-**游戏用法示例**：
+**Game usage example**:
 
 ```cpp
 class GameChatListener : public chirp::sdk::ChatEventListener {
@@ -133,21 +133,21 @@ class GameChatListener : public chirp::sdk::ChatEventListener {
 };
 ```
 
-## 认证钩子
+## Auth hook
 
 ### AuthProvider
 
-游戏登录系统与 SDK 对接。
+The game login system connects with the SDK.
 
-| 回调 | 触发时机 | 说明 |
+| Callback | When it fires | Description |
 |---|---|---|
-| `GetToken()` | SDK 需要 token 时 | 返回游戏登录系统签发的 token |
-| `OnTokenExpired(renew)` | token 过期时 | 游戏刷新 token 后调用 `renew(new_token)` |
-| `OnAuthResult(code, user_id)` | 认证结果 | 通知游戏认证成功/失败 |
+| `GetToken()` | when the SDK needs a token | returns the token issued by the game login system |
+| `OnTokenExpired(renew)` | when the token expires | after the game refreshes the token, call `renew(new_token)` |
+| `OnAuthResult(code, user_id)` | auth result | notifies the game of auth success/failure |
 
-**C++ 定义**：`sdks/core/include/chirp/auth_provider.h`
+**C++ definition**: `sdks/core/include/chirp/auth_provider.h`
 
-**游戏用法示例**：
+**Game usage example**:
 
 ```cpp
 class GameAuthProvider : public chirp::sdk::AuthProvider {
@@ -170,22 +170,22 @@ class GameAuthProvider : public chirp::sdk::AuthProvider {
 };
 ```
 
-## 命令扩展钩子
+## Command extension hooks
 
 ### CommandHandler
 
-游戏注册自定义聊天命令。
+The game registers custom chat commands.
 
-| 方法 | 说明 |
+| Method | Description |
 |---|---|
-| `GetName()` | 命令名（不含斜杠），如 "trade" |
-| `GetDescription()` | 命令描述，用于 /help |
-| `GetUsage()` | 用法示例，如 "/trade <玩家名>" |
-| `Execute(args, sender_id)` | 执行命令，返回 `true` = 已处理 |
+| `GetName()` | command name (without the leading slash), e.g. "trade" |
+| `GetDescription()` | command description, used by /help |
+| `GetUsage()` | usage example, e.g. "/trade &lt;player name&gt;" |
+| `Execute(args, sender_id)` | execute the command; returns `true` = handled |
 
-**C++ 定义**：`sdks/core/include/chirp/command_handler.h`
+**C++ definition**: `sdks/core/include/chirp/command_handler.h`
 
-**游戏用法示例**：
+**Game usage example**:
 
 ```cpp
 class TradeCommand : public chirp::sdk::CommandHandler {
@@ -226,7 +226,7 @@ sdk.RegisterCommand(std::make_unique<TradeCommand>());
 sdk.RegisterCommand(std::make_unique<InviteCommand>());
 ```
 
-**命令解析流程**：
+**Command parsing flow**:
 
 ```
 玩家输入: "/trade PlayerA 100 gold"
@@ -236,25 +236,25 @@ sdk.RegisterCommand(std::make_unique<InviteCommand>());
   → 如果所有 handler 都返回 false → 提示"未知命令"
 ```
 
-## 消息存储钩子
+## Message storage hook
 
 ### MessageStore
 
-游戏自定义消息的本地缓存策略。
+The game customizes the local caching strategy for messages.
 
-| 方法 | 说明 |
+| Method | Description |
 |---|---|
-| `Save(msg)` | 存储一条消息 |
-| `Load(type, channel_id, limit, before_timestamp)` | 加载历史消息 |
-| `MarkRead(type, channel_id, message_id)` | 标记已读 |
-| `GetUnreadCount(type, channel_id)` | 获取未读数 |
-| `Cleanup(older_than)` | 清理过期消息 |
+| `Save(msg)` | store one message |
+| `Load(type, channel_id, limit, before_timestamp)` | load history messages |
+| `MarkRead(type, channel_id, message_id)` | mark as read |
+| `GetUnreadCount(type, channel_id)` | get the unread count |
+| `Cleanup(older_than)` | clean up expired messages |
 
-**C++ 定义**：`sdks/core/include/chirp/message_store.h`
+**C++ definition**: `sdks/core/include/chirp/message_store.h`
 
-**内置实现**：`MemoryMessageStore`（内存缓存，轻量级游戏用）、`FileMessageStore`（文件持久化，`chirp/file_message_store.h`，header-only；append-only 日志 + 已读游标 + `Compact()` 原子重写，与 C# SDK 同一文件格式）
+**Built-in implementations**: `MemoryMessageStore` (in-memory cache, for lightweight games), `FileMessageStore` (file persistence, `chirp/file_message_store.h`, header-only; append-only log + read cursor + `Compact()` atomic rewrite — the same file format as the C# SDK)
 
-**游戏用法示例**：
+**Game usage example**:
 
 ```cpp
 // 轻量级：使用默认内存缓存
@@ -283,21 +283,21 @@ class SqliteMessageStore : public chirp::sdk::MessageStore {
 };
 ```
 
-## 各语言接口映射
+## Per-language interface mapping
 
-| 钩子 | C++ | C# | TypeScript | GDScript | Dart |
+| Hook | C++ | C# | TypeScript | GDScript | Dart |
 |---|---|---|---|---|---|
-| 消息拦截 | `MessageInterceptor` 虚基类 | `IMessageInterceptor` interface | `MessageInterceptor` interface | signal + callback | `MessageInterceptor` abstract class |
-| 事件监听 | `ChatEventListener` 虚基类 | `IChatEventListener` interface | `ChatEventListener` interface | signal | `ChatEventListener` abstract class |
-| 认证 | `AuthProvider` 虚基类 | `IAuthProvider` interface | `AuthProvider` interface | callback | `AuthProvider` abstract class |
-| 命令 | `CommandHandler` 虚基类 | `ICommandHandler` interface | `CommandHandler` interface | signal | `CommandHandler` abstract class |
-| 存储 | `MessageStore` 虚基类 | `IMessageStore` interface | `MessageStore` interface | Resource | `MessageStore` abstract class |
+| Message interception | `MessageInterceptor` virtual base class | `IMessageInterceptor` interface | `MessageInterceptor` interface | signal + callback | `MessageInterceptor` abstract class |
+| Event listening | `ChatEventListener` virtual base class | `IChatEventListener` interface | `ChatEventListener` interface | signal | `ChatEventListener` abstract class |
+| Auth | `AuthProvider` virtual base class | `IAuthProvider` interface | `AuthProvider` interface | callback | `AuthProvider` abstract class |
+| Command | `CommandHandler` virtual base class | `ICommandHandler` interface | `CommandHandler` interface | signal | `CommandHandler` abstract class |
+| Storage | `MessageStore` virtual base class | `IMessageStore` interface | `MessageStore` interface | Resource | `MessageStore` abstract class |
 
-> C#/TypeScript 列均已落地（GDScript 列为计划形态，Godot 走 C# 复用路线，见 `docs/sdk/godot.md`；Dart/Flutter SDK 已随 2026-09-29 移除）。跨语言内置实现还包括 C++/C#/TS 三语言的 `WordFilterInterceptor`（敏感词预检，语义对齐服务端，见 `docs/design-notes/sdk_compatibility.md`）。
+> The C#/TypeScript columns are both implemented (the GDScript column is planned — Godot takes the C# reuse route, see `docs/sdk/godot.md`; the Dart/Flutter SDK was removed on 2026-09-29). Cross-language built-in implementations also include the `WordFilterInterceptor` in C++/C#/TS (send-side word-filter precheck, semantics aligned with the server; see `docs/design-notes/sdk_compatibility.md`).
 
-## SDK 注册入口
+## SDK registration entry point
 
-所有钩子通过 SDK 实例注册，必须在 `Connect` 之前调用：
+All hooks are registered through the SDK instance and must be called before `Connect`:
 
 ```cpp
 chirp::sdk::ChatClient sdk(config);

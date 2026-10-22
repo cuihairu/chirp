@@ -1,18 +1,18 @@
-> 🌐 Language: **中文** (this page) | [English](./API.en.md)
+> 🌐 Language: [中文](zh/API.md)) | **English** (this page)
 
-# Chirp API 说明
+# Chirp API
 
-权威的 API 总览已迁移到 [api/overview.md](./api/overview.md)。
+The authoritative API overview has moved to [api/overview.md](api/overview.md)).
 
-请到那个页面查看:
+Please see that page for:
 
-- 包帧格式(packet framing)
-- `chirp.gateway.Packet` 信封规则
-- 受支持端点的状态
-- 当前消息 ID 对照
-- 登录与聊天流程
-- 常见错误码
+- packet framing
+- the `chirp.gateway.Packet` envelope rules
+- the status of supported endpoints
+- the current message ID reference
+- the login and chat flows
+- common error codes
 
-消息定义(Schema)的事实来源仍然是 `proto/*.proto`。
+The source of truth for message definitions (schema) remains `proto/*.proto`.
 
-状态提醒:受支持的运行时路径是 `gateway + auth + chat`。网关(gateway)配置 `--chat_host` 后会把 2xxx(2001-2999)业务包经每客户端 ServiceBridge 管道转发到对应 chat 实例,其中 2248 在 2xxx 通配前先分流到 search 服务(`--search_host`,目标端口 `--search_port`,默认 5007);social(3xxx)/voice(4xxx)不在转发路径。聊天客户端既可走网关转发,也可直连 Chat 服务(可选路径)。在把更大的 proto 面当成稳定能力之前,先核对 [Capability Matrix](./CAPABILITY_MATRIX.md)。
+Status reminder: the supported runtime path is `gateway + auth + chat`. With `--chat_host` configured, the gateway forwards 2xxx (2001-2999) business packets through each client's ServiceBridge pipe to the corresponding chat instance, except that 2248 is split off to the search service (`--search_host`, target port `--search_port`, default 5007) before the 2xxx wildcard; social (3xxx)/voice (4xxx) are not on the forwarding path. Chat clients can go through the gateway forwarding or connect directly to the Chat service (an optional path). Before treating a larger proto surface as a stable capability, check the [Capability Matrix](CAPABILITY_MATRIX.md)).

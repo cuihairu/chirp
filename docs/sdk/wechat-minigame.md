@@ -1,24 +1,24 @@
-> 🌐 Language: **中文** (this page) | [English](./wechat-minigame.en.md)
+> 🌐 Language: [中文](../zh/sdk/wechat-minigame.md)) | **English** (this page)
 
-# 微信小游戏
+# WeChat Mini Game
 
-**微信小游戏暂无官方 SDK**。小运行时没有 TCP,只有 `wx.connectSocket`——这反而简化了选型:**必须且只能走 chirp 的 WebSocket 边缘**,协议与所有其他端完全一致。chirp 的接入面是纯协议(帧 + Protobuf),与宿主环境无关。
+**There is no official SDK for WeChat Mini Game yet.** The mini runtime has no TCP, only `wx.connectSocket` — which actually simplifies the choice: **it must and can only use Chirp's WebSocket edge**, with a protocol identical to every other client. Chirp's integration surface is a pure protocol (frames + Protobuf), independent of the host environment.
 
-## 接入方式
+## How to integrate
 
 ```ts
 const task = wx.connectSocket({ url: "wss://your-domain/chirp-ws" });
-task.onOpen(() => { /* 发 LOGIN */ });
-task.onMessage((res) => { /* res.data 是 ArrayBuffer:解帧 */ });
+task.onOpen(() => { /* send LOGIN */ });
+task.onMessage((res) => { /* res.data is an ArrayBuffer: decode the frame */ });
 ```
 
-需要自己实现的三层(与 Cocos/LayaAir 完全相同):
+Three layers you need to implement yourself (exactly the same as Cocos/LayaAir):
 
-1. **帧编解码**:每帧是 `[uint32_be payload_size][Packet protobuf 字节]`,`Packet` 含 `msg_id` / `sequence` / `body`(可选 `request_id` 跨平面追踪);
-2. **protobuf**:[protobuf.js](https://github.com/protobufjs/protobuf.js) 可在小游戏环境运行(加载 `proto/gateway.proto` 编译产物,注意用 json/commonjs 方式打包,避免动态加载限制);
-3. **客户端状态机**:登录往返、心跳、重连、KICK 终态。
+1. **Frame codec**: each frame is `[uint32_be payload_size][Packet protobuf bytes]`, and `Packet` has `msg_id` / `sequence` / `body` (optional `request_id` for cross-plane tracing);
+2. **protobuf**: [protobuf.js](https://github.com/protobufjs/protobuf.js) can run in the mini-game environment (load the compiled output of `proto/gateway.proto`; note that you should bundle it as json/commonjs to avoid dynamic-loading restrictions);
+3. **Client state machine**: the login round trip, heartbeat, reconnect, KICK terminal state.
 
-**参考实现**:仓库 `sdks/ts/src/` 是带 149 例 vitest 单测的 TS 协议栈(`frame.ts` / `msg_map.ts` / `chirp_client.ts`,行覆盖按 CI 阈值门禁(`vitest.config.ts`:lines/branches/functions/statements ≥90%),不依赖 DOM,可直接搬进小游戏工程。传输层适配已经写好:`sdks/ts/src/adapters/wx_socket.ts` 把 `wx.connectSocket` 的 SocketTask(回调注册 + `{ data }` 信封对象)桥到 ChirpClient 期望的 `WebSocketLike` 接口:
+**Reference implementation**: `sdks/ts/src/` in this repo is a TS protocol stack with 149 vitest unit tests (`frame.ts` / `msg_map.ts` / `chirp_client.ts`, line coverage gated by CI thresholds (`vitest.config.ts`: lines/branches/functions/statements ≥90%)) that does not depend on the DOM and can be moved directly into a mini-game project. The transport adapter is already written: `sdks/ts/src/adapters/wx_socket.ts` bridges `wx.connectSocket`'s SocketTask (callback registration + a `{ data }` envelope object) to the `WebSocketLike` interface ChirpClient expects:
 
 ```ts
 import { ChirpClient } from '@chirp/protocol/chirp_client';
@@ -26,37 +26,37 @@ import { createWxSocketFactory } from '@chirp/protocol/adapters/wx_socket';
 
 const client = new ChirpClient({
   url: 'wss://chat.example.com/ws',
-  wsFactory: createWxSocketFactory(wx), // wx: 小游戏运行时全局
+  wsFactory: createWxSocketFactory(wx), // wx: the mini-game runtime global
 });
 ```
 
-二进制帧以 ArrayBuffer 双向直通;该适配器带 fake-socket 单测与一条真实 ChirpClient 登录回路测试(`adapters/wx_socket.test.ts`)。
+Binary frames pass through in both directions as ArrayBuffers; the adapter has fake-socket unit tests plus one real ChirpClient login round-trip test (`adapters/wx_socket.test.ts`).
 
-## 生命周期
+## Lifecycle
 
 ```text
-connectSocket → LOGIN(1003/1004) → 收发(2001 发送 / 2005 推送) → 心跳(1001/1002)
-        ↓ 断线/切后台                    ↓ 收到 KICK(1005)
-      自动重连 + 重新登录              踢线终态:停止重连,需玩家重新登录
+connectSocket → LOGIN(1003/1004) → send/receive (2001 send / 2005 push) → heartbeat (1001/1002)
+        ↓ disconnect/backgrounded        ↓ KICK received (1005)
+      auto reconnect + re-login         kick terminal state: stop reconnecting, the player must log in again
 ```
 
-小游戏特有的两点:
+Two points specific to mini games:
 
-- **切后台挂起**:微信切后台会断 WS。回到前台(`onShow`)后主动重建连接并重新登录;离线期间的消息由服务端离线队列补投,收到后记得 ack。
-- **心跳兜底**:若宿主长时间挂起导致心跳断掉,服务端会按超时关闭连接——下个 `onShow` 的重连流程自然会覆盖,不需要为心跳做特殊逻辑。
+- **Suspension when backgrounded**: WeChat drops the WS when the game is backgrounded. After returning to the foreground (`onShow`), actively rebuild the connection and log in again; messages from the offline period are redelivered by the server's offline queue, and you should ack them on receipt.
+- **Heartbeat fallback**: if the host stays suspended long enough for the heartbeat to lapse, the server closes the connection on timeout — the reconnect flow on the next `onShow` naturally covers it, so no special heartbeat logic is needed.
 
-部署到线上环境时,WS 域名需为 wss 并在小程序后台配置合法域名(这是微信平台要求,与 chirp 无关;本地开发可用 devtools 的"不校验合法域名"直连 `ws://127.0.0.1:7001`)。
+When deploying to a production environment, the WS domain must be wss and registered as a legal domain in the mini-program backend (this is a WeChat platform requirement, unrelated to chirp; for local development you can use devtools' "do not verify legal domains" option to connect straight to `ws://127.0.0.1:7001`).
 
-## 协议 / API 参考
+## Protocol / API reference
 
-- 协议总览:[API 概述](/api/overview)(Packet 帧、消息 ID 分段、核心流程)——接入前先读这份
-- 消息 ID 全表:`proto/gateway.proto` 的 `MsgID` 枚举(1xxx 认证/会话、2xxx 聊天、3xxx 社交、4xxx 语音、7xxx 组队)
-- TS 参考实现:[sdks/ts](https://github.com/cuihairu/chirp/tree/main/sdks/ts)
-- C# 版语义对照(消息面覆盖表):[Unity3D](/sdk/unity3d)
-- 服务端接入(游戏后端):[服务端 SDK](/sdk/server) 与[服务器平面](/server_plane)
+- Protocol overview: [API Overview](/api/overview) (Packet frames, message ID ranges, core flows) — read this first before integrating
+- Full message ID table: the `MsgID` enum in `proto/gateway.proto` (1xxx auth/session, 2xxx chat, 3xxx social, 4xxx voice, 7xxx party)
+- TS reference implementation: [sdks/ts](https://github.com/cuihairu/chirp/tree/main/sdks/ts)
+- C# semantics comparison (message-plane coverage table): [Unity3D](/sdk/unity3d)
+- Server integration (game backend): [Server SDK](/sdk/server) and [Server Plane](/server_plane)
 
-## 现状与边界
+## Current state and boundaries
 
-- 语音(4xxx,WebRTC 信令 + 媒体面)在小游戏环境没有 `RTCPeerConnection`,**不可用**;聊天/组队/设备推送等纯消息面不受影响。
-- 聊天主链路只需要 chat 一条连接;社交(WS 8001)、组队(WS 7501)独立服务,按需再接。
-- 每日构建:Actions nightly 的 `daily-build` artifact 打包含 `@chirp/protocol` npm 包(未签名),入口见 [SDK 总览](/sdk/)。
+- Voice (4xxx, WebRTC signaling + media plane) has no `RTCPeerConnection` in the mini-game environment and is **unavailable**; pure message planes such as chat/party/device push are unaffected.
+- The main chat path needs only the one chat connection; social (WS 8001) and party (WS 7501) are separate services to add as needed.
+- Nightly builds: the Actions nightly `daily-build` artifact bundle includes the `@chirp/protocol` npm package (unsigned); see [SDK Overview](/sdk/) for the entry point.

@@ -1,26 +1,26 @@
-> 🌐 Language: **中文** (this page) | [English](./getting-started.en.md)
+> 🌐 Language: [中文](../zh/guide/getting-started.md)) | **English** (this page)
 
-# 快速上手
+# Getting Started
 
-本指南聚焦当前受支持的后端路径:`gateway + auth + chat`。
+This guide focuses on the currently supported backend path: `gateway + auth + chat`.
 
-## 前置条件
+## Prerequisites
 
-必需:
+Required:
 
-- CMake 3.21 或更新
-- C++23 编译器
-- Protocol Buffers 编译器与 C++ 运行时
+- CMake 3.21 or newer
+- A C++23 compiler
+- The Protocol Buffers compiler and C++ runtime
 
-可选:
+Optional:
 
-- Docker 与 Docker Compose,用于 Redis/MySQL 和多服务启动
-- MySQL 客户端开发库,用于增强版 auth/chat 构建
-- libsodium,用于增强版 auth 构建
+- Docker and Docker Compose, for Redis/MySQL and multi-service startup
+- MySQL client development libraries, for the enhanced auth/chat builds
+- libsodium, for the enhanced auth build
 
-## 本地构建
+## Local build
 
-在仓库根目录:
+From the repo root:
 
 ```bash
 ./gen_proto.sh
@@ -29,14 +29,14 @@ cmake --build --preset dev
 ctest --preset dev
 ```
 
-只想要最小构建路径的话:
+If you only want the minimal build path:
 
 ```bash
 cmake --preset minimal
 cmake --build --preset minimal
 ```
 
-macOS 上用 vcpkg 的话,还要传宿主架构:
+On macOS with vcpkg you also need to pass the host architecture:
 
 ```bash
 cmake --preset dev \
@@ -44,45 +44,45 @@ cmake --preset dev \
   -DCMAKE_OSX_ARCHITECTURES="$(uname -m)"
 ```
 
-## 冒烟测试(smoke test)
+## Smoke tests
 
 ```bash
-./test_services.sh --smoke       # auth + gateway + TCP/WS 登录客户端
-./test_services.sh --smoke-chat  # chat 服务 + 聊天客户端
-./test_services.sh --smoke-sdk   # 游戏客户端 SDK(sdks/core)+ chat:登录 / 在线投递 / 离线队列
-./test_services.sh --smoke-npc   # server plane 上的 NPC 对话闭环
-./test_services.sh --smoke-redis # Redis 支撑的分布式会话/踢线路径
+./test_services.sh --smoke       # auth + gateway + TCP/WS login client
+./test_services.sh --smoke-chat  # chat service + chat client
+./test_services.sh --smoke-sdk   # game client SDK (sdks/core) + chat: login / online delivery / offline queue
+./test_services.sh --smoke-npc   # NPC dialog loop on the server plane
+./test_services.sh --smoke-redis # Redis-backed distributed session/kick path
 ```
 
-集成冒烟测试:
+Integration smoke tests:
 
 ```bash
 bash tests/run_integration_tests.sh
 bash tests/run_integration_tests.sh --local-services --gateway-port 5500 --auth-port 6500
 ```
 
-## 用 Docker Compose 启动
+## Starting with Docker Compose
 
 ```bash
 docker compose up --build
 ```
 
-Compose 会启动 Redis、MySQL、Auth、Gateway、Chat 和实验性服务。第一次验证时,只关注:
+Compose starts Redis, MySQL, Auth, Gateway, Chat and the experimental services. On the first verification pass, only focus on:
 
-- `redis`:缓存与会话存储
-- `auth`:认证服务
-- `gateway`:网关服务
-- `chat`:聊天服务
+- `redis`: cache and session storage
+- `auth`: the authentication service
+- `gateway`: the gateway service
+- `chat`: the chat service
 
-常用默认端口:
+Common default ports:
 
-| 服务 | TCP | WebSocket | 说明 |
+| Service | TCP | WebSocket | Notes |
 | --- | --- | --- | --- |
-| Gateway | 5000 | 5001 | 登录、登出、心跳(heartbeat)、会话(session) |
-| Auth | 6000 | - | 认证校验 |
-| Chat | 7000 | 7001 | 直连聊天入口 |
+| Gateway | 5000 | 5001 | login, logout, heartbeat, session |
+| Auth | 6000 | - | authentication verification |
+| Chat | 7000 | 7001 | direct chat entry point |
 
-## 手动启动
+## Starting manually
 
 ```bash
 ./build/services/app/auth/chirp_app_auth --port 6000 --jwt_secret dev_secret
@@ -90,22 +90,22 @@ Compose 会启动 Redis、MySQL、Auth、Gateway、Chat 和实验性服务。第
 ./build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001 --redis_host 127.0.0.1 --redis_port 6379 --offline_ttl 604800
 ```
 
-最基本的本地聊天测试可以不配 Redis,但验证离线队列(offline queue)、历史列表或分布式会话行为时建议配上。
+The most basic local chat test can run without Redis configured, but it is recommended when verifying the offline queue, history lists or distributed session behavior.
 
-## 协议提醒
+## Protocol reminder
 
-TCP 和 WebSocket 承载的都是:
+Both TCP and WebSocket carry:
 
 ```text
 [uint32_be payload_size][chirp.gateway.Packet protobuf bytes]
 ```
 
-`Packet.msg_id` 在 protobuf 信封(envelope)里面,不是独立的 2 字节网络帧头。
+`Packet.msg_id` lives inside the protobuf envelope; it is not a separate 2-byte network frame header.
 
-## 当前限制
+## Current limitations
 
-- Gateway 登录不会自动认证一条独立的 Chat 连接。
-- 聊天消息目前直连 Chat 服务,不经过 Gateway。
-- Social、voice、notification、search、移动应用、管理后台和各 SDK 包装层并非都达到生产可用。
+- Gateway login does not automatically authenticate a separate Chat connection.
+- Chat messages currently go directly to the Chat service and do not pass through the Gateway.
+- Social, voice, notification, search, the mobile apps, the admin dashboard and the various SDK wrappers are not all production-ready.
 
-精确状态见 [Overall Architecture](../architecture.md) 与 [Capability Matrix](../CAPABILITY_MATRIX.md)。
+For the precise state see [Overall Architecture](../architecture.md)) and [Capability Matrix](../CAPABILITY_MATRIX.md)).

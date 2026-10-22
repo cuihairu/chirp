@@ -65,7 +65,8 @@ onMounted(() => {
 onBeforeUnmount(stopTimer);
 
 const { site } = useData();
-const detailLink = `${site.value.base}design-notes/app_chat_prototype`;
+const detailPrefix = useData().lang.value === 'zh-CN' ? 'zh/' : '';
+const detailLink = `${site.value.base}${detailPrefix}design-notes/app_chat_prototype`;
 </script>
 
 <template>

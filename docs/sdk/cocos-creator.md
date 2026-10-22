@@ -1,57 +1,57 @@
-> 🌐 Language: **中文** (this page) | [English](./cocos-creator.en.md)
+> 🌐 Language: [中文](../zh/sdk/cocos-creator.md)) | **English** (this page)
 
 # Cocos Creator
 
-**Cocos Creator 暂无官方 SDK**。chirp 的接入面是纯协议(TCP/WebSocket + Protobuf),与引擎无关,Cocos Creator(TypeScript 项目)按协议直连即可——仓库里的 `sdks/ts` 协议栈就是一份可运行的 TS 参考实现。
+**There is no official SDK for Cocos Creator yet.** Chirp's integration surface is a pure protocol (TCP/WebSocket + Protobuf), independent of any engine, so a Cocos Creator (TypeScript) project can simply connect over the protocol — the `sdks/ts` protocol stack in this repo is a runnable TS reference implementation.
 
-## 接入方式
+## How to integrate
 
-Cocos Creator 3.x 的 `WebSocket` 即可连 chirp 的 WS 边缘(开发拓扑 chat **WS 7001**;TCP 7000 帧协议与 WS 消息体一致,浏览器/小游戏环境用 WS 即可):
+Cocos Creator 3.x's `WebSocket` can connect straight to Chirp's WS edge (development topology chat **WS 7001**; the TCP 7000 frame protocol is identical to the WS message body, so browser/mini-game environments can just use WS):
 
 ```ts
 const ws = new WebSocket("ws://127.0.0.1:7001");
 ws.binaryType = "arraybuffer";
 ```
 
-需要自己实现的三层(工作量不大,协议是二进制小帧):
+Three layers you need to implement yourself (not much work, the protocol is small binary frames):
 
-1. **帧编解码**:每帧是 `[uint32_be payload_size][Packet protobuf 字节]`,`Packet` 含 `msg_id` / `sequence` / `body` 与可选的 `request_id` 四个字段;
-2. **protobuf**:用 [protobuf.js](https://github.com/protobufjs/protobuf.js)(或 google-protobuf)加载 `proto/gateway.proto` 编译产物;
-3. **客户端状态机**:登录请求-响应关联、心跳、断线重连、KICK 终态处理。
+1. **Frame codec**: each frame is `[uint32_be payload_size][Packet protobuf bytes]`, and `Packet` has the four fields `msg_id` / `sequence` / `body` and the optional `request_id`;
+2. **protobuf**: use [protobuf.js](https://github.com/protobufjs/protobuf.js) (or google-protobuf) to load the compiled output of `proto/gateway.proto`;
+3. **Client state machine**: login request-response correlation, heartbeat, reconnect on disconnect, KICK terminal-state handling.
 
-**直接抄现成实现**:仓库 `sdks/ts/src/` 下有完整的 TS 协议栈,可整目录搬进 Cocos 工程(微信小游戏目标用 `@chirp/protocol/adapters/wx_socket` 的 `createWxSocketFactory(wx)` 作传输工厂)——
+**Just copy an existing implementation**: `sdks/ts/src/` in this repo contains a complete TS protocol stack that can be moved wholesale into a Cocos project (for the WeChat Mini Game target, use `createWxSocketFactory(wx)` from `@chirp/protocol/adapters/wx_socket` as the transport factory) —
 
-| 文件 | 职责 |
+| File | Responsibility |
 | --- | --- |
-| `frame.ts` | 帧编解码(u32 长度前缀 + Packet) |
-| `msg_map.ts` | 消息 ID ↔ 请求/响应类型映射表 |
-| `chirp_client.ts` | 客户端状态机(连接/心跳/重连/序列号关联) |
+| `frame.ts` | Frame codec (u32 length prefix + Packet) |
+| `msg_map.ts` | Message ID <-> request/response type mapping table |
+| `chirp_client.ts` | Client state machine (connect/heartbeat/reconnect/sequence correlation) |
 
-该实现有 149 例 vitest 单测(`*.test.ts`,行覆盖按 CI 阈值门禁(`vitest.config.ts`:lines/branches/functions/statements ≥90%)兜底,语义与 unity 端逐项对齐。
+That implementation is backed by 149 vitest unit tests (`*.test.ts`, line coverage gated by CI thresholds (`vitest.config.ts`: lines/branches/functions/statements ≥90%)) and its semantics are aligned item by item with the unity client.
 
-## 生命周期
+## Lifecycle
 
-与所有客户端一致:
+The same as every client:
 
 ```text
-connect → LOGIN(1003/1004) → 收发(2001 发送 / 2005 推送) → 心跳(1001/1002)
-        ↓ 断线                  ↓ 收到 KICK(1005)
-      自动重连 + 重新登录      踢线终态:停止重连,需玩家重新登录
+connect → LOGIN(1003/1004) → send/receive (2001 send / 2005 push) → heartbeat (1001/1002)
+        ↓ disconnect              ↓ KICK received (1005)
+      auto reconnect + re-login   kick terminal state: stop reconnecting, the player must log in again
 ```
 
-- `sequence` 递增,响应按 sequence 关联回请求;
-- 收到离线消息后要发 ack,否则服务端重复投递;
-- 被顶号(KICK)是终态,不要对它做自动重连。
+- `sequence` increments, and responses are correlated back to requests by sequence;
+- after receiving an offline message you must send an ack, otherwise the server redelivers it;
+- being replaced (KICK) is a terminal state, so do not auto-reconnect after it.
 
-## 协议 / API 参考
+## Protocol / API reference
 
-- 协议总览:[API 概述](/api/overview)(Packet 帧、消息 ID 分段、核心流程)——接入前先读这份
-- 消息 ID 全表:`proto/gateway.proto` 的 `MsgID` 枚举(1xxx 认证/会话、2xxx 聊天、3xxx 社交、4xxx 语音、7xxx 组队)
-- TS 参考实现:[sdks/ts](https://github.com/cuihairu/chirp/tree/main/sdks/ts)
-- C# 版语义对照(消息面覆盖表):[Unity3D](/sdk/unity3d)
-- 服务端接入(游戏后端):[服务端 SDK](/sdk/server) 与[服务器平面](/server_plane)
+- Protocol overview: [API Overview](/api/overview) (Packet frames, message ID ranges, core flows) — read this first before integrating
+- Full message ID table: the `MsgID` enum in `proto/gateway.proto` (1xxx auth/session, 2xxx chat, 3xxx social, 4xxx voice, 7xxx party)
+- TS reference implementation: [sdks/ts](https://github.com/cuihairu/chirp/tree/main/sdks/ts)
+- C# semantics comparison (message-plane coverage table): [Unity3D](/sdk/unity3d)
+- Server integration (game backend): [Server SDK](/sdk/server) and [Server Plane](/server_plane)
 
-## 现状与边界
+## Current state and boundaries
 
-- 官方维护的 SDK 只有 Unity(C#)、Unreal(C++ 壳)、Go(服务端)与 C++ 核心;Cocos/LayaAir/微信小游戏按协议接入,TS 层直接复用 `sdks/ts` 协议栈即可。
-- 社交(WS 8001)、语音(WS 9001)、组队(WS 7501)是独立 WS 服务,各开一条连接;按需再接,聊天主链路只需要 chat 一条。
+- The only officially maintained SDKs are Unity (C#), Unreal (C++ shell), Go (server) and the C++ core; Cocos/LayaAir/WeChat Mini Game integrate over the protocol, and the TS layer can simply reuse the `sdks/ts` protocol stack.
+- Social (WS 8001), voice (WS 9001) and party (WS 7501) are separate WS services, each on its own connection; add them as needed — the main chat path only needs the one chat connection.

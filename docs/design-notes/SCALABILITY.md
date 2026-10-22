@@ -1,12 +1,12 @@
-> 🌐 Language: **中文** (this page) | [English](./SCALABILITY.en.md)
+> 🌐 Language: [中文](../zh/design-notes/SCALABILITY.md)) | **English** (this page)
 
-# Chirp 分布式扩展方案
+# Chirp Distributed Scaling Plan
 
-> 状态说明：本文是扩展性设计和演进文档，不是当前生产容量承诺。当前实现边界请先阅读 [Overall Architecture](../architecture.md) 和 [Capability Matrix](../CAPABILITY_MATRIX.md)。其中 `chirp_chat_distributed`、增强存储、Social/Voice 分布式化等路径应按实验性能力理解。
+> Status note: this document is a scalability design and evolution document, not a current production capacity commitment. For current implementation boundaries, read [Overall Architecture](../architecture.md)) and [Capability Matrix](../CAPABILITY_MATRIX.md)) first. Paths such as `chirp_chat_distributed`, enhanced storage, and the distribution of Social/Voice should be understood as experimental capabilities.
 
-## 当前架构分析
+## Current architecture analysis
 
-### 单机架构问题
+### Single-server architecture problems
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -23,16 +23,16 @@
 └─────────────────────────────────────────────────────┘
 ```
 
-**瓶颈：**
-1. Gateway 连接数受限于单机端口和文件描述符
-2. Chat/Social 服务的内存状态无法共享
-3. 单点故障风险
+**Bottlenecks:**
+1. Gateway connection counts are limited by the ports and file descriptors of a single server
+2. The in-memory state of the Chat/Social services cannot be shared
+3. Single point of failure risk
 
 ---
 
-## 分布式架构设计
+## Distributed architecture design
 
-### 整体架构
+### Overall architecture
 
 ```
                                     ┌─────────────────┐
@@ -93,11 +93,11 @@
 
 ---
 
-## 扩展性改造方案
+## Scalability refactoring plan
 
-### 1. Gateway 层（已支持扩展）
+### 1. Gateway layer (scaling already supported)
 
-**当前状态：** 已实现 Redis 分布式会话管理
+**Current state:** Redis-backed distributed session management is already implemented.
 
 ```cpp
 // libs/network/redis_session_manager.cc
@@ -107,7 +107,7 @@
 // - 新实例登录时，通知旧实例踢人
 ```
 
-**部署方式：**
+**Deployment:**
 ```bash
 # 多实例部署
 docker compose up --scale gateway=3
@@ -117,7 +117,7 @@ docker compose up --scale gateway=3
 ./build/services/game/sdk_gateway/chirp_game_sdk_gateway --instance_id gw_3 --port 5002 &
 ```
 
-**负载均衡：**
+**Load balancing:**
 ```nginx
 # nginx.conf
 upstream gateway_tcp {
@@ -137,13 +137,13 @@ upstream gateway_ws {
 
 ---
 
-### 2. Chat/Social/Voice 服务改造（需要改造）
+### 2. Chat/Social/Voice service refactoring (needs refactoring)
 
-**问题：** 当前使用本地内存存储用户会话映射，多实例时无法互通
+**Problem:** user session mappings are currently stored in local memory, which instances cannot share.
 
-**解决方案：** 添加 Redis Pub/Sub 消息转发机制
+**Solution:** add a Redis Pub/Sub message forwarding mechanism.
 
-#### 2.1 消息路由设计
+#### 2.1 Message routing design
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
@@ -158,7 +158,7 @@ upstream gateway_ws {
 └─────────────────────────────┴──────────────────────────────────┘
 ```
 
-#### 2.2 改造架构
+#### 2.2 Refactored architecture
 
 ```cpp
 // 消息路由器接口
@@ -201,9 +201,9 @@ class ChatService {
 };
 ```
 
-#### 2.3 连接迁移策略
+#### 2.3 Connection migration strategy
 
-**选项 A：Gateway 保持长连接，服务层无状态化**
+**Option A: Gateway holds the long connection, stateless service layer**
 
 ```
 Client --TCP--> Gateway --(short-lived HTTP/gRPC)--> Service
@@ -211,7 +211,7 @@ Client --TCP--> Gateway --(short-lived HTTP/gRPC)--> Service
                  └── WebSocket 长连接 ───────────────┘
 ```
 
-**选项 B：Gateway 直连后端服务，使用一致性哈希**
+**Option B: Gateway connects directly to backend services using consistent hashing**
 
 ```cpp
 // 一致性哈希路由
@@ -227,13 +227,13 @@ class ConsistentHashRouter {
 };
 ```
 
-**推荐：选项 B** - 保持长连接优势，减少连接建立开销
+**Recommended: option B** - keeps the advantages of long connections and reduces the cost of connection establishment.
 
 ---
 
-### 3. 服务发现
+### 3. Service discovery
 
-#### 3.1 基于 Redis 的服务发现
+#### 3.1 Redis-based service discovery
 
 ```cpp
 class ServiceDiscovery {
@@ -266,7 +266,7 @@ public:
 
 ---
 
-### 4. 数据层扩展
+### 4. Data layer scaling
 
 #### 4.1 Redis Cluster
 
@@ -284,7 +284,7 @@ redis-cluster:
     --cluster-replicas 1
 ```
 
-#### 4.2 MySQL 主从复制
+#### 4.2 MySQL master-slave replication
 
 ```yaml
 # docker-compose.yml
@@ -306,9 +306,9 @@ mysql-slave:
 
 ---
 
-## 部署配置
+## Deployment configuration
 
-### Docker Compose (多实例)
+### Docker Compose (multi-instance)
 
 ```yaml
 # docker-compose.cluster.yml
@@ -353,7 +353,7 @@ services:
     image: mysql:8.0
 ```
 
-### Kubernetes 部署
+### Kubernetes deployment
 
 ```yaml
 # k8s/gateway-deployment.yaml
@@ -404,11 +404,11 @@ spec:
 
 ---
 
-## 容量规划
+## Capacity planning
 
-### 单机性能参考
+### Single-server performance reference
 
-| 组件 | 连接数 | QPS | 内存 |
+| Component | Connections | QPS | Memory |
 |------|--------|-----|------|
 | Gateway | 10K-50K | 100K | 2GB |
 | Chat | 5K-20K | 50K | 4GB |
@@ -416,31 +416,31 @@ spec:
 | Social | 5K | 10K | 2GB |
 | Redis | - | 100K | 4GB |
 
-### 规模建议
+### Scale recommendations
 
-| 在线用户 | Gateway | Chat | Redis | MySQL |
+| Online users | Gateway | Chat | Redis | MySQL |
 |----------|---------|------|-------|-------|
 | 1K | 1 | 1 | 1 | 1 |
-| 10K | 2 | 2 | 1 (主) + 1 (从) | 1 (主) |
-| 100K | 5-10 | 5-10 | 3 (Cluster) | 1 (主) + 2 (从) |
-| 1M | 20-50 | 20-50 | 6 (Cluster) | 1 (主) + 3 (从) + 分库分表 |
+| 10K | 2 | 2 | 1 (primary) + 1 (replica) | 1 (primary) |
+| 100K | 5-10 | 5-10 | 3 (Cluster) | 1 (primary) + 2 (replica) |
+| 1M | 20-50 | 20-50 | 6 (Cluster) | 1 (primary) + 3 (replica) + database/table sharding |
 
 ---
 
-## 下一步工作
+## Next work
 
-1. **立即实施**
-   - [x] 添加 MessageRouter 组件——已落地（2026-10-08 核实：`libs/network/message_router.{h,cc}`）
-   - [x] Chat 服务改造支持 Redis Pub/Sub——已落地（2026-10-08 核实：`services/shared/chat/src/main_distributed.cc`，CMake target `chirp_chat_distributed`；路由经 Redis Pub/Sub，跨实例踢人在 `libs/network/redis_session_manager.cc`）
-   - [ ] 添加服务发现模块——待做（仓库内未见 consul/etcd 类实现）
+1. **Implement immediately**
+   - [x] Add the MessageRouter component - done (verified 2026-10-08: `libs/network/message_router.{h,cc}`)
+   - [x] Refactor the Chat service to support Redis Pub/Sub - done (verified 2026-10-08: `services/shared/chat/src/main_distributed.cc`, CMake target `chirp_chat_distributed`; routing goes through Redis Pub/Sub, and cross-instance kicks are in `libs/network/redis_session_manager.cc`)
+   - [ ] Add a service discovery module - to do (no consul/etcd-style implementation found in the repo)
 
-2. **短期优化**
-   - [ ] Social/Voice 服务改造——待做
-   - [x] HAProxy 负载均衡配置——已落地（2026-10-08 核实：`deploy/haproxy.cfg`）
-   - [ ] 健康检查和自动故障转移——部分落地（`deploy/haproxy.cfg` 已含 `tcp-check` 健康检查；backup 备节点仍注释未启用）
+2. **Short-term optimization**
+   - [ ] Refactor the Social/Voice services - to do
+   - [x] HAProxy load balancing configuration - done (verified 2026-10-08: `deploy/haproxy.cfg`)
+   - [ ] Health checks and automatic failover - partially done (`deploy/haproxy.cfg` already contains `tcp-check` health checks; the backup node is still commented out and not enabled)
 
-3. **长期规划**
-   - [ ] Redis Cluster 支持——部分落地（部署编排 `deploy/k8s/redis-cluster.yaml`（Redis Operator）已落，客户端集群协议接入待做）
-   - [ ] MySQL 分库分表——待做
-   - [x] Kubernetes 部署方案——已落地（2026-10-08 核实：`deploy/k8s/`）
-   - [ ] 监控和告警系统——待做（`tools/benchmark` 已有 `chirp_chat_mysql_exporter` 导出器，整体监控告警未建）
+3. **Long-term planning**
+   - [ ] Redis Cluster support - partially done (deployment orchestration `deploy/k8s/redis-cluster.yaml` (Redis Operator) is in place; client-side cluster protocol integration is to do)
+   - [ ] MySQL sharding - to do
+   - [x] Kubernetes deployment plan - done (verified 2026-10-08: `deploy/k8s/`)
+   - [ ] Monitoring and alerting - to do (`tools/benchmark` already has a `chirp_chat_mysql_exporter`; the overall monitoring/alerting system has not been built)

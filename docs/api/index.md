@@ -1,7 +1,7 @@
-> 🌐 Language: **中文** (this page) | [English](./index.en.md)
+> 🌐 Language: [中文](../zh/api/index.md)) | **English** (this page)
 
-# API 参考
+# API Reference
 
-Chirp 当前的对外协议以 Protocol Buffers 为核心，TCP 和 WebSocket 共用同一套业务信封(envelope)。
+Chirp's current external protocol is built around Protocol Buffers, with TCP and WebSocket sharing the same business envelope.
 
-- [协议总览](./overview.md)
+- [Protocol overview](overview.md))

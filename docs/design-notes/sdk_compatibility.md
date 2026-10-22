@@ -1,241 +1,233 @@
-> 🌐 Language: **中文** (this page) | [English](./sdk_compatibility.en.md)
+> 🌐 Language: [中文](../zh/design-notes/sdk_compatibility.md)) | **English** (this page)
 
-# SDK 引擎兼容性
+# SDK Engine Compatibility
 
-最后更新：2026-09-21
+Last updated: 2026-09-21
 
-## 总览
+## Overview
 
-| 引擎 | 语言 | SDK 目录 | 最低版本 | 优先级 | 状态 |
+| Engine | Language | SDK directory | Minimum version | Priority | Status |
 |---|---|---|---|---|---|
-| Unity | C# | `sdks/unity/` | 2021.2 LTS | P0 | 已有基础 |
-| Unreal Engine 5 | C++ | `sdks/unreal/` | 5.1 | P0 | 已有基础 |
-| LayaBox | TypeScript | `sdks/laya/`（规划，目录未建） | LayaAir 3.0 | P1 | 待开发 |
-| Godot | GDScript / C# | `sdks/godot/`（规划，目录未建） | 4.0 | P2 | 待开发 |
-| Cocos Creator | TypeScript | `sdks/cocos/`（规划，目录未建） | 3.8 | P2 | 待开发 |
-| Web | TypeScript | `apps/web_companion/` | — | P0 | 已有基础 |
-| Android | Kotlin | `apps/android/` | minSdk 26 | P1 | 原生协议核已交付 |
-| iOS | Swift | `apps/ios/` | Swift 5.9+ | P1 | 原生协议核已交付; `swift test` 232 例（ChirpProtocolTests 93 + ChirpAppCoreTests 139） |
-| C++ 桌面 | C++ | `sdks/core/` | C++17 | P0 | 已有基础 |
-| Go 服务端 | Go | `sdks/go/` | 1.21 | P0 | 已有基础 |
+| Unity | C# | `sdks/unity/` | 2021.2 LTS | P0 | Foundation exists |
+| Unreal Engine 5 | C++ | `sdks/unreal/` | 5.1 | P0 | Foundation exists |
+| LayaBox | TypeScript | `sdks/laya/` (planned, directory not created) | LayaAir 3.0 | P1 | To develop |
+| Godot | GDScript / C# | `sdks/godot/` (planned, directory not created) | 4.0 | P2 | To develop |
+| Cocos Creator | TypeScript | `sdks/cocos/` (planned, directory not created) | 3.8 | P2 | To develop |
+| Web | TypeScript | `apps/web_companion/` | — | P0 | Foundation exists |
+| Android | Kotlin | `apps/android/` | minSdk 26 | P1 | Native protocol core delivered |
+| iOS | Swift | `apps/ios/` | Swift 5.9+ | P1 | Native protocol core delivered; `swift test` 232 cases (ChirpProtocolTests 93 + ChirpAppCoreTests 139) |
+| C++ desktop | C++ | `sdks/core/` | C++17 | P0 | Foundation exists |
+| Go server | Go | `sdks/go/` | 1.21 | P0 | Foundation exists |
 
-## 各引擎详细要求
+## Detailed requirements per engine
 
-### Unity（P0 优先级）
+### Unity (P0 priority)
 
-| 项目 | 要求 |
+| Item | Requirement |
 |---|---|
-| 最低版本 | Unity 2021.2 LTS（C# 9 / netstandard2.1） |
-| 推荐版本 | Unity 2022.3 LTS 或 Unity 6000.x |
-| .NET 兼容 | .NET Standard 2.1 |
-| Protobuf | Google.Protobuf 3.27.x（Unity 发布包） |
-| 传输层 | ClientWebSocket（内建） |
-| 线程模型 | ChirpManager MonoBehaviour 主线程派发 |
-| 包格式 | Unity Package（UPM）或直接拷贝 Assets/ |
+| Minimum version | Unity 2021.2 LTS (C# 9 / netstandard2.1) |
+| Recommended version | Unity 2022.3 LTS or Unity 6000.x |
+| .NET compatibility | .NET Standard 2.1 |
+| Protobuf | Google.Protobuf 3.27.x (Unity release package) |
+| Transport | ClientWebSocket (built-in) |
+| Threading model | ChirpManager MonoBehaviour main-thread dispatch |
+| Package format | Unity Package (UPM) or direct Assets/ copy |
 
-已有：
-- `ChirpClient` 协议核心（纯 C#，无 UnityEngine 依赖）
-- `ChirpManager` MonoBehaviour 薄壳
-- `dotnet/` 纯 .NET 测试工程
-- `proto/csharp/` 生成代码
+Already present:
+- `ChirpClient` protocol core (pure C#, no UnityEngine dependency)
+- `ChirpManager` MonoBehaviour thin shell
+- `dotnet/` pure .NET test project
+- `proto/csharp/` generated code
 
-待补：
-- [x] Hook 接口（MessageInterceptor/AuthProvider/MessageStore/ChatEventListener/CommandHandler 五件套）——C++ core(2026-09)与 .NET/Unity(2026-09,`ChirpHooks.cs`,interface + 默认方法)均已对齐
-- [x] 历史消息本地存储——.NET/Unity 侧为 `FileMessageStore`(2026-09,零依赖文件持久化:append-only 日志 + 启动重放 + 已读游标,`Compact()` 原子重写;不绑 SQLite,工程需要可自行接第三方 SQLite 实现同一 `IMessageStore`);C++ core 同款 `file_message_store.h`(2026-09-24,header-only,与 C# 版**同一文件格式** `CHIRPLOG1`,存档可互换读取;TS 走内存实现,Web/移动端持久化属宿主存储层职责)
-- [x] 敏感词过滤客户端预检——三语言同款 `WordFilterInterceptor`(2026-09:C++ `word_filter.h`、C# `WordFilterInterceptor.cs`、TS protocol 层 `word_filter`;Dart/Flutter SDK 已随 2026-09-29 移除):词库格式、ASCII 大小写不敏感子串匹配、mask 后重建的替换语义全部对齐服务端 `chirp::chat::WordFilter`,客户端与服务端可共用同一词库文件;Replace(改写,连续命中塌缩)/Reject(拦截 = blocked)两档,无 Record(审计是服务端职责);只滤发送侧
-- [x] Unity Package 发布配置——UPM 布局就绪(2026-09:`package.json` `com.chirp.unity@0.1.0` + `Chirp.Sdk`/`Chirp.Manager` 两个 asmdef,`Chirp/` 零引擎依赖由 `noEngineReferences` 编译期固化);支持 manifest `file:` 引用或 tarball 本地导入;registry 发布按"不发版"红线不做,待游戏工程接入后按需自办
+To complete:
+- [x] Hook interfaces (the five-piece MessageInterceptor/AuthProvider/MessageStore/ChatEventListener/CommandHandler set) - both C++ core (2026-09) and .NET/Unity (2026-09, `ChirpHooks.cs`, interface + default methods) are aligned
+- [x] Local history message storage - the .NET/Unity side is `FileMessageStore` (2026-09, zero-dependency file persistence: append-only log + startup replay + read cursor, `Compact()` atomic rewrite; not bound to SQLite - if a project needs it, it can wire in a third-party SQLite implementation behind the same `IMessageStore`); the C++ core has the same `file_message_store.h` (2026-09-24, header-only, **the same file format** `CHIRPLOG1` as the C# version, so archives are interchangeably readable; TS uses an in-memory implementation - Web/mobile persistence is the host storage layer's responsibility)
+- [x] Sensitive-word filter client precheck - the same `WordFilterInterceptor` in three languages (2026-09: C++ `word_filter.h`, C# `WordFilterInterceptor.cs`, TS protocol layer `word_filter`; the Dart/Flutter SDK was removed on 2026-09-29): lexicon format, ASCII case-insensitive substring matching, and mask-then-rebuild replacement semantics are all aligned with the server `chirp::chat::WordFilter`, and clients and the server can share the same lexicon file; Replace (rewrite, consecutive hits collapse) / Reject (blocked) tiers, no Record (auditing is the server's job); filters the send side only
+- [x] Unity Package release configuration - UPM layout ready (2026-09: `package.json` `com.chirp.unity@0.1.0` + the `Chirp.Sdk`/`Chirp.Manager` asmdefs, with `Chirp/`'s zero-engine-dependency property fixed at compile time by `noEngineReferences`); supports manifest `file:` references or local tarball import; registry publishing is not done per the "no releases" red line - to be handled per project need once a game project integrates
 
-### Unreal Engine 5（P0 优先级）
+### Unreal Engine 5 (P0 priority)
 
-| 项目 | 要求 |
+| Item | Requirement |
 |---|---|
-| 最低版本 | UE 5.1 |
-| 推荐版本 | UE 5.4+ |
-| C++ 标准 | C++20（UE5 默认） |
-| 传输层 | 原生 TCP（chirp core SDK） |
-| 线程模型 | AsyncTask(ENamedThreads::GameThread) 派发 |
-| 包格式 | UE Plugin（.uplugin） |
+| Minimum version | UE 5.1 |
+| Recommended version | UE 5.4+ |
+| C++ standard | C++20 (UE5 default) |
+| Transport | Native TCP (chirp core SDK) |
+| Threading model | AsyncTask(ENamedThreads::GameThread) dispatch |
+| Package format | UE Plugin (.uplugin) |
 
-已有：
-- `UChirpClientSubsystem`（GameInstance 子系统）
-- Blueprint 事件（login result、chat message、kick、disconnect、reconnecting/reconnected、send result、完整信封）
-- 连接状态/频道类型枚举、`FChirpChatEnvelope`/`FChirpSendOptions` 结构
-- `SendChatMessageEx`（命令路由/拦截器/存档全管线 + reply 引用）、`LoadHistory`/`GetUnreadCount`/`MarkRead`/`CleanupMessages` BP 转发
-- native 核心编译脚本
+Already present:
+- `UChirpClientSubsystem` (GameInstance subsystem)
+- Blueprint events (login result, chat message, kick, disconnect, reconnecting/reconnected, send result, full envelope)
+- Connection status / channel type enums, `FChirpChatEnvelope`/`FChirpSendOptions` structs
+- `SendChatMessageEx` (command routing/interceptor/store full pipeline + reply quoting), `LoadHistory`/`GetUnreadCount`/`MarkRead`/`CleanupMessages` BP forwarding
+- Native core build script
 
-待补：
-- [x] Hook 接口（C++ 虚基类经 `NativeClient()` 直通 core + Blueprint 可绑定事件；内建 listener 已桥 OnReconnecting/OnReconnected/OnChatEnvelope，2026-09）
-- [ ] UMG 聊天 UI 组件（可选）
-- [x] 物品链接/成就分享的 Blueprint 可渲染数据结构（`FChirpChatEnvelope`：MsgType/Metadata/ReplyToMessageId 全字段 BP 可读，2026-09）
-- [ ] UE 5.4+ 验证
+To complete:
+- [x] Hook interfaces (C++ virtual base classes passed straight through to core via `NativeClient()` + Blueprint-bindable events; the built-in listener already bridges OnReconnecting/OnReconnected/OnChatEnvelope, 2026-09)
+- [ ] UMG chat UI components (optional)
+- [x] Blueprint-renderable data structures for item links / achievement shares (`FChirpChatEnvelope`: MsgType/Metadata/ReplyToMessageId all fields BP-readable, 2026-09)
+- [ ] UE 5.4+ verification
 
-### LayaBox（P1 优先级）
+### LayaBox (P1 priority)
 
-| 项目 | 要求 |
+| Item | Requirement |
 |---|---|
-| 最低版本 | LayaAir 3.0 |
-| 推荐版本 | LayaAir 3.x 最新 |
-| 语言 | TypeScript |
-| 传输层 | WebSocket |
-| 运行时 | 浏览器 / 微信小游戏 / APP |
-| Protobuf | protobuf.js（运行时）或 ts-proto（编译时） |
+| Minimum version | LayaAir 3.0 |
+| Recommended version | latest LayaAir 3.x |
+| Language | TypeScript |
+| Transport | WebSocket |
+| Runtime | Browser / WeChat mini-game / APP |
+| Protobuf | protobuf.js (runtime) or ts-proto (compile time) |
 
-待开发：
-- [x] TypeScript 协议核心（2026-09-24：由独立包 `@chirp/protocol` 提供，ChirpClient + 帧编解码 + 消息映射，自带单测与 90% 覆盖率门禁）
-- [x] WebSocket 传输适配（ChirpClient 构造时注入 `wsFactory`；浏览器原生 WebSocket 即默认实现）
-- [x] 微信小游戏平台适配（2026-09-24：`sdks/ts/src/adapters/wx_socket.ts` 把 `wx.connectSocket` 的 SocketTask 桥到 `WebSocketLike`，回调注册→处理器属性、ArrayBuffer 双向直通；带 fake-socket 单测与真实 ChirpClient 登录回路测试）
-- [x] Hook 接口（`hooks.ts` 五钩子 + ChatPipeline，语义与 C++/C# 对齐）
-- [ ] 示例项目（需真实 LayaAir 工程）
+To develop:
+- [x] TypeScript protocol core (2026-09-24: provided by the standalone `@chirp/protocol` package - ChirpClient + frame codec + message map, with its own unit tests and a 90% coverage gate)
+- [x] WebSocket transport adapter (`wsFactory` injected at ChirpClient construction; the browser's native WebSocket is the default implementation)
+- [x] WeChat mini-game platform adapter (2026-09-24: `sdks/ts/src/adapters/wx_socket.ts` bridges `wx.connectSocket`'s SocketTask to `WebSocketLike`, callback registration -> handler properties, ArrayBuffer passthrough in both directions; with fake-socket unit tests and a real-ChirpClient login round-trip test)
+- [x] Hook interfaces (the five hooks in `hooks.ts` + ChatPipeline, semantics aligned with C++/C#)
+- [ ] Sample project (needs a real LayaAir project)
 
-### Godot（P2 优先级）
+### Godot (P2 priority)
 
-| 项目 | 要求 |
+| Item | Requirement |
 |---|---|
-| 最低版本 | Godot 4.0 |
-| 推荐版本 | Godot 4.3+ |
-| 语言 | GDScript 或 C# |
-| 传输层 | StreamPeerTCP / WebSocketPeer |
-| Protobuf | GDScript protobuf 或 C# protobuf |
+| Minimum version | Godot 4.0 |
+| Recommended version | Godot 4.3+ |
+| Language | GDScript or C# |
+| Transport | StreamPeerTCP / WebSocketPeer |
+| Protobuf | GDScript protobuf or C# protobuf |
 
-待开发：
-- [x] GDScript 协议核心（或 C# 复用 Unity SDK 的纯 C# 部分）——2026-09-24：走 C# 复用路线。`sdks/unity/Runtime/Chirp/` 零引擎依赖（`noEngineReferences` asmdef 固化），传输层 `ChirpTransport.cs` 用 `System.Net.WebSockets` 标准库，Godot 4 .NET 直接复用、无需适配；接入指南 `docs/sdk/godot.md`。GDScript 版无路线（无成熟 protobuf 生态）
-- [ ] Godot 节点封装（ChatClient node；需真实 Godot 工程验证）
-- [x] Hook 接口（C# 形态：直接复用 `ChirpHooks.cs` 五接口，listener 接线示例见 `docs/sdk/godot.md`；GDScript signal 无路线——同上，GDScript 无成熟 protobuf 生态，Godot 走 C# 复用路线）
-- [ ] 示例项目
+To develop:
+- [x] GDScript protocol core (or C# reusing the Unity SDK's pure C# part) - 2026-09-24: took the C# reuse route. `sdks/unity/Runtime/Chirp/` has zero engine dependency (fixed by the `noEngineReferences` asmdef), the transport `ChirpTransport.cs` uses the `System.Net.WebSockets` standard library, so Godot 4 .NET reuses it directly with no adaptation; integration guide at `docs/sdk/godot.md`. No GDScript route (no mature protobuf ecosystem)
+- [ ] Godot node wrapper (a ChatClient node; needs verification in a real Godot project)
+- [x] Hook interfaces (C# form: reuse the five `ChirpHooks.cs` interfaces directly, listener wiring example in `docs/sdk/godot.md`; no GDScript signal route - same as above, GDScript has no mature protobuf ecosystem, Godot takes the C# reuse route)
+- [ ] Sample project
 
-### Cocos Creator（P2 优先级）
+### Cocos Creator (P2 priority)
 
-| 项目 | 要求 |
+| Item | Requirement |
 |---|---|
-| 最低版本 | Cocos Creator 3.8 |
-| 推荐版本 | 3.8.x LTS |
-| 语言 | TypeScript |
-| 传输层 | WebSocket（原生 / 小游戏适配层） |
-| 运行时 | Web / iOS / Android / 微信小游戏 |
-| Protobuf | protobuf.js 或 ts-proto |
+| Minimum version | Cocos Creator 3.8 |
+| Recommended version | 3.8.x LTS |
+| Language | TypeScript |
+| Transport | WebSocket (native / mini-game adapter layer) |
+| Runtime | Web / iOS / Android / WeChat mini-game |
+| Protobuf | protobuf.js or ts-proto |
 
-待开发：
-- [x] TypeScript 协议核心（与 LayaAir 共享 `@chirp/protocol`，2026-09-24）
-- [x] 微信小游戏平台适配（共享 `@chirp/protocol` 的 `adapters/wx_socket.ts`）
-- [ ] Cocos 组件封装（需 Cocos Creator 工程）
-- [x] Hook 接口（共享 `hooks.ts` 五钩子）
+To develop:
+- [x] TypeScript protocol core (shares `@chirp/protocol` with LayaAir, 2026-09-24)
+- [x] WeChat mini-game platform adapter (shares `@chirp/protocol`'s `adapters/wx_socket.ts`)
+- [ ] Cocos component wrapper (needs a Cocos Creator project)
+- [x] Hook interfaces (shares the five hooks in `hooks.ts`)
 
-### Web（P0，已有基础）
+### Web (P0, foundation exists)
 
-| 项目 | 要求 |
+| Item | Requirement |
 |---|---|
-| 运行时 | 现代浏览器（Chrome 90+、Firefox 90+、Safari 15+、Edge 90+） |
-| 语言 | TypeScript（strict） |
-| 传输层 | WebSocket |
-| 框架 | React 18（web_companion 示例） |
-| 构建 | Vite |
+| Runtime | Modern browsers (Chrome 90+, Firefox 90+, Safari 15+, Edge 90+) |
+| Language | TypeScript (strict) |
+| Transport | WebSocket |
+| Framework | React 18 (web_companion sample) |
+| Build | Vite |
 
-已有：
-- `ChirpClient` 协议核心（TypeScript）
-- WebSocket 传输
-- React 组件示例
-- Hook 接口与 `ChatPipeline`（`sdks/ts/src/hooks.ts` + `chat_pipeline.ts`，纯
-  TypeScript、零 React 依赖；MessageInterceptor / AuthProvider / MessageStore /
-  ChatEventListener / CommandHandler 五钩子，语义与 C++ core、C# 对齐：'/'
-  命令零注册透传、拦截器返回 false 或抛异常 = 拦截、AUTH_FAILED 至多续期一次）
+Already present:
+- `ChirpClient` protocol core (TypeScript)
+- WebSocket transport
+- React component samples
+- Hook interfaces and `ChatPipeline` (`sdks/ts/src/hooks.ts` + `chat_pipeline.ts`, pure TypeScript with zero React dependency; the five hooks MessageInterceptor / AuthProvider / MessageStore / ChatEventListener / CommandHandler, semantics aligned with the C++ core and C#: '/' commands pass through with zero registration, an interceptor returning false or throwing = intercepted, AUTH_FAILED renews at most once)
 
-待补：
-- [ ] 独立 npm 包发布
-- [x] 框架无关的核心包独立成包（2026-09-24：`sdks/ts` = `@chirp/protocol`
-  workspace 包，自带 tsconfig/vitest 与 90% 覆盖率门禁；web_companion 经
-  `@chirp/protocol/*` 引用，红线未动——registry 发布仍不做）
+To complete:
+- [ ] Standalone npm package publishing
+- [x] Framework-agnostic core package split out (2026-09-24: `sdks/ts` = the `@chirp/protocol` workspace package with its own tsconfig/vitest and a 90% coverage gate; web_companion references it via `@chirp/protocol/*`, red line unchanged - registry publishing still not done)
 
-### 移动端原生（Android/iOS，2026-09-29 起替代 Flutter）
+### Mobile native (Android/iOS, replacing Flutter since 2026-09-29)
 
-Flutter 应用（`apps/mobile_companion`）已随原生迁移移除：协议核按 Android
-M1→M4+M3.5 与 iOS 分批路径移植到原生包，测试向量沿用同一组做三端对拍
-（Flutter 移除批次补齐了 custom msgType/状态翻转扇出/重连事件扇出/无
-store 降级四条向量，原生包此后独占承载）。
+The Flutter app (`apps/mobile_companion`) was removed with the native migration: the protocol cores were ported to native packages along the Android M1->M4+M3.5 and iOS phased paths, with the test vectors reused for three-way cross-checks (the Flutter-removal batch filled in four vectors - custom msgType / state-flip fan-out / reconnect-event fan-out / no-store degradation - which the native packages now solely carry).
 
-| 项目 | Android | iOS |
+| Item | Android | iOS |
 |---|---|---|
-| 路径 | `apps/android/` | `apps/ios/` |
-| 语言 | Kotlin（AGP 9 内建编译器） | Swift（SwiftPM，Linux 上 `swift test` 门禁） |
-| 传输层 | OkHttp WebSocket | URLSessionWebSocketTask（Darwin）/脚本化 fake（Linux 门禁） |
-| 协议核 | Frame/MessageSpec/ChatConnection/WordFilter/ChatPipeline/OfflineSendQueue/DeviceRegistrar/PushRoute | 同左（同组向量） |
-| 门禁 | `make test` 110 例 + `gradlew testDebugUnitTest` | `swift test` 232 例（ChirpProtocolTests 93 + ChirpAppCoreTests 139） |
+| Path | `apps/android/` | `apps/ios/` |
+| Language | Kotlin (AGP 9 built-in compiler) | Swift (SwiftPM, `swift test` gate on Linux) |
+| Transport | OkHttp WebSocket | URLSessionWebSocketTask (Darwin) / scripted fake (Linux gate) |
+| Protocol core | Frame/MessageSpec/ChatConnection/WordFilter/ChatPipeline/OfflineSendQueue/DeviceRegistrar/PushRoute | Same (same vector set) |
+| Gate | `make test` 110 cases + `gradlew testDebugUnitTest` | `swift test` 232 cases (ChirpProtocolTests 93 + ChirpAppCoreTests 139) |
 
-已有：
-- 五钩子接口（MessageInterceptor/AuthProvider/MessageStore/ChatEventListener/CommandHandler）
-  + `ChatPipeline` 管线，语义与 C++ core、C#、Web 对齐（'/‘ 命令零注册透传、
-  拦截器改写/拦截、AUTH_FAILED 至多续期一次、onReconnecting/onReconnected
-  事件面、KICK reason 透传监听器；SendOptions 与 TS 同款可选字段）
-- FCM 推送缝（Android M3.5：构建开关 + 占位凭据，空 token 降级注册）/
-  APNs token 缝（iOS M3.5 核：真凭据待接，降级路径已测）
+Already present:
+- The five-hook interfaces (MessageInterceptor/AuthProvider/MessageStore/ChatEventListener/CommandHandler)
+  + the `ChatPipeline` pipeline, semantics aligned with the C++ core, C# and Web ('/' commands pass through with zero registration,
+  interceptor rewrite/intercept, AUTH_FAILED renews at most once, the onReconnecting/onReconnected
+  event surface, KICK reason passed through to the listener; SendOptions with the same optional fields as TS)
+- The FCM push seam (Android M3.5: build switch + placeholder credentials, empty-token degraded registration) /
+  the APNs token seam (iOS M3.5 core: real credentials pending, degraded path tested)
 
-待补：
-- [x] Android 接收侧通知渲染/点击深链（2026-10-11：`PushRoute.kt` 协议核——`PushRouteParser`/`PushForegroundPolicy` iOS P5 同语义移植，8 测与 Swift 同组向量对拍；壳层 `ChirpNotifications`（chirp_messages channel、按会话堆叠、点击 PendingIntent 带会话键）+ `MainActivity`（singleTask+onNewIntent 深链开 DM、POST_NOTIFICATIONS API 33+ 运行时权限、onResume/onPause 维护 ActiveChannel）+ `ChirpFirebaseService`（仅 -PchirpPush 构建编译，data 反解路由、正看该会话抑制横幅）；端到端真投递仍需真 Firebase 凭据）
-- [x] Android token 刷新重注册（2026-10-11：`PushTokenHub.kt` 协议核——进程级 latest + 监听扇出，空/同 token 幂等、抛异常监听者隔离，6 测；push 腿 `onNewToken` 记入 hub，登录中的壳层即在既有连接重注册（服务端 RegisterDevice 按 device_id create-or-update 同键覆盖换 token），未登录只记 latest、下次登录本就注册最新 token）
-- [ ] iOS 壳层 UI、APNs 真凭据
-- [ ] HarmonyOS（ArkTS，工具链未决）
+To complete:
+- [x] Android receiving-side notification rendering / click deep link (2026-10-11: the `PushRoute.kt` protocol core - `PushRouteParser`/`PushForegroundPolicy` ported with the same semantics as iOS P5, 8 tests cross-checked against the same Swift vector set; the shell `ChirpNotifications` (chirp_messages channel, stacked per conversation, click PendingIntent carrying the conversation key) + `MainActivity` (singleTask+onNewIntent deep link into DMs, POST_NOTIFICATIONS runtime permission on API 33+, onResume/onPause maintaining ActiveChannel) + `ChirpFirebaseService` (compiled only in the -PchirpPush build, data reverse-parsed into a route, banner suppressed when the conversation is being viewed); end-to-end real delivery still needs real Firebase credentials)
+- [x] Android token refresh re-registration (2026-10-11: the `PushTokenHub.kt` protocol core - process-level latest token + listener fan-out, empty/same-token idempotent, throwing listeners isolated, 6 tests; the push leg's `onNewToken` records into the hub, and the shell mid-login re-registers over the existing connection (the server's RegisterDevice does create-or-update by device_id, so the same key overwrites the token); when not logged in only latest is recorded, and the next login registers the newest token as always)
+- [ ] iOS shell UI, real APNs credentials
+- [ ] HarmonyOS (ArkTS, toolchain undecided)
 
-### C++ 桌面（P0，已有基础）
+### C++ desktop (P0, foundation exists)
 
-| 项目 | 要求 |
+| Item | Requirement |
 |---|---|
-| C++ 标准 | C++17（最低），C++20（推荐） |
-| 传输层 | TCP（ASIO） |
-| 依赖 | ASIO（standalone）、Protobuf |
-| 平台 | Linux、Windows、macOS |
+| C++ standard | C++17 (minimum), C++20 (recommended) |
+| Transport | TCP (ASIO) |
+| Dependencies | ASIO (standalone), Protobuf |
+| Platforms | Linux, Windows, macOS |
 
-已有：
-- `ChatClient` 完整实现
-- 5 个 Hook 接口（MessageInterceptor/AuthProvider/MessageStore/ChatEventListener/CommandHandler）已接线（2026-09）
-- 27 个便捷 API（发送扩展/服务端历史/已读未读/黑名单/静音/输入状态/编辑删除/表情回执/批量删除/@提及/群组全套，2026-09）
-- 单测见 `tests/unit/sdk_core_test.cc`（状态机/loopback/钩子接线/便捷 API/FileMessageStore 往返）
-- `sdk_example` 示例
+Already present:
+- The complete `ChatClient` implementation
+- The 5 hook interfaces (MessageInterceptor/AuthProvider/MessageStore/ChatEventListener/CommandHandler) wired (2026-09)
+- 27 convenience APIs (send extensions/server history/read & unread/blocklist/mute/typing/edit-delete/reaction receipts/bulk delete/@mentions/the full group set, 2026-09)
+- Unit tests in `tests/unit/sdk_core_test.cc` (state machine/loopback/hook wiring/convenience APIs/FileMessageStore round trips)
+- The `sdk_example` sample
 
-### Go 服务端（P0，已有基础）
+### Go server (P0, foundation exists)
 
-| 项目 | 要求 |
+| Item | Requirement |
 |---|---|
-| Go 版本 | 1.21+ |
-| 传输层 | TCP（出站连接到 game_server_gateway） |
-| 依赖 | google.golang.org/protobuf |
+| Go version | 1.21+ |
+| Transport | TCP (outbound to game_server_gateway) |
+| Dependencies | google.golang.org/protobuf |
 
-已有：
-- 完整的 server plane 客户端
-- inject / event / identity / subscription / unread RPC
-- 33 个 race-enabled 单测（`client_test.go` 14 + `client_edge_test.go` 19）
+Already present:
+- A complete server plane client
+- inject / event / identity / subscription / unread RPCs
+- 33 race-enabled unit tests (`client_test.go` 14 + `client_edge_test.go` 19)
 
-待补：
-- [x] 对齐新的 proto 包名（game_server_gateway）——已验证（2026-09）：`sdks/go/client.go` import 的是 `proto/go/game_server_gateway`,`proto/go/` 下无 `server_gateway` 孤儿目录,`go build ./...` 与 `go test ./sdks/go/` 全过
+To complete:
+- [x] Align with the new proto package name (game_server_gateway) - verified (2026-09): `sdks/go/client.go` imports `proto/go/game_server_gateway`, there is no orphan `server_gateway` directory under `proto/go/`, and `go build ./...` plus `go test ./sdks/go/` all pass
 
-## Hook 接口统一设计
+## Unified hook interface design
 
-所有 SDK 实现相同的钩子接口（按语言惯用方式）：
+All SDKs implement the same hook interfaces (in each language's idiomatic way):
 
-| 钩子 | C++ | C# | TypeScript | GDScript |
+| Hook | C++ | C# | TypeScript | GDScript |
 |---|---|---|---|---|
-| 消息拦截 | `MessageInterceptor`（虚基类） | `IMessageInterceptor`（interface） | `MessageInterceptor`（interface） | signal + callback |
-| 认证提供 | `AuthProvider`（虚基类） | `IAuthProvider`（interface） | `AuthProvider`（interface） | callback |
-| 命令处理 | `CommandHandler`（虚基类） | `ICommandHandler`（interface） | `CommandHandler`（interface） | signal |
-| 消息存储 | `MessageStore`（虚基类） | `IMessageStore`（interface） | `MessageStore`（interface） | Resource |
-| 事件监听 | `ChatEventListener`（虚基类） | `IChatEventListener`（interface） | `ChatEventListener`（interface） | signal |
-| 消息渲染 | `MessageRenderer`（虚基类） | `IMessageRenderer`（interface） | `MessageRenderer`（interface） | signal |
+| Message interception | `MessageInterceptor` (virtual base class) | `IMessageInterceptor` (interface) | `MessageInterceptor` (interface) | signal + callback |
+| Auth provision | `AuthProvider` (virtual base class) | `IAuthProvider` (interface) | `AuthProvider` (interface) | callback |
+| Command handling | `CommandHandler` (virtual base class) | `ICommandHandler` (interface) | `CommandHandler` (interface) | signal |
+| Message storage | `MessageStore` (virtual base class) | `IMessageStore` (interface) | `MessageStore` (interface) | Resource |
+| Event listening | `ChatEventListener` (virtual base class) | `IChatEventListener` (interface) | `ChatEventListener` (interface) | signal |
+| Message rendering | `MessageRenderer` (virtual base class) | `IMessageRenderer` (interface) | `MessageRenderer` (interface) | signal |
 
-接口语义一致，只是按语言习惯调整命名和调用方式。详见 `sdks/core/include/chirp/` 下的 C++ 头文件定义。
+The interface semantics are identical; only naming and call style follow each language's conventions. See the C++ header definitions under `sdks/core/include/chirp/` for details.
 
-## 实现优先级
+## Implementation priorities
 
-### 第一批（P0，与游戏平面同步）
+### First batch (P0, in step with the game plane)
 
-1. **C++ core SDK**：Hook 接口 + 命令系统（其他 SDK 的参考实现）
-2. **Unity SDK**：Hook 接口 + 历史存储
-3. **Unreal SDK**：Hook 接口 + Blueprint 事件
+1. **C++ core SDK**: hook interfaces + command system (the reference implementation for the other SDKs)
+2. **Unity SDK**: hook interfaces + history storage
+3. **Unreal SDK**: hook interfaces + Blueprint events
 
-### 第二批（P1，App 平面启动后）
+### Second batch (P1, after the App plane starts)
 
-4. **TypeScript 核心包**：独立于 web_companion，LayaBox/Cocos/Web 共用
-5. **LayaBox SDK**：TypeScript 核心 + Laya 适配层
-6. **移动端原生包**：`apps/android` + `apps/ios`（2026-09-29 交付；Flutter 应用同批移除）
+4. **TypeScript core package**: independent of web_companion, shared by LayaBox/Cocos/Web
+5. **LayaBox SDK**: TypeScript core + Laya adapter layer
+6. **Mobile native packages**: `apps/android` + `apps/ios` (delivered 2026-09-29; the Flutter app was removed in the same batch)
 
-### 第三批（P2，按需）
+### Third batch (P2, on demand)
 
-7. **Godot SDK**：GDScript 或 C# 复用
-8. **Cocos Creator SDK**：TypeScript 核心 + Cocos 适配层
+7. **Godot SDK**: GDScript or C# reuse
+8. **Cocos Creator SDK**: TypeScript core + Cocos adapter layer

@@ -1,4 +1,4 @@
-> 🌐 Language: [中文](./README.zh.md) | **English** (this page)
+> 🌐 Language: [中文](./zh/README.md) | **English** (this page)
 
 # Chirp Documentation
 

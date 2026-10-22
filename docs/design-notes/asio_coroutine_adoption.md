@@ -1,64 +1,64 @@
-> 🌐 Language: **中文** (this page) | [English](./asio_coroutine_adoption.en.md)
+> 🌐 Language: [中文](../zh/design-notes/asio_coroutine_adoption.md)) | **English** (this page)
 
-# ASIO 协程化分析:要不要、何时、怎么走
+# ASIO coroutines: should we, when, and how
 
-> 状态:技术决策分析(2026-09)。结论是"不整体重写、新模块采用",理由见下文;若未来证据变化,按文末决策表重新评估。能力边界以 [CAPABILITY_MATRIX](../CAPABILITY_MATRIX.md) 为准。
+> Status: technical decision analysis (2026-09). The conclusion is "no wholesale rewrite, adopt for new modules", with the reasoning below; if the evidence changes, re-evaluate using the decision table at the end. Capability boundaries are defined by [CAPABILITY_MATRIX](../CAPABILITY_MATRIX.md)).
 
-## 要点速览(TL;DR)
+## TL;DR
 
-1. 前提纠正:asio 对 C++20 协程的支持不是 1.36 才开始的——`awaitable`/`co_spawn`/`use_awaitable` 这套原生协程设施自 **asio 1.16(2019 年底,对应 Boost.Asio 1.70)就已可用**,更早还有 TS 风格的 stackless 伪协程(`asio::coroutine` + `yield`)。
-2. 本项目已经在用支持协程的版本:vcpkg 提供的 **asio 1.32.0**(standalone 模式),编译标准 **C++23**(`CMakeLists.txt:4`),GCC 工具链对协程的原生支持齐备。启用协程不需要升级任何依赖。
-3. 协程提升的主要是代码形态,不是吞吐:回调改协程不会让消息转发变快。真正能带来延迟收益的,是把"io 线程上的阻塞调用"变成真异步——这和协程是互补关系(协程让异步代码写起来像同步),不是同一件事。
-4. 建议:不做大爆炸重写。回调基线已 100% 行覆盖、嵌套浅、无性能证据;但**新写的多步流程**(设备级会话核心、迁移 worker 类任务、分布式路由)直接用 `co_await` 写,避免再造深层回调状态机。
+1. Premise correction: asio's support for C++20 coroutines did not start at 1.36 — the native coroutine facilities `awaitable`/`co_spawn`/`use_awaitable` have been available since **asio 1.16 (late 2019, corresponding to Boost.Asio 1.70)**, and before that there were TS-style stackless pseudo-coroutines (`asio::coroutine` + `yield`).
+2. This project already uses a version that supports coroutines: **asio 1.32.0** provided by vcpkg (standalone mode), compile standard **C++23** (`CMakeLists.txt:4`), with the GCC toolchain having complete native coroutine support. Enabling coroutines requires no dependency upgrade at all.
+3. What coroutines mainly improve is code shape, not throughput: turning callbacks into coroutines does not make message forwarding faster. What genuinely delivers a latency win is converting "blocking calls on the io thread" into real async — that is complementary to coroutines (coroutines make async code read like sync), not the same thing.
+4. Recommendation: no big-bang rewrite. The callback baseline already has 100% line coverage, shallow nesting, and no performance evidence; but **newly written multi-step flows** (the device-level session core, migration-worker style tasks, distributed routing) should be written with `co_await`, to avoid creating deep callback state machines.
 
-## 1. 事实核对:asio 协程时间线
+## 1. Fact check: the asio coroutines timeline
 
-| 能力 | 进入 asio 的时间 | 说明 |
+| Capability | When it entered asio | Notes |
 | --- | --- | --- |
-| stackless 伪协程(`asio::coroutine` + `yield_context`) | asio 1.12 前后(Boost.Asio 1.66 时代) | 基于 C++98 技巧展开的"伪协程",无语言级支持 |
-| **C++20 原生协程**(`awaitable`/`co_spawn`/`use_awaitable`/`this_coro`) | **asio 1.16(2019-12,Boost.Asio 1.70)** | 语言级 stackless 协程,今天的主流写法 |
-| `asio::experimental::coro`(带值的 channel 式协程) | asio 1.20+ | 实验性,后续转正 |
-| asio 1.30 / 1.32(本项目在用) | 2024 | 协程设施已稳定多年 |
+| stackless pseudo-coroutines (`asio::coroutine` + `yield_context`) | asio ~1.12 (the Boost.Asio 1.66 era) | "Pseudo-coroutines" built on C++98 tricks, with no language-level support |
+| **C++20 native coroutines** (`awaitable`/`co_spawn`/`use_awaitable`/`this_coro`) | **asio 1.16 (2019-12, Boost.Asio 1.70)** | Language-level stackless coroutines, today's mainstream style |
+| `asio::experimental::coro` (value-carrying, channel-style coroutines) | asio 1.20+ | Experimental, later graduated |
+| asio 1.30 / 1.32 (what this project uses) | 2024 | The coroutine facilities have been stable for years |
 
-所以问题从来不是"版本够不够",而是"值不值得改"。
+So the question was never "is the version new enough", but "is it worth changing".
 
-## 2. 两条协程路线:别把微信的答案抄错题
+## 2. Two coroutine routes: don't misquote WeChat
 
-讨论"微信服务器大量使用协程"时,必须分清两条技术路线:
+Any discussion of "WeChat servers use coroutines heavily" must distinguish two technical routes:
 
-**有栈协程(stackful)**——微信开源的 [libco](https://github.com/Tencent/libco) 是这一类。每个协程持有独立(或共享)的调用栈,挂起/恢复靠汇编级上下文切换,**任意函数内部都能挂起**,业务代码可以长成完全同步的样子(包括阻塞式 socket API,libco 通过 hook 系统调用做到"看起来阻塞、实际让出")。微信的场景是海量长连接 + 复杂同步风格的业务逻辑,这套方案把"十亿级连接的并发"和"同步代码的可维护性"同时拿到手。
+**Stackful coroutines** — the open-sourced [libco](https://github.com/Tencent/libco) by WeChat is of this kind. Every coroutine holds its own (or a shared) call stack; suspension/resumption uses assembly-level context switching, **suspension can happen inside any function**, and business code can take a fully synchronous shape (including blocking-style socket APIs — libco achieves "looks blocking, actually yields" by hooking syscalls). WeChat's scenario is massive long connections + complex synchronous-style business logic; this solution captured "concurrency at billion-connection scale" and "maintainability of synchronous code" at the same time.
 
-**无栈协程(stackless)**——C++20 协程、asio `awaitable` 是这一类。协程帧按挂起点所需的最大局部状态在堆上分配,挂起点只能在 `co_await` 处、只能跨协程函数传播。内存占用小、切换成本极低,但"同步化"只覆盖协程链内部,普通函数里不能随便挂起。
+**Stackless coroutines** — C++20 coroutines and asio `awaitable` are of this kind. The coroutine frame is allocated on the heap at the maximum local state required by the suspension points; suspension can only happen at a `co_await` and can only propagate across coroutine functions. Memory use is small and the switch cost is extremely low, but the "synchronization" only covers the inside of a coroutine chain — you can't just suspend inside an ordinary function.
 
-chirp 用 asio standalone,自然的路线是 **C++20 无栈协程**。照搬 libco(引入有栈协程库)意味着自建调度集成、hook 层和一套与 asio 之外的上下文切换机制——为了"写法像微信"付出真实成本,而微信选 libco 的约束(海量连接、2013 年还没有 C++20、全同步存量代码)我们不全部成立。
+Chirp uses asio standalone, so the natural route is **C++20 stackless coroutines**. Copying libco (introducing a stackful coroutine library) means building your own scheduler integration, a hook layer, and a context-switching mechanism independent of asio — paying real cost for "code that looks like WeChat's", while the constraints that led WeChat to libco (massive connections, no C++20 in 2013, a fully synchronous legacy codebase) do not all hold here.
 
-## 3. 性能真相:协程提升什么,不提升什么
+## 3. The performance truth: what coroutines improve, and what they don't
 
-### 不提升的部分
+### What they don't improve
 
-- **单跳 I/O 吞吐与延迟**。asio 的事件循环就绪队列 + 回调,与 co_spawn + co_await 的本质相同:一个状态机,一次恢复。协程帧的堆分配(每协程一次)与回调对象捕获(每跳一次)在同一个量级,基准上互有胜负,从来不是数量级差异。
-- **连接数上限**。内存模型没有质变:回调链的 lambda 捕获 vs 协程帧,都是每连接常数级。
+- **Single-hop I/O throughput and latency**. asio's event loop ready queue + callbacks is essentially the same as co_spawn + co_await: one state machine, one resumption. The heap allocation of a coroutine frame (once per coroutine) and the capture in a callback object (once per hop) are the same order of magnitude; benchmarks flip either way, and it is never an order-of-magnitude difference.
+- **Connection ceiling**. There is no qualitative change in the memory model: lambda captures in a callback chain vs coroutine frames — both are constant per connection.
 
-### 真正提升的部分
+### What they genuinely improve
 
-- **深层嵌套流程的可写性**。每多一步异步,回调就多一层嵌套 + 一份手工传递的状态;协程把 n 步写成 n 行顺序代码,错误处理从"每层手工转发错误码"变成 `try/catch`。
-- **取消与超时的传播**。asio 的 `cancellation_slot`/`cancellation_state` 在协程链里自动传播;回调链里每个环节都要手工接线。
-- **io 线程上的阻塞调用,可以被"顺手"消灭**。这一条对 chirp 最重要,详见第 4 节。
+- **Writableness of deeply nested flows**. Every extra async step adds a level of callback nesting plus a hand-carried state object; a coroutine writes n steps as n sequential lines, and error handling becomes `try/catch` instead of "check and forward the error code at every level".
+- **Propagation of cancellation and timeout**. asio's `cancellation_slot`/`cancellation_state` propagate automatically through a coroutine chain; in a callback chain every link has to be wired by hand.
+- **Blocking calls on the io thread can be "casually" eliminated**. This one matters most for chirp; see section 4.
 
-一句话:**协程是让"正确的异步架构"变得可维护的工具,它自己不产生性能。**
+In one sentence: **coroutines are the tool that makes a "correct async architecture" maintainable; they do not produce performance themselves.**
 
-## 4. 对照 chirp 现状
+## 4. Against chirp's current state
 
-### 4.1 当前形态
+### 4.1 Current shape
 
-- 边缘/会话层回调嵌套浅:`libs/network/tcp_session.cc` 的 `DoRead`→`on_frame`→`DoWrite` 是"读到帧→回调→写回"的简单链,状态量少,strand 保护清晰。这类代码改协程**收益接近零**,还要动 100% 覆盖的基线。
-- fire-and-forget 已经是现状:chat 的 NPC 上行(`SendEventPublish(..., lambda)`)就是"发出去,失败打个日志"。协程不会让它更快,只会让它更好读一点。
-- 真正嵌套深、状态机重的地方:`libs/network/server_gateway_peer.cc`(重连/认证/心跳状态机)、`message_migration_worker`(多步迁移流程)。这些是协程化的**高收益区**,但它们目前工作正常且有覆盖。
-- 一个比"回调 vs 协程"更大的事实:`libs/network/redis_client.cc` 的每条命令都是**同步阻塞实现**(resolve → connect → read,`SendCmd` 每次新建连接)。它跑在 io 线程上时,一次 Redis 往返会**卡住该线程上所有连接的调度**。这是当前架构里最实际的延迟放大器——比任何代码风格问题都大。它的正确解法是真异步 Redis 客户端,而**协程正是让异步 Redis 客户端的使用代码保持可读的手段**。换而言之:如果哪天做 Redis 异步化,协程化的收益会自动兑现;单独做"回调改协程"则不会。
+- The edge/session layer has shallow callback nesting: `libs/network/tcp_session.cc`'s `DoRead`→`on_frame`→`DoWrite` is a simple "read a frame → callback → write back" chain, with little state and clear strand protection. Converting this kind of code to coroutines has **near-zero benefit**, and would touch a 100%-covered baseline.
+- Fire-and-forget is already the status quo: chat's NPC upstream (`SendEventPublish(..., lambda)`) is already "send it out, log the failure". Coroutines wouldn't make it faster, only slightly more readable.
+- The genuinely deep, state-machine-heavy spots: `libs/network/server_gateway_peer.cc` (the reconnect/auth/heartbeat state machine), `message_migration_worker` (a multi-step migration flow). These are the **high-yield zone** for coroutines, but they currently work fine and are covered.
+- One fact larger than "callbacks vs coroutines": every command in `libs/network/redis_client.cc` is a **synchronous blocking implementation** (resolve → connect → read, with `SendCmd` opening a new connection each time). When it runs on the io thread, a single Redis round trip **blocks the scheduling of every connection on that thread**. This is the most practical latency amplifier in the current architecture — bigger than any code-style issue. The correct fix is a truly asynchronous Redis client, and **coroutines are exactly the means that keeps the code using an async Redis client readable**. In other words: if we ever do Redis async-ification, the coroutine payoff materializes on its own; doing "convert callbacks to coroutines" alone would not.
 
-### 4.2 前后对比(以"取历史 [逐页回填]"类流程为例)
+### 4.2 Before/after (using a "fetch history [page-fill]" style flow)
 
-现在的写法(每步一跳,状态手工传递):
+Current style (one hop per step, state carried by hand):
 
 ```cpp
 void Retriever::Start(std::string channel) {
@@ -67,13 +67,13 @@ void Retriever::Start(std::string channel) {
     self->archive_->FetchOlder(channel, page.oldest(), [self](auto older) {
       if (older.empty()) { self->Finish(); return; }
       self->Merge(older);
-      self->archive_->FetchOlder(channel, /* 再来一层… */);
+      self->archive_->FetchOlder(channel, /* one more level… */);
     });
   });
 }
 ```
 
-协程写法(同一逻辑):
+Coroutine style (the same logic):
 
 ```cpp
 asio::awaitable<void> Retriever::Run(std::string channel) {
@@ -85,42 +85,42 @@ asio::awaitable<void> Retriever::Run(std::string channel) {
   }
   Finish();
 }
-// 入口:asio::co_spawn(strand_, retriever->Run(channel), asio::detached);
+// Entry point: asio::co_spawn(strand_, retriever->Run(channel), asio::detached);
 ```
 
-编译器替我们生成了那台手工状态机,并且异常、取消、超时都能沿链传播。
+The compiler generates that state machine for us, and exceptions, cancellation and timeouts can all propagate along the chain.
 
-## 5. 优缺点清单(针对本项目)
+## 5. Pros and cons checklist (for this project)
 
-### 采用的收益
+### Benefits of adopting
 
-1. 多步异步流程回归顺序表达,消除深层回调嵌套(迁移 worker、hub peer 重连、未来的设备级会话核心)。
-2. `try/catch` 统一错误路径,替代"每层检查错误码并转发"。
-3. 取消/超时沿协程链自动传播,不必在每个回调里手工接线。
-4. 为未来的异步 Redis/推送传输(真异步 I/O)准备好可维护的写法。
-5. 与 C++23 标准库/生态方向一致,新代码不再积累"历史风格债"。
+1. Multi-step async flows return to sequential expression, eliminating deep callback nesting (migration worker, hub peer reconnect, the future device-level session core).
+2. `try/catch` unifies error paths, replacing "check and forward the error code at every level".
+3. Cancellation/timeout propagates automatically through the coroutine chain, with no hand-wiring in each callback.
+4. Prepares a maintainable style for future async Redis/push transport (true async I/O).
+5. Consistent with the direction of the C++23 standard library/ecosystem; new code no longer accumulates "historical style debt".
 
-### 采用的代价与风险
+### Costs and risks of adopting
 
-1. **重写风险与收益不成比**:存量回调代码有 100% 行覆盖基线,风格迁移本身不修任何 bug,却引入等价性验证成本。
-2. **心智门槛**:协程的生命周期陷阱(协程帧悬挂引用、`co_spawn` 的所有权、detached 协程里 `this` 失效)比回调的捕获陷阱更隐蔽,团队/未来贡献者需要一次学习成本。
-3. **栈内存模型不同**:协程帧按挂起点最大局部状态分配——大缓冲区误留在跨挂起作用域里会造成每协程内存放大;回调链的每跳分配反而更"所见即所得"。
-4. **同步阻塞调用混入协程链的危险**:`co_await` 链里混一个阻塞调用(比如现在的同步 `RedisClient`),阻塞的还是 io 线程,而且看起来"异步"更难被 review 发现。
-5. **调试体验**:协程回溯依赖工具链版本(新 GCC 有 `-g` 协程帧感知,老版本栈帧拼接不完整)。
-6. 与微信路线**不可直接类比**:libco 的"任意函数可挂起 + 同步 API 直用"的爽感,C++20 无栈协程给不了;拿微信当论据支持"改 awaitable"是抄错题。
+1. **Rewrite risk out of proportion to the reward**: the existing callback code has a 100% line-coverage baseline, and a style migration fixes no bug while introducing equivalence-verification cost.
+2. **Mental barrier**: the lifetime traps of coroutines (coroutine frames holding dangling references, `co_spawn` ownership, `this` becoming invalid in a detached coroutine) are more insidious than callback capture traps, and the team/future contributors need one round of learning.
+3. **A different stack/memory model**: a coroutine frame is allocated at the maximum local state across suspension points — a large buffer accidentally left alive across a suspension amplifies per-coroutine memory; per-hop allocations in a callback chain are instead more "what you see is what you get".
+4. **Danger of mixing blocking calls into a coroutine chain**: one blocking call (such as today's synchronous `RedisClient`) inside a `co_await` chain still blocks the io thread, and because it looks "async" it is harder for review to spot.
+5. **Debugging experience**: coroutine backtraces depend on the toolchain version (new GCC has `-g` coroutine-frame awareness, older versions produce incomplete frame stitching).
+6. **Not directly comparable to the WeChat route**: libco's "any function can suspend + synchronous APIs used directly" pleasure cannot be given by C++20 stackless coroutines; citing WeChat as grounds for "switch to awaitable" is quoting the wrong lesson.
 
-## 6. 建议
+## 6. Recommendation
 
-1. **不整体重写**。当前没有性能证据(容量基准本来就是 TODO 里的暂缓项),回调基线覆盖 100%,重写只买风格。
-2. **新模块默认协程**。P1 的设备级会话核心、任何新的多步异步流程(推送传输真实化、分布式路由增强)用 `co_await` 写,入口 `asio::co_spawn`,延续 strand 纪律(每个会话一条 strand,协程 spawn 到 strand 上)。
-3. **协程化和 Redis 异步化绑定立项**。哪天要把同步 `RedisClient` 换成真异步,一起把使用它的流程协程化——那时协程的收益(可维护的异步)才会真实兑现。单独的"风格迁移"不建议立项。
-4. **约定先行**:如果开始写协程,同步补一份内部约定(co_spawn 的所有权/detached 使用限制、协程帧里不放缓冲区、禁止在协程链中直接调用阻塞 I/O),放在 `libs/network` 的头注释或 docs 里。
+1. **No wholesale rewrite**. There is no performance evidence today (the capacity benchmark is itself a deferred TODO item), the callback baseline is 100% covered, and a rewrite only buys style.
+2. **Default new modules to coroutines**. The P1 device-level session core and any new multi-step async flow (real push transport, distributed routing enhancements) should be written with `co_await`, entering via `asio::co_spawn`, keeping the strand discipline (one strand per session, coroutines spawned onto the strand).
+3. **Bundle coroutine adoption with Redis async-ification**. Whichever day we replace the synchronous `RedisClient` with a real async one, coroutine-ify the flows using it at the same time — that is when the coroutine payoff (maintainable async) actually materializes. A standalone "style migration" should not be scheduled.
+4. **Conventions first**: if we start writing coroutines, add an internal convention at the same time (ownership of co_spawn / detached usage limits, no buffers in coroutine frames, no direct blocking I/O calls inside a coroutine chain), placed in a header comment under `libs/network` or in docs.
 
-## 7. 重新评估的触发信号
+## 7. Triggers for re-evaluation
 
-出现以下任一情况,应重新审视本文结论:
+Any of the following should prompt a re-examination of this document's conclusion:
 
-- 压测(TODO P3 容量基准)显示回调链/阻塞 Redis 是可测量的延迟瓶颈;
-- P1 设备级会话核心的流程图复杂到回调嵌套 ≥ 4 层、状态手工传递对象 ≥ 3 个;
-- Redis 异步化或真实推送传输(APNs HTTP/2)立项——这两个天然该用协程写;
-- asio 升级带来显著的多线程 `co_await` 亲和性/调度改进,使迁移成本下降。
+- A load test (TODO P3 capacity benchmark) shows the callback chain / blocking Redis is a measurable latency bottleneck;
+- The P1 device-level session core's flow diagram becomes complex enough that callback nesting is ≥ 4 levels and hand-carried state objects are ≥ 3;
+- Redis async-ification or real push transport (APNs HTTP/2) is scheduled — both should naturally be written with coroutines;
+- An asio upgrade brings significant improvement to multithreaded `co_await` affinity/scheduling, lowering migration cost.

@@ -1,306 +1,306 @@
-> 🌐 Language: **中文** (this page) | [English](./roadmap_history.en.md)
+> 🌐 Language: [中文](../zh/design-notes/roadmap_history.md)) | **English** (this page)
 
-# Chirp 路线图历史(存档)
+# Chirp Roadmap History (Archive)
 
-> 2026-09 自 TODO.md 归档。本文件是早期路线图与更新日志的历史记录;勾选状态反映归档时点的仓库状态,并已与 [../CAPABILITY_MATRIX.md](../CAPABILITY_MATRIX.md) 交叉核对。当前工作请看 [TODO.md](../../TODO.md)。
+> Archived from TODO.md in 2026-09. This file is a historical record of the early roadmap and change log; the checked states reflect the repository as of archiving time and have been cross-checked against [../CAPABILITY_MATRIX.md](../CAPABILITY_MATRIX.md)). For current work see [TODO.md](https://github.com/cuihairu/chirp/blob/main/TODO.md)).
 
-## 1. 基础设施(Monorepo 与 C++)
+## 1. Infrastructure (Monorepo and C++)
 
-> 注：以下第 1–6 节为历史 roadmap，勾选状态已于 2026-09 按 [能力矩阵](../CAPABILITY_MATRIX.md) 对齐。`[x]` 仅表示代码存在；未标注的为核心 Supported 路径，标注 **Experimental** / **Demo** / **Stub** 的不应视为稳定能力。
+> Note: sections 1–6 below are the historical roadmap; the checked states were aligned with the [capability matrix](../CAPABILITY_MATRIX.md)) in 2026-09. `[x]` only means the code exists; items without an annotation are core Supported paths, and items annotated **Experimental** / **Demo** / **Stub** must not be treated as stable capabilities.
 
-- [x] **项目脚手架**:搭建 `libs`、`services`、`proto` 目录结构。
-- [x] **构建系统**:根 `CMakeLists.txt` 与各模块配置。
-- [x] **Protobuf 定义**:`common`、`auth`、`gateway` schema。
-- [x] **网络库**:`chirp_network`(ASIO 封装、Packet 解析)。
-- [x] **公共库**:配置加载器、日志器(spdlog 封装)。
+- [x] **Project scaffolding**: set up the `libs`, `services`, `proto` directory structure.
+- [x] **Build system**: root `CMakeLists.txt` and per-module configuration.
+- [x] **Protobuf definitions**: `common`, `auth`, `gateway` schemas.
+- [x] **Network library**: `chirp_network` (ASIO wrapper, Packet parsing).
+- [x] **Common libraries**: config loader, logger (spdlog wrapper).
 
-## 2. 后端服务(微服务)
+## 2. Backend Services (Microservices)
 
-- [x] **网关服务**(边缘)
-  - [x] TCP 服务器(面向游戏客户端)。
-  - [x] WebSocket 服务器(面向 Web/移动应用)。
-  - [x] 会话管理(本地内存)。
-  - [x] 会话管理(分布式,Redis)。
+- [x] **Gateway service** (edge)
+  - [x] TCP server (for game clients).
+  - [x] WebSocket server (for web/mobile apps).
+  - [x] Session management (local memory).
+  - [x] Session management (distributed, Redis).
 
-- [x] **认证服务**（basic token 流程 = Supported；以下为增强实现，**Experimental**，依赖 MySQL + libsodium 条件构建，且目前零单测 — 见 P2）
-  - [x] 登录/登出逻辑,密码哈希(Argon2)
-  - [x] Token 校验(JWT)
-  - [x] 多设备冲突处理(踢线逻辑)
-  - [x] 刷新 token 支持
-  - [x] 限流(基于 Redis)
-  - [x] 防爆破
-  - [x] 用户注册,MySQL 持久化
+- [x] **Auth service** (basic token flow = Supported; the items below are the enhanced implementation, **Experimental**, conditionally built on MySQL + libsodium, and currently zero unit tests — see P2)
+  - [x] Login/logout logic, password hashing (Argon2)
+  - [x] Token validation (JWT)
+  - [x] Multi-device conflict handling (kick logic)
+  - [x] Refresh token support
+  - [x] Rate limiting (Redis-based)
+  - [x] Brute-force protection
+  - [x] User registration, MySQL persistence
 
-- [x] **聊天服务**(核心)（basic 消息 = Supported；存储增强与分布式为 **Experimental**）
-  - [x] 1v1 消息路由。
-  - [x] 离线消息存储(Redis → MySQL 迁移管线) **(Experimental)**
-  - [x] 历史消息检索,带分页
-  - [x] 消息送达跟踪(ACK/NACK) **(Experimental)**
-  - [x] 混合消息存储(Redis + MySQL) **(Experimental — 且增强构建缺失 server plane/push bridge 文件，见 P1)**
-    - [x] 从 Redis 历史/离线队列导出 MySQL 兼容 SQL
-    - [x] 归档脚本与后台 worker
-  - [x] 分布式路由(`chirp_chat_distributed` 目标) **(Experimental)**
+- [x] **Chat service** (core) (basic messaging = Supported; storage enhancements and the distributed form are **Experimental**)
+  - [x] 1v1 message routing.
+  - [x] Offline message storage (Redis → MySQL migration pipeline) **(Experimental)**
+  - [x] History retrieval, with pagination
+  - [x] Message delivery tracking (ACK/NACK) **(Experimental)**
+  - [x] Hybrid message storage (Redis + MySQL) **(Experimental — and the enhanced build is missing server plane/push bridge files, see P1)**
+    - [x] Export MySQL-compatible SQL from Redis history/offline queues
+    - [x] Archival scripts and background worker
+  - [x] Distributed routing (`chirp_chat_distributed` target) **(Experimental)**
 
-- [x] **社交与在线状态服务** **(Experimental — 未验证为核心路径，零单测)**
-  - [x] 好友列表管理。
-  - [x] 实时状态同步(在线/游戏中),经 Redis Pub/Sub。
+- [x] **Social & presence service** **(Experimental — not verified as a core path, zero unit tests)**
+  - [x] Friend list management.
+  - [x] Real-time status sync (online/in-game), via Redis Pub/Sub.
 
-## 3. 实时语音(WebRTC) **(Experimental — 环境依赖重，不在最小验证路径，零单测)**
+## 3. Real-time Voice (WebRTC) **(Experimental — heavy environment dependencies, not on the minimal verification path, zero unit tests)**
 
-> 目标:面向游戏与移动应用的低延迟组队语音。
+> Goal: low-latency party voice for games and mobile apps.
 
-- [x] **信令服务**
-  - [x] 房间管理(创建/加入/退出)。
-  - [x] SDP 与 ICE candidate 交换。
-- [x] **语音客户端模块**
-  - [x] WebRTC 原生集成(C++)。
-  - [x] 音频设备管理(麦克风/扬声器)。
-  - [x] 网络自适应(抖动缓冲、FEC 配置)。
+- [x] **Signaling service**
+  - [x] Room management (create/join/leave).
+  - [x] SDP and ICE candidate exchange.
+- [x] **Voice client module**
+  - [x] WebRTC native integration (C++).
+  - [x] Audio device management (microphone/speaker).
+  - [x] Network adaptivity (jitter buffer, FEC configuration).
 
-## 4. SDK(`sdks/`) **(Experimental — 不应宣称稳定)**
+## 4. SDKs (`sdks/`) **(Experimental — must not be claimed stable)**
 
-- [x] **核心 SDK(C++)** (`sdks/core`) **(Experimental)**
-  - [x] 聊天与语音的统一接口。
-  - [x] 跨平台编译(Windows/Mac/iOS/Android)。
-- [x] **Unity SDK** (`sdks/unity` - C# 适配层) **(Experimental — social 绑定含 TODO)**
-  - [x] C ABI 桥(原生插件)
-  - [x] C# 封装(P/Invoke)
-  - [x] MonoBehaviour 组件
-  - [ ] 全功能的 Blueprint 函数 **(social 部分为 TODO 占位)**
-- [x] **Unreal SDK** (`sdks/unreal` - UPlugin) **(Experimental — 存在未实现的返回路径)**
-  - [x] UPlugin 描述符
-  - [x] Blueprint 函数库
-  - [ ] C++ 封装实现 **(部分函数为未实现的返回路径)**
-  - [x] 事件派发器
+- [x] **Core SDK (C++)** (`sdks/core`) **(Experimental)**
+  - [x] Unified interface for chat and voice.
+  - [x] Cross-platform compilation (Windows/Mac/iOS/Android).
+- [x] **Unity SDK** (`sdks/unity` - C# adapter layer) **(Experimental — social bindings contain TODOs)**
+  - [x] C ABI bridge (native plugin)
+  - [x] C# wrapper (P/Invoke)
+  - [x] MonoBehaviour components
+  - [ ] Full-featured Blueprint functions **(the social part is a TODO placeholder)**
+- [x] **Unreal SDK** (`sdks/unreal` - UPlugin) **(Experimental — contains unimplemented return paths)**
+  - [x] UPlugin descriptor
+  - [x] Blueprint function library
+  - [ ] C++ wrapper implementation **(some functions are unimplemented return paths)**
+  - [x] Event dispatcher
 
-## 5. 客户端应用(`apps/`)
+## 5. Client Applications (`apps/`)
 
-- [x] **移动伴侣应用** (`apps/mobile_companion` - Flutter/RN) **(Demo — 不应呈现为生产就绪)**(2026-09-29 随原生迁移移除:协议核移植至 `apps/android`/`apps/ios`,同组测试向量对拍;CI 腿 `mobile-build.yml` 与 `proto/dart` 同批删除)
-  - [x] **UI 框架**:联系人列表、聊天窗口、语音房间。
-  - [ ] **后台服务**:推送通知(APNs/FCM),保证应用被杀后用户仍"可达"。 **(默认日志传输；`--push_transport http` 打开真实 HTTP/1.1+TLS provider 投递，APNs 需 HTTP/2 由部署前置协议转换，见 P2)**
-  - [x] **语音交互**:CallKit/ConnectionService 集成(系统电话 UI)。
-- [x] **CLI 客户端** (`apps/cli_client` - C++) **(Demo — 用于 smoke/手工验证)**
-  - [x] 简单的终端聊天客户端,用于测试。
-- [x] **压测工具** (`apps/load_tester` - C++) **(Demo)**
-  - [x] 连接洪泛测试
-  - [x] 消息风暴测试
-  - [x] 统计上报
-- [ ] **管理后台** (`apps/admin_dashboard`) **(Stub — 页面首选真实 HTTP 调 `/api/{stats,users,channels,messages}`，失败回落内置 mock 演示数据；仓内无 `/api/*` 后端服务，仍未接真实后端)**
+- [x] **Mobile companion app** (`apps/mobile_companion` - Flutter/RN) **(Demo — must not be presented as production-ready)** (removed on 2026-09-29 along with the native migration: the protocol core was ported into `apps/android`/`apps/ios` with same-shape test vectors cross-checked; the CI leg `mobile-build.yml` and `proto/dart` were deleted in the same batch)
+  - [x] **UI framework**: contacts list, chat window, voice rooms.
+  - [ ] **Background services**: push notifications (APNs/FCM), keeping users "reachable" after the app is killed. **(default log transport; `--push_transport http` turns on real HTTP/1.1+TLS provider delivery, APNs needs HTTP/2 via a protocol-converting front deployed ahead of it, see P2)**
+  - [x] **Voice interaction**: CallKit/ConnectionService integration (system phone UI).
+- [x] **CLI client** (`apps/cli_client` - C++) **(Demo — used for smoke/manual verification)**
+  - [x] A simple terminal chat client, used for testing.
+- [x] **Load testing tool** (`apps/load_tester` - C++) **(Demo)**
+  - [x] Connection flood testing
+  - [x] Message storm testing
+  - [x] Statistics reporting
+- [ ] **Admin dashboard** (`apps/admin_dashboard`) **(Stub — pages first attempt real HTTP calls to `/api/{stats,users,channels,messages}`, falling back to built-in mock demo data on failure; there is no `/api/*` backend service in the repo, still not wired to a real backend)**
 
-## 6. 运维与测试
+## 6. Operations & Testing
 
-- [x] **部署**:全部服务的 Dockerfile。 **(Supported)**
-- [x] **编排**:Docker Compose / K8s 清单。 **(Docker Compose = Supported；K8s 为草案)**
-- [x] **压测**:网关 10k+ 并发连接基准。实测证据见 [capacity_benchmark](/design-notes/capacity_benchmark)；容量数字已对外宣称。
+- [x] **Deployment**: Dockerfiles for all services. **(Supported)**
+- [x] **Orchestration**: Docker Compose / K8s manifests. **(Docker Compose = Supported; K8s is a draft)**
+- [x] **Load testing**: 10k+ concurrent connection benchmark for the gateway. Measured evidence in [capacity_benchmark](/design-notes/capacity_benchmark); the capacity numbers have been publicly claimed.
 
-## 近期更新(2026-03-18)
+## Recent Updates (2026-03-18)
 
-### 移动伴侣应用(Flutter)
-- 新增带 WebRTC 集成的语音房间界面
-- 新增带发言指示的参与者列表
-- 新增静音/取消静音控制
-- 新增扬声器切换
-- 集成 ChirpClient 承担语音信令
-- 首页增加语音房间入口
+### Mobile Companion App (Flutter)
+- Added a voice room screen with WebRTC integration
+- Added a participant list with speaking indicators
+- Added mute/unmute controls
+- Added speaker switching
+- Integrated ChirpClient for voice signaling
+- Added a voice room entry on the home page
 
-### Android 原生集成
-- 创建带原生 method channel 的 MainActivity.kt
-- 实现后台通话的 VoiceForegroundService
-- 实现响应通知动作的 VoiceBroadcastReceiver
-- 实现来电 UI 的 VoiceCallNotification
-- 实现推送通知的 ChirpFirebaseMessagingService
-- 创建含全部所需权限的 AndroidManifest.xml
-- 添加带 Firebase 与 Kotlin 依赖的 build.gradle
+### Android Native Integration
+- Created MainActivity.kt with native method channels
+- Implemented VoiceForegroundService for background calls
+- Implemented VoiceBroadcastReceiver responding to notification actions
+- Implemented VoiceCallNotification for the incoming-call UI
+- Implemented ChirpFirebaseMessagingService for push notifications
+- Created AndroidManifest.xml with all required permissions
+- Added build.gradle with Firebase and Kotlin dependencies
 
-### iOS 原生集成
-- 创建带 CallKit 集成的 AppDelegate.swift
-- 实现 VoIP 推送的 PKPushRegistryDelegate
-- 实现通话管理的 CXProviderDelegate
-- 添加音频焦点与免提控制
-- 创建含麦克风/相机权限的 Info.plist
-- 创建带 Firebase 与 CallKit 依赖的 Podfile
+### iOS Native Integration
+- Created AppDelegate.swift with CallKit integration
+- Implemented PKPushRegistryDelegate for VoIP push
+- Implemented CXProviderDelegate for call management
+- Added audio focus and speakerphone controls
+- Created Info.plist with microphone/camera permissions
+- Created a Podfile with Firebase and CallKit dependencies
 
-### 跨平台构建脚本
-- 创建 macOS/Linux 构建的 build_all.sh
-- 创建 Windows 构建的 build_all.bat
-- 创建 iOS.cmake 工具链文件
-- 创建 linux-gcc.cmake 工具链文件
-- 创建全平台 Unity 插件构建脚本
-- 增加 iOS XCFramework 制作
+### Cross-platform Build Scripts
+- Created build_all.sh for macOS/Linux builds
+- Created build_all.bat for Windows builds
+- Created the iOS.cmake toolchain file
+- Created the linux-gcc.cmake toolchain file
+- Created an all-platform Unity plugin build script
+- Added iOS XCFramework packaging
 
-### WebRTC 原生客户端模块
-- 创建 WebRTC 抽象层 webrtc_client.h
-- 创建含音频设备管理的 webrtc_client.cc
-- 将 WebRTC 客户端接入语音模块
-- 增加音量监测
-- 增加设备枚举 API
-- 增加输入/输出启用/禁用控制
+### WebRTC Native Client Module
+- Created the WebRTC abstraction layer webrtc_client.h
+- Created webrtc_client.cc with audio device management
+- Wired the WebRTC client into the voice module
+- Added volume monitoring
+- Added a device enumeration API
+- Added input/output enable/disable controls
 
-### 认证服务增强
-- 新增 `refresh_tokens` 表,刷新 token 持久化
-- 新增 `failed_login_attempts` 表,爆破追踪
-- 新增 `password_reset_tokens` 表,密码找回
-- 实现 Argon2id 的 `PasswordHasher`
-- 实现安全 token 生成的 `TokenGenerator`
-- 实现 MySQL 用户 CRUD 的 `UserStore`
-- 实现多设备会话追踪的 `SessionStore`
-- 实现分布式会话的 `RedisAuthStore`
-- 实现 `RateLimiter` 与 `BruteForceProtector`
-- 完整认证服务:注册、密码登录、刷新 token
+### Auth Service Enhancements
+- Added the `refresh_tokens` table, refresh token persistence
+- Added the `failed_login_attempts` table, brute-force tracking
+- Added the `password_reset_tokens` table, password recovery
+- Implemented the Argon2id `PasswordHasher`
+- Implemented the `TokenGenerator` for secure token generation
+- Implemented the `UserStore` for MySQL user CRUD
+- Implemented the `SessionStore` for multi-device session tracking
+- Implemented the `RedisAuthStore` for distributed sessions
+- Implemented `RateLimiter` and `BruteForceProtector`
+- Complete auth service: registration, password login, refresh token
 
-### 聊天服务增强
-- 创建集中配置的 `MessageStoreConfig`
-- protobuf 扩展 ACK/NACK 与分页消息
-- `MySQLMessageStore` 增加批量操作
-- 创建 Redis + MySQL 双写的 `HybridMessageStore` 接口
-- 创建 ACK/NACK 跟踪的 `MessageDeliveryTracker`
-- 创建后台 Redis→MySQL 迁移的 `MessageMigrationWorker`
-- 创建跨源分页的 `PaginatedHistoryRetriever`
+### Chat Service Enhancements
+- Created `MessageStoreConfig` for centralized configuration
+- protobuf extensions for ACK/NACK and paginated messages
+- `MySQLMessageStore` gained batch operations
+- Created the `HybridMessageStore` interface for Redis + MySQL dual writes
+- Created `MessageDeliveryTracker` for ACK/NACK tracking
+- Created `MessageMigrationWorker` for background Redis→MySQL migration
+- Created `PaginatedHistoryRetriever` for cross-source pagination
 
 ### Unity SDK
-- 创建 C ABI 桥(`chirp_unity_bridge.h/cc`)
-- 创建 P/Invoke 的 C# 封装(`ChirpSDK.cs`)
-- 创建 MonoBehaviour 组件(`ChirpManager.cs`)
-- 原生插件构建配置(`CMakeLists.txt`)
-- 支持 Windows、macOS、Linux、iOS、Android
+- Created the C ABI bridge (`chirp_unity_bridge.h/cc`)
+- Created the C# wrapper for P/Invoke (`ChirpSDK.cs`)
+- Created the MonoBehaviour component (`ChirpManager.cs`)
+- Native plugin build configuration (`CMakeLists.txt`)
+- Supports Windows, macOS, Linux, iOS, Android
 
 ### Unreal SDK
-- 创建 UPlugin 描述符(`ChirpSDK.uplugin`)
-- 创建覆盖全部聊天、社交、语音功能的 Blueprint 函数库
-- 创建 C++ 封装实现(`ChirpClient.h/cpp`)
-- 创建模块配置的 Build.cs
-- Blueprint 事件派发器
+- Created the UPlugin descriptor (`ChirpSDK.uplugin`)
+- Created a Blueprint function library covering all chat, social and voice features
+- Created the C++ wrapper implementation (`ChirpClient.h/cpp`)
+- Created the Build.cs for module configuration
+- Blueprint event dispatcher
 
-### 压测工具
-- 在 `apps/load_tester/` 创建 `LoadTester` 框架
-- 连接洪泛场景(爬升到 N 连接)
-- 消息风暴场景(高吞吐)
-- 混合负载场景(贴近真实使用)
-- 带延迟指标的统计上报
+### Load Testing Tool
+- Created the `LoadTester` framework in `apps/load_tester/`
+- Connection flood scenario (ramping up to N connections)
+- Message storm scenario (high throughput)
+- Mixed workload scenario (close to real usage)
+- Statistics reporting with latency metrics
 
-## 近期更新(2026-03-18 续)
+## Recent Updates (2026-03-18 cont.)
 
-### Discord 式频道系统
-- 创建层级频道管理的 `channel_manager.h/cc`
-- 用于组织的频道分类
-- 文本/语音/公告/舞台/论坛频道类型
-- 带角色/用户覆盖的权限系统
-- 频道慢速模式支持
-- 语音频道参与者管理
+### Discord-style Channel System
+- Created `channel_manager.h/cc` for hierarchical channel management
+- Channel categories for organization
+- Text/voice/announcement/stage/forum channel types
+- Permission system with role/user overrides
+- Channel slow-mode support
+- Voice channel participant management
 
-### 消息回应
-- 创建表情回应的 `reaction_manager.h/cc`
-- 带聚合的添加/移除回应
-- 多消息的批量回应获取
-- 供 UI 展示的热门回应
+### Message Reactions
+- Created `reaction_manager.h/cc` for emoji reactions
+- Add/remove reactions with aggregation
+- Batch reaction fetching for multiple messages
+- Popular reactions for UI display
 
-### 消息编辑/删除
-- 创建消息编辑的 `message_edit_manager.h/cc`
-- 可配置的编辑时间窗(默认 15 分钟)
-- 带上限的编辑历史追踪
-- 带保留期的软删除
-- 管理员的硬删除
-- 批量删除操作
+### Message Edit/Delete
+- Created `message_edit_manager.h/cc` for message editing
+- Configurable edit time window (default 15 minutes)
+- Edit history tracking with a cap
+- Soft delete with a retention period
+- Hard delete for admins
+- Batch delete operations
 
-### 正在输入提示
-- 创建实时输入反馈的 `typing_manager.h/cc`
-- 向频道参与者广播输入状态
-- 可配置超时(默认 10 秒)
-- 防止过度广播的冷却
+### Typing Indicators
+- Created `typing_manager.h/cc` for real-time typing feedback
+- Broadcast typing state to channel participants
+- Configurable timeout (default 10 seconds)
+- Cooldown to prevent excessive broadcasting
 
-### 提及系统
-- 创建 @提及解析的 `mention_manager.h/cc`
-- 支持 @user、@role、@channel、@everyone、@here
-- 大规模提及的冷却
-- 通知接收者构建
-- 自动补全支持钩子
+### Mention System
+- Created `mention_manager.h/cc` for @mention parsing
+- Support for @user, @role, @channel, @everyone, @here
+- Cooldown for mass mentions
+- Notification recipient construction
+- Autocomplete support hooks
 
-### 文件分享
-- 创建文件上传/下载的 `file_storage_manager.h/cc`
-- 预签名 URL 的上传预备
-- 文件类型校验(图片、视频、音频、文档)
-- 可配置大小上限(默认 100MB)
-- 下载 URL 生成
-- 病毒扫描钩子
+### File Sharing
+- Created `file_storage_manager.h/cc` for file upload/download
+- Upload preparation with pre-signed URLs
+- File type validation (images, video, audio, documents)
+- Configurable size cap (default 100MB)
+- Download URL generation
+- Virus scanning hook
 
-### Prometheus 指标
-- 创建指标采集的 `metrics.h/cc`
-- Counter、Gauge、Histogram 指标类型
-- /metrics 端点的 HTTP 服务器
-- 健康检查端点
-- 简单实现(无外部依赖)
+### Prometheus Metrics
+- Created `metrics.h/cc` for metric collection
+- Counter, Gauge, Histogram metric types
+- HTTP server for the /metrics endpoint
+- Health check endpoint
+- Simple implementation (no external dependencies)
 
-### 移动端 CI/CD
-- 创建 `.github/workflows/mobile-build.yml`
-- Android APK/AppBundle 构建
-- iOS 构建工作流
-- Flutter 代码分析
-- 原生 SDK 跨平台构建
+### Mobile CI/CD
+- Created `.github/workflows/mobile-build.yml`
+- Android APK/AppBundle builds
+- iOS build workflow
+- Flutter code analysis
+- Native SDK cross-platform builds
 
-## 近期更新(2026-03-18 续二)
+## Recent Updates (2026-03-18 cont. 2)
 
-### 消息编辑/删除
-- 创建消息编辑的 `message_edit_manager.h/cc`
-- 可配置的编辑时间窗(默认 15 分钟)
-- 带上限的编辑历史追踪
-- 带保留期的软删除
-- 管理员的硬删除
-- 批量删除操作
+### Message Edit/Delete
+- Created `message_edit_manager.h/cc` for message editing
+- Configurable edit time window (default 15 minutes)
+- Edit history tracking with a cap
+- Soft delete with a retention period
+- Hard delete for admins
+- Batch delete operations
 
-### 正在输入提示
-- 创建实时输入反馈的 `typing_manager.h/cc`
-- 向频道参与者广播输入状态
-- 可配置超时(默认 10 秒)
-- 防止过度广播的冷却
+### Typing Indicators
+- Created `typing_manager.h/cc` for real-time typing feedback
+- Broadcast typing state to channel participants
+- Configurable timeout (default 10 seconds)
+- Cooldown to prevent excessive broadcasting
 
-### 提及系统
-- 创建 @提及解析的 `mention_manager.h/cc`
-- 支持 @user、@role、@channel、@everyone、@here
-- 大规模提及的冷却
-- 通知接收者构建
-- 自动补全支持钩子
+### Mention System
+- Created `mention_manager.h/cc` for @mention parsing
+- Support for @user, @role, @channel, @everyone, @here
+- Cooldown for mass mentions
+- Notification recipient construction
+- Autocomplete support hooks
 
-### 文件分享
-- 创建文件上传/下载的 `file_storage_manager.h/cc`
-- 预签名 URL 的上传预备
-- 文件类型校验(图片、视频、音频、文档)
-- 可配置大小上限(默认 100MB)
-- 下载 URL 生成
-- 病毒扫描钩子
+### File Sharing
+- Created `file_storage_manager.h/cc` for file upload/download
+- Upload preparation with pre-signed URLs
+- File type validation (images, video, audio, documents)
+- Configurable size cap (default 100MB)
+- Download URL generation
+- Virus scanning hook
 
-### 推送通知服务
-- 创建支持 FCM/APNs 的 `services/notification`
-- 设备注册与 token 管理
-- 消息、提及与来电通知
-- 静默通知支持
-- 角标数管理
-- 防骚扰的通知冷却
-- 不活跃设备清理
+### Push Notification Service
+- Created `services/notification` supporting FCM/APNs
+- Device registration and token management
+- Message, mention and incoming-call notifications
+- Silent notification support
+- Badge count management
+- Notification cooldown against spam
+- Inactive device cleanup
 
-### 在线状态增强
-- 创建多设备在线状态的 `presence_manager_v2.h/cc`
-- 状态类型:在线、闲置、勿扰、隐身、游戏中、语音中、通话中
-- 带表情的自定义状态消息
-- 活动检测与闲置/离线超时
-- 按设备的会话管理
-- 批量在线状态查询
-- 在线好友检测
+### Presence Enhancements
+- Created `presence_manager_v2.h/cc` for multi-device presence
+- Status types: online, idle, do-not-disturb, invisible, in-game, in-voice, in-call
+- Custom status messages with emoji
+- Activity detection and idle/offline timeouts
+- Per-device session management
+- Batch presence queries
+- Online friend detection
 
-### 消息搜索服务
-- 创建带全文索引的 `services/search`
-- 快速文本搜索的倒排索引
-- 按频道、发送者、时间范围、类型过滤
-- 短语匹配与相关性打分
-- 带上下文的高亮片段
-- 查询建议/自动补全
-- 搜索统计追踪
+### Message Search Service
+- Created `services/search` with a full-text index
+- Inverted index for fast text search
+- Filtering by channel, sender, time range, type
+- Phrase matching and relevance scoring
+- Highlighted snippets with context
+- Query suggestions/autocomplete
+- Search statistics tracking
 
-### Web 管理后台
-- 创建 React 应用 `apps/admin_dashboard`
-- 带图表的实时指标面板
-- 带搜索与操作的用户管理
-- 频道管理与监控
-- 消息搜索界面
-- 系统设置面板
-- Material-UI 暗色主题
-- Vite 快速开发
+### Web Admin Dashboard
+- Created the React app `apps/admin_dashboard`
+- Real-time metrics panels with charts
+- User management with search and actions
+- Channel management and monitoring
+- Message search UI
+- System settings panel
+- Material-UI dark theme
+- Fast development with Vite

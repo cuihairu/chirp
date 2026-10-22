@@ -1,110 +1,110 @@
-> 🌐 Language: **中文** (this page) | [English](./capacity_benchmark.en.md)
+> 🌐 Language: [中文](../zh/design-notes/capacity_benchmark.md)) | **English** (this page)
 
-# 网关并发连接容量基准（实测）
+# Gateway concurrent-connection capacity benchmark (measured)
 
-> 2026-09-27 实测。回填 [roadmap_history](/design-notes/roadmap_history) 「压测：网关 10k+ 并发连接基准」一项。
-> **所有数字来自共享开发机上的单实例回环测试**，环境噪声与口径限制见[局限](#局限与适用范围)，对外引用时必须连同该节一起。
+> Measured 2026-09-27. Backfills the "load test: gateway 10k+ concurrent-connection benchmark" item in [roadmap_history](/design-notes/roadmap_history).
+> **All numbers come from single-instance loopback tests on a shared development machine**; environmental noise and measurement caveats are in [Limitations](#limitations-and-applicability) and must be quoted together with that section.
 
-## 结论速览
+## TL;DR
 
-| 指标 | 实测值 | 条件 |
+| Metric | Measured value | Conditions |
 | --- | --- | --- |
-| 并发在线连接 | **12000/12000** 登录在线，0 握手超时 | 200 conn/s 铺开 60s，rounds=0 纯容量档 |
-| 建连速率（无并发流量） | **200 conn/s 持续干净**（500/1000/2000/12000 档全部 0 握手超时） | 客户端只建连不发消息 |
-| 建连速率（有并发流量） | **50 conn/s 也会打穿**：steady500 档 165/500 管道握手超时 | 建连斜坡与消息发送重叠 |
-| 稳态私聊吞吐 | 受服务端 pacing（私聊 1s/用户，硬编码）约束，上限 ≈ **conns/1.1 msg/s** | 环形互发、interval 1100ms |
-| 稳态发送 RTT | 见[稳态档](#稳态发送档)分档表；安静机器 200 连接 p50 ≈ 2-3ms，本机 loadavg≈60 时 p50 ≈ 80-170ms | RTT 含回环网络+两个服务进程 |
-| 内存 | chat 峰值 RSS ≈ 19.7MB、gateway ≈ 8.6MB @12k 连接 | VmHWM，含每连接管道与 会话状态 |
+| Concurrent online connections | **12000/12000** logged in and online, 0 handshake timeouts | spread over 60s at 200 conn/s, rounds=0 pure-capacity tier |
+| Connection rate (no concurrent traffic) | **200 conn/s sustained clean** (500/1000/2000/12000 tiers all at 0 handshake timeouts) | clients connect only, send no messages |
+| Connection rate (with concurrent traffic) | **Even 50 conn/s breaks through**: the steady500 tier hit 165/500 pipe handshake timeouts | the connection ramp overlaps with message sending |
+| Steady-state private-chat throughput | Bound by server-side pacing (private 1s per user, hard-coded), ceiling ≈ **conns/1.1 msg/s** | round-robin mutual sends, interval 1100ms |
+| Steady-state send RTT | See the tiered table in [Steady-state send tiers](#steady-state-send-tiers); on a quiet machine 200 connections p50 ≈ 2-3ms, on this machine at loadavg≈60 p50 ≈ 80-170ms | RTT includes loopback network + two service processes |
+| Memory | chat peak RSS ≈ 19.7MB, gateway ≈ 8.6MB at 12k connections | VmHWM, including per-connection pipes and session state |
 
-「10k+ 并发连接」的口径：**12000 条 TCP 连接同时登录在线**（每条都完成 LOGIN_RESP、持有网关会话与网关→chat 管道）。不是 12000 用户同时高频发消息——发送面容量见吞吐行与[瓶颈分析](#瓶颈与边界)。
+The meaning of "10k+ concurrent connections": **12000 TCP connections logged in and online at the same time** (each has completed LOGIN_RESP and holds a gateway session plus a gateway→chat pipe). It is not 12000 users sending messages at high frequency simultaneously — see the throughput row and [Bottlenecks and boundaries](#bottlenecks-and-boundaries) for send-plane capacity.
 
-## 被测拓扑
+## Topology under test
 
-与 smoke-game 同构的最小游戏平面：
+A minimal game plane isomorphic to smoke-game:
 
 ```
-chirp_load_client ──TCP──> chirp_game_sdk_gateway ──每客户端一条管道──> chirp_chat
-   N 连接                   (端口 G/WS)        ServiceBridge 2xxx 转发      (端口 P/WS)
+chirp_load_client ──TCP──> chirp_game_sdk_gateway ──one pipe per client──> chirp_chat
+   N connections              (port G/WS)            ServiceBridge 2xxx forwarding    (port P/WS)
 ```
 
-- 客户端线协议与生产一致：`[u32_be len][chirp.gateway.Packet]`；登录走网关 scaffold（token=user_id）。
-- chat 与 gateway 各自是**单线程 `io_context::run()`**（`services/shared/chat/src/main.cc`、`services/game/sdk_gateway/src/main.cc`）。
-- 网关对每个客户端向 chat 建一条管道，管道经 `SERVER_AUTH_REQ`（`--gateway_service_secret`）认证；管道握手超时硬编码 5s（`libs/network/service_bridge.cc:25`）。
+- The client wire protocol matches production: `[u32_be len][chirp.gateway.Packet]`; login goes through the gateway scaffold (token=user_id).
+- chat and gateway are each a **single-threaded `io_context::run()`** (`services/shared/chat/src/main.cc`, `services/game/sdk_gateway/src/main.cc`).
+- The gateway opens one pipe to chat per client; the pipe is authenticated via `SERVER_AUTH_REQ` (`--gateway_service_secret`); the pipe handshake timeout is hard-coded at 5s (`libs/network/service_bridge.cc:25`).
 
-### 依赖形态（关键）
+### Dependency shape (critical)
 
-`chirp_chat`（enhanced 主程序）的 Redis/MySQL 参数**默认指向 127.0.0.1**（`main_enhanced.cc`），不显式配置就会连共享实例；共享 MySQL 若凭据不符，每条消息的落库都在后台线程**单次尝试失败后仅告警**（`hybrid_message_store.cc` `StoreMessageAsync`，无重试），但历史层失步会随读写放大拖慢应答——实测 200 连接档因此 9 分钟不退出、65% 管道握手超时。因此正式测量使用专属一次性依赖：
+`chirp_chat` (the enhanced main) has Redis/MySQL arguments that **default to 127.0.0.1** (`main_enhanced.cc`); without explicit configuration it connects to the shared instances, and if the shared MySQL rejects the credentials, every message's archive write **fails on a single attempt in the background thread and only warns** (`hybrid_message_store.cc` `StoreMessageAsync`, no retry), but the resulting history-tier skew gets amplified by reads and writes and slows responses — measured, the 200-connection tier ran 9 minutes without exiting and saw 65% pipe handshake timeouts. Formal measurement therefore uses dedicated throwaway dependencies:
 
-- 专属 redis：`redis-server --port 16379 --save "" --appendonly no`
-- 专属 MariaDB：`mariadbd --datadir=… --port=13306 --skip-grant-tables`（store 自动 `CREATE TABLE IF NOT EXISTS`），`CREATE DATABASE chirp` 即可
+- dedicated redis: `redis-server --port 16379 --save "" --appendonly no`
+- dedicated MariaDB: `mariadbd --datadir=… --port=13306 --skip-grant-tables` (the store auto-creates `CREATE TABLE IF NOT EXISTS`), then just `CREATE DATABASE chirp`
 
-已知无害噪声：`HybridMessageStore` 启动自检用 `GET ping`，把「key 不存在」的 nil 回复误判为连接失败打一行 WARN（`hybrid_message_store.cc:109-111`）；实际读写照常（`RedisClient` 现为连接池复用，见[瓶颈](#瓶颈与边界)第 4 条）。
+Known harmless noise: `HybridMessageStore`'s startup self-check uses `GET ping` and misreads the nil reply for "key does not exist" as a connection failure, logging one WARN line (`hybrid_message_store.cc:109-111`); actual reads and writes proceed normally (`RedisClient` is now a reused connection pool, see [Bottlenecks](#bottlenecks-and-boundaries) item 4).
 
-## 工具与方法
+## Tooling and method
 
-- 工具：`chirp_load_client`（`tools/benchmark/load_client.cc`）——每连接一线程，支持 `--ramp-ms` 铺开建连、`--barrier on|off`、`--rounds 0` 纯连接档、逐轮 RTT 分位、登录 RTT 分位、发送窗口吞吐。
-- 运行器：`tools/benchmark/run_capacity_bench.sh`——端口预检+归属断言（bind 冲突时探测会假成功，曾产出「5000/5000 在线、登录 p99=42s」的废数据）、taskset 分核（服务 0-3 / 客户端 5-13）、VmHWM 与 `/proc/$pid/stat` CPU 核·秒、网关握手超时计数。
-- 并发守卫：`tools/benchmark/bench_guard.sh`（被 source 的两件套，run_capacity_bench.sh 与各 probe 脚本共用）——`bench_acquire_lock` 用 flock 对 `/tmp/chirp_bench.lock` 机器级互斥（`LOCK_WAIT=1` 排队，`LOCK_TIMEOUT` 默认 3600s）；`bench_preflight_ports` 逐端口查监听者，空闲放行，被占时只有「本 uid + 基准二进制」的孤儿在 `FORCE=1` 下才清理，其余一律报错退出（共享机纪律：绝不代杀别的会话的活体进程）。各 probe 的端口块：steady 17880-83、scale 17850-53、perf 17840-43、est_rate 17870-73、stack 17830-33、cpu_attribution 17810-13、run_capacity_bench 17800-03（`CHAT_PORT` 等可覆盖）。阶梯驱动（ladder_local / capacity_ladder_local / capacity_ramp_ladder）不重复拿锁——每档内层运行器自带守卫，外层再拿同一把 flock 会自锁。
-- 每档独立起停服务；用户前缀按档轮换，规避跨档限流/禁言残留。
+- Tool: `chirp_load_client` (`tools/benchmark/load_client.cc`) — one thread per connection, supports `--ramp-ms` to spread out connections, `--barrier on|off`, `--rounds 0` for a pure-connection tier, per-round RTT percentiles, login RTT percentiles, and send-window throughput.
+- Runner: `tools/benchmark/run_capacity_bench.sh` — port preflight plus an ownership assertion (when a bind conflicts, probing falsely succeeds, which once produced the garbage data "5000/5000 online, login p99=42s"), taskset core pinning (services 0-3 / clients 5-13), VmHWM and `/proc/$pid/stat` CPU core-seconds, gateway handshake-timeout counting.
+- Concurrency guard: `tools/benchmark/bench_guard.sh` (a sourced two-piece set shared by run_capacity_bench.sh and the individual probe scripts) — `bench_acquire_lock` uses flock for machine-level mutual exclusion on `/tmp/chirp_bench.lock` (`LOCK_WAIT=1` queues, `LOCK_TIMEOUT` defaults to 3600s); `bench_preflight_ports` checks each port for a listener, passes idle ones through, and when occupied only cleans up an orphan that is "this uid + the benchmark binary" under `FORCE=1`, otherwise reporting an error and exiting (shared-machine discipline: never kill another session's live process on its behalf). Port blocks per probe: steady 17880-83, scale 17850-53, perf 17840-43, est_rate 17870-73, stack 17830-33, cpu_attribution 17810-13, run_capacity_bench 17800-03 (`CHAT_PORT` etc. can be overridden). Ladder drivers (ladder_local / capacity_ladder_local / capacity_ramp_ladder) do not take the lock again — each tier's inner runner carries its own guard, and taking the same flock at the outer level would self-deadlock.
+- Each tier starts and stops the services independently; the user prefix rotates per tier, avoiding cross-tier rate-limit/mute residue.
 
-复现（示例）：
+Reproduce (example):
 
 ```bash
 REDIS_HOST=127.0.0.1 REDIS_PORT=16379 MYSQL_HOST=127.0.0.1 MYSQL_PORT=13306 \
 BIN_DIR=./build-rel bash tools/benchmark/run_capacity_bench.sh 12000 0 1100 60000
 ```
 
-## 实测数据
+## Measured data
 
-### 连接容量档（rounds=0，只建连不发消息）
+### Connection-capacity tier (rounds=0, connect only, no messages sent)
 
-| 档 | 建连速率 | 在线 | 握手超时 | 登录RTT p50/p99/max | chat 峰值RSS | gateway 峰值RSS | chat CPU 核·秒 | 环境loadavg |
+| Tier | Connection rate | Online | Handshake timeouts | Login RTT p50/p99/max | chat peak RSS | gateway peak RSS | chat CPU core-seconds | env loadavg |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 500 | 8.3 conn/s | 500/500 | 421 | 3/7/11 ms | 38.0MB | 9.1MB | 22.03 (60s) | ~59 |
 | 1000 | 16.7 conn/s | 1000/1000 | 843 | 4/9/17 ms | 37.5MB | 9.9MB | 18.66 (60s) | ~59 |
 | 2000 | 33.3 conn/s | 2000/2000 | 1714 | 4/10/63 ms | 36.5MB | 11.0MB | 13.61 (60s) | ~84 |
 | **12000** | 200 conn/s | **12000/12000** | **10636** | 3/17/54 ms | **73.0MB** | **24.5MB** | 30.68 (63.5s) | ~73 |
 
-> **注**：本轮测试使用 `ramp_ms=60000` 把 12k 建连铺开到 60 秒，避免同瞬冲击握手上限。`handshake_timeouts` 计数因 ramp 铺开窗口与 5s 手shake 超时的交互而产生。`chat CPU 核·秒` 为 ctest 期间的累计增量。环境 loadavg 受多会话并行构建影响。
+> **Note**: this round used `ramp_ms=60000` to spread the 12k connections over 60 seconds, avoiding a same-instant hammer against the handshake limit. The `handshake_timeouts` count arises from the interaction between the spread-out ramp window and the 5s handshake timeout. `chat CPU core-seconds` is the cumulative delta during the ctest window. The environmental loadavg is affected by parallel builds in multiple sessions.
 
-> **对比**：先前表格的数字来自无 MySQL/Redis 依赖的旧构建；本表为增强聊天（HybridMessageStore + MySQL）在共享 14 核开发机上实测，负载受多会话共享。
+> **Contrast**: the numbers in the earlier table came from an old build with no MySQL/Redis dependencies; this table is a measurement of the enhanced chat (HybridMessageStore + MySQL) on a shared 14-core development machine, with load shared across sessions.
 
-要点：
+Key points:
 
-- 建连本身很便宜：12000 条连接只花 chat 8.24 核·秒（≈130µs/连接，含管道握手与会话状态）。
-- 内存几乎不随连接数涨（chat 15.7→19.7MB、gateway 8.6MB 持平）：每连接状态在两位数 KB 量级，12k 连接远未逼近内存边界。
+- Connecting is itself cheap: 12000 connections cost chat only 8.24 core-seconds (≈130µs/connection, including pipe handshake and session state).
+- Memory barely grows with connection count (chat 15.7→19.7MB, gateway flat at 8.6MB): per-connection state is on the order of a few tens of KB, and 12k connections are nowhere near the memory boundary.
 
-### 稳态发送档
+### Steady-state send tiers
 
-（数字见下表；两档均在 loadavg≈60 的共享机上取得，RTT 含客户端 500/1000 线程自扰动，**只作数量级参考**。）
+(See the table below; both tiers were taken on a shared machine at loadavg≈60, and RTT includes self-interference from the client's 500/1000 threads, so **treat these as order-of-magnitude reference only**.)
 
-| 档 | 存活发送者 | 握手超时(建连期) | 稳态轮 p50 | 稳态轮 p99 | 窗口吞吐 |
+| Tier | Surviving senders | Handshake timeouts (connection phase) | Steady round p50 | Steady round p99 | Window throughput |
 | --- | --- | --- | --- | --- | --- |
-| steady500（50/s 铺开+ramp 期即发送） | 335/500 | 165 | 112-173 ms | 465-546 ms | 82.9 msg/s |
-| steady1000（同上） | 536/1000 | 464 | 112-164 ms | 535-749 ms | 73.4 msg/s |
-| 安静机参照（200 连接、loadavg≈8、共享依赖时代旧数据） | 200/200 | 0 | **2-3 ms** | 5-8 ms | 141 msg/s |
+| steady500 (spread at 50/s + sending during the ramp) | 335/500 | 165 | 112-173 ms | 465-546 ms | 82.9 msg/s |
+| steady1000 (same) | 536/1000 | 464 | 112-164 ms | 535-749 ms | 73.4 msg/s |
+| Quiet-machine reference (200 connections, loadavg≈8, older data from the shared-dependency era) | 200/200 | 0 | **2-3 ms** | 5-8 ms | 141 msg/s |
 
-稳态窗口吞吐远低于 pacing 上限（500/1.1≈455 msg/s）的原因：客户端轮次非流水（等响应再睡 1.1s，周期=RTT+1100ms）、ramp 扩散计入窗口、以及机器负载抬高 RTT。**服务端 pacing（私聊 1s/用户硬编码）才是吞吐的结构性上限**：环形互发下限 ≈ conns/1.1s，与实测相符（如 64 连接@1100ms → 58.25 msg/s ≈ 64/1.1）。
+Why steady-state window throughput is far below the pacing ceiling (500/1.1≈455 msg/s): client rounds are not pipelined (wait for the response, then sleep 1.1s, so the period = RTT+1100ms), ramp spread counts into the window, and machine load pushes RTT up. **Server-side pacing (private 1s per user, hard-coded) is the structural throughput ceiling**: the round-robin mutual-send floor ≈ conns/1.1s, matching the measurements (e.g. 64 connections @1100ms → 58.25 msg/s ≈ 64/1.1).
 
-## 瓶颈与边界
+## Bottlenecks and boundaries
 
-1. **chat 单 io 线程把建连与消息处理串行化**。纯建连 200/s 全绿；但建连斜坡与消息发送重叠时（steady500/1000 档），消息处理挤占 io 线程，管道握手的 5s 硬截止被打穿（50 conn/s 也 165/500 超时）。生产含义：**高峰期登录风暴会与消息流量互相放大**。缓解方向：管道握手超时可配化、握手与消息处理分线程/分优先级。
-2. **栅栏同步风暴**（`--barrier on`）：全员会合后锁相轮发，2k 连接时每轮都是 2000 条齐发，RTT 尾部到 60s（排队排水时间）。这是测量方法要避开的坑，也是真实「同刻齐发」场景的预期行为。
-3. **吞吐结构上限 = pacing**：私聊 1s/用户硬编码（`ChannelPacer`，进程内），多实例部署下每实例独立计数；Redis 模糊闸（120/min/用户）与登录 IP 限流需 `--redis_host` 才生效。
-4. ~~**`RedisClient` 每命令新建 TCP 短连接**~~ **已落地同步连接池（2026-10-11）**：`redis_client.cc` 的 `SendCmd` 每命令短连接改为空闲连接池复用（上限 `kDefaultMaxIdle=8`，取用探活、失败弃用不重试），消息路径上的 RPush 不再每次付 connect+close 握手。此项即本基准点名的吞吐抬升优化点；异步化/协程化按 `asio_coroutine_adoption.md` 口径另行立项。管道复用仍不做。
-5. **MySQL 必须配好**：落库在后台线程单次尝试、失败仅告警无重试（`StoreMessageAsync`），坏依赖会让热/冷历史层失步并拖慢应答（见[依赖形态](#依赖形态关键)；投递契约口径见[专项审计](/审计-专项审查-投递认证与状态一致性) D2）。
-6. 客户端为线程/连接模型：万级线程自身抢核会抬高 RTT（曾实测轮询栅栏把 loadavg 打到 1181），故分核 taskset + 条件变量栅栏；万级以上建议改事件驱动客户端再测。
+1. **chat's single io thread serializes connection handling with message handling**. Pure connecting is 200/s all-green; but when the connection ramp overlaps with message sending (steady500/1000 tiers), message handling crowds out the io thread and the pipe handshake's 5s hard deadline is breached (165/500 timeouts even at 50 conn/s). Production implication: **a login storm during peak hours and message traffic amplify each other**. Mitigation directions: make the pipe handshake timeout configurable, and split handshakes from message handling onto separate threads / separate priorities.
+2. **Barrier synchronization storms** (`--barrier on`): after everyone assembles, rounds are sent in phase-lock, so with 2k connections every round is 2000 simultaneous sends, and the RTT tail reaches 60s (queue drain time). This is a measurement-method pitfall to avoid, and it is also the expected behavior of a real "everyone sends at the same instant" scenario.
+3. **Throughput structural ceiling = pacing**: private 1s per user, hard-coded (`ChannelPacer`, in-process); in a multi-instance deployment each instance counts independently; the Redis fuzzy gate (120/min per user) and the login IP rate limit only take effect with `--redis_host`.
+4. ~~**`RedisClient` opens a new TCP short connection per command**~~ **A synchronous connection pool has landed (2026-10-11)**: `SendCmd`'s per-command short connections were replaced by a reused idle connection pool (cap `kDefaultMaxIdle=8`, a liveness probe on take, a failed connection is discarded without retry), so the RPush on the message path no longer pays the connect+close handshake every time. This is the throughput-boosting optimization this benchmark called out; async-ification/coroutine-ification is a separate project per the criteria in `asio_coroutine_adoption.md`. Pipe reuse is still not done.
+5. **MySQL must be configured correctly**: archiving is a single background-thread attempt that only warns on failure with no retry (`StoreMessageAsync`), so a bad dependency desynchronizes the hot/cold history tiers and slows responses (see [Dependency shape](#dependency-shape-critical); for the delivery-contract criterion see [special audit](/审计-专项审查-投递认证与状态一致性) D2).
+6. The client is a thread/connection model: tens of thousands of threads contend for cores and push RTT up on their own (a polled barrier was once measured to drive loadavg to 1181), hence taskset core pinning + a condition-variable barrier; above tens of thousands, switch to an event-driven client before measuring.
 
-## 局限与适用范围
+## Limitations and applicability
 
-- **共享 14 核开发机**：环境 loadavg 每档记录在案（55-108），RTT/吞吐数字含不可剥离的邻居噪声；连接容量、握手超时、RSS、CPU 核·秒等结构性数字不受影响。
-- 回环网络：RTT 不含真实网络 RTT；吞吐不含网卡带宽约束。
-- 单实例 chat/gateway：多实例水平扩展（Redis 全局限流口径）未测。
-- scaffold 登录路径（无真实 auth 服务）：真实认证链路的登录 RTT 未测。
-- 客户端发送面只覆盖私聊（环形互发）：群播扇出、离线队列投递未纳入本基准。
+- **Shared 14-core development machine**: the environmental loadavg is recorded per tier (55-108); RTT/throughput numbers carry inseparable neighbor noise; structural numbers such as connection capacity, handshake timeouts, RSS and CPU core-seconds are unaffected.
+- Loopback network: RTT excludes real network RTT; throughput excludes NIC bandwidth constraints.
+- Single-instance chat/gateway: multi-instance horizontal scaling (global Redis rate limiting) is untested.
+- The scaffold login path (no real auth service): login RTT for the real authentication chain is untested.
+- The client send surface covers private chat only (round-robin mutual sends): group-broadcast fan-out and offline-queue delivery are not part of this benchmark.
 
-## 关联
+## Related
 
-- [roadmap_history](/design-notes/roadmap_history) §运维与测试「压测」项回填
+- [roadmap_history](/design-notes/roadmap_history) § operations and testing "load test" item backfill
 - [SCALABILITY](/design-notes/SCALABILITY) / [game_chat_architecture](/design-notes/game_chat_architecture)
-- 工具说明：[tools/benchmark](https://github.com/) 本地 README（`chirp_load_client` 章节）
+- Tooling reference: the local README in [tools/benchmark](https://github.com/) (the `chirp_load_client` section)

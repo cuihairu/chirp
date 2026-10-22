@@ -1,93 +1,93 @@
-> 🌐 Language: **中文** (this page) | [English](./game_combat_best_practices.en.md)
+> 🌐 Language: [中文](../zh/design-notes/game_combat_best_practices.md)) | **English** (this page)
 
-# 游戏战斗系统最佳实践 (Game Combat System Best Practices)
+# Game Combat System Best Practices
 
-> 状态说明：本文是通用游戏战斗设计笔记，不是 Chirp 当前后端能力说明。它更适合作为玩法系统或客户端实现的参考。
+> Status note: this page is generic game combat design notes, not a statement of Chirp's current backend capabilities. It is better used as a reference for gameplay systems or client implementation.
 
-针对塔防 (Tower Defense) 和 MMORPG 两类游戏，战斗系统的设计重心虽然不同，架构模式上却有不少共通点。
+For tower defense (Tower Defense) and MMORPG games, the design focus of the combat system differs, yet the architectural patterns share quite a lot.
 
-## 1. 核心架构模式：Entity-Component-System (ECS) vs 面向对象 (OOP)
+## 1. Core architectural pattern: Entity-Component-System (ECS) vs object-oriented (OOP)
 
-对于现代游戏战斗系统，**首选 ECS 或组合优于继承 (Composition over Inheritance)**。
+For a modern game combat system, **prefer ECS or composition over inheritance**.
 
-- **传统 OOP 的问题**：
-  - 层级过深（`Unit` -> `Movable` -> `CombatUnit` -> `Hero`），难以维护。
-  - 缓存不友好（数据分散在内存各处）。
-- **ECS 的优势**：
-  - **组合性**：塔防里的塔和 MMORPG 里的玩家都可以只是 `Position` + `Health` + `Skill` 组件的组合。
-  - **性能**：数据连续存储（Data Locality），对塔防这种同一屏幕可能有上千单位的游戏至关重要。
-
----
-
-## 2. 塔防类 (Tower Defense) 最佳实践
-
-塔防战斗的核心挑战在于**海量单位的路径与碰撞计算**以及**确定性**。
-
-### A. 空间管理 (Spatial Partitioning)
-
-- **痛点**：数百个塔，每秒都要寻找攻击范围内的几千个怪。$O(N^2)$ 复杂度无法接受。
-- **方案**：使用 **四叉树 (QuadTree)** 或 **空间哈希 (Spatial Hashing)** (Grid)。
-  - 每个 Grid 存储其中的怪物 ID。
-  - 塔只需查询自身攻击半径覆盖的 Grid。
-
-### B. 对象池 (Object Pooling)
-
-- **痛点**：子弹、特效、怪物频繁创建销毁，导致 GC (如果是有 GC 语言) 或 内存碎片。
-- **方案**：所有战斗实体（尤其是子弹）必须预分配并复用。
-
-### C. 确定性 (Determinism)
-
-- **场景**：防作弊校验、甚至由于联机模式（如《魔兽争霸 3》模式）。
-- **方案**：
-  - 逻辑与渲染分离。
-  - 使用定点数 (Fixed-point math) 代替浮点数，保证跨平台计算结果一致。
-  - 所有随机数使用统一的 Seed 序列。
+- **Problems with traditional OOP**:
+  - hierarchies grow too deep (`Unit` -> `Movable` -> `CombatUnit` -> `Hero`), hard to maintain.
+  - cache-unfriendly (data scattered across memory).
+- **Advantages of ECS**:
+  - **Composability**: a tower in tower defense and a player in an MMORPG can both just be a combination of `Position` + `Health` + `Skill` components.
+  - **Performance**: data stored contiguously (data locality), which is critical for a game like tower defense where a single screen may hold thousands of units.
 
 ---
 
-## 3. MMORPG 类最佳实践
+## 2. Tower Defense best practices
 
-MMORPG 的核心挑战在于**网络延迟掩盖**、**状态同步**以及**技能系统的复杂度**。
+The core challenges of tower defense combat are **pathfinding and collision computation for massive unit counts** and **determinism**.
 
-### A. 技能系统 (GAS - Gameplay Ability System)
+### A. Spatial partitioning
 
-这是目前业界（如 Unreal Engine）的标准做法，即便不使用 Unreal，也建议参考其架构：
+- **Pain point**: hundreds of towers each second must find the thousands of monsters within attack range. $O(N^2)$ complexity is unacceptable.
+- **Solution**: use a **QuadTree** or **spatial hashing** (Grid).
+  - Each Grid stores the monster IDs inside it.
+  - A tower only queries the Grids its attack radius covers.
 
-- **Ability (技能)**：不仅仅是“造成伤害”，而是一个逻辑流程（前摇 -> 判定 -> 结算 -> 后摇）。
-- **Effect (效果/Buff)**：所有状态改变（扣血、中毒、加速）都抽象为 GameplayEffect。
-- **Tag (标签)**：用标签控制逻辑。例如“眩晕”状态下拥有 `State.Stunned` 标签，而施法技能需要 `!State.Stunned`。
-- **Attribute (属性)**：基础属性（力量）派生计算属性（攻击力），自动化重算。
+### B. Object pooling
 
-### B. 网络同步模型
+- **Pain point**: bullets, effects, and monsters are created and destroyed constantly, causing GC pressure (in GC languages) or memory fragmentation.
+- **Solution**: all combat entities (especially bullets) must be pre-allocated and reused.
 
-- **状态同步 (State Synchronization)**：
-  - 客户端发送操作指令（"Cast Skill A at Target B"）。
-  - 服务器验证 CD、距离、消耗，然后广播结果（"User A cast Skill A, User B took 100 dmg"）。
-  - **不要信任客户端的计算结果**（不要直接发 "I dealt 100 dmg"）。
-- **客户端预测 (Client Prediction)**：
-  - **移动**：客户端先行移动，服务器回滚纠正（Rubber banding）。
-  - **表现**：技能特效先行播放，伤害数字等服务器回包。
+### C. Determinism
 
-### C. 兴趣区域 (Area of Interest - AOI)
-
-- MMO 必须做 AOI，只同步玩家视野周边的实体状态，节省带宽。
-- 常见做法：九宫格 (9-Grid) 或 十字链表 (Cross Linked List)。
+- **Scenarios**: anti-cheat verification, and even online modes (such as the Warcraft 3 model).
+- **Solution**:
+  - Separate logic from rendering.
+  - Use fixed-point math instead of floating point to guarantee identical results across platforms.
+  - All random numbers use a unified seed sequence.
 
 ---
 
-## 4. 战斗核心系统设计 (Combat Core Design)
+## 3. MMORPG best practices
 
-**定时器、生命周期和更新循环**这三件事，标准设计范式如下：
+The core challenges of an MMORPG are **masking network latency**, **state synchronization**, and **skill system complexity**.
 
-### A. 驱动模型：固定时间步长 (Fixed Time Step)
+### A. Skill system (GAS - Gameplay Ability System)
 
-永远不要直接依赖系统时间的 `delta` 来更新战斗逻辑，因为网络波动和机器性能会导致不可预测的结果。
+This is the current industry standard (e.g. Unreal Engine); even if you do not use Unreal, its architecture is worth referencing:
 
-**最佳实践：Accumulator Pattern**
+- **Ability (skill)**: not just "deal damage" but a logic flow (wind-up -> hit check -> settlement -> backswing).
+- **Effect (buff)**: every state change (HP loss, poison, haste) is abstracted as a GameplayEffect.
+- **Tag**: use tags to control logic. For example, the "stunned" state carries the `State.Stunned` tag, while casting a skill requires `!State.Stunned`.
+- **Attribute**: base attributes (strength) derive computed attributes (attack power), recalculated automatically.
+
+### B. Network synchronization model
+
+- **State synchronization**:
+  - The client sends operation commands ("Cast Skill A at Target B").
+  - The server validates CD, distance, and cost, then broadcasts the result ("User A cast Skill A, User B took 100 dmg").
+  - **Never trust the client's computation** (do not send "I dealt 100 dmg" directly).
+- **Client prediction**:
+  - **Movement**: the client moves first, the server rolls back and corrects (rubber banding).
+  - **Presentation**: skill effects play immediately; damage numbers wait for the server reply.
+
+### C. Area of Interest (AOI)
+
+- An MMO must implement AOI: only synchronize entity state around each player's view, to save bandwidth.
+- Common approaches: the 9-grid or the cross linked list.
+
+---
+
+## 4. Combat core system design
+
+For **timers, lifecycle, and the update loop**, the standard design patterns are as follows:
+
+### A. Drive model: fixed time step
+
+Never update combat logic directly from the system clock's `delta`, because network jitter and machine performance lead to unpredictable results.
+
+**Best practice: the accumulator pattern**
 
 ```cpp
-// 伪代码：主循环
-const double MS_PER_UPDATE = 16.666; // 60Hz 逻辑帧 (或者 MMO 常用 100ms/10Hz)
+// pseudocode: main loop
+const double MS_PER_UPDATE = 16.666; // 60Hz logic frame (or the MMO-typical 100ms/10Hz)
 double accumulated_time = 0.0;
 
 void GameLoop() {
@@ -97,60 +97,60 @@ void GameLoop() {
 
     accumulated_time += delta;
 
-    // 追帧逻辑：如果积压了太多时间，连续执行多次 Update
+    // catch-up logic: if too much time has piled up, run Update several times in a row
     while (accumulated_time >= MS_PER_UPDATE) {
-        BattleInstance->Update(MS_PER_UPDATE); // 传入固定 dt
+        BattleInstance->Update(MS_PER_UPDATE); // pass the fixed dt
         accumulated_time -= MS_PER_UPDATE;
     }
 
-    // Render 使用插值 (Interpolation) 平滑表现 (Client Side)
+    // Render uses interpolation to smooth presentation (Client Side)
 }
 ```
 
-- **优势**：保证所有玩家、所有机器上的逻辑迭代次数一致，物理计算和 CD 计算稳定。
+- **Advantage**: guarantees the same number of logic iterations for every player on every machine, keeping physics and CD computations stable.
 
-### B. 定时器管理 (Timer Management)
+### B. Timer management
 
-战斗中充满大量的定时需求：Buff 持续时间、技能 CD、延迟伤害结算。
+Combat is full of timing needs: buff durations, skill CDs, delayed damage settlement.
 
-- **不要做的事**：
+- **Do not**:
 
-  - 不要使用 `std::thread` 或 `sleep`。
-  - 不要在每个从对象（如每个 Buff）里单独存一个 `float timer` 然后每帧 `-= dt`（当拥有上万个对象时，遍历开销巨大）。
+  - Do not use `std::thread` or `sleep`.
+  - Do not store a separate `float timer` in every subordinate object (e.g. every buff) and `-= dt` it each frame (with tens of thousands of objects, the traversal cost is huge).
 
-- **推荐方案 1：优先队列 (Priority Queue / Min-Heap)**
+- **Recommended approach 1: priority queue (min-heap)**
 
-  - 适用：同时存在的定时器数量 < 1000。
-  - 原理：将所有定时任务按 **触发的绝对时间戳** 放入最小堆。
-  - Tick：每帧只检查 `Queue.top()`，如果 `now >= top.executeTime` 则弹出并执行，重复直到堆顶时间未到。
-  - 复杂度：插入 $O(\log N)$，查询 $O(1)$。
+  - Fits: the number of simultaneous timers is < 1000.
+  - Principle: put all timed tasks into a min-heap keyed by their **absolute trigger timestamp**.
+  - Tick: each frame only check `Queue.top()`; if `now >= top.executeTime`, pop and execute, repeating until the heap top's time has not yet arrived.
+  - Complexity: insert $O(\log N)$, peek $O(1)$.
 
-- **推荐方案 2：时间轮 (Timing Wheel)** (Linux Kernel / Netty 采用)
-  - 适用：海量定时器（如 MMO 服务器，数万个 Buff）。
-  - 原理：类似钟表刻度，有一个指针每帧转动一格。任务挂在对应的刻度链表上。
-  - 复杂度：插入 $O(1)$，执行 $O(1)$。
+- **Recommended approach 2: timing wheel** (used by the Linux kernel / Netty)
+  - Fits: massive timer counts (e.g. an MMO server with tens of thousands of buffs).
+  - Principle: like clock ticks — a pointer advances one slot per frame, and tasks hang on the slot's linked list.
+  - Complexity: insert $O(1)$, execute $O(1)$.
 
 ```cpp
-// 简单定时器管理器接口
+// simple timer manager interface
 class BattleTimer {
 public:
     using TimerID = uint64_t;
     using Callback = std::function<void()>;
 
-    // 注册一个定时器，delayMs 后执行
+    // register a timer to execute after delayMs
     TimerID AddTimer(uint32_t delayMs, Callback cb);
 
-    // 取消定时器 (比如 Buff 被驱散)
+    // cancel a timer (e.g. a buff gets dispelled)
     void CancelTimer(TimerID id);
 
-    // 在主循环 Update 中调用
+    // call this inside the main-loop Update
     void Tick(uint64_t currentServerTimeMs);
 };
 ```
 
-### C. 战斗生命周期 (Combat Lifecycle FSM)
+### C. Combat lifecycle (FSM)
 
-单场战斗必须是一个明确的**有限状态机 (Finite State Machine)**。
+A single battle must be an explicit **finite state machine**.
 
 ```mermaid
 stateDiagram-v2
@@ -163,28 +163,28 @@ stateDiagram-v2
     销毁(Cleanup) --> [*]
 ```
 
-**代码结构示例**：
+**Code structure example**:
 
 ```cpp
 class BattleInstance {
     enum class State { PREPARE, RUNNING, SETTLEMENT, FINISHED };
     State currentState;
 
-    // 核心组件
+    // core components
     BattleMap map;
     EntityManager entityMgr;
     BattleTimer timerMgr;
 
 public:
     void Update(double dt) {
-        // 1. 驱动定时器
+        // 1. drive the timers
         timerMgr.Tick(GetLogicTime());
 
-        // 2. 根据状态分发逻辑
+        // 2. dispatch logic by state
         switch (currentState) {
             case State::Running:
-                entityMgr.Update(dt); // 移动、攻击、AI
-                CheckWinCondition();  // 胜负判定
+                entityMgr.Update(dt); // movement, attacks, AI
+                CheckWinCondition();  // win-condition check
                 break;
             // ...
         }
@@ -192,106 +192,106 @@ public:
 
     void StartBattle() {
         currentState = State::Running;
-        OnBattleStart(); // 触发各种 "战斗开始时" 的被动技能
+        OnBattleStart(); // fire the various "on battle start" passive skills
     }
 };
 ```
 
 ---
 
-## 5. 服务器端战斗架构详解 (Server-Side Combat Architecture)
+## 5. Server-side combat architecture in detail
 
-服务器端的战斗设计与客户端最大的不同在于：**稳定性、并发处理**与**防作弊**。
+The biggest differences of server-side combat design from the client are **stability, concurrency handling**, and **anti-cheat**.
 
-### A. 并发模型 (Concurrency Models)
+### A. Concurrency models
 
-如何利用多核 CPU 处理成千上万个战斗副本？
+How do you use a multi-core CPU to handle thousands of concurrent battle instances?
 
-#### 1. Actor Model (推荐)
+#### 1. Actor model (recommended)
 
-- **概念**：每个战斗房间 (Room/Zone) 是一个独立的 Actor。
-- **线程模型**：
-  - **Logic Thread**：所有战斗逻辑处理都在单个 Actor 内部串行执行（无锁）。
-  - **Worker Pool**：一个固定大小的线程池（如 CPU 核数）调度执行成千上万个 Actor。
-- **优势**：
-  - **无锁编程**：不需要 `mutex`，也就没有锁竞争和死锁。
-  - **高吞吐**：线程池按核数铺开，多核利用充分。
-- **实现**：C++ 可用 `CAF (C++ Actor Framework)`，Go 语言天然支持 (Goroutine + Channel)，Java 可用 `Akka`。
+- **Concept**: each battle room (Room/Zone) is an independent Actor.
+- **Threading model**:
+  - **Logic Thread**: all combat logic for one Actor executes serially inside it (lock-free).
+  - **Worker Pool**: a fixed-size thread pool (e.g. CPU core count) schedules the thousands of Actors.
+- **Advantages**:
+  - **Lock-free programming**: no `mutex` is needed, hence no lock contention and no deadlocks.
+  - **High throughput**: the thread pool spreads across cores, using them fully.
+- **Implementations**: C++ can use `CAF (C++ Actor Framework)`; Go supports it natively (Goroutine + Channel); Java can use `Akka`.
 
-#### 2. Thread-per-Zone (传统模型)
+#### 2. Thread-per-Zone (the traditional model)
 
-- **概念**：开一个线程专门跑一个地图或战斗。
-- **缺点**：线程切换开销大，且如果战斗数量 > CPU 核数，性能急剧下降。只适合少量、极高负载的战斗（如单服万人同屏的国战）。
+- **Concept**: dedicate one thread to running one map or battle.
+- **Drawbacks**: heavy thread-switching overhead, and once the number of battles exceeds the CPU core count, performance drops sharply. Only fits a small number of extremely heavy battles (e.g. a single-server, ten-thousand-players-on-screen nation war).
 
-#### 3. ECS System 并行化
+#### 3. Parallelizing ECS systems
 
-- **概念**：在 ECS 架构下，`MovementSystem` 处理所有实体的移动，`DamageSystem` 处理所有伤害。这些 System 可以并行。
-- **注意**：实现难度极高，需要精细的数据依赖分析。通常只在单机 3A 大作或极少数高性能引擎中使用。
+- **Concept**: under ECS, `MovementSystem` handles movement for all entities and `DamageSystem` handles all damage. These systems can run in parallel.
+- **Note**: extremely hard to implement, requiring careful data-dependency analysis. Usually seen only in single-player AAA titles or a rare few high-performance engines.
 
-### B. 状态管理与持久化 (State & Persistence)
+### B. State management and persistence
 
-**黄金法则：战斗中绝不阻塞读写数据库。**
+**Golden rule: never block on database reads or writes during combat.**
 
-#### 1. 内存为王 (In-Memory Logic)
+#### 1. In-memory is king
 
-- 战斗开始时：从 DB/Redis 加载所有玩家数据到内存（Player Object）。
-- 战斗进行中：**所有**读写只在内存中操作。
-- 战斗结束/定期：异步回写 (Write-Back) 到数据库。
+- At battle start: load all player data from DB/Redis into memory (Player Objects).
+- During the battle: **all** reads and writes stay in memory.
+- At battle end / periodically: write back asynchronously to the database.
 
-#### 2. 异步持久化设计
+#### 2. Asynchronous persistence design
 
-千万不要在 `OnDamage()` 里写 `db.Update()`。
+Never call `db.Update()` inside `OnDamage()`.
 
 ```cpp
-// 错误示范 (卡顿之源)
+// wrong example (a source of stalls)
 void OnDamage(Player* p, int dmg) {
     p->hp -= dmg;
-    db.Execute("UPDATE players SET hp = ? WHERE id = ?", p->hp, p->id); // 阻塞 IO！
+    db.Execute("UPDATE players SET hp = ? WHERE id = ?", p->hp, p->id); // blocking IO!
 }
 
-// 正确示范 (异步队列)
+// right example (async queue)
 void OnDamage(Player* p, int dmg) {
     p->hp -= dmg;
-    p->SetDirty(true); // 标记脏数据
+    p->SetDirty(true); // mark the data dirty
 }
 
-// 独立的 Persistence Thread 每隔几秒或战斗结束时运行
+// a separate Persistence Thread runs every few seconds or at battle end
 void PersistenceLoop() {
     while (true) {
         auto dirtyPlayers = CollectDirtyPlayers();
-        BulkUpdateDB(dirtyPlayers); // 批量写入，极大提高吞吐
+        BulkUpdateDB(dirtyPlayers); // bulk writes, greatly improving throughput
         Sleep(5000);
     }
 }
 ```
 
-### C. 网络与 Tick 同步 (Server Authoritative)
+### C. Network and tick synchronization (server authoritative)
 
-#### 1. 权威服务器 (Server Authoritative)
+#### 1. Authoritative server
 
-- 永远以服务器数据为准。客户端发来的 `Move(x, y)` 只是**请求**，服务器计算后返回 `NewPos(x', y')`。
-- **防瞬移/加速**：服务器每一帧都要校验 `dist(last_pos, new_pos) <= max_speed * dt`。
+- Server data is always authoritative. A client's `Move(x, y)` is only a **request**; the server computes and returns `NewPos(x', y')`.
+- **Anti-teleport / anti-speedhack**: every frame the server validates `dist(last_pos, new_pos) <= max_speed * dt`.
 
-#### 2. 缓冲与插值 (Buffer & Interpolation)
+#### 2. Buffering and interpolation
 
-- 服务器通常以固定频率发送快照 (Snapshot)，比如每 50ms (20Hz)。
-- 客户端收到快照时，并不立即渲染，而是放入缓冲队列。
-- 客户端渲染时间通常比服务器**滞后** 1-2 个包（Render Delay），在两个快照之间做线性插值，保证看到的其他玩家移动是平滑的。
+- The server usually sends snapshots at a fixed rate, e.g. every 50ms (20Hz).
+- On receiving a snapshot, the client does not render immediately but puts it into a buffer queue.
+- The client's render time usually **lags** the server by 1-2 packets (render delay) and linearly interpolates between two snapshots, so the movement of other players looks smooth.
 
-#### 3. 甚至不需要 TCP
+#### 3. You may not even need TCP
 
-- 实时性要求极高（FPS/MOBA）：**UDP (KCP/QUIC)** 是必须的。丢包重发会导致“卡顿”，不如直接丢弃过期的包，只处理最新的状态包。
-- MMORPG/卡牌/回合制：TCP/WebSocket 足矣。
+- Extremely demanding real-time (FPS/MOBA): **UDP (KCP/QUIC)** is a must. Retransmitting lost packets causes "stutter"; it is better to drop stale packets outright and process only the newest state packets.
+- MMORPG/card/turn-based games: TCP/WebSocket is enough.
 
 ---
 
-## 6. 总结
+## 6. Summary
 
-| 特性         | 塔防 (Tower Defense)                   | MMORPG                         |
+| Feature          | Tower Defense                    | MMORPG                         |
 | :----------- | :------------------------------------- | :----------------------------- |
-| **瓶颈**     | CPU / 内存带宽 (海量单位)              | 网络带宽 / 延迟 / 数据库一致性 |
-| **同步方式** | 这里的关键往往是确定性 Lockstep (联机) | 状态同步 (State Sync)          |
-| **核心算法** | A\*寻路, 空间哈希, 碰撞检测            | 技能逻辑(GAS), AOI, 持久化     |
-| **推荐架构** | ECS (纯数据驱动)                       | ECS 或 Actor Model (便于 RPC)  |
+| **Bottleneck**     | CPU / memory bandwidth (massive unit counts)              | network bandwidth / latency / database consistency |
+| **Sync model** | the key here is usually deterministic lockstep (online play) | state synchronization (state sync)          |
+| **Core algorithms** | A\* pathfinding, spatial hashing, collision detection            | skill logic (GAS), AOI, persistence     |
+| **Recommended architecture** | ECS (purely data-driven)                       | ECS or the Actor model (RPC-friendly)  |
 
-建议如果是在现有 `chirp` 项目（看起来是 C++ 网络服务）中扩展，可以先从 **AOI 服务** 和 **基础属性组件** 开始构建。
+If you are extending within the existing `chirp` project (which looks like a C++ network service), the suggestion is to start by building the **AOI service** and the **basic attribute components**.

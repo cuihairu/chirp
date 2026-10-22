@@ -1,31 +1,31 @@
-> 🌐 Language: **中文** (this page) | [English](./architecture.en.md)
+> 🌐 Language: [中文](zh/architecture.md)) | **English** (this page)
 
-# Chirp 整体架构
+# Chirp Overall Architecture
 
-最后审查：2026-10-19
+Last reviewed: 2026-10-19
 
-Chirp 是面向游戏的实时通信后端。游戏平面和 App 平面是两套独立系统，各自有独立的边缘和独立的 chat 服务。跨平面通信是 chat 的原生能力——两个 chirp_chat 实例直连，通过内置的注册协议、版本协商和访问控制完成接入。
+Chirp is a real-time communication backend for games. The game plane and the App plane are two independent systems, each with its own edge and its own chat service. Cross-plane communication is a native capability of chat — two `chirp_chat` instances connect directly and complete attachment through a built-in registration protocol, version negotiation, and access control.
 
-## 概要
+## Overview
 
-- 两个平面，两个 chat 实例。`game_chat` 服务游戏客户端；`app_chat` 服务伴侣 App。同一个二进制，不同部署。
-- `app_chat` 是 hub。`game_chat` 实例通过内置的对等注册协议接入，支持白名单和版本协商。
-- `game_server_gateway` 是轻量的游戏后端注入枢纽。
-- 检索是独立服务 `chirp_search`（TCP 5007，SQLite FTS5）：两个网关经第二 ServiceBridge（`--search_host`）把 2248 查询转发给它（凭证复用 chat 的 service_id/secret），search 桥失败降级回 `SERVER_UNAVAILABLE` 不踢客户端；未配置 `--search_host` 时 2248 落回 chat 通配。
-- 边缘（`game_sdk_gateway`、`app_sdk_gateway`）是无状态连接管理器。
-- 游戏平面自足，不依赖 App 平面的任何组件。单独部署"只做游戏聊天"是一等公民。
-- 两个平面的认证彼此隔离：游戏平面由游戏后端签发 token，game_chat 本地验证；App 平面由 `app_auth` 签发/验证平台用户令牌。
+- Two planes, two chat instances. `game_chat` serves game clients; `app_chat` serves the companion app. Same binary, different deployments.
+- `app_chat` is the hub. `game_chat` instances attach via the built-in peer registration protocol, which supports a whitelist and version negotiation.
+- `game_server_gateway` is the lightweight game backend injection hub.
+- Search is a separate service `chirp_search` (TCP 5007, SQLite FTS5): both gateways forward 2248 queries to it via a second ServiceBridge (`--search_host`), reusing chat's service_id/secret credentials; if the search bridge fails, it degrades to `SERVER_UNAVAILABLE` without kicking the client; when `--search_host` is not configured, 2248 falls back to the chat catch-all.
+- The edges (`game_sdk_gateway`, `app_sdk_gateway`) are stateless connection managers.
+- The game plane is self-sufficient and depends on no component of the App plane. A deployment that "does game chat only" is a first-class citizen.
+- Authentication in the two planes is isolated from each other: the game plane's tokens are issued by the game backend and verified locally by `game_chat`; the App plane's platform user tokens are issued and verified by `app_auth`.
 
-## 设计原则
+## Design Principles
 
-1. 两个平面，不是一个共享核心。游戏平面面向游戏、高频、低延迟；App 平面面向玩家、低频、重聚合。
-2. 同协议，同二进制。`game_chat` 和 `app_chat` 是同一个 `chirp_chat` 二进制。跨平面通信使用 chat 原生的 trusted-peer 协议，没有翻译层，也没有外部桥接进程。
-3. Hub-spoke 接入模型。`app_chat` 是 hub，每个 `game_chat` 注册接入，hub 通过白名单和凭证验证控制谁能连接。
-4. 边缘薄。只做连接管理、协议适配、认证转发、心跳，不持有业务状态。
-5. 平面之间不互相依赖。游戏平面不依赖 App 平面的任何组件（包括认证）。跨平面接入的方向是游戏平面经注册协议连向 App 平面：`game_chat` 注册进 hub `app_chat`，反向不成立。
-6. 可信平面用服务凭证，不可信边缘用用户令牌，不混用。
+1. Two planes, not one shared core. The game plane faces games, high frequency, low latency; the App plane faces players, low frequency, heavy aggregation.
+2. Same protocol, same binary. `game_chat` and `app_chat` are the same `chirp_chat` binary. Cross-plane communication uses chat's native trusted-peer protocol — there is no translation layer and no external bridging process.
+3. Hub-spoke attachment model. `app_chat` is the hub; each `game_chat` attaches to it, and the hub controls who may connect through a whitelist and credential verification.
+4. Thin edges. Only connection management, protocol adaptation, authentication forwarding, and heartbeats — no business state.
+5. No mutual dependency between planes. The game plane depends on no component of the App plane (authentication included). The direction of cross-plane attachment is the game plane connecting to the App plane over the registration protocol: `game_chat` registers into hub `app_chat`; the reverse does not hold.
+6. Trusted planes use service credentials; untrusted edges use user tokens; the two are never mixed.
 
-## 拓扑
+## Topology
 
 ```mermaid
 flowchart TB
@@ -57,40 +57,40 @@ flowchart TB
     ACHAT -->|"玩家回复"| GCHAT
 ```
 
-图示说明：
+Reading the diagram:
 
-- 游戏平面自足。`game_sdk_gateway + game_chat` 是完整的游戏聊天部署，游戏后端签发 token，game_chat 本地验证，不依赖 `app_auth` 或任何 App 平面组件。
-- App 平面是可选附加，需要伴侣 App 时才部署；`app_auth` 只服务 App 平面。
-- 跨平面是 chat 原生能力。两个 chirp_chat 实例直连，使用同一套 trusted-peer 协议，注册、版本协商、白名单都内建在 chat 服务中。
+- The game plane is self-sufficient. `game_sdk_gateway + game_chat` is a complete game chat deployment; the game backend issues tokens, `game_chat` verifies them locally, and nothing depends on `app_auth` or any App plane component.
+- The App plane is an optional add-on, deployed only when a companion app exists; `app_auth` serves only the App plane.
+- Cross-plane is a native capability of chat. Two `chirp_chat` instances connect directly using the same trusted-peer protocol — registration, version negotiation, and the whitelist are all built into the chat service.
 
-## 游戏平面
+## Game Plane
 
-| 职责 | 归属 | 说明 |
+| Responsibility | Owner | Notes |
 | --- | --- | --- |
-| 边缘 | `game_sdk_gateway` | TCP + WS 监听，登录/登出/心跳、踢出。无状态。 |
-| Chat | `game_chat` | 部署为游戏平面的 `chirp_chat`。持有游戏内频道、历史、离线队列。本地验证 token。作为 spoke 注册到 `app_chat`。 |
-| 认证 | game_chat 本地 | 游戏后端签发 HS256 JWT（`--token_secret`），game_chat 本地校验。不需要外部认证服务。 |
-| 会话 claim | Redis | `chirp:sess:<user>\x1F<platform>` per 边缘实例。 |
-| 后端注入 | `game_server_gateway` | 可信枢纽；游戏后端以 `service_id` + secret 出站连接。只负责消息注入 + 事件下发。可选。 |
+| Edge | `game_sdk_gateway` | TCP + WS listener; login/logout/heartbeat and kicks. Stateless. |
+| Chat | `game_chat` | Deployed as the game plane's `chirp_chat`. Holds in-game channels, history, and the offline queue. Verifies tokens locally. Registers to `app_chat` as a spoke. |
+| Authentication | game_chat locally | The game backend issues an HS256 JWT (`--token_secret`), and `game_chat` verifies it locally. No external authentication service is needed. |
+| Session claim | Redis | `chirp:sess:<user>\x1F<platform>` per edge instance. |
+| Backend injection | `game_server_gateway` | Trusted hub; the game backend makes an outbound connection with `service_id` + secret. Responsible for message injection plus event delivery only. Optional. |
 
-部署形态：`game_sdk_gateway + game_chat` 即为完整部署。需要游戏后端注入时加 `game_server_gateway`。chat 本身需要扩展时，换成分布式 chat 构建。
+Deployment shapes: `game_sdk_gateway + game_chat` is a complete deployment on its own. Add `game_server_gateway` when game backend injection is needed. When chat itself needs to scale, switch to the distributed chat build.
 
-## App 平面
+## App Plane
 
-| 职责 | 归属 | 说明 |
+| Responsibility | Owner | Notes |
 | --- | --- | --- |
-| 边缘 | `app_sdk_gateway` | WS 优先，可选 TLS，移动网络调优心跳。无状态。 |
-| Chat | `app_chat` | 部署为 hub 的 `chirp_chat`。接受 `game_chat` 注册，聚合跨游戏频道，投递给伴侣 App。持有身份绑定、频道订阅、未读计数。 |
-| 认证 | `app_auth` | 签发/验证平台用户令牌（player_id）。只服务 App 平面，与游戏平面无关。 |
-| 推送 | `app_notification` | 玩家离线时推送到手机（APNs/FCM）。独立服务，因为推送有厂商限制、合并、限流等特殊运行时特征。 |
+| Edge | `app_sdk_gateway` | WS-first, optional TLS, heartbeats tuned for mobile networks. Stateless. |
+| Chat | `app_chat` | Deployed as the hub's `chirp_chat`. Accepts `game_chat` registrations, aggregates cross-game channels, and delivers to the companion app. Holds identity bindings, channel subscriptions, and unread counts. |
+| Authentication | `app_auth` | Issues and verifies platform user tokens (`player_id`). Serves only the App plane; unrelated to the game plane. |
+| Push | `app_notification` | Pushes to the phone (APNs/FCM) when the player is offline. A separate service, because push has vendor-specific constraints, collapsing, rate limiting, and other runtime characteristics of its own. |
 
-部署形态：`app_sdk_gateway + app_chat + app_auth + app_notification`。任意数量 `app_sdk_gateway` 实例，一个 `app_chat`。
+Deployment shapes: `app_sdk_gateway + app_chat + app_auth + app_notification`. Any number of `app_sdk_gateway` instances, one `app_chat`.
 
-## 对等注册协议
+## Peer Registration Protocol
 
-`game_chat` 启动时，通过内置的对等注册握手接入 `app_chat`。注册、访问控制、版本协商都是 chat 的原生能力。协议级字段、错误码、CLI 与实现状态详见 [Chat Peer 注册协议](api/peer_protocol.md)。
+When `game_chat` starts, it attaches to `app_chat` through the built-in peer registration handshake. Registration, access control, and version negotiation are all native capabilities of chat. Protocol-level fields, error codes, CLI, and implementation status are in [Chat Peer Registration Protocol](api/peer_protocol.md).
 
-### 握手
+### Handshake
 
 ```mermaid
 sequenceDiagram
@@ -110,48 +110,48 @@ sequenceDiagram
     end
 ```
 
-### 注册字段
+### Registration Fields
 
-| 字段 | 方向 | 含义 |
+| Field | Direction | Meaning |
 | --- | --- | --- |
-| `service_id` | game → app | 游戏标识（如 `game_42`） |
-| `service_secret` | game → app | 该游戏接入的共享密钥 |
-| `protocol_version` | 双向 | 整数版本号；双方协商最高共同支持版本 |
-| `game_id` | game → app | 游戏命名空间；该 peer 的所有频道在 hub 中自动加 `{game_id}:` 前缀 |
-| `supported_features` | 双向 | 可选能力位掩码（已读回执转发、正在输入转发、在线状态同步等） |
+| `service_id` | game → app | Game identifier (e.g. `game_42`) |
+| `service_secret` | game → app | The shared secret under which that game attaches |
+| `protocol_version` | both ways | Integer version number; the two sides negotiate the highest mutually supported version |
+| `game_id` | game → app | Game namespace; every channel of that peer is automatically prefixed with `{game_id}:` in the hub |
+| `supported_features` | both ways | Optional capability bitmask (read-receipt relay, typing relay, presence synchronization, etc.) |
 
-### 白名单与访问控制
+### Whitelist and Access Control
 
-`app_chat` 维护允许接入的对等方白名单：
+`app_chat` maintains a whitelist of peers that are allowed to attach:
 
-| 配置项 | 默认值 | 含义 |
+| Setting | Default | Meaning |
 | --- | --- | --- |
-| `--allowed_peers` | （无） | 逗号分隔的 `service_id:secret` 对。空 = 拒绝所有。 |
-| `--min_peer_version` | 1 | 接受的最低 `protocol_version`。 |
-| `--allow_unknown_peers` | 0 | 是否接受不在白名单中的对等方（开放注册模式）。 |
+| `--allowed_peers` | (none) | Comma-separated `service_id:secret` pairs. Empty = reject everything. |
+| `--min_peer_version` | 1 | Lowest accepted `protocol_version`. |
+| `--allow_unknown_peers` | 0 | Whether to accept peers that are not in the whitelist (open registration mode). |
 
-规则：
-- 不在 `--allowed_peers` 中（且 `--allow_unknown_peers` 关闭）的对等方被拒绝，返回 `AUTH_FAILED`。
-- `protocol_version` 低于 `--min_peer_version` 的对等方被拒绝，返回 `VERSION_MISMATCH`；响应中携带 hub 的最低版本。
-- 注册成功后，对等连接在连接生命周期内有效。断线重连需重新注册。
-- 同一 `service_id` 的第二次注册挤掉第一次。
+Rules:
+- A peer that is not in `--allowed_peers` (and with `--allow_unknown_peers` off) is rejected with `AUTH_FAILED`.
+- A peer whose `protocol_version` is below `--min_peer_version` is rejected with `VERSION_MISMATCH`; the response carries the hub's minimum version.
+- Once registration succeeds, the peer connection is valid for the life of the connection. Re-registration is required after a disconnect and reconnect.
+- A second registration with the same `service_id` displaces the first.
 
-### 版本协商
+### Version Negotiation
 
-双方在握手时交换 `protocol_version` 和 `supported_features`。协商版本为 `min(hub_version, spoke_version)`。交集之外的能力在该会话中禁用。
+The two sides exchange `protocol_version` and `supported_features` during the handshake. The negotiated version is `min(hub_version, spoke_version)`. Capabilities outside the intersection are disabled for that session.
 
-| 能力位 | 含义 |
+| Capability bit | Meaning |
 | --- | --- |
-| `RELAY_READ_RECEIPTS` | hub 转发已读回执变更给 spoke |
-| `RELAY_TYPING` | hub 转发正在输入指示给 spoke |
-| `RELAY_PRESENCE` | hub 转发在线/离线状态给 spoke |
-| `RELAY_OFFLINE_MESSAGES` | spoke 在玩家登录时推送离线消息历史给 hub |
+| `RELAY_READ_RECEIPTS` | hub relays read-receipt changes to the spoke |
+| `RELAY_TYPING` | hub relays typing indicators to the spoke |
+| `RELAY_PRESENCE` | hub relays online/offline status to the spoke |
+| `RELAY_OFFLINE_MESSAGES` | spoke pushes offline message history to the hub when the player logs in |
 
-新增能力时，递增 `protocol_version` 并添加能力位。不理解该位的旧 peer 不使用它——无破坏性变更。
+When a new capability is added, bump `protocol_version` and add the capability bit. Older peers that do not understand the bit simply do not use it — no breaking change.
 
-## 跨平面消息流
+## Cross-Plane Message Flow
 
-### game_chat → app_chat：频道消息桥接
+### game_chat → app_chat: channel message bridging
 
 ```mermaid
 sequenceDiagram
@@ -173,15 +173,15 @@ sequenceDiagram
     AG->>A: 推送
 ```
 
-`game_chat` 把每条频道消息发给已注册的 hub peer。hub（`app_chat`）负责扇出：
+`game_chat` sends every channel message to its registered hub peer. The hub (`app_chat`) owns the fan-out:
 
-1. 查询哪些玩家订阅了 `(game_id, channel_id)`。
-2. 解析发送者的 `game_user_id → player_id`。
-3. 为每个订阅者注入一条私信副本到 app chat，频道自动加 `{game_id}:{channel_id}` 前缀。
+1. Query which players are subscribed to `(game_id, channel_id)`.
+2. Resolve the sender's `game_user_id → player_id`.
+3. Inject a private-message copy into the app chat for each subscriber, with the channel automatically prefixed `{game_id}:{channel_id}`.
 
-游戏侧不知道订阅者、扇出或玩家身份。它只是把频道消息发给 hub。
+The game side knows nothing about subscribers, fan-out, or player identity. It only sends the channel message to the hub.
 
-### app_chat → game_chat：玩家回复
+### app_chat → game_chat: player replies
 
 ```mermaid
 sequenceDiagram
@@ -203,15 +203,15 @@ sequenceDiagram
     G->>C: 推送
 ```
 
-玩家向带 `{game_id}:` 前缀的频道发消息时，`app_chat`：
+When a player sends a message to a channel carrying the `{game_id}:` prefix, `app_chat`:
 
-1. 检测跨平面前缀。
-2. 解析 `player_id → game_user_id`。
-3. 将消息注入到该 `game_id` 对应的已注册 `game_chat` peer。
+1. Detects the cross-plane prefix.
+2. Resolves `player_id → game_user_id`.
+3. Injects the message into the registered `game_chat` peer for that `game_id`.
 
-游戏侧收到的是普通注入——它不知道消息来自 App 玩家。（2026-09-22 已落地:`PlayerDirectory::RelayGameReply` + `ChatPeerHub::service_id_for_game` + `IdentityRegistry::ResolveGameUser`,回码 OK/SERVER_UNAVAILABLE/INVALID_PARAM,详见 server_plane.md「跨平面回复」。)
+What the game side receives is an ordinary injection — it does not know the message came from an App player. (Landed 2026-09-22: `PlayerDirectory::RelayGameReply` + `ChatPeerHub::service_id_for_game` + `IdentityRegistry::ResolveGameUser`, with reply codes OK / SERVER_UNAVAILABLE / INVALID_PARAM; see server_plane.md, "Cross-plane replies".)
 
-### 游戏后端注入系统消息
+### Game backend injecting system messages
 
 ```mermaid
 sequenceDiagram
@@ -227,123 +227,123 @@ sequenceDiagram
     GC->>AC: CHANNEL_MESSAGE_NOTIFY（如果 hub 订阅了该频道）
 ```
 
-## 身份与命名空间
+## Identity and Namespaces
 
-两个身份空间，一个映射点：
+Two identity spaces, one mapping point:
 
-- **游戏平面** 使用 `game_user_id`。游戏后端签发游戏作用域的短期用户令牌，game_chat 本地验证。游戏平面不知道 `player_id` 的存在。
-- **App 平面** 使用 `player_id`。`app_auth` 签发平台用户令牌。
-- **映射在 `app_chat` 内部。** 游戏后端在玩家通过游戏自己的登录服务器认证后，调 `app_chat` 的 `BIND_PLAYER_IDENTITY` RPC 断言 `player_id ↔ (game_id, game_user_id)`。映射存在 `app_chat` 内部（Redis 后端）。
+- The **game plane** uses `game_user_id`. The game backend issues short-lived, game-scoped user tokens, which `game_chat` verifies locally. The game plane is unaware that `player_id` exists.
+- The **App plane** uses `player_id`. `app_auth` issues the platform user tokens.
+- The mapping lives **inside `app_chat`.** After a player has authenticated through the game's own login server, the game backend calls `app_chat`'s `BIND_PLAYER_IDENTITY` RPC to assert `player_id ↔ (game_id, game_user_id)`. The mapping is stored inside `app_chat` (Redis backend).
 
-频道命名空间：
+Channel namespaces:
 
-- `game_chat` 内部，频道是裸的：`guild_123`、`world`、`team_42`。
-- `app_chat` 内部，跨平面频道带前缀：`<game_id>:guild_123`。App 本地频道（玩家间私聊、App 侧群组）不带前缀。
-- 前缀由 `app_chat` 在收到已注册 `game_chat` peer 的消息时自动添加（使用注册握手中的 `game_id`）。spoke 看不到前缀。
+- Inside `game_chat`, channels are bare: `guild_123`, `world`, `team_42`.
+- Inside `app_chat`, cross-plane channels carry a prefix: `<game_id>:guild_123`. App-local channels (player-to-player private chat, App-side groups) carry no prefix.
+- `app_chat` adds the prefix automatically when it receives a message from a registered `game_chat` peer (using the `game_id` from the registration handshake). The spoke never sees the prefix.
 
-## 凭证模型
+## Credential Model
 
-两种凭证，不可互换：
+Two kinds of credential, not interchangeable:
 
-| 种类 | 标识 | 生命周期 | 使用位置 |
+| Kind | Identifier | Lifetime | Where it is used |
 | --- | --- | --- | --- |
-| 服务凭证（`service_id` + secret） | 后端组件 | 长期 | `game_server_gateway` peer、`game_chat → app_chat` 注册、gateway → chat trusted pipes、gateway → search 管道（复用 chat 的 service_id/secret） |
-| 用户令牌（HS256 JWT） | 单个用户会话 | 短期 | 游戏客户端 → `game_sdk_gateway`（游戏后端签发，game_chat 本地验证）、App → `app_sdk_gateway`（`app_auth` 签发） |
+| Service credential (`service_id` + secret) | backend component | long-lived | `game_server_gateway` peer, `game_chat → app_chat` registration, gateway → chat trusted pipes, gateway → search pipes (reusing chat's service_id/secret) |
+| User token (HS256 JWT) | single user session | short-lived | game client → `game_sdk_gateway` (issued by the game backend, verified locally by `game_chat`), App → `app_sdk_gateway` (issued by `app_auth`) |
 
-规则：
+Rules:
 
-- 服务凭证不进客户端二进制。
-- 用户令牌不进可信平面。
-- 两个平面的用户令牌彼此隔离：游戏平面的 token 由游戏后端签发，App 平面的 token 由 `app_auth` 签发，两者的 secret 互不相关。
-- game_chat 用 `--token_secret` 本地验证游戏用户令牌，不依赖外部服务。
-- `--auth_host` 可选，且只服务 App 边缘。`game_sdk_gateway`/`app_sdk_gateway` 的 `--auth_host` 仅在非空时创建 `AuthClient`（`services/game/sdk_gateway/src/main.cc`、`services/app/sdk_gateway/src/main.cc`）。未配置时 `HandleLogin` 走 scaffold：token 即 user_id，`BindAuthenticatedSession` 后经 ServiceBridge 转给 chat——游戏平面自足，无 `app_auth` 依赖。chat 侧与 `app_auth` 的关系同理：配了 `--token_secret` 就本地 HS256 验签，不回调任何认证服务；`app_auth` 的 scaffold 回退还额外要求 `--allow_scaffold_login 1`（默认关）。纯游戏平面端到端由 `test_services.sh --smoke-game` 覆盖（gateway 不配 `--auth_host` + chat 不配 `--token_secret` 的 scaffold 路径，以及生产同构的 `--token_secret` 本地验签路径由 `--smoke-jwt` 覆盖）。
+- Service credentials never enter client binaries.
+- User tokens never enter trusted planes.
+- The user tokens of the two planes are isolated from each other: the game plane's tokens are issued by the game backend, the App plane's by `app_auth`, and the two secrets are unrelated.
+- `game_chat` verifies game user tokens locally with `--token_secret` and depends on no external service.
+- `--auth_host` is optional and serves only the App edge. `--auth_host` on `game_sdk_gateway` / `app_sdk_gateway` creates an `AuthClient` only when it is non-empty (`services/game/sdk_gateway/src/main.cc`, `services/app/sdk_gateway/src/main.cc`). When it is not configured, `HandleLogin` goes through the scaffold path: the token is used directly as the user_id, and after `BindAuthenticatedSession` it is forwarded to chat over ServiceBridge — the game plane is self-sufficient with no `app_auth` dependency. chat's relationship with `app_auth` works the same way: with `--token_secret` configured, chat does local HS256 signature verification and calls back no authentication service; `app_auth`'s scaffold fallback additionally requires `--allow_scaffold_login 1` (off by default). The pure game plane end-to-end path is covered by `test_services.sh --smoke-game` (gateway without `--auth_host` plus chat without `--token_secret`, i.e. the scaffold path), and the production-isomorphic `--token_secret` local verification path is covered by `--smoke-jwt`.
 
-## 故障与降级
+## Failure and Degradation
 
-| 组件故障 | 影响范围 |
+| Component failure | Blast radius |
 | --- | --- |
-| 一个 `game_sdk_gateway` 实例 | 其当前连接断开；客户端重连到其他实例。 |
-| `game_chat` | 游戏平面消息停止。App 平面继续运行（跨游戏消息停止，但 App 本地消息正常）。 |
-| `game_server_gateway` | 游戏后端无法注入消息。玩家聊天不受影响。 |
-| 一个 `app_sdk_gateway` 实例 | 其当前连接断开；客户端重连到其他实例。 |
-| `app_chat` | App 平面消息停止。游戏平面不受影响。`game_chat` peer 检测到连接断开，带退避重试注册。 |
-| `app_auth` | App 平面新登录被阻断。已有会话不受影响（JWT 本地验证）。游戏平面不受影响。 |
-| `app_notification` | 离线推送停止。在线消息不受影响。 |
-| `chirp_search` | 2248 查询即时降级：网关回 `SERVER_UNAVAILABLE`，不踢客户端、不动连接，下一条查询自动重拨。聊天不受影响。 |
-| Redis（游戏平面） | 会话 claim 降级为单实例（无跨实例踢出）。 |
-| Redis（App 平面） | `app_chat` 的身份绑定/订阅/未读数据不可用。会话 claim 降级。 |
+| one `game_sdk_gateway` instance | its current connections drop; clients reconnect to another instance. |
+| `game_chat` | game-plane messages stop. The App plane keeps running (cross-game messages stop, but App-local messages work). |
+| `game_server_gateway` | the game backend can no longer inject messages. Player chat is unaffected. |
+| one `app_sdk_gateway` instance | its current connections drop; clients reconnect to another instance. |
+| `app_chat` | App-plane messages stop. The game plane is unaffected. The `game_chat` peer detects the disconnect and retries registration with backoff. |
+| `app_auth` | new App-plane logins are blocked. Existing sessions are unaffected (local JWT verification). The game plane is unaffected. |
+| `app_notification` | offline push stops. Online messages are unaffected. |
+| `chirp_search` | 2248 queries degrade immediately: the gateway returns `SERVER_UNAVAILABLE`, without kicking the client or touching the connection, and the next query dials again automatically. Chat is unaffected. |
+| Redis (game plane) | session claim degrades to single-instance (no cross-instance kicks). |
+| Redis (App plane) | `app_chat`'s identity bindings / subscriptions / unread data become unavailable. Session claim degrades. |
 
-游戏平面的任何故障都不会影响 App 平面，反之亦然（`app_chat` 故障只影响跨平面消息，不影响游戏平面本地运行）。
+Any failure in the game plane leaves the App plane untouched, and vice versa (an `app_chat` failure only affects cross-plane messages, not the game plane's local operation).
 
-## 水平扩展
+## Horizontal Scaling
 
-- **边缘**（`game_sdk_gateway`、`app_sdk_gateway`）：无状态；在负载均衡器后扩展。跨实例踢出通过 Redis claim。
-- **`app_auth`**：无状态；在负载均衡器后扩展。
-- **`game_server_gateway`**：每个游戏后端集成一个。
-- **Chat**：单写入者设计。需要扩展 chat 本身时，换成分布式 chat 构建。
-- **`game_chat` 到 `app_chat` 连接**：每个 `game_chat` 实例维持一条到 `app_chat` 的持久连接。多个 `game_chat` 实例各自用 `service_id` 注册；hub 同时接受所有连接。
+- Edges (`game_sdk_gateway`, `app_sdk_gateway`): stateless; scale behind a load balancer. Cross-instance kicks go through Redis claims.
+- `app_auth`: stateless; scale behind a load balancer.
+- `game_server_gateway`: one per game backend integration.
+- Chat: single-writer design. When chat itself needs to scale, switch to the distributed chat build.
+- `game_chat` to `app_chat` connections: each `game_chat` instance maintains one persistent connection to `app_chat`. Multiple `game_chat` instances each register with their own `service_id`; the hub accepts all connections concurrently.
 
-## 仓库分层
+## Repository Layering
 
-| 层 | 路径 | 角色 |
+| Layer | Path | Role |
 | --- | --- | --- |
-| 协议 | `proto/*.proto` | 共享信封和 msg-id 块 |
-| 公共库 | `libs/common` | 日志、JWT、base64、指标 |
-| 网络库 | `libs/network` | ASIO TCP/WS 会话、帧协议、Redis 客户端、trusted-peer 辅助 |
-| 共享服务 | `services/shared/chat/` | 聊天服务：同一 `chirp_chat` 二进制按启动参数部署为 `game_chat` / `app_chat` / 分布式形态 |
-| 检索服务 | `services/search/` | 服务端消息搜索（`chirp_search`，SQLite FTS5，2248/2249） |
-| 社交服务 | `services/social/` | 好友/在线状态/黑名单（`chirp_social`，8000/8001，Experimental） |
-| 语音服务 | `services/voice/` | 语音房信令（`chirp_voice`，9000/9001，Experimental） |
-| 组队服务 | `services/party/` | 组队快照面（`chirp_party`，7500/7501，Experimental） |
-| 游戏平面 | `services/game/` | |
-| | `services/game/sdk_gateway/` | 游戏客户端边缘（`game_sdk_gateway`） |
-| | `services/game/server_gateway/` | 游戏后端注入枢纽（`game_server_gateway`，可选） |
-| | `services/game/npc_dialog/` | NPC 关键词规则引擎（`chirp_npc_dialog`，无监听口，server plane 客户端） |
-| App 平面 | `services/app/` | |
-| | `services/app/sdk_gateway/` | App 客户端边缘（`app_sdk_gateway`） |
-| | `services/app/auth/` | App 平面认证（`app_auth`） |
-| | `services/app/notification/` | 后台推送（`app_notification`） |
-| SDK | `sdks/*` | 客户端集成 |
-| 应用/工具 | `apps/*`、`tools/*` | 演示、smoke 客户端、基准测试 |
-| 交付 | `docker-compose.yml`、`deploy/`、`scripts/` | 编排与验证 |
+| Protocol | `proto/*.proto` | Shared envelope and msg-id blocks |
+| Common library | `libs/common` | logging, JWT, base64, metrics |
+| Network library | `libs/network` | ASIO TCP/WS sessions, framing protocol, Redis client, trusted-peer helpers |
+| Shared service | `services/shared/chat/` | chat service: the same `chirp_chat` binary deployed as `game_chat` / `app_chat` / the distributed form, distinguished by startup flags |
+| Search service | `services/search/` | server-side message search (`chirp_search`, SQLite FTS5, 2248/2249) |
+| Social service | `services/social/` | friends/presence/blacklist (`chirp_social`, 8000/8001, Experimental) |
+| Voice service | `services/voice/` | voice room signaling (`chirp_voice`, 9000/9001, Experimental) |
+| Party service | `services/party/` | party snapshot surface (`chirp_party`, 7500/7501, Experimental) |
+| Game plane | `services/game/` | |
+| | `services/game/sdk_gateway/` | game client edge (`game_sdk_gateway`) |
+| | `services/game/server_gateway/` | game backend injection hub (`game_server_gateway`, optional) |
+| | `services/game/npc_dialog/` | NPC keyword rule engine (`chirp_npc_dialog`, no listening port, server-plane client) |
+| App plane | `services/app/` | |
+| | `services/app/sdk_gateway/` | App client edge (`app_sdk_gateway`) |
+| | `services/app/auth/` | App plane authentication (`app_auth`) |
+| | `services/app/notification/` | backend push (`app_notification`) |
+| SDK | `sdks/*` | client integration |
+| Apps / tooling | `apps/*`, `tools/*` | demos, smoke clients, benchmarks |
+| Delivery | `docker-compose.yml`, `deploy/`, `scripts/` | orchestration and verification |
 
-## 协议基线
+## Protocol Baseline
 
-所有边缘和可信 peer 使用相同的帧格式：
+All edges and trusted peers use the same framing:
 
 ```
 TCP 流:    [uint32_be payload_size][chirp.gateway.Packet protobuf bytes]
 WebSocket: binary frame payload = [uint32_be payload_size][chirp.gateway.Packet protobuf bytes]
 ```
 
-`chirp.gateway.Packet` 携带 `msg_id`、`sequence`、`body`、`request_id`（分布式关联 id；0 = 未提供，收发两侧按连接内单调值兜底，转发链路原样透传，见 [API 总览](api/overview.md)）。消息 ID 块：
+`chirp.gateway.Packet` carries `msg_id`, `sequence`, `body`, and `request_id` (distributed correlation id; 0 = not provided, in which case both ends fall back to a per-connection monotonic value, and forwarding chains pass it through unchanged — see [API Overview](api/overview.md)). Message ID blocks:
 
-| 块 | 平面 | 用途 |
+| Block | Plane | Purpose |
 | --- | --- | --- |
-| 1xxx | 双方 | 认证 / 会话 / 心跳 |
-| 2xxx | 双方 | 聊天/检索（客户端 ↔ chat/search 业务消息；2248/2249 归 search，其余归 chat） |
-| 3xxx | 游戏 | 社交 |
-| 4xxx | 游戏 | 语音 |
-| 5xxx | 可信 | 服务平面（`game_server_gateway`、chat 对等注册） |
-| 6xxx | App | 设备 / 通知 |
-| 7xxx | 游戏 | 组队（party） |
+| 1xxx | both | authentication / session / heartbeat |
+| 2xxx | both | chat/search (client ↔ chat/search business messages; 2248/2249 belong to search, the rest to chat) |
+| 3xxx | game | social |
+| 4xxx | game | voice |
+| 5xxx | trusted | service plane (`game_server_gateway`, chat peer registration) |
+| 6xxx | App | device / notification |
+| 7xxx | Game | party |
 
-### 对等注册新增 msg-id
+### Peer registration msg-ids
 
-| ID | 消息 | 方向 |
+| ID | Message | Direction |
 | --- | --- | --- |
-| 5050 | `PEER_REGISTER_REQ` | spoke → hub（spoke 发起注册） |
-| 5051 | `PEER_REGISTER_RESP` | hub → spoke（含 hub 分配的心跳周期 `heartbeat_interval_seconds`，spoke 静默约 2× 周期即被剔除） |
-| 5052 | `CHANNEL_MESSAGE_NOTIFY` | spoke → hub（频道消息上行，hub 扇出） |
-| 5053 | `PEER_INJECT_MESSAGE_NOTIFY` | hub → spoke（玩家回复注入；命名带 `PEER_` 前缀，与 server_gateway 链路的 5007 `INJECT_MESSAGE_NOTIFY` 区分） |
+| 5050 | `PEER_REGISTER_REQ` | spoke → hub (the spoke initiates registration) |
+| 5051 | `PEER_REGISTER_RESP` | hub → spoke (carries the hub-assigned heartbeat interval `heartbeat_interval_seconds`; a spoke that stays silent for roughly 2× that interval is evicted) |
+| 5052 | `CHANNEL_MESSAGE_NOTIFY` | spoke → hub (channel message uplink, hub fans out) |
+| 5053 | `PEER_INJECT_MESSAGE_NOTIFY` | hub → spoke (player reply injection; the name carries the `PEER_` prefix to distinguish it from the server_gateway chain's 5007 `INJECT_MESSAGE_NOTIFY`) |
 
-字段表、错误码表、能力位协商与 CLI 详见 [Chat Peer 注册协议](api/peer_protocol.md)。
+Field tables, error code tables, capability negotiation, and the CLI are in [Chat Peer Registration Protocol](api/peer_protocol.md).
 
-## 架构承诺
+## Architectural Commitments
 
-- 游戏平面和 App 平面是独立部署单元。游戏平面可以独立运行，不依赖 App 平面的任何组件。
-- 跨平面通信是 chat 的原生能力，不是外部桥接进程。
-- Hub（`app_chat`）通过白名单和版本协商控制接入。
-- 两个平面的认证彼此隔离：游戏平面由游戏后端负责，App 平面由 `app_auth` 负责。
-- 玩家身份和游戏身份不混用。映射存在 `app_chat` 内部。
-- 边缘不持有业务状态。Chat 不持有跨平面状态。
+- The game plane and the App plane are independent deployment units. The game plane can run on its own, depending on no component of the App plane.
+- Cross-plane communication is a native capability of chat, not an external bridging process.
+- The hub (`app_chat`) controls attachment through a whitelist and version negotiation.
+- Authentication in the two planes is isolated from each other: the game plane's is the game backend's responsibility, the App plane's is `app_auth`'s.
+- Player identity and game identity are never mixed. The mapping lives inside `app_chat`.
+- The edge holds no business state. Chat holds no cross-plane state.

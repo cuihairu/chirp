@@ -1,11 +1,11 @@
-> 🌐 Language: **中文** (this page) | [English](./index.en.md)
+> 🌐 Language: [中文](../zh/guide/index.md)) | **English** (this page)
 
-# 指南
+# Guide
 
-从这里开始了解 Chirp 的本地构建、验证和部署路径。
+Start here to learn about Chirp's local build, verification and deployment paths.
 
-- [项目简介](./introduction.md)
-- [快速开始](./getting-started.md)
-- [安装与构建](./installation.md)
-- [部署方式](./deployment.md)
-- [接入避坑指南](./integration-pitfalls.md)
+- [Introduction](introduction.md))
+- [Getting started](getting-started.md))
+- [Installation and build](installation.md))
+- [Deployment](deployment.md))
+- [Integration pitfalls](integration-pitfalls.md))

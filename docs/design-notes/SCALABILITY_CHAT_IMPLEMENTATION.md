@@ -1,12 +1,12 @@
-> 🌐 Language: **中文** (this page) | [English](./SCALABILITY_CHAT_IMPLEMENTATION.en.md)
+> 🌐 Language: [中文](../zh/design-notes/SCALABILITY_CHAT_IMPLEMENTATION.md)) | **English** (this page)
 
-# Chat 服务分布式改造示例
+# Chat Service Distributed Refactoring Example
 
-> 状态说明：本文是分布式 Chat 改造示例和实现笔记。实际当前架构边界请以 [整体架构](../architecture.md) 与 [能力矩阵](../CAPABILITY_MATRIX.md) 为准。
+> Status note: this document is a distributed Chat refactoring example with implementation notes. For the actual current architecture boundaries, defer to [Overall Architecture](../architecture.md)) and the [Capability Matrix](../CAPABILITY_MATRIX.md)).
 
-> 注：文中嵌入代码为早期快照，现役实现以 `services/shared/chat/src/main_distributed.cc` 为准（已含 per-device 离线桶、ack 台账、`--token_secret`/`--notification_host` 启动参数）。
+> Note: the code embedded in this document is an early snapshot; the live implementation is `services/shared/chat/src/main_distributed.cc` (which already includes per-device offline buckets, an ack ledger, and the `--token_secret`/`--notification_host` startup parameters).
 
-## 改造后的 Chat 服务主文件
+## The refactored Chat service main file
 
 ```cpp
 // services/shared/chat/src/main_distributed.cc
@@ -376,7 +376,7 @@ int main(int argc, char** argv) {
 }
 ```
 
-## Docker Compose 集群部署
+## Docker Compose cluster deployment
 
 ```yaml
 # docker-compose.cluster.yml
@@ -596,7 +596,7 @@ volumes:
   mysql_master_data:
 ```
 
-## HAProxy 配置
+## HAProxy configuration
 
 ```
 # haproxy.cfg
@@ -646,7 +646,7 @@ listen chat_ws
     server chat-3 chat-3:7001 check
 ```
 
-## 部署步骤
+## Deployment steps
 
 ```bash
 # 1. 构建镜像

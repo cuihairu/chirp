@@ -1,10 +1,10 @@
-> 🌐 Language: **中文** (this page) | [English](./DEPLOYMENT.en.md)
+> 🌐 Language: [中文](../zh/design-notes/DEPLOYMENT.md)) | **English** (this page)
 
-# 部署笔记(历史)
+# Deployment notes (historical)
 
-> 本文是早期的部署笔记,混有已过时的模板内容。现行部署指南是 [guide/deployment.md](../guide/deployment.md)(Docker Compose、真实二进制路径、真实命令行参数、实测容量数据);需要下部署结论时以那一页为准。
+> This is an early deployment note and still mixes in outdated template content. The current deployment guide is [guide/deployment.md](../guide/deployment.md)) (Docker Compose, real binary paths, real command-line flags, measured capacity data); use that page when you need to draw deployment conclusions.
 
-## 服务依赖
+## Service dependencies
 
 ```
 ┌─────────────┐     ┌─────────────┐
@@ -27,13 +27,13 @@
                                     └─────────┘
 ```
 
-## 端口一览
+## Port overview
 
-| 服务 | 端口 | 协议 |
+| Service | Port | Protocol |
 |---------|------|----------|
-| Gateway(game_sdk_gateway) | 5000, 5001 | TCP, WS |
-| Auth(app_auth) | 6000 | TCP |
-| Chat(chirp_chat) | 7000, 7001 | TCP, WS |
+| Gateway (game_sdk_gateway) | 5000, 5001 | TCP, WS |
+| Auth (app_auth) | 6000 | TCP |
+| Chat (chirp_chat) | 7000, 7001 | TCP, WS |
 | Social | 8000, 8001 | TCP, WS |
 | Party | 7500, 7501 | TCP, WS |
 | Voice | 9000, 9001 | TCP, WS |
@@ -43,39 +43,39 @@
 | Redis | 6379 | TCP |
 | MySQL | 3306 | TCP |
 
-## 常用命令
+## Common commands
 
 ```bash
-# 一套起齐(docker compose)
+# bring the whole stack up (docker compose)
 docker compose up -d
 docker compose logs -f
 docker compose down
 
-# 源码构建与本地验证
+# build from source and verify locally
 ./gen_proto.sh
 cmake --preset dev
 cmake --build --preset dev
 ctest --preset dev
 ```
 
-服务配置以命令行参数为准,样例见 `docker-compose.yml` 与 [guide/deployment.md](../guide/deployment.md);chat 存储层另有 `CHIRP_*` 环境变量读取点(`message_store_config.cc`)。日志是纯文本行(`YYYY-MM-DD HH:MM:SS [LEVEL] [tid=...] 消息`,`libs/common/logger.*`),没有 JSON 结构化输出。
+Service configuration is authoritative in the command-line flags; samples are in `docker-compose.yml` and [guide/deployment.md](../guide/deployment.md)). The chat storage layer additionally reads `CHIRP_*` environment variables (`message_store_config.cc`). Logs are plain text lines (`YYYY-MM-DD HH:MM:SS [LEVEL] [tid=...] message`, `libs/common/logger.*`), with no JSON structured output.
 
-## 容量
+## Capacity
 
-容量口径以 [capacity_benchmark.md](./capacity_benchmark.md) 的实测为准:单机 12000 并发登录在线、200 conn/s 干净建连(有并发流量时 50 conn/s 也会打穿)、稳态私聊吞吐受 1 秒/用户 pacing 约束。本文不再维护估算表。
+For the capacity numbers, use the measurements in [capacity_benchmark.md](capacity_benchmark.md)): 12000 concurrent logged-in online connections on a single machine, 200 conn/s for clean establishment (with concurrent traffic in flight even 50 conn/s gets pushed through), and steady-state private-chat throughput constrained by the 1 second/user pacing. This page no longer maintains an estimate table.
 
-## 备份与网络安全
+## Backup and network security
 
 ```bash
-# MySQL 备份与恢复
+# MySQL backup and restore
 mysqldump -u chirp -p chirp > backup_$(date +%Y%m%d).sql
 mysql -u chirp -p chirp < backup_20240301.sql
 
-# Redis 快照
+# Redis snapshot
 redis-cli BGSAVE
 ```
 
-对外只暴露客户端边缘端口,内部端口(6xxx、7000、8100 等)用防火墙挡住外网:
+Only the client edge ports are exposed externally; internal ports (6xxx, 7000, 8100 and so on) are blocked from the internet by firewall rules:
 
 ```bash
 ufw allow 5000/tcp
@@ -83,4 +83,4 @@ ufw allow 5001/tcp
 ufw deny 7000/tcp
 ```
 
-Redis 高可用(Sentinel)、MySQL 主从复制是部署侧运维选择,仓库不内置对应配置。
+Redis high availability (Sentinel) and MySQL master-slave replication are deployment-side operations choices, and the repository ships no configuration for them.

@@ -1,451 +1,466 @@
-> 🌐 Language: **中文** (this page) | [English](./app_chat_prototype.en.md)
+> 🌐 Language: [中文](../zh/design-notes/app_chat_prototype.md)) | **English** (this page)
 
-# 应用聊天原型与游戏内集成
+# App chat prototype and in-game integration
 
-本文两张图:**应用聊天原型线框**(对应当前已交付的聊天 UI)与**游戏中的集成图**(客户端内嵌 SDK / 游戏后端两条接入路径)。原型不是目标态——每个区块都标注了当前实现的组件来源,改 UI 先对图。
+This page has two diagrams: the **app chat prototype wireframes** (matching the chat UI as delivered today) and the **in-game integration diagrams** (the two access paths — the in-process SDK in the client and the game backend). The prototype is not the target state — every block annotates which component of the current implementation it comes from; change the UI only after reconciling it against the diagram.
 
-原型基准与范围:
+Prototype baseline and scope:
 
-| 客户端 | 现状 | 原型基准 |
+| Client | Current state | Prototype baseline |
 | --- | --- | --- |
-| web 伴侣(`apps/web_companion`,「Chirp 伴侣」) | 已交付,功能最全 | **参考实现**,线框图以它为基准 |
-| 桌面端(`apps/desktop`,Tauri v2 + React/MUI) | 已交付,与 web 同功能面 | 同图;差异只在导航形态(Rail 竖排页签替代 260px 左列,`src/ui/Rail.tsx`) |
-| Android / iOS(`apps/android`、`apps/ios`) | 仅协议库(`protocol/`、`Sources/ChirpProtocol/`),**无 UI** | **目标态原型**,见第三节;实现前不得引用为已交付 |
+| web companion (`apps/web_companion`, "Chirp Companion") | Delivered, most complete feature surface | **Reference implementation**; the wireframes use it as the baseline |
+| Desktop (`apps/desktop`, Tauri v2 + React/MUI) | Delivered, same feature surface as web | Same diagram; the only difference is the navigation form (a vertical Rail tab strip replaces the 260px left column, `src/ui/Rail.tsx`) |
+| Android / iOS (`apps/android`, `apps/ios`) | Protocol library only (`protocol/`, `Sources/ChirpProtocol/`), **no UI** | **Target-state prototype**, see section 3; must not be cited as delivered before implementation |
 
-## 一、应用聊天原型
+## 1. The app chat prototype
 
-### 登录页
+### Login page
 
 ```text
 ┌────────────────────────────────────┐
 │                                    │
-│            登录到 Chirp             │
-│     开发模式:输入用户 ID 即可登录      │
+│            Log in to Chirp           │
+│   Dev mode: a user ID is enough      │
 │                                    │
-│      用户 ID  [ al____________ ]    │
+│      User ID  [ al__________ ]      │
 │                                    │
-│            [ 登录 ]                │
+│            [ Log in ]              │
 │                                    │
 └────────────────────────────────────┘
 ```
 
-来源 `LoginPage.tsx`:dev 模式无密码,用户 ID 即凭据;token 登录是 SDK 面(移动壳)的事。
+Source `LoginPage.tsx`: dev mode has no password, the user ID is the credential; token login belongs to the SDK surface (the mobile shell).
 
-### 主界面(双栏壳)
+### Main interface (two-column shell)
 
 ```text
 ┌───────────────────────┬────────────────────────────────────────────┐
-│ Chirp 伴侣  alice      │  [ConnectionBanner:断线重连/被踢,仅异常时出现] │
+│ Chirp Companion alice │  [ConnectionBanner:reconnecting/kicked,    │
 ├───────────────────────┼────────────────────────────────────────────┤
-│ [新的私聊] [新建群组]    │  频道标题                            [⚙]   │
-│───────────────────────│  alice, bob 正在输入…                       │
-│ 私聊                   │────────────────────────────────────────────│
-│  bob    (2) 好的,收到   │        [ 加载更早的消息 ]                    │
-│  carol       在吗?      │                                            │
-│ 群聊                   │     ┌──────────────────────────┐           │
-│  战队A  (5) 集合了      │     │ bob: 今晚八点集合          │           │
-│───────────────────────│     │ [👍 2] [👏] +             │           │
-│ [好友] [组队] [语音]     │     └──────────────────────────┘           │
-│ [设备]                 │     ┌──────────────────────────┐           │
-│                       │     │ 我: 收到,准时上线    20:14  │           │
-│ 通知权限(点此开启)       │     └────────────[已读]────────┘           │
-│ 退出登录               │  ┌──────────────────────────────────────┐  │
-│                       │  │ 输入消息,Enter 发送              [发送] │  │
+│ [New private chat]    │  Channel title                           [⚙] │
+│ [New group]           │────────────────────────────────────────────│
+│───────────────────────│                                            │
+│ Private chats         │        [ Load earlier messages ]           │
+│  bob    (2) OK, got it│                                            │
+│  carol       Around?  │     ┌──────────────────────────┐           │
+│ Group chats           │     │ bob: Meet at eight        │           │
+│  Squad A  (5) Gather! │     │ [👍 2] [👏] +             │           │
+│───────────────────────│     └──────────────────────────┘           │
+│ [Friends] [Party] [Voice]     ┌──────────────────────────┐           │
+│ [Devices]             │     │ Me: Got it, I'll be there  20:14│        │
+│                       │     └────────────[Read]────────┘           │
+│ Notification permission│  ┌──────────────────────────────────────┐  │
+│ (tap to enable)       │  │ Type a message, Enter to send  [Send]│  │
+│ Log out               │  └──────────────────────────────────────┘  │
 └───────────────────────┴──┴──────────────────────────────────────┴──┘
      260px · ConversationList               ChatWindow
-     (未选会话时右栏显示空态提示)
+     (right column shows an empty state when no conversation is selected)
 ```
 
-区块来源:
+Block sources:
 
-| 区块 | 内容 | 组件 |
+| Block | Content | Component |
 | --- | --- | --- |
-| 左列头部 | 应用名 + 当前用户 ID | `ChatPage.tsx` |
-| 会话列表 | 私聊/群聊分组、未读角标、最近消息预览;顶部「新的私聊」「新建群组」按钮 | `ConversationList.tsx` |
-| 平面入口 | 好友(加好友/请求/在线绿点)、组队(创建/邀请/转让/解散)、语音房(创建/加入/静音)、多端在线(其他在线端清单) | `FriendsDialog` / `PartyDialog` / `VoiceDialog` / `DevicesDialog` / `OnlineDevicesDialog` |
-| 左列底部 | 桌面通知权限入口(从不自动请求)、退出登录 | `ChatPage.tsx` |
-| 右栏头部 | 频道标题;正在输入指示(「alice, bob 正在输入…」);群聊独享 ⚙ 打开群设置 | `ChatWindow.tsx` |
-| 消息列表 | 「加载更早的消息」按页上翻;气泡见下 | `ChatWindow.tsx` + `MessageBubble.tsx` |
-| 输入区 | Enter 发送 | `MessageInput.tsx` |
+| Left column header | App name + current user ID | `ChatPage.tsx` |
+| Conversation list | Private/group grouping, unread badges, last-message preview; "New private chat" / "New group" buttons at the top | `ConversationList.tsx` |
+| Plane entries | Friends (add friend/requests/online green dot), party (create/invite/transfer/disband), voice rooms (create/join/mute), multi-device online (list of other online clients) | `FriendsDialog` / `PartyDialog` / `VoiceDialog` / `DevicesDialog` / `OnlineDevicesDialog` |
+| Left column footer | Desktop notification permission entry (never requested automatically), log out | `ChatPage.tsx` |
+| Right column header | Channel title; typing indicator ("alice, bob are typing…"); the group-only ⚙ opens group settings | `ChatWindow.tsx` |
+| Message list | "Load earlier messages" pages upward; bubbles dissected below | `ChatWindow.tsx` + `MessageBubble.tsx` |
+| Input area | Enter to send | `MessageInput.tsx` |
 
-### 消息气泡解剖
+### Message bubble anatomy
 
 ```text
-   对方消息                                自己的消息
+   Peer message                            Own message
 ┌────────────────────────┐        ┌────────────────────────────┐
-│ bob                    │        │                         我 │
-│ 今晚八点集合            │        │         收到,准时上线        │
-│ [👍 2] [👏] +          │        │         20:14 · 已读        │
+│ bob                    │        │                         Me │
+│ Meet at eight          │        │     Got it, I'll be there    │
+│ [👍 2] [👏] +          │        │     20:14 · Read          │
 └────────────────────────┘        └────────────────────────────┘
- 气泡下方:表情回应 chips             状态行(逐级出现,同一行):
- (快捷反应一键回应)                   · 发送中… → 已读(对端 MARK_READ 后)
- (自己的消息另有 编辑/撤回)            · 发送失败
-                                    · 对方离线,已排队(上线自动补投)
+ Below the bubble: reaction chips     Status line (appears level by level,
+ (one-tap quick reactions)              on one line):
+ (own messages also have edit/recall)  · Sending… → Read (after the peer MARK_READ)
+                                       · Send failed
+                                       · Peer offline, queued (redelivered
+                                         automatically when they come online)
 ```
 
-状态与特殊形态(全部来自 `MessageBubble.tsx` 现行为):
+States and special forms (all from current behavior in `MessageBubble.tsx`):
 
-- **已读**:自己的消息在「对端已读游标 ≥ 本条」后追加 `· 已读`;
-- **(已编辑)**:对方编辑过的消息显示标记;自己的编辑直接原位更新;
-- **撤回**:整条折叠为「消息已撤回」(双方一致);
-- **敏感词**:命中词库的内容已是改写后的文本(REPLACE 策略显示 `**`),规约见 [敏感词过滤](word_filter.md);
-- 群聊额外有群主标识与成员数(群设置内)。
+- **Read**: own messages append `· Read` once "the peer's read cursor ≥ this message";
+- **(Edited)**: a message edited by the peer shows the marker; your own edit updates in place;
+- **Recall**: the whole message collapses to "message recalled" (identical on both sides);
+- **Sensitive words**: content that hits the word list is already rewritten text (the REPLACE strategy displays `**`), the convention is in [Word filter](word_filter.md);
+- Group chats additionally have the owner marker and the member count (inside group settings).
 
-### 群设置(群聊 ⚙)
+### Group settings (group-chat ⚙)
 
 ```text
-┌─ 群组设置:战队A ──────────────┐
-│  成员 4/10                    │
-│  ──────────────────────────  │
-│  ★ alice(群主)        [移出]  │
-│    bob                [移出]  │
-│  ──────────────────────────  │
-│  [添加成员: 输入用户 ID]       │
-│  [退出群组]                   │
-└──────────────────────────────┘
+┌─ Group settings: Squad A ─────────────┐
+│  Members 4/10                         │
+│  ────────────────────────────────     │
+│  ★ alice (owner)              [Remove]│
+│    bob                       [Remove]│
+│  ────────────────────────────────     │
+│  [Add member: enter user ID]           │
+│  [Leave group]                        │
+└────────────────────────────────────────┘
 ```
 
-来源 `GroupDialogs.tsx`:创建群、邀请/踢人、群主标识、退群确认。桌面端同功能面在 `desktop/src/ui/Dialogs.tsx`。
+Source `GroupDialogs.tsx`: create group, invite/kick, owner marker, leave-group confirmation. The desktop build has the same feature surface in `desktop/src/ui/Dialogs.tsx`.
 
-### 全局状态与降级行为
+### Global states and degradation behavior
 
-| 状态 | 表现 | 依据 |
+| State | Behavior | Basis |
 | --- | --- | --- |
-| 断线 | 顶部条幅「连接已断开,正在自动重连…」,恢复后自愈 | `ConnectionBanner.tsx` |
-| 被踢(顶号) | 条幅「账号已在其他设备登录…」+ 返回登录按钮——踢线是终态,不自动重连 | 同上 |
-| 平面缺席 | social/party/voice/设备四平面登录均 best-effort:任一宕机聊天主线照常,对应功能入口隐藏 | `ChatPage.tsx` 四个 useEffect 契约 |
-| 桌面通知 | 仅在页面隐藏且消息不在当前频道时弹系统通知;权限从不自动请求 | `ChatPage.tsx` + `desktop_notify.ts` |
-| 未读数 | 客户端本地记账(收消息 +1、MARK_READ 清零),登录后 `GET_UNREAD_COUNT`(2205) 向服务端对账一次;当前**没有**未读变更推送 | `ConversationList.tsx` / `message_handlers.cc` |
+| Disconnected | Top banner "Connection lost, reconnecting automatically…", self-heals after recovery | `ConnectionBanner.tsx` |
+| Kicked (topped by another login) | Banner "This account has been logged in on another device…" + a back-to-login button — a kick is a terminal state, no automatic reconnect | same |
+| Plane absent | The social/party/voice/devices planes all log in on a best-effort basis: if any is down the chat main line still works and that feature's entry is hidden | the four useEffect contracts in `ChatPage.tsx` |
+| Desktop notifications | A system notification only pops when the page is hidden and the message is not in the current channel; permission is never requested automatically | `ChatPage.tsx` + `desktop_notify.ts` |
+| Unread counts | Accounted for locally by the client (incoming message +1, MARK_READ clears), reconciled once with the server after login via `GET_UNREAD_COUNT` (2205); currently there is **no** unread-change push | `ConversationList.tsx` / `message_handlers.cc` |
 
-## 二、游戏中的集成
+## 2. In-game integration
 
-游戏接入有两条正交路径:**游戏客户端内嵌 SDK**(玩家聊天主线)与**游戏后端服务器平面**(系统消息/数据互通)。二者可同时存在。
+Game access has two orthogonal paths: the **SDK embedded in the game client** (the player chat main line) and the **game backend server plane** (system messages / data interop). Both can exist at the same time.
 
-### 图 A:客户端内嵌 SDK(in-process)
+### Diagram A: in-process client SDK
 
 ```mermaid
 graph TD
-    subgraph GAME["游戏进程(Unity / Unreal / Cocos / 小游戏)"]
-        UI["游戏 UI / HUD 聊天面板"]
-        subgraph SDK["chirp SDK(进程内)"]
-            MGR["引擎壳:ChirpManager / UChirpClientSubsystem<br/>主线程派发 · 自动重连 · AutoRelogin · 踢线终态"]
-            WF["WordFilterSync 拦截器<br/>发送侧预检 + 词库下发 2245-2247"]
-            STORE["MessageStore 本地档案<br/>历史 · 已读游标 · 本地未读数"]
+    subgraph GAME["Game process (Unity / Unreal / Cocos / mini-game)"]
+        UI["Game UI / HUD chat panel"]
+        subgraph SDK["chirp SDK (in-process)"]
+            MGR["Engine shell: ChirpManager / UChirpClientSubsystem<br/>Main-thread dispatch · auto-reconnect · AutoRelogin · kick is terminal"]
+            WF["WordFilterSync interceptor<br/>Send-side pre-check + word-list push 2245-2247"]
+            STORE["MessageStore local archive<br/>History · read cursor · local unread counts"]
         end
     end
-    subgraph EDGE["服务端边缘"]
+    subgraph EDGE["Server edge"]
         GW["gateway / app_gateway<br/>chat WS 7001 · TCP 5000 · app WS 5201"]
-        PLANES["social 8001 · party 7501 · voice 9001<br/>(可降级平面,缺席不碍聊天)"]
+        PLANES["social 8001 · party 7501 · voice 9001<br/>(degradable planes, absence does not block chat)"]
     end
-    CHAT["chat 服务<br/>服务端强制过滤 · 扇出 · 离线队列"]
+    CHAT["chat service<br/>server-side enforced filtering · fan-out · offline queue"]
 
-    UI -->|"发消息 / On* 事件 / OnNotify 订阅"| MGR
+    UI -->|"send message / On* events / OnNotify subscriptions"| MGR
     MGR --> WF
     MGR --> STORE
-    SDK -->|"帧协议 Packet(protobuf 小帧)"| GW
+    SDK -->|"frame protocol Packet (small protobuf frames)"| GW
     GW --> CHAT
     GW -.-> PLANES
 ```
 
-要点(接入语义详见 [SDK 总览](../sdk/index.md) 与 [SDK 钩子](sdk_hooks.md)):
+Key points (for the access semantics see [SDK overview](../sdk/index.md)) and [SDK hooks](sdk_hooks.md)):
 
-- **游戏侧只面对事件与 Task**:`OnChatMessage` 等回调已被引擎壳派发回主线程;请求-响应走 spec 表(`RequestAsync`,序列号关联,超时抛错);
-- **发送侧预检在 SDK 内完成**:注册 `WordFilterSync` 为拦截器后,`SendMessageAsync` 全管线先过词库;词库由服务端下发,客户端裁决预测服务端裁决;
-- **离线不是失败**:发送返回 `TargetOffline` 表示已滚进对方离线队列;收到消息必须 `AckChatMessage`,否则服务端重复投递;
-- **被踢是终态**:顶号后 SDK 停止重连,游戏弹重新登录(对应原型里的条幅)。
+- **The game side only deals with events and Tasks**: callbacks such as `OnChatMessage` are already dispatched back to the main thread by the engine shell; request-response goes through the spec table (`RequestAsync`, correlated by sequence number, throws on timeout);
+- **The send-side pre-check happens inside the SDK**: after registering `WordFilterSync` as an interceptor, the whole `SendMessageAsync` pipeline passes the word list first; the word list is pushed by the server, the client adjudicates a prediction of the server's adjudication;
+- **Offline is not failure**: a send returning `TargetOffline` means it has rolled into the peer's offline queue; an incoming message must be `AckChatMessage`, otherwise the server redelivers;
+- **Being kicked is terminal**: after being topped by another login the SDK stops reconnecting and the game pops a re-login prompt (the banner from the prototype).
 
-### 图 B:游戏后端(服务器平面 dial-out)
+### Diagram B: game backend (server plane dial-out)
 
 ```mermaid
 graph TD
-    GS["游戏服务器(任意语言,官方 Go SDK)"]
-    SG["server_gateway hub(TCP 8100,dial-out + service_id + secret)"]
-    CHAT["chat 服务"]
-    DIR["玩家目录 / presence<br/>进游戏绑定 · 退出解绑(好友消息进游戏)"]
-    LEDGER["未读徽标账本(Redis)<br/>GET_UNREAD_SUMMARY 5029 · MARK_CHANNELS_READ 5030"]
+    GS["Game server (any language, official Go SDK)"]
+    SG["server_gateway hub (TCP 8100, dial-out + service_id + secret)"]
+    CHAT["chat service"]
+    DIR["Player directory / presence<br/>Bind on entering the game · Unbind on exit (friend messages enter the game)"]
+    LEDGER["Unread badge ledger (Redis)<br/>GET_UNREAD_SUMMARY 5029 · MARK_CHANNELS_READ 5030"]
 
-    GS -->|"注入消息 / 广播 / 事件"| SG
+    GS -->|"inject message / broadcast / event"| SG
     SG --> CHAT
-    GS -->|"绑定在线断言"| DIR
-    CHAT -->|"fan-in 副本成功递交 → 计数 +1"| LEDGER
-    GS -->|"读徽标 / 清徽标"| LEDGER
+    GS -->|"online assertion binding"| DIR
+    CHAT -->|"fan-in copy delivered successfully → count +1"| LEDGER
+    GS -->|"read badge / clear badge"| LEDGER
 ```
 
-要点:
+Key points:
 
-- **dial-out 直连**:游戏后端主动外连 hub,不开监听端口;鉴权用 service_id + secret;
-- **徽标账本与聊天未读互不喂**:账本只数「订阅通知被成功递交给 chat」的 fan-in 副本,`MarkChannelsRead` 是唯一递减路径(协议注释明文);
-- **presence 绑定即在线**:游戏后端在玩家进/退游戏时绑定/解绑,好友「在游戏中」状态由此而来,不需要额外心跳信号。
+- **dial-out is a direct connection**: the game backend dials out to the hub itself and opens no listening port; authentication uses service_id + secret;
+- **The badge ledger and chat unread do not feed each other**: the ledger only counts fan-in copies whose "subscribe notification was successfully delivered to chat"; `MarkChannelsRead` is the only decrement path (stated explicitly in the protocol comment);
+- **A presence binding means online**: the game backend binds/unbinds when the player enters/leaves the game, the friend "in game" status derives from this, and no extra heartbeat signal is needed.
 
-### 图 C:一句话在游戏里的一生
+### Diagram C: the life of one message in the game
 
 ```mermaid
 sequenceDiagram
-    participant A as 玩家A·Unity
+    participant A as Player A · Unity
     participant S as chirp SDK
-    participant E as 边缘 WS
-    participant C as chat 服务
-    participant B as 玩家B
+    participant E as Edge WS
+    participant C as chat service
+    participant B as Player B
 
-    A->>S: 输入并回车发送
-    S->>S: WordFilterSync 发送侧预检(REPLACE 改写 / REJECT 拦下)
+    A->>S: Types and presses enter to send
+    S->>S: WordFilterSync send-side pre-check (REPLACE rewrites / REJECT blocks)
     S->>E: SEND_MESSAGE_REQ
-    E->>C: 路由
-    C->>C: 服务端强制过滤(终审,三策略)
-    alt B 在线
-        C-->>B: MESSAGE_NEW 扇出 → SDK 事件 → UI 气泡 + 本地未读 +1
-    else B 离线
-        C->>C: 滚进离线队列,B 上线补投(B 须 AckChatMessage)
+    E->>C: Routing
+    C->>C: Server-side enforced filtering (final adjudication, three strategies)
+    alt B online
+        C-->>B: MESSAGE_NEW fan-out → SDK event → UI bubble + local unread +1
+    else B offline
+        C->>C: Rolls into the offline queue, redelivered when B comes online (B must AckChatMessage)
     end
-    B->>S: 打开频道 MARK_READ
-    S->>E: MARK_READ_REQ(本地未读清零)
-    E-->>A: MESSAGE_READ_NOTIFY → 自己的气泡标「已读」
+    B->>S: Opens the channel, MARK_READ
+    S->>E: MARK_READ_REQ (local unread cleared)
+    E-->>A: MESSAGE_READ_NOTIFY → own bubble marked "Read"
 ```
 
-三道关卡与两处记账都在这张图里:预检(SDK,可被绕过所以服务端必审)→ 强制过滤(chat 服务)→ 扇出/离线;未读(收方本地)、已读游标(驱动 2207 通知)。
+Three gates and two pieces of accounting are all in this diagram: pre-check (SDK, bypassable so the server must adjudicate) → enforced filtering (chat service) → fan-out/offline; unread (receiver-local), read cursor (drives the 2207 notification).
 
-## 三、手机端原型(目标态,尚未实现)
+## 3. Mobile prototype (target state, not yet implemented)
 
-> ⚠ 本节是**设计原型**——手机端 UI 尚未实现,仓库内现有的只有协议层
-> (Android `apps/android/src/main/kotlin/chirp/mobile/protocol/`,iOS
-> `apps/ios/Sources/ChirpProtocol/`)。本节功能面与 web/桌面完全同源,不新增
-> 任何协议能力;实现落地前,不要在能力矩阵或 README 引用本节为已交付。
+> ⚠ This section is a **design prototype** — the mobile UI is not implemented yet, and all that exists in the repo is the protocol layer
+> (Android `apps/android/src/main/kotlin/chirp/mobile/protocol/`, iOS
+> `apps/ios/Sources/ChirpProtocol/`). The feature surface in this section is
+> fully isomorphic to web/desktop and adds no protocol capability; do not cite
+> this section as delivered in the capability matrix or the README before the
+> implementation lands.
 >
-> 2026-10-05 起,本节五屏(会话列表/聊天窗/好友与游戏好友/通知/我的)有了
-> 可视 HTML 稿:`design/prototypes/mobile/`(375×812,近黑底+indigo,
-> 中性占位;`index.html` 导览,README.md 逐页设计说明)——同为设计稿非实现,
-> 审核已通过:01/02/04/05 四页用户一审通过(2026-10-07),03 好友页修订稿
-> (来源游戏标签+来源筛选)已代决通过(FW1016D 2026-10-16,用户可推翻);
-> 其余屏仍以本节 ASCII 线框为准。
+> Since 2026-10-05 the five screens in this section (conversation list / chat window /
+> friends and game friends / notifications / me) have visual HTML drafts:
+> `design/prototypes/mobile/` (375×812, near-black background + indigo,
+> neutral placeholders; `index.html` is the navigator, README.md carries the per-page
+> design notes) — also a design draft, not an implementation. The review has passed:
+> pages 01/02/04/05 passed user first review (2026-10-07), and the revised page 03
+> (friends) with game-source tags and a source filter was approved by proxy decision
+> (FW1016D 2026-10-16, the user can overturn it); the remaining screens still follow the
+> ASCII wireframes in this section.
 
-### 布局映射:Rail → 底部页签
+### Layout mapping: Rail → bottom tab strip
 
-手机单列形态没有 260px 左列的余地,导航映射沿用桌面 Rail 的五项(`desktop/src/ui/Rail.tsx`),压成底部页签;对话框(好友/组队/语音/设备/群设置)一律全屏 sheet。
+The phone's single-column form has no room for a 260px left column, so the navigation mapping reuses the desktop Rail's five items (`desktop/src/ui/Rail.tsx`) compressed into a bottom tab strip; dialogs (friends/party/voice/devices/group settings) are all full-screen sheets.
 
-### 会话列表(首页)
-
-```text
-┌────────────────────────────┐
-│ Chirp 伴侣  alice     [🔔] │
-├────────────────────────────┤
-│ [新的私聊]      [新建群组]   │
-│────────────────────────────│
-│ 私聊                        │
-│  bob     (2)  好的,收到     │
-│  carol         在吗?        │
-│ 群聊                        │
-│  战队A   (5)  集合了        │
-│────────────────────────────│
-│  💬聊天   👥好友   🧩组队    │
-│  🎙语音   📱设备            │
-└────────────────────────────┘
- 顶栏:应用名 + 当前用户 ID + 通知开关
- 列表:同 web 会话列表(未读角标 + 最近消息预览)
- 底部:五页签 = 桌面 Rail 同款功能入口
-```
-
-### 聊天窗口(全屏推入)
+### Conversation list (home)
 
 ```text
 ┌────────────────────────────┐
-│ ←   战队A              ⚙   │
-│     bob 正在输入…           │
+│ Chirp Companion alice  [🔔]│
 ├────────────────────────────┤
-│      [ 加载更早的消息 ]      │
-│  ┌──────────────────────┐  │
-│  │ bob: 今晚八点集合      │  │
-│  │ [👍 2] [👏] +         │  │
-│  └──────────────────────┘  │
-│        ┌──────────────────┐│
-│        │ 我: 收到   20:14  ││
-│        └──────[已读]───────┘│
-├────────────────────────────┤
-│ [ 输入消息…           ][发送]│
+│ [New private chat] [New group]│
+│────────────────────────────│
+│ Private chats               │
+│  bob     (2)  OK, got it    │
+│  carol          Around?     │
+│ Group chats                 │
+│  Squad A   (5)  Gather!     │
+│────────────────────────────│
+│  💬Chat   👥Friends   🧩Party│
+│  🎙Voice  📱Devices         │
 └────────────────────────────┘
- 头部:返回 + 标题 + typing 副标题 + ⚙(群聊)
- 气泡:与「消息气泡解剖」同款,状态行/回应/撤回一致
+  Top bar: app name + current user ID + notification toggle
+  List: same as the web conversation list (unread badge + last-message preview)
+  Bottom: five tabs = the same feature entries as the desktop Rail
 ```
 
-### 群设置(全屏 sheet)
+### Chat window (pushed in full screen)
 
 ```text
 ┌────────────────────────────┐
-│ ✕  群组设置:战队A           │
-│────────────────────────────│
-│  成员 4/10                  │
-│  ★ alice(群主)      [移出]  │
-│    bob              [移出]  │
-│────────────────────────────│
-│  [ 添加成员:输入用户 ID  ]   │
-│  [ 退出群组 ]               │
+│ ←   Squad A             ⚙   │
+│     bob is typing…           │
+├────────────────────────────┤
+│      [ Load earlier messages ]│
+│  ┌──────────────────────┐    │
+│  │ bob: Meet at eight   │    │
+│  │ [👍 2] [👏] +         │    │
+│  └──────────────────────┘    │
+│        ┌──────────────────┐  │
+│        │ Me: Got it   20:14│  │
+│        └──────[Read]──────┘  │
+├────────────────────────────┤
+│ [ Type a message…      ][Send]│
 └────────────────────────────┘
- 内容与 web 群设置对话框同源(GroupDialogs)
+  Header: back + title + typing subtitle + ⚙ (group chats)
+  Bubbles: same as "Message bubble anatomy", same status line/reactions/recall
 ```
 
-### 手机端与 web/桌面的差异面
+### Group settings (full-screen sheet)
 
-| 维度 | web / 桌面(已交付) | 手机端(目标态) | 依据 |
+```text
+┌────────────────────────────┐
+│ ✕  Group settings: Squad A  │
+│────────────────────────────│
+│  Members 4/10               │
+│  ★ alice (owner)    [Remove]│
+│    bob              [Remove]│
+│────────────────────────────│
+│  [ Add member: enter user ID ]│
+│  [ Leave group ]            │
+└────────────────────────────┘
+  Content is isomorphic to the web group-settings dialog (GroupDialogs)
+```
+
+### Where mobile differs from web/desktop
+
+| Dimension | web / desktop (delivered) | Mobile (target state) | Basis |
 | --- | --- | --- | --- |
-| 导航 | 260px 左列 / Rail 竖排页签 | 底部五页签 + 全屏 sheet | 桌面 `Rail.tsx` 同源映射 |
-| 通知 | 桌面通知(页面隐藏且非当前频道) | 系统推送,经设备平面注册(`RegisterDevice`,app_gateway WS 5201);iOS APNs 凭据、鸿蒙 ArkTS 工具链为已登记的外部前置,落地前推送臂不可用 | `DeviceRegistrar.kt` / `apps/ios` 协议库 |
-| 发送 | 在线直发,失败可重试 | 协议库自带离线发送队列,弱网先入队、恢复后重放 | `OfflineSendQueue.kt` |
-| 顶号 | 条幅 + 返回登录 | 同为踢线终态:SDK 停止重连,弹重新登录 | 协议库踢线终态契约 |
-| 词库 | `WordFilterSync` 拦截器随 SDK | 同一组件三端同契约(Kotlin/Swift 协议库已备),原生壳照接 | `WordFilterSync.kt` / `WordFilterSync.swift` |
+| Navigation | 260px left column / vertical Rail tabs | Five bottom tabs + full-screen sheets | Isomorphic mapping from the desktop `Rail.tsx` |
+| Notifications | Desktop notifications (only when hidden and not the current channel) | System push, registered via the devices plane (`RegisterDevice`, app_gateway WS 5201); iOS APNs credentials and the HarmonyOS ArkTS toolchain are registered external prerequisites, so the push arm is unavailable before they land | `DeviceRegistrar.kt` / the `apps/ios` protocol library |
+| Sending | Direct send while online, retryable on failure | The protocol library ships its own offline send queue: enqueue on a weak network and replay after recovery | `OfflineSendQueue.kt` |
+| Being topped | Banner + back to login | Also a terminal kick: the SDK stops reconnecting and pops a re-login prompt | The kick-is-terminal contract in the protocol library |
+| Word list | The `WordFilterSync` interceptor ships with the SDK | The same component with the same contract on all three platforms (the Kotlin/Swift protocol libraries are ready), wired straight into the native shells | `WordFilterSync.kt` / `WordFilterSync.swift` |
 
-### 屏幕导航(底部五页签 = 桌面 Rail)
+### Screen navigation (five bottom tabs = the desktop Rail)
 
 ```mermaid
 graph TD
-    L["登录"] --> CH
-    subgraph TABS["底部五页签"]
-        CH["聊天 · 会话列表"]
-        FR["好友"]
-        PT["组队"]
-        VC["语音"]
-        DV["设备"]
+    L["Login"] --> CH
+    subgraph TABS["Five bottom tabs"]
+        CH["Chat · conversation list"]
+        FR["Friends"]
+        PT["Party"]
+        VC["Voice"]
+        DV["Devices"]
     end
-    CH --> CW["聊天窗口 · 全屏推入"]
-    CH --> NP["新的私聊 sheet"]
-    CH --> NG["新建群组 sheet"]
-    CW --> GS["群设置 sheet"]
-    CW --> MS["长按气泡 · 操作 sheet"]
-    FR --> FA["添加好友 · 请求处理"]
-    PT --> PC["创建队伍 · 邀请 · 转让"]
-    VC --> VR["创建 / 加入房间"]
-    DV --> OD["在线设备清单"]
+    CH --> CW["Chat window · pushed in full screen"]
+    CH --> NP["New private chat sheet"]
+    CH --> NG["New group sheet"]
+    CW --> GS["Group settings sheet"]
+    CW --> MS["Long-press bubble · action sheet"]
+    FR --> FA["Add friend · request handling"]
+    PT --> PC["Create party · invite · transfer"]
+    VC --> VR["Create / join room"]
+    DV --> OD["Online device list"]
 ```
 
-### 好友页
+### Friends page
 
 ```text
 ┌────────────────────────────┐
-│ 好友                 [添加] │
+│ Friends             [Add]  │
 ├────────────────────────────┤
-│ 好友请求 (1)                 │
-│  dave 请求加你为好友         │
-│              [接受]  [拒绝]  │
+│ Friend requests (1)         │
+│  dave wants to add you      │
+│              [Accept] [Decline]│
 │────────────────────────────│
-│ ● bob               [发消息] │
-│ ● carol             [发消息] │
-│ ○ erin              [发消息] │
+│ ● bob           [Message]  │
+│ ● carol         [Message]  │
+│ ○ erin          [Message]  │
 │────────────────────────────│
-│ 等待对方同意: frank          │
+│ Waiting for their approval: frank│
 │────────────────────────────│
-│  💬聊天  👥好友  🧩组队  ... │
+│  💬Chat  👥Friends  🧩Party ...│
 └────────────────────────────┘
- ● 在线绿点 / ○ 离线;「发消息」跳转
- 对应私聊并切回聊天页签(同 FriendsDialog 动作集)
+  ● online green dot / ○ offline; "Message" jumps to
+  the private chat and switches back to the chat tab
+  (same action set as FriendsDialog)
 ```
 
-### 组队页
+### Party page
 
 ```text
 ┌────────────────────────────┐
-│ 组队                        │
+│ Party                       │
 ├────────────────────────────┤
-│ (无队伍时)                   │
-│  [ 创建队伍 · 人数上限默认 5 ]│
+│ (no party)                  │
+│  [ Create party · default cap 5 ]│
 │────────────────────────────│
-│ 收到的邀请 (1)               │
-│  alice 邀请你入队            │
-│              [接受]  [拒绝]  │
+│ Invitations received (1)    │
+│  alice invited you          │
+│              [Accept] [Decline]│
 │────────────────────────────│
-│ (入队后)                    │
-│  队伍 2/5                   │
+│ (after joining)             │
+│  Party 2/5                  │
 │  ★ alice  ·  bob            │
-│  [邀请] [转让队长] [退出队伍] │
+│  [Invite] [Transfer leader] [Leave party]│
 │────────────────────────────│
-│  💬聊天  👥好友  🧩组队  ... │
+│  💬Chat  👥Friends  🧩Party ...│
 └────────────────────────────┘
- 邀请-接受制,快照同步(成员变更整队广播)
- ——与 web PartyDialog / 桌面组队页同源
+  Invite-and-accept model, snapshot sync (member changes
+  are broadcast to the whole party)
+  — isomorphic to the web PartyDialog / the desktop party page
 ```
 
-### 语音页
+### Voice page
 
 ```text
 ┌────────────────────────────┐
-│ 语音                        │
+│ Voice                       │
 ├────────────────────────────┤
-│ (不在房间时)                 │
-│  [ 创建房间 ]   [ 加入房间 ]  │
+│ (not in a room)             │
+│  [ Create room ]  [ Join room ]│
 │────────────────────────────│
-│ (进房后)                    │
-│  房间 room-1                │
+│ (after entering)            │
+│  Room room-1                │
 │  🎙 alice   🎙 bob           │
-│  [静音 / 解除]   [离开房间]   │
+│  [Mute / Unmute]  [Leave room]│
 │────────────────────────────│
-│ ⚠ 信令闭环;媒体面(音频流)未验证 │
+│ ⚠ Signaling closed loop; the media plane (audio stream) is unverified│
 │────────────────────────────│
-│  💬聊天  👥好友  🧩组队  ... │
+│  💬Chat  👥Friends  🧩Party ...│
 └────────────────────────────┘
- ⚠ 不是漏画:与桌面端同一现状口径——
- 语音只到信令,媒体面验证前不画任何
- 通话 UI 承诺
+  ⚠ Not an oversight in drawing: this is the same state
+  of affairs as on desktop —
+  voice only goes as far as signaling, and no call UI is
+  promised until the media plane is verified
 ```
 
-### 设备页
+### Devices page
 
 ```text
 ┌────────────────────────────┐
-│ 设备                        │
+│ Devices                     │
 ├────────────────────────────┤
-│ 本账号在线设备 (2)           │
-│  📱 alice-手机(本机)         │
-│  💻 alice-桌面               │
+│ Online devices for this account (2)│
+│  📱 alice-phone (this device) │
+│  💻 alice-desktop           │
 │────────────────────────────│
-│ 同账号在他端登录会顶掉当前会话 │
-│ ——踢线是终态,弹回登录页       │
+│ Logging in on another device│
+│ with the same account tops off the current session│
+│ — a kick is terminal, so pop back to the login page│
 │────────────────────────────│
-│  💬聊天  👥好友  🧩组队  ... │
+│  💬Chat  👥Friends  🧩Party ...│
 └────────────────────────────┘
- 同 OnlineDevicesDialog:在线端清单
- + 同型顶号提示;推送注册在本页管理
+  Same as OnlineDevicesDialog: the list of online clients
+  plus the same "topped by another login" notice; push
+  registration is managed on this page
 ```
 
-### 长按气泡(操作 sheet)
+### Long-press bubble (action sheet)
 
 ```text
 ┌────────────────────────────┐
 │  ┌──────────────────────┐  │
-│  │ 今晚八点集合       bob │  │ ← 长按这条
+│  │ Meet at eight     bob │  │ ← long-press this one
 │  └──────────────────────┘  │
 │ ┌────────────────────────┐ │
-│ │  👍   👏   🔥   ❤️      │ │ ← 快捷反应(QUICK_REACTIONS)
+│ │  👍   👏   🔥   ❤️      │ │ ← quick reactions (QUICK_REACTIONS)
 │ │ ────────────────────── │ │
-│ │  编辑     (自己的消息)   │ │
-│ │  撤回     (自己的消息)   │ │
+│ │  Edit    (own messages)│ │
+│ │  Recall  (own messages)│ │
 │ └────────────────────────┘ │
 └────────────────────────────┘
- web 悬停动作集(回应/编辑/撤回)原样
- 翻译成长按 sheet,不增不减
+  The web hover action set (react/edit/recall) is
+  translated one-to-one into a long-press sheet,
+  nothing added and nothing removed
 ```
 
-### 登录页
+### Login page
 
 ```text
 ┌────────────────────────────┐
 │                            │
-│        登录到 Chirp         │
-│  开发模式:输入用户 ID 即可登录│
+│        Log in to Chirp     │
+│ Dev mode: a user ID is enough│
 │                            │
-│   用户 ID [ ____________ ]  │
+│   User ID [ ____________ ] │
 │                            │
-│          [ 登录 ]           │
+│          [ Log in ]        │
 └────────────────────────────┘
- 与 web LoginPage 同款:dev 模式无密码,
- 用户 ID 即凭据;token 登录留给正式壳
+  Same as the web LoginPage: dev mode has no password,
+  the user ID is the credential; token login is left to
+  the production shell
 ```
 
-### 交互翻译表
+### Interaction translation table
 
-| web / 桌面(已交付) | 手机端(目标态) | 语义 |
+| web / desktop (delivered) | Mobile (target state) | Semantics |
 | --- | --- | --- |
-| 悬停气泡 → 回应/编辑/撤回 | 长按气泡 → 操作 sheet | 动作集原样翻译,不增不减 |
-| Enter 发送 | 发送按钮 / 输入法发送动作 | 同一 `MessageInput` 语义 |
-| 「加载更早的消息」按钮 | 同款按钮置列表顶部 | 分页语义不变 |
-| 桌面通知(隐藏且非当前频道才弹) | 系统推送 + 应用内横幅,点击跳对应频道 | 通知抑制规则同源(`shouldNotifyFor`) |
-| 顶部 ConnectionBanner | 同款顶部条幅;被踢弹回登录页 | 踢线终态一致 |
-| 群/好友/组队/语音/设备对话框 | 全屏 sheet / 底部页签 | 内容同源 |
+| Hover bubble → react/edit/recall | Long-press bubble → action sheet | The action set is translated one-to-one, nothing added and nothing removed |
+| Enter to send | Send button / IME send action | The same `MessageInput` semantics |
+| "Load earlier messages" button | The same button at the top of the list | The pagination semantics are unchanged |
+| Desktop notifications (only pop when hidden and not the current channel) | System push + in-app banner, tapping jumps to the matching channel | The notification-suppression rules are isomorphic (`shouldNotifyFor`) |
+| Top ConnectionBanner | The same top banner; a kick pops back to the login page | The kick-is-terminal behavior is consistent |
+| Group/friends/party/voice/devices dialogs | Full-screen sheets / bottom tabs | The content is isomorphic |
 
-**刻意不设计的面**:语音媒体面 UI(信令之外未验证,见语音页 ⚠)、推送通道凭据(APNs 需 Apple 开发者凭据、鸿蒙需 ArkTS 工具链——外部前置登记在案,落地前推送臂不可用)。除这两处外部前置外,本节原型不依赖任何尚不存在的能力。
+**Deliberately un-designed surfaces**: the voice media-plane UI (unverified beyond signaling, see the ⚠ on the voice page), and push-channel credentials (APNs needs Apple developer credentials, HarmonyOS needs the ArkTS toolchain — the external prerequisites are registered, so the push arm is unavailable before they land). Apart from these two external prerequisites, the prototype in this section depends on no capability that does not yet exist.

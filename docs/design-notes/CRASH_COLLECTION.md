@@ -1,145 +1,86 @@
-> 🌐 Language: **中文** (this page) | [English](./CRASH_COLLECTION.en.md)
+> 🌐 Language: [中文](../zh/design-notes/CRASH_COLLECTION.md)) | **English** (this page)
 
-# 崩溃采集（Crashpad）设计简档
+# Crash collection (Crashpad) design brief
 
-> 2026-10-08 简档（先设计后实现）。选型已钉：**Google Crashpad**，C++ 直集成；
-> Breakpad 只作历史对照，不引入（其 on-process handler 与构建链均为上一代方案）。
+> Brief of 2026-10-08 (design before implementation). The choice is pinned: **Google Crashpad**, integrated directly in C++;
+> Breakpad is kept as a historical reference only and is not brought in (its on-process handler and build chain are a previous-generation solution).
 
-## 目标与边界
+## Goals and boundaries
 
-- 进程崩溃（SIGSEGV/SIGABRT/…）落 minidump 到本地磁盘，符号化还原出调用栈。
-- **先本地落盘不外发**：上传属数据外发，默认关（留位见下）。
-- 不新增监控系统：与既有日志面（`libs/common/logger`）打通，Warn 级结构化行即
-  接入点。
+- A process crash (SIGSEGV/SIGABRT/…) writes a minidump to local disk, and symbolication restores the call stack.
+- **Local disk first, no outbound upload**: uploading is an outward data flow, off by default (the reserved slot is below).
+- No new monitoring system: hook into the existing logging surface (`libs/common/logger`); a Warn-level structured line is the integration point.
 
-## 接入方式（CMake）
+## Integration approach (CMake)
 
-- **FetchContent 钉固定版本**，不走子模块：与根 `CMakeLists.txt` 既有 abseil/asio
-  接入同款（`CHIRP_FETCH_DEPS` 门控），免去 CI workflow 全部加
-  `submodules: checkout` 的改动面。
-  - 仓库：`https://github.com/backtrace-labs/crashpad.git`
-  - 钉 **tag `v0.3.0`**（分支 backtrace，tag 提交 `3f7fee9e54…`，2026 年仍在
-    维护的分叉；其自带完整分目录 CMake 构建——`client`/`handler`/`tools`/
-    `compat`/`snapshot`/`minidump` 各为一个 target，不需社区 wrapper 仓）。
-- 新开关 `CHIRP_ENABLE_CRASHPAD`（缺省 `ON`，仅 Linux 与 `CHIRP_FETCH_DEPS=ON`
-  时实际拉取；关闭/拉取失败时 `crash::Initialize` 退化为返回 `false` 的 no-op
-  桩，所有服务照常编译运行）。
-- **警告与插桩隔离**：根目录 `add_compile_options`（`-Wall -Wextra -Wpedantic`
-  `-Werror`（CI）与覆盖率 `-ftest-coverage`）通过目录属性继承会灌进第三方源。
-  接入前临时清空根目录 `COMPILE_OPTIONS`、`FetchContent_MakeAvailable` 之后
-  恢复，保证：① CI `-Werror` 不被 2010s 风格的第三方代码撞翻；② 覆盖率构建
-  不给 crashpad 插桩（其源码不在门禁 universe 内，只白耗时间）。
+- **FetchContent with a pinned fixed version**, not a submodule: the same approach as the existing abseil/asio integration in the root `CMakeLists.txt` (gated by `CHIRP_FETCH_DEPS`), sparing every CI workflow the
+  `submodules: checkout` change surface.
+  - Repository: `https://github.com/backtrace-labs/crashpad.git`
+  - Pinned to **tag `v0.3.0`** (the backtrace branch, tag commit `3f7fee9e54…`, a fork still maintained in 2026; it ships a complete per-directory CMake build — `client`/`handler`/`tools`/`compat`/`snapshot`/`minidump` are each a target, with no community wrapper repo needed).
+- New switch `CHIRP_ENABLE_CRASHPAD` (default `ON`; actually fetched only on Linux with `CHIRP_FETCH_DEPS=ON`; when off or when fetching fails, `crash::Initialize` degrades to a no-op stub returning `false`, and all services compile and run as usual).
+- **Warning and instrumentation isolation**: the root `add_compile_options` (`-Wall -Wextra -Wpedantic` `-Werror` (CI) plus coverage `-ftest-coverage`) would flow into third-party sources via directory-property inheritance. Before integration, temporarily clear the root `COMPILE_OPTIONS` and restore them after `FetchContent_MakeAvailable`, ensuring: ① CI's `-Werror` is not knocked over by 2010s-style third-party code; ② the coverage build does not instrument crashpad (its sources are outside the gate universe and would only waste time).
 
-## handler 初始化点
+## Handler initialization point
 
-- 位置：**每个服务 `main()` 的第一条语句**
-  `chirp::common::crash::Initialize(argc, argv)`——在一切 flag 解析、日志初始化
-  之前，启动期崩溃同样接住。返回值忽略（失败降级为无崩溃采集 + 一行 Warn 日志）。
-- 初始化做的事（`libs/common/crash_handler.{h,cc}`）：
-  1. 解析崩溃目录与上传 URL（见下）；
-  2. 扫描上次会话遗留 dump → 打 Warn 日志（日志/监控打通面）；
-  3. `CrashpadClient::StartHandler(handler 路径, database, database, url,
-     annotations, arguments, /*restartable*/ true, /*asynchronous_start*/ false)`。
-- 服务面覆盖：全部 `services/**/main*.cc`（探针 `tools/crash_probe` 同源调用）。
-  SDK 示例（`sdks/core/examples`）不在本批范围。
+- Location: **the first statement of every service's `main()`** — `chirp::common::crash::Initialize(argc, argv)` — before any flag parsing or logger initialization, so startup-phase crashes are caught too. The return value is ignored (a failure degrades to no crash collection + one Warn log line).
+- What initialization does (`libs/common/crash_handler.{h,cc}`):
+  1. Parse the crash directory and the upload URL (see below);
+  2. Scan for dumps left over from the previous session → emit a Warn log (the log/monitoring integration surface);
+  3. `CrashpadClient::StartHandler(handler path, database, database, url, annotations, arguments, /*restartable*/ true, /*asynchronous_start*/ false)`.
+- Service coverage: all `services/**/main*.cc` (the probe `tools/crash_probe` calls the same entry). The SDK examples (`sdks/core/examples`) are out of scope for this batch.
 
-## dump 落盘目录
+## Dump directory
 
-查找序（先命中先用）：
+Lookup order (first hit wins):
 
-1. `--crash_dir=DIR`（对 argv 做逐参 peek，不接管各服务自己的 flag 解析）；
-2. 环境变量 `CHIRP_CRASH_DIR`；
-3. 缺省 `./crash_dumps`（进程 cwd）。
+1. `--crash_dir=DIR` (a per-argument peek over argv; does not take over each service's own flag parsing);
+2. the environment variable `CHIRP_CRASH_DIR`;
+3. the default `./crash_dumps` (the process cwd).
 
-目录不存在则创建（mkdir -p 语义）。目录内容是 crashpad 自有的数据库布局
-（`new/` `pending/` `completed/` `last_upload_attempt`），**不手工管理**，也
-不进 git（`.gitignore` 加 `crash_dumps/`）。
+If the directory does not exist it is created (mkdir -p semantics). The directory contents follow crashpad's own database layout (`new/` `pending/` `completed/` `last_upload_attempt`), which is **not managed by hand** and does not go into git (`.gitignore` gains `crash_dumps/`).
 
-## 独立 handler 进程打包
+## The standalone handler process and packaging
 
-- `crashpad_handler` 是独立可执行文件，由 client `StartHandler` 从进程外拉起
-  （handler 崩了不连坐主进程；主进程崩溃时 handler 还活着才能写盘）。
-- 运行时查找序：
-  1. 环境变量 `CHIRP_CRASH_HANDLER`（运维覆盖）；
-  2. 与调用进程**同目录**（安装/发布包的平铺布局）；
-  3. 从 exe 目录**向上最多 4 级父目录**（build 树：`build/services/<组>/<服务>/`
-     → `build/`）。
-- 产物面：CMake 构建收尾把 handler 复制为 **build 根产物**
-  （`build/crashpad_handler`），与 `test_services.sh` 的 `build/` 布局同处一级。
-- 安装/nightly 打包面（已落地）：nightly Linux 腿构建步加编 handler 复制
-  目标（`chirp_crashpad_handler_copy`），装配把 `build/crashpad_handler`
-  平铺进 `cpp/<arch>/bin/`，package job 经既有 `bin/` 目录探测带进
-  tarball；`install.sh --component cpp` 把包内 `bin/` 平铺进
-  `$PREFIX/bin`。darwin/windows 腿 crashpad 关（平台门），包内如实不含
-  handler（`install.ps1` 有注记）。安装后查找序命中已实测：probe 与
-  handler 同目录、子目录上溯一级均命中 `$PREFIX/bin/crashpad_handler`。
+- `crashpad_handler` is a standalone executable, launched out of process by the client's `StartHandler` (if the handler crashes, the main process is not implicated; the handler must be alive when the main process crashes, or nothing is written).
+- Runtime lookup order:
+  1. the environment variable `CHIRP_CRASH_HANDLER` (ops override);
+  2. **the same directory** as the calling process (the flat layout of an install/release package);
+  3. **up at most 4 parent levels** from the exe directory (build tree: `build/services/<group>/<service>/` → `build/`).
+- Artifact surface: the CMake build finish copies the handler as a **build-root artifact** (`build/crashpad_handler`), at the same level as the `build/` layout used by `test_services.sh`.
+- Install/nightly packaging surface (landed): the nightly Linux leg's build step adds the handler copy target (`chirp_crashpad_handler_copy`), the assembly step lays `build/crashpad_handler` flat into `cpp/<arch>/bin/`, the package job carries it into the tarball via the existing `bin/` directory probing; `install.sh --component cpp` lays the package's `bin/` flat into `$PREFIX/bin`. The darwin/windows legs have crashpad off (platform gate), and those packages honestly contain no handler (`install.ps1` has the note). The post-install lookup order has been measured: the probe with the handler in the same directory, and one level up from a subdirectory, both hit `$PREFIX/bin/crashpad_handler`.
 
-## 符号表管理
+## Symbol management
 
-- **构建全程留 `-g`**：dev/coverage preset 是 Debug 天然带；ci/minimal 是
-  Release，靠分离符号流程：
-  1. `scripts/extract_symbols.sh <binary> [symbols_dir]`：
-     `objcopy --only-keep-debug`（分离符号归档）→ `dump_syms <bin>` 生成
-     breakpad `.sym` → 按符号服务器布局 `<name>/<debug-id>/<name>.sym`
-     摆放；**原二进制不动**，发布面需要瘦身时另跑 `strip --strip-debug`。
-- **还原栈**：`minidump-stackwalk <dump> --symbols-path symbols/`，输出带
-  `file:line` 与函数名的调用栈。
-- 工具依赖（如实声明，不入仓）：`dump_syms` 与 `minidump-stackwalk` 均为
-  rust-minidump 套件，`cargo install dump_syms minidump-stackwalk` 安装。
-  （Breakpad 语义的 `.sym` 格式是两者共同的中间格式；不引入 Breakpad 源码。）
-- **nightly 符号包归档（已落地）**：Linux 腿 `cargo install dump_syms`
-  （cargo 由既有 Setup Rust 步提供）后对 `libchirp_core_sdk.so` 与
-  `crashpad_handler` 跑 `extract_symbols.sh`，产
-  `symbols/<arch>/chirp-cpp-symbols-<arch>.tar.gz` **独立成件**（不进主
-  安装包），随 nightly-dist 分支镜像与滚动 Release 归档，manifest 单列
-  `symbols` 组件；静态库无运行时符号面不产。
+- **Keep `-g` throughout the build**: the dev/coverage presets are Debug and carry it naturally; ci/minimal are Release and rely on the symbol-separation flow:
+  1. `scripts/extract_symbols.sh <binary> [symbols_dir]`: `objcopy --only-keep-debug` (separated symbol archive) → `dump_syms <bin>` generates the breakpad `.sym` → laid out per the symbol-server convention `<name>/<debug-id>/<name>.sym`; **the original binary is untouched** — run `strip --strip-debug` separately when the release surface needs slimming.
+- **Restoring stacks**: `minidump-stackwalk <dump> --symbols-path symbols/`, outputting a call stack with `file:line` and function names.
+- Tool dependencies (declared as-is, not committed): `dump_syms` and `minidump-stackwalk` are both from the rust-minidump suite, installed with `cargo install dump_syms minidump-stackwalk`. (The Breakpad-semantics `.sym` format is the common intermediate format of both; no Breakpad source is introduced.)
+- **Nightly symbol package archiving (landed)**: on the Linux leg, after `cargo install dump_syms` (cargo provided by the existing Setup Rust step), run `extract_symbols.sh` against `libchirp_core_sdk.so` and `crashpad_handler` to produce `symbols/<arch>/chirp-cpp-symbols-<arch>.tar.gz` as a **separate artifact** (not in the main install package), archived alongside the nightly-dist branch mirror and the rolling Release, with the manifest listing a separate `symbols` component; static libraries have no runtime symbol surface and produce nothing.
 
-## 上传留位（默认关）
+## Reserved upload slot (off by default)
 
-- `StartHandler` 的 URL 参数：**空串 = 纯本地落盘，不外发**（crashpad 不启
-  uploader 线程）。
-- 留位：`CHIRP_CRASH_UPLOAD_URL` 环境变量（或 `--crash_upload_url=` peek）。
-  **缺省为空 = 关**；非空时才把该 URL 传给 handler 启用其自带上传面。打开
-  属数据外发决策，需单独评估，不随本批默认开。
+- The URL argument of `StartHandler`: **empty string = purely local disk, nothing sent out** (crashpad does not start the uploader thread).
+- Reserved slot: the `CHIRP_CRASH_UPLOAD_URL` environment variable (or the `--crash_upload_url=` peek). **Empty by default = off**; only when non-empty is the URL passed to the handler to enable its built-in upload surface. Turning it on is an outbound-data decision that needs separate evaluation and does not come on by default in this batch.
 
-## 与既有日志/监控打通
+## Integration with existing logging/monitoring
 
-- `Initialize` 扫描数据库：上一会话若有未处理 dump，打 Warn
-  （`crash report pending: <path>`）——部署侧既有日志采集（log 落盘/stdout）
-  即接入点，不新开监控面。
-- annotations 注入每份 dump：`binary`（argv0）、`pid`、`cmd`（截断后的命令行）、
-  `crash_dir`——现场还原与日志行互为索引。
+- `Initialize` scans the database: if the previous session left unprocessed dumps, it emits a Warn (`crash report pending: <path>`) — the deployment side's existing log collection (log-to-file/stdout) is the integration point; no new monitoring surface is opened.
+- Annotations injected into every dump: `binary` (argv0), `pid`, `cmd` (the truncated command line), `crash_dir` — so the crash scene and the log lines index each other.
 
-## 验收（故意崩溃测试）
+## Acceptance (deliberate-crash test)
 
-1. 新增 `tools/crash_probe`：初始化 crashpad → 打印就绪信息 →
-   `--crash_probe_segfault` 开关触发空指针写；
-2. 运行 → dump 落盘于指定 `--crash_dir`，退出后数据库留有记录；
-3. `dump_syms` 生成 .sym → `minidump-stackwalk` 还原出**含 `crash_probe` 帧与
-   `file:line`** 的调用栈；日志/输出留档报验收。
+1. New `tools/crash_probe`: initialize crashpad → print a ready message → the `--crash_probe_segfault` switch triggers a null-pointer write;
+2. Run → the dump lands in the specified `--crash_dir`, and the database retains a record after exit;
+3. `dump_syms` generates the .sym → `minidump-stackwalk` restores a call stack **containing `crash_probe` frames with `file:line`**; keep the log/output as acceptance evidence.
 
-## 覆盖率与门禁对账
+## Coverage and gate reconciliation
 
-- `libs/common/crash_handler.cc` 在门禁 universe（`libs/**`）内：可测面——
-  目录查找序（argv/env/缺省）、目录创建、URL 缺省关、数据库扫描出 Warn、
-  handler 缺失时的失败降级——全部用单测覆盖。
-- **覆盖率构建（`CHIRP_ENABLE_COVERAGE=ON`）强制关 crashpad**：第三方源
-  既不入 universe（gcov 聚合只认 `libs/` `services/` `sdks/core/src`
-  前缀）也不参与插桩（省时）；此时 `StartHandler` 分支整体不编译
-  （`CHIRP_HAVE_CRASHPAD` 未定义），无 uncovered 行、无需豁免钉——
-  `Initialize` 编为短路径桩（建目录 + 遗留 Warn + `return false`），
-  单测安全断言。真拉起 handler 的 E2E 责任归 `crash_probe` 验收腿。
-- 本仓源 include 的 crashpad 头带 GCC 扩展（`#include_next`），
-  `crash_handler.cc` 在 include 点局部压 `-Wpedantic`，自身代码照常受
-  `-Wall -Wextra -Wpedantic`（CI 叠 `-Werror`）约束。
-- `sdks/core` 的 `libchirp_core_sdk.so` 链入 crashpad 静态库：FetchContent
-  作用域内全局 `CMAKE_POSITION_INDEPENDENT_CODE=ON`。
+- `libs/common/crash_handler.cc` is inside the gate universe (`libs/**`): the testable surface — directory lookup order (argv/env/default), directory creation, URL off by default, database scan producing a Warn, and failure degradation when the handler is missing — is fully covered by unit tests.
+- **The coverage build (`CHIRP_ENABLE_COVERAGE=ON`) force-disables crashpad**: the third-party sources are neither in the universe (gcov aggregation only recognizes the `libs/` `services/` `sdks/core/src` prefixes) nor instrumented (saves time); the `StartHandler` branch is then not compiled at all (`CHIRP_HAVE_CRASHPAD` undefined), with no uncovered lines and no exemption pins needed — `Initialize` compiles as a stub that takes the short path (create directory + leftover Warn + `return false`), which unit tests assert safely. E2E responsibility for actually launching the handler belongs to the `crash_probe` acceptance leg.
+- The crashpad headers included by this repo's sources carry GCC extensions (`#include_next`); `crash_handler.cc` locally suppresses `-Wpedantic` at the include point, while its own code is still bound by `-Wall -Wextra -Wpedantic` (CI adds `-Werror`).
+- `sdks/core`'s `libchirp_core_sdk.so` links the crashpad static library: a FetchContent-scoped global `CMAKE_POSITION_INDEPENDENT_CODE=ON`.
 
-## 范围外（如实）
+## Out of scope (as-is)
 
-- 崩溃**采集**目前只在 Linux 生效：`CHIRP_ENABLE_CRASHPAD` 被平台门限制在
-  Linux（与仓内 CI 一致），darwin/windows 包如实不含 handler。但
-  `libs/common/crash_handler.*` 本身可跨平台编译（exe 目录探测按
-  `_WIN32` 分支到 `GetModuleFileNameA`，pid 用 `_getpid`），非 Linux 平台
-  上是无采集的降级桩，不阻断 SDK 构建。
-- 上传端点、多机集中检索、alert 联动：外发面默认关，另批评估。
+- Crash **collection** currently takes effect only on Linux: `CHIRP_ENABLE_CRASHPAD` is gated to Linux by the platform check (consistent with the repo's CI), and the darwin/windows packages honestly contain no handler. But `libs/common/crash_handler.*` itself compiles cross-platform (exe-directory probing branches on `_WIN32` to `GetModuleFileNameA`, pid uses `_getpid`); on non-Linux platforms it is a degraded stub without collection and does not block the SDK build.
+- Upload endpoint, multi-machine centralized retrieval, alert integration: the outbound surface stays off by default, to be evaluated in a separate batch.

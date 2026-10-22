@@ -1,176 +1,128 @@
-> 🌐 Language: **中文** (this page) | [English](./word_filter.en.md)
+> 🌐 Language: [中文](../zh/design-notes/word_filter.md)) | **English** (this page)
 
-# 敏感词过滤（word filter）算法规约
+# Word Filter Algorithm Specification
 
-聊天消息的敏感词过滤在**服务端强制执行**，客户端做发送侧预检。本文是四端共享的
-算法规约——所有实现必须逐字节对拍同一语义，客户端裁决才能预测服务端裁决。
+Sensitive-word filtering of chat messages is **enforced server-side**; clients do a send-side precheck. This document is the algorithm specification shared by all four clients - every implementation must match byte for byte on the same semantics, so that a client's verdict can predict the server's verdict.
 
-## 实现矩阵
+## Implementation matrix
 
-| 端 | 文件 | 角色 |
+| End | File | Role |
 |---|---|---|
-| C++ 服务端（真源） | `services/shared/chat/src/word_filter.{h,cc}` | 聊天服务强制执行点，三策略 + 词库热更新 |
-| C++ core SDK | `sdks/core/include/chirp/{word_filter.h,word_filter_sync.h}` | 发送侧预检（interceptor）+ 词库下发同步 |
-| C# (Unity) | `sdks/unity/Runtime/Chirp/{WordFilterInterceptor.cs,WordFilterSync.cs}` | 发送侧预检（interceptor）+ 词库下发同步 |
-| Kotlin (Android 原生) | `apps/android/src/main/kotlin/chirp/mobile/protocol/WordFilter.kt` | 发送侧预检（双门禁共用：JVM make 腿 + Gradle 腿） |
-| Swift (iOS) | `apps/ios/Sources/ChirpProtocol/WordFilter.swift` | 发送侧预检（匹配按 UTF-16 code unit 与 Kotlin 对齐） |
+| C++ server (source of truth) | `services/shared/chat/src/word_filter.{h,cc}` | The chat service's enforcement point: three policies + lexicon hot reload |
+| C++ core SDK | `sdks/core/include/chirp/{word_filter.h,word_filter_sync.h}` | Send-side precheck (interceptor) + lexicon delivery sync |
+| C# (Unity) | `sdks/unity/Runtime/Chirp/{WordFilterInterceptor.cs,WordFilterSync.cs}` | Send-side precheck (interceptor) + lexicon delivery sync |
+| Kotlin (native Android) | `apps/android/src/main/kotlin/chirp/mobile/protocol/WordFilter.kt` | Send-side precheck (shared by both gates: the JVM make leg + the Gradle leg) |
+| Swift (iOS) | `apps/ios/Sources/ChirpProtocol/WordFilter.swift` | Send-side precheck (matching aligns with Kotlin on UTF-16 code units) |
 
-测试对拍约定：各端测试使用**同一组向量**（Kotlin
-`apps/android/src/test/kotlin/chirp/mobile/protocol/WordFilterTest.kt`、Swift
-`apps/ios/Tests/ChirpProtocolTests/WordFilterTests.swift` 等；Dart/Flutter SDK
-已随 2026-09-29 移除，其 `word_filter_test.dart` 不复存在）。改语义先改本文，再各端同步实现与向量。
+Cross-end testing convention: each end's tests use the **same vector set** (Kotlin `apps/android/src/test/kotlin/chirp/mobile/protocol/WordFilterTest.kt`, Swift `apps/ios/Tests/ChirpProtocolTests/WordFilterTests.swift`, etc.; the Dart/Flutter SDK was removed on 2026-09-29, and its `word_filter_test.dart` no longer exists). Change semantics here first, then update each end's implementation and vectors in sync.
 
-## 算法
+## Algorithm
 
-一句话：**ASCII 折叠小写后做多模式朴素子串扫描，命中区间写入掩码，按掩码重建
-原文（连续命中塌缩成一次替换）**。不是 Aho-Corasick，不是正则。
+One sentence: **ASCII-fold to lowercase, run a naive multi-pattern substring scan, write the hit ranges into a mask, and rebuild the original text from the mask (collapsing consecutive hits into one replacement)**. Not Aho-Corasick, not regex.
 
-### 1. 词库解析（LoadLexicon / parseWordLexicon）
+### 1. Lexicon parsing (LoadLexicon / parseWordLexicon)
 
-- 文件格式：每行一词；`#` 开头的行是注释；空行忽略
-- trim 集合与 C locale 一致：仅行尾的 空格/CR/LF 与行首空格（**tab 不 trim**）
-- 每词做 ASCII 折叠小写后**去重 + 排序**（排序只为遍历确定性，不影响语义）
-- 空词库 ⇒ 过滤器整体禁用（`enabled == false`，Filter 恒放行）
+- File format: one word per line; lines starting with `#` are comments; blank lines ignored
+- Trim set matches the C locale: only trailing space/CR/LF and leading space (**tab is not trimmed**)
+- Each word is ASCII-folded to lowercase, then **deduplicated + sorted** (sorting only for deterministic traversal; it does not affect semantics)
+- An empty lexicon disables the filter entirely (`enabled == false`, Filter always lets through)
 
-### 2. 大小写折叠（ToLower / asciiLower）
+### 2. Case folding (ToLower / asciiLower)
 
-**只折叠 ASCII** `0x41–0x5A → 0x61–0x7A`，其余字节原样。这是对齐服务端
-`std::tolower` 在 C locale 下的字节语义：UTF-8 多字节序列（中文等）完全不被
-触碰，匹配按字节/code unit 进行。客户端实现把这个折叠**硬编码**为 ASCII-only
-（dart/Kotlin 无 locale 概念，也避免宿主 locale 污染），语义等价且更稳。
+**ASCII only**: `0x41-0x5A -> 0x61-0x7A`, all other bytes untouched. This aligns with the server-side `std::tolower` byte semantics under the C locale: UTF-8 multibyte sequences (Chinese and so on) are never touched at all, and matching proceeds per byte/code unit. Client implementations **hard-code** this folding as ASCII-only (Dart/Kotlin have no locale concept, and this also avoids host-locale contamination), which is semantically equivalent and more robust.
 
-### 3. 匹配（Filter 的扫描段）
+### 3. Matching (the scan part of Filter)
 
-在折叠副本上，对每个词做 `find` 循环扫描；每次命中从 `命中位置 + 词长` 处继续
-（同一词的重叠出现不重复计）。所有词的所有命中位置构成命中集合；命中集合为空
-⇒ 放行原文。
+On the folded copy, loop a `find` scan for each word; each hit resumes from `hit position + word length` (overlapping occurrences of the same word are not counted twice). All hit positions of all words form the hit set; an empty hit set means the original text passes through unchanged.
 
-复杂度 O(词数 × 文本长 × 词长)。设计词库量级是游戏词表的「百」级、消息百字符
-级，总工作量微秒级——朴素扫描的常数与可解释性优先于渐近复杂度。
+Complexity is O(words x text length x word length). Designed lexicon sizes are at the "hundreds" of game word tables, and messages are on the order of a hundred characters, so the total workload is microseconds - the constant and interpretability of a naive scan outweigh asymptotic complexity here.
 
-### 4. 掩码重建（kReplace 路径）
+### 4. Mask-based rebuilding (the kReplace path)
 
-- 所有命中区间写入长度 = 原文长度的布尔掩码（区间是**并集**）
-- 按掩码重建：未命中字节保留**原文大小写**；连续命中 run 塌缩成**一次**替换符
-  （词库 `{ab, bc}` 对 `"abc"` → `"#"`，不是 `"##"`）
+- All hit ranges are written into a boolean mask whose length equals the original text length (ranges are a **union**)
+- Rebuild from the mask: unmatched bytes keep their **original case**; a consecutive run of matches collapses into a **single** replacement character (lexicon `{ab, bc}` on `"abc"` yields `"#"`, not `"##"`)
 
-### 5. 策略（服务端三级，客户端两级）
+### 5. Policies (three server-side, two client-side)
 
-| 策略 | 行为 | 客户端是否实现 |
+| Policy | Behavior | Implemented client-side |
 |---|---|---|
-| `replace`（默认） | 命中区间掩码改写后放行 | ✅ |
-| `reject` | 任一命中即拒绝（服务端回 `INVALID_PARAM`；游戏面专码 `WORD_FILTERED=10`） | ✅ |
-| `record` | 原样放行，仅记日志供事后审计 | ❌（纯服务端运维面，客户端无意义） |
+| `replace` (default) | Mask-rewrite the hit ranges and pass through | ✅ |
+| `reject` | Reject on any hit (server returns `INVALID_PARAM`; game-plane dedicated code `WORD_FILTERED=10`) | ✅ |
+| `record` | Pass through unchanged, log only for after-the-fact auditing | ❌ (pure server-side operations concern, meaningless to clients) |
 
-策略解析大小写不敏感；未知串**回退 replace**。替换符可配，默认 `"**"`。
+Policy parsing is case-insensitive; an unknown string **falls back to replace**. The replacement string is configurable, defaulting to `"**"`.
 
-## 服务端运行时行为
+## Server runtime behavior
 
-- **词库热更新**：mtime 变化即整表重载，检查节流 `reload_check_interval_ms`
-  （默认 5s）——改文件无需重启
-- **fail-open**：词库缺失/不可读 → 空表 + Warn 日志，聊天继续（过滤器挂了不
-  连带聊天挂）
-- **线程模型**：只允许 service io 线程调用（发送路径单线程），惰性重载状态
-  不加锁
-- 词库行缓冲 512 字节（`fgets`）：**超过 511 字节的词条会被截断成多行**——
-  词表里别放超长条目
+- **Lexicon hot reload**: any mtime change reloads the whole table, checks throttled by `reload_check_interval_ms` (default 5s) - no restart needed to change the file
+- **fail-open**: missing/unreadable lexicon -> empty table + a Warn log, chat continues (a broken filter must not drag chat down with it)
+- **Threading model**: only the service io thread may call it (the send path is single-threaded); lazy reload state is lock-free
+- Lexicon line buffer is 512 bytes (`fgets`): **entries over 511 bytes get truncated across multiple lines** - do not put very long entries in the word list
 
-## 设计取舍（FAQ）
+## Design trade-offs (FAQ)
 
-**为什么不让用户/调用方选匹配算法？**
-过滤的「用户」是运营者不是聊天用户，算法是契约不是配置。可配置面是策略、替换
-符、词库内容；算法一旦多选，客户端预检与服务端裁决就可能分叉（客户端放行服务
-端拒 = 浪费往返 + 报错困惑），且四端 × N 算法的等价性证明成本爆炸。
+**Why not let the user/caller pick the matching algorithm?**
+The "user" of filtering is the operator, not the chat user; the algorithm is a contract, not a configuration. The configurable surface is policy, replacement string, and lexicon contents. Once the algorithm becomes multi-choice, client precheck and server verdict can diverge (client passes, server rejects = a wasted round trip plus confusing errors), and proving equivalence across four ends x N algorithms explodes.
 
-**为什么不用 Aho-Corasick？**
-规模不需要（见复杂度段）。且将来词库涨到性能敏感量级时，AC 与朴素扫描对同一
-词库产生**完全相同的命中区间并集**——把 `maskHits` 内部换成 AC 自动机，
-`Filter` 返回值逐字节不变。即算法可以作为内部实现细节升级（保语义契约），不
-作为外部选项存在。
+**Why not Aho-Corasick?**
+The scale does not need it (see the complexity section). And if the lexicon ever grows to a performance-sensitive size, AC and the naive scan produce **exactly the same union of hit ranges** for the same lexicon - swapping `maskHits`' internals for an AC automaton leaves `Filter`'s return value byte-identical. In other words the algorithm can be upgraded as an internal implementation detail (preserving the semantic contract) without existing as an external option.
 
-**谐音/拼音/变体字怎么办？**
-不靠匹配算法解决：服务端加归一化层（拼音表/变体映射先折叠原文再进同一匹配
-器），匹配语义仍然只有一份。
+**What about homophones/pinyin/variant characters?**
+Not solved by the matching algorithm: the server adds a normalization layer (pinyin tables/variant mappings fold the text first, then it enters the same matcher). Matching semantics remains single-sourced.
 
-**为什么客户端知道结果还要发？**
-客户端预检只是**预测**，服务端是唯一裁决点（词库/策略随时可改且不下发给客
-户端）。预测失败的最坏情形是多一次往返拿 `INVALID_PARAM`。
+**Why does the client still send when it already knows the result?**
+Client precheck is only a **prediction**; the server is the single verdict point (the lexicon/policy can change at any time and is not delivered to clients). The worst case of a failed prediction is one extra round trip that comes back with `INVALID_PARAM`.
 
-## 词库下发协议（2026-10 提案，已落地）
+## Lexicon delivery protocol (2026-10 proposal, implemented)
 
-### 背景
+### Background
 
-服务端词库长期只有 `--word_filter_file` 本地装载（mtime 惰性热更新），客户端
-预检词库靠部署侧人工同步（Android 壳读 `filesDir/word_filter.txt`，iOS/TS 由
-调用方构造）——两端词库一旦漂移，客户端预检就预测不准服务端裁决（多浪费往返、
-reject 策略下还造成客户端能发服务端拒的困惑）。本提案给词库立一条下发通道：
-客户端预检词库以下发源为准，本地文件降级为回退。
+The server lexicon long had only local loading via `--word_filter_file` (mtime-triggered lazy hot reload), and client precheck lexicons were synced manually by deployment (the Android shell reads `filesDir/word_filter.txt`; iOS/TS build them from the caller) - once the two sides drift apart, client precheck no longer predicts the server verdict (wasted round trips, and under the reject policy the confusing case where the client can send what the server rejects). This proposal gives the lexicon a delivery channel: the client precheck lexicon treats the delivered source as authoritative, with the local file downgraded to a fallback.
 
-### 消息（proto/gateway.proto MsgID 2245-2247，body 见 proto/chat.proto）
+### Messages (proto/gateway.proto MsgID 2245-2247, bodies in proto/chat.proto)
 
-| MsgID | 名称 | 方向 | 语义 |
+| MsgID | Name | Direction | Semantics |
 |---|---|---|---|
-| 2245 | `WORD_FILTER_FETCH_REQ` | 客户端 → 服务端 | 拉取，body `WordFilterFetchRequest{known_version}` |
-| 2246 | `WORD_FILTER_FETCH_RESP` | 服务端 → 客户端 | 应答拉取，body `WordFilterFetchResponse{code, lexicon}` |
-| 2247 | `WORD_FILTER_UPDATE_NOTIFY` | 服务端 → 客户端 | 热更新推送，body `WordFilterUpdateNotify{lexicon}`，sequence 0、只读、不要求 ACK |
+| 2245 | `WORD_FILTER_FETCH_REQ` | client -> server | Fetch, body `WordFilterFetchRequest{known_version}` |
+| 2246 | `WORD_FILTER_FETCH_RESP` | server -> client | Fetch response, body `WordFilterFetchResponse{code, lexicon}` |
+| 2247 | `WORD_FILTER_UPDATE_NOTIFY` | server -> client | Hot-reload push, body `WordFilterUpdateNotify{lexicon}`, sequence 0, read-only, no ACK required |
 
-`WordFilterLexicon`（RESP 与 NOTIFY 共用载荷）：`version` + `enabled` +
-`policy` + `replacement` + `lexicon`（规范化词库文本）。
+`WordFilterLexicon` (shared payload of RESP and NOTIFY): `version` + `enabled` + `policy` + `replacement` + `lexicon` (the normalized lexicon text).
 
-### 语义规约
+### Semantic specification
 
-1. **版本单调**：服务端每次装载词库（构造首载、mtime 热更新重载、重载失败
-   变空表）`version` 自增，从 1 起；`0` 表示服务端没有装配词库。客户端忽略
-   `version <= 本地版本` 的任何下发——乱序与重复投递免疫。
-2. **拉取 = 条件 GET**：客户端带 `known_version`（0 = 没有）；服务端版本一致
-   时 RESP 省略 `lexicon` 文本（省流量），客户端按 version 相等跳过装载。
-3. **推送 = 热更新广播**：服务端词库 mtime 变化重载成功后，向全部已认证在线
-   会话广播完整新词库（锁内快照、锁外投递，对齐设备清单广播）。没拉取过的
-   端收到推送也照常装载——推送自足，不依赖先拉取。
-4. **文本格式不变**：`lexicon` 文本是服务端词库的规范化形式（每行一词、小写、
-   去重排序），与 `--word_filter_file` 同格式，客户端照常走 `parseWordLexicon`。
-5. **策略随词库下发**：客户端预检镜像服务端策略——`replace` 改写、`reject`
-   拒发；`record` 是纯服务端审计语义，客户端**不预检**（透传，避免客户端拦了
-   服务端却放行的体验分叉）。
-6. **鉴权与守卫**：FETCH 未登录回 `AUTH_FAILED`，垃圾 body 回 `INVALID_PARAM`
-   （对齐 2239-2244 段守卫惯例）；词库不是机密但不开给未认证连接。
-7. **服务端未启用词库**（无 `--word_filter_file`）：FETCH 照常应答
-   `version=0, enabled=false, 空文本`；客户端收到后清空本地预检词库（服务端
-   都不过滤，预检没有意义，且本地词库可能比服务端新——防止客户端误拦）。
+1. **Monotonic versioning**: every time the server loads a lexicon (initial load in the constructor, mtime hot reload, and an empty table after a failed reload) `version` increments, starting from 1; `0` means the server has no lexicon assembled. Clients ignore any delivery with `version <= local version` - immune to out-of-order and duplicate delivery.
+2. **Fetch = conditional GET**: the client sends `known_version` (0 = none); when the server version matches, RESP omits the `lexicon` text (saving bandwidth), and the client skips loading on version equality.
+3. **Push = hot-reload broadcast**: after a successful reload triggered by a lexicon mtime change, the server broadcasts the full new lexicon to all authenticated online sessions (snapshot under the lock, delivery outside it, aligned with the device-list broadcast). A client that never fetched also loads on receiving a push - the push is self-sufficient and does not depend on a prior fetch.
+4. **Text format unchanged**: the `lexicon` text is the normalized form of the server lexicon (one word per line, lowercase, deduplicated and sorted), the same format as `--word_filter_file`, and clients pass it through `parseWordLexicon` as usual.
+5. **Policy delivered with the lexicon**: client precheck mirrors the server policy - `replace` rewrites, `reject` blocks sending; `record` is a pure server-side auditing semantic, and clients **do not precheck** (pass through, avoiding an experience divergence where the client blocks something the server lets through).
+6. **Authentication and guards**: FETCH without login returns `AUTH_FAILED`, a garbage body returns `INVALID_PARAM` (aligned with the guard conventions of the 2239-2244 range); the lexicon is not a secret but is not opened to unauthenticated connections.
+7. **Server lexicon disabled** (no `--word_filter_file`): FETCH answers normally with `version=0, enabled=false, empty text`; on receiving it the client clears its local precheck lexicon (the server isn't filtering at all, so precheck is meaningless, and the local lexicon may be newer than the server's - this prevents the client from falsely blocking).
 
-### 客户端接收（五端 SDK，`WordFilterSync` 组件）
+### Client reception (five-end SDKs, `WordFilterSync` component)
 
-下发源成为首选，`WordFilterLoader` 本地文件降级为回退：
+The delivered source becomes preferred, with the `WordFilterLoader` local file downgraded to fallback:
 
-| 端 | 组件 | 拉取时机 | 回退 |
+| End | Component | Fetch timing | Fallback |
 |---|---|---|---|
-| TS | `sdks/ts/src/word_filter_sync.ts` | 应用在登录成功后调 `fetch()` | `loadLocal(lines)` |
-| C++ core | `sdks/core/include/chirp/word_filter_sync.h` | 调用方在登录成功后 `Fetch()`（`Start()` 订阅推送） | `LoadLocal(lines)` |
-| Unity C# | `sdks/unity/Runtime/Chirp/WordFilterSync.cs` | 调用方在登录成功后 `FetchAsync()`（`Start()` 订阅推送） | `LoadLocal(lines)` |
-| Kotlin | `apps/android/.../protocol/WordFilterSync.kt` | 壳层登录成功后 `fetch()` | `loadLocal(lines)`（原 `WordFilterLoader` 读的文件行） |
-| Swift | `apps/ios/Sources/ChirpProtocol/WordFilterSync.swift` | 调用方在登录成功后 `fetch()` | `loadLocal(lines)`（原 `WordFilterLoader` 读的文本行） |
+| TS | `sdks/ts/src/word_filter_sync.ts` | the app calls `fetch()` after login succeeds | `loadLocal(lines)` |
+| C++ core | `sdks/core/include/chirp/word_filter_sync.h` | the caller calls `Fetch()` after login succeeds (`Start()` subscribes to pushes) | `LoadLocal(lines)` |
+| Unity C# | `sdks/unity/Runtime/Chirp/WordFilterSync.cs` | the caller calls `FetchAsync()` after login succeeds (`Start()` subscribes to pushes) | `LoadLocal(lines)` |
+| Kotlin | `apps/android/.../protocol/WordFilterSync.kt` | the shell calls `fetch()` after login succeeds | `loadLocal(lines)` (the file lines the original `WordFilterLoader` read) |
+| Swift | `apps/ios/Sources/ChirpProtocol/WordFilterSync.swift` | the caller calls `fetch()` after login succeeds | `loadLocal(lines)` (the text lines the original `WordFilterLoader` read) |
 
-组件自身实现各端 `MessageInterceptor`：内部持当前 `WordFilter`（可热换），
-`FETCH_RESP` / `UPDATE_NOTIFY` 到达即重建——预检立即跟随服务端词库。`fetch()`
-失败（断线/超时/非 OK）不抛给 UI，回退词库继续生效，下次连接再拉。
+The component itself implements each end's `MessageInterceptor`: it holds the current `WordFilter` internally (hot-swappable) and rebuilds on arrival of `FETCH_RESP` / `UPDATE_NOTIFY` - precheck follows the server lexicon immediately. A failed `fetch()` (disconnect/timeout/non-OK) is not thrown to the UI; the fallback lexicon stays in effect and the next connection fetches again.
 
-### 服务端接线
+### Server wiring
 
-- **basic**（`main.cc`）：`HandlePacket` switch 新增 `WORD_FILTER_FETCH_REQ`
-  case，词库状态填充与条件 GET 判定在共享单元
-  `services/shared/chat/src/word_filter_push.{h,cc}`；
-- **enhanced**（`main_enhanced.cc`）：`on_packet` 分发在
-  `DispatchDistributedPacket` 前拦截同款处理（SERVER_AUTH_REQ 先例）；
-- **广播**：两形态 `main()` 各挂 `WordFilter::set_on_reload` 回调 →
-  `BroadcastWordFilterUpdate`（遍历 registry 全部活会话）；
-- distributed 形态本就未接词库（无过滤），不接下发。
+- **basic** (`main.cc`): a new `WORD_FILTER_FETCH_REQ` case in the `HandlePacket` switch; lexicon state population and the conditional GET decision live in the shared unit `services/shared/chat/src/word_filter_push.{h,cc}`
+- **enhanced** (`main_enhanced.cc`): `on_packet` interception before `DispatchDistributedPacket` with the same handling (precedent: SERVER_AUTH_REQ)
+- **Broadcast**: both builds' `main()` attach a `WordFilter::set_on_reload` callback -> `BroadcastWordFilterUpdate` (iterating all live sessions in the registry)
+- the distributed build never wired a lexicon at all (no filtering) and does not wire delivery
 
-### 设计取舍
+### Design trade-offs
 
-- **版本号 + 全量文本，不做哈希两步拉取**：游戏词库量级是几百项、几 KB，一轮
-  拉取就完事；哈希协商把一次往返变两次，还要客户端持久化哈希状态，收益为负。
-- **推送不做增量**：同上，全量文本是自足载荷，客户端不维护补丁状态。
-- **record 策略客户端不预检**：见语义规约 5——预检的职责是预测裁决，record
-  没有可预测的拒绝行为。
-- **服务端未启用时清空客户端词库**：防「本地词库比服务端狠」的误拦——服务端
-  放行的消息客户端拦住，比漏拦更伤体验。
+- **Version number + full text, no two-step hash fetch**: game lexicons are a few hundred entries and a few KB, so one round trip is enough; hash negotiation turns one round trip into two and requires the client to persist hash state, so the payoff is negative.
+- **Pushes are not incremental**: same reason - the full text is a self-sufficient payload, and the client keeps no patch state.
+- **Clients do not precheck under the record policy**: see semantic rule 5 - precheck's job is to predict a verdict, and record has no predictable rejection behavior.
+- **Clearing the client lexicon when the server is disabled**: this prevents false blocking from a "local lexicon stricter than the server" situation - blocking a message the server lets through hurts the experience more than a missed block.

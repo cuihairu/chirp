@@ -1,93 +1,93 @@
-> 🌐 Language: **中文** (this page) | [English](./DISTRIBUTED_DEPLOYMENT.en.md)
+> 🌐 Language: [中文](../zh/design-notes/DISTRIBUTED_DEPLOYMENT.md)) | **English** (this page)
 
-# Chirp 分布式扩展 - 完整指南
+# Chirp distributed extension - complete guide
 
-> 状态说明：本文描述分布式扩展方案和部署示例。当前默认支持路径与实验性边界请以 [整体架构](../architecture.md) 和 [能力矩阵](../CAPABILITY_MATRIX.md) 为准；不要把容量数字或集群示例直接理解为已压测的生产承诺。
+> Status note: this document describes the distributed extension plan and deployment examples. For the currently supported default path and the experimental boundary, use [Overall Architecture](../architecture.md)) and the [Capability Matrix](../CAPABILITY_MATRIX.md)); do not read the capacity numbers or cluster examples directly as load-tested production commitments.
 
-## 概述
+## Overview
 
-本文档描述如何将 Chirp 从单机部署扩展到分布式集群部署，支持水平扩展和高可用性。
+This document describes how to scale Chirp from a single-machine deployment to a distributed cluster deployment, with horizontal scaling and high availability.
 
 ---
 
-## 架构变更
+## Architecture changes
 
-### 1. 新增组件
+### 1. New components
 
-| 组件 | 文件 | 说明 |
+| Component | File | Description |
 |------|------|------|
-| **MessageRouter** | `libs/network/message_router.h/cc` | Redis Pub/Sub 消息路由器，实现跨实例消息转发 |
-| **DistributedChatService** | `services/shared/chat/src/main_distributed.cc` | 分布式版本的 Chat 服务 |
+| **MessageRouter** | `libs/network/message_router.h/cc` | A Redis Pub/Sub message router implementing cross-instance message forwarding |
+| **DistributedChatService** | `services/shared/chat/src/main_distributed.cc` | The distributed variant of the Chat service |
 
 ---
 
-## 核心设计
+## Core design
 
-### MessageRouter 消息路由器
+### MessageRouter
 
 ```cpp
-// 消息路由
+// message routing
 router->SendChatMessage(user_id, message,
     [](const std::string& uid) -> bool {
-        // 1. 优先尝试本地投递
+        // 1. try local delivery first
         if (auto session = local_sessions.Get(uid)) {
             SendToSession(session, message);
-            return true;  // 本地投递成功
+            return true;  // local delivery succeeded
         }
-        return false;  // 触发 Redis Pub/Sub 转发
+        return false;  // fall back to Redis Pub/Sub forwarding
     });
 ```
 
-**工作流程：**
-1. 发送消息时，先检查接收者是否在本地实例
-2. 如果本地在线，直接投递（避免 Redis 开销）
-3. 如果本地离线，通过 Redis Pub/Sub 转发到其他实例
-4. 接收者实例订阅自己的频道，收到消息后投递
+**Workflow:**
+1. On send, first check whether the recipient is on the local instance
+2. If the recipient is online locally, deliver directly (avoiding the Redis overhead)
+3. If the recipient is offline locally, forward through Redis Pub/Sub to another instance
+4. Each recipient's instance subscribes to its own channel and delivers on receipt
 
-### Redis 频道设计
+### Redis channel design
 
-| 频道模式 | 用途 |
+| Channel pattern | Purpose |
 |----------|------|
-| `chirp:chat:user:{user_id}` | 用户私聊消息 |
-| `chirp:chat:group:{group_id}` | 群组消息 |
-| `chirp:social:user:{user_id}` | 社交通知 |
-| `chirp:kick:instance:{id}` | 跨实例踢人通知 |
+| `chirp:chat:user:{user_id}` | User private-chat messages |
+| `chirp:chat:group:{group_id}` | Group messages |
+| `chirp:social:user:{user_id}` | Social notifications |
+| `chirp:kick:instance:{id}` | Cross-instance kick notifications |
 
 ---
 
-## 构建和部署
+## Build and deploy
 
-### 方式一：Docker Compose 集群部署
+### Option 1: Docker Compose cluster deployment
 
 ```bash
-# 1. 构建项目
+# 1. build the project
 ./scripts/build-cluster.sh build
 
-# 2. 构建 Docker 镜像
+# 2. build the Docker images
 ./scripts/build-cluster.sh docker
 
-# 3. 启动集群
+# 3. start the cluster
 ./scripts/build-cluster.sh start
 
-# 4. 查看状态
+# 4. check status
 docker compose -f docker-compose.cluster.yml ps
 
-# 5. 查看日志
+# 5. view logs
 docker compose -f docker-compose.cluster.yml logs -f chat-1
 
-# 6. 扩展服务
+# 6. scale the service
 docker compose -f docker-compose.cluster.yml up -d --scale chat-1=5
 ```
 
-### 方式二：手动部署
+### Option 2: manual deployment
 
 ```bash
-# 构建分布式 Chat 服务
+# build the distributed Chat service
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build . --target chirp_chat_distributed
 
-# 启动多个实例(端口不冲突才能同机起两个)
+# start multiple instances (ports must not collide to run two on one machine)
 ./services/shared/chat/chirp_chat_distributed \
     --port 7000 \
     --ws_port 7001 \
@@ -103,200 +103,200 @@ cmake --build . --target chirp_chat_distributed
     --instance_id chat_2 &
 ```
 
-### 方式三：Kubernetes 部署
+### Option 3: Kubernetes deployment
 
 ```bash
-# 部署到 Kubernetes
+# deploy to Kubernetes
 kubectl apply -f deploy/k8s/redis-cluster.yaml
 kubectl apply -f deploy/k8s/gateway-deployment.yaml
 kubectl apply -f deploy/k8s/chat-deployment.yaml
 
-# 查看状态
+# check status
 kubectl get pods -n chirp
 
-# 扩展
+# scale
 kubectl scale deployment chirp-chat -n chirp --replicas=5
 ```
 
 ---
 
-## 配置说明
+## Configuration
 
-### Chat 服务参数
+### Chat service parameters
 
-| 参数 | 说明 | 默认值 |
+| Flag | Description | Default |
 |------|------|--------|
-| `--port` | TCP 端口 | 7000 |
-| `--ws_port` | WebSocket 端口 | 7001 |
-| `--redis_host` | Redis 主机 | 127.0.0.1 |
-| `--redis_port` | Redis 端口 | 6379 |
-| `--offline_ttl` | 离线消息TTL(秒) | 604800 (7天) |
-| `--instance_id` | 实例ID | 随机生成 |
+| `--port` | TCP port | 7000 |
+| `--ws_port` | WebSocket port | 7001 |
+| `--redis_host` | Redis host | 127.0.0.1 |
+| `--redis_port` | Redis port | 6379 |
+| `--offline_ttl` | Offline message TTL (seconds) | 604800 (7 days) |
+| `--instance_id` | Instance ID | randomly generated |
 
-### 环境变量
+### Environment variables
 
 ```bash
-# Redis 配置
+# Redis configuration
 export CHIRP_REDIS_HOST=redis-cluster
 export CHIRP_REDIS_PORT=6379
 
-# 消息存储(MySQL)配置(见 services/shared/chat/src/message_store_config.cc)
+# message storage (MySQL) configuration (see services/shared/chat/src/message_store_config.cc)
 export CHIRP_MYSQL_HOST=mysql
 export CHIRP_MYSQL_PORT=3306
 export CHIRP_MYSQL_DATABASE=chirp
 export CHIRP_MYSQL_USER=chirp
 export CHIRP_MYSQL_PASSWORD=changeme
 
-# 历史消息迁移
+# history message migration
 export CHIRP_MIGRATION_ENABLED=1
 export CHIRP_MIGRATION_BATCH_SIZE=100
 
-# 投递追踪(ACK 台账)
+# delivery tracking (ACK ledger)
 export CHIRP_DELIVERY_TRACKING_ENABLED=1
 ```
 
-> 注: 实例 ID 通过 Chat 服务启动参数 `--instance_id` 指定(缺省随机生成 `chat_<hex>`),见 `services/shared/chat/src/main_distributed.cc`。`CHIRP_INSTANCE_ID`/`CHIRP_LOG_LEVEL` 等环境变量在源码中不存在(幽灵配置),请勿使用也无法通过环境变量启动。
+> Note: the instance ID is specified by the Chat service startup flag `--instance_id` (randomly generated as `chat_<hex>` when omitted); see `services/shared/chat/src/main_distributed.cc`. Environment variables such as `CHIRP_INSTANCE_ID`/`CHIRP_LOG_LEVEL` do not exist in the source (ghost configuration) — do not use them, and they will not start anything via environment variables either.
 
 ---
 
-## 容量规划
+## Capacity planning
 
-### 单实例性能参考
+### Single-instance performance reference
 
-| 指标 | Gateway | Chat | Auth |
+| Metric | Gateway | Chat | Auth |
 |------|---------|------|------|
-| 最大连接数 | 50K | 20K | 10K |
-| 消息QPS | 100K | 50K | 20K |
-| 内存使用 | 1GB | 2GB | 512MB |
-| CPU使用 | 2核 | 2核 | 1核 |
+| Max connections | 50K | 20K | 10K |
+| Message QPS | 100K | 50K | 20K |
+| Memory usage | 1GB | 2GB | 512MB |
+| CPU usage | 2 cores | 2 cores | 1 core |
 
-### 集群规模建议
+### Suggested cluster sizing
 
-| 在线用户 | Gateway实例 | Chat实例 | Redis | MySQL |
+| Online users | Gateway instances | Chat instances | Redis | MySQL |
 |----------|-------------|----------|-------|-------|
-| 1K 在线 | 1 | 1 | 1 | 1 |
-| 10K | 2-3 | 2-3 | 1主2从 | 1主1从 |
-| 100K | 5-10 | 5-10 | Cluster (3主3从) | 1主2从 |
-| 1M | 20-50 | 20-50 | Cluster (6+节点) | 分库分表 |
+| 1K online | 1 | 1 | 1 | 1 |
+| 10K | 2-3 | 2-3 | 1 master, 2 replicas | 1 master, 1 replica |
+| 100K | 5-10 | 5-10 | Cluster (3 masters, 3 replicas) | 1 master, 2 replicas |
+| 1M | 20-50 | 20-50 | Cluster (6+ nodes) | sharded tables |
 
 ---
 
-## 测试验证
+## Test verification
 
-### 基本连接测试
+### Basic connection test
 
 ```bash
-# 连接到 HAProxy
+# connect to HAProxy
 nc localhost 5000
 
-# 发送登录请求 (Protobuf)
-# 这里需要使用客户端工具或测试脚本
+# send a login request (Protobuf)
+# a client tool or test script is needed here
 ```
 
-### 使用测试客户端
+### Using the test client
 
 ```bash
-# 编译测试客户端(随主工程 CMake 构建,目标名带 chirp_ 前缀)
+# build the test client (built with the main project's CMake, target name prefixed with chirp_)
 cmake -S . -B build-rel -DCMAKE_BUILD_TYPE=Release
 cmake --build build-rel --target chirp_chat_send_client
 
-# 测试多个用户连接
+# test multiple user connections
 for i in {1..100}; do
     ./build-rel/tools/benchmark/chirp_chat_send_client --host localhost --port 7000 --user user_$i &
 done
 ```
 
-### 分布式场景测试
+### Distributed scenario tests
 
-1. **多实例消息路由测试**
+1. **Multi-instance message routing test**
    ```bash
-   # 启动两个 Chat 实例
+   # start two Chat instances
    ./chirp_chat_distributed --instance_id chat_1 --port 7000 &
    ./chirp_chat_distributed --instance_id chat_2 --port 7001 &
 
-   # 连接到 chat_1，发送消息给连接在 chat_2 的用户
-   # 验证消息通过 Redis 正确路由
+   # connect to chat_1 and send a message to a user connected on chat_2
+   # verify that the message is routed correctly through Redis
    ```
 
-2. **故障转移测试**
+2. **Failover test**
    ```bash
-   # 杀掉一个 Chat 实例
+   # kill one Chat instance
    kill -9 <chat_1_pid>
 
-   # 验证消息仍可路由到 chat_2
+   # verify that messages can still be routed to chat_2
    ```
 ---
 
-## 故障排查
+## Troubleshooting
 
-### 常见问题
+### Common problems
 
-**1. 消息未送达**
+**1. Messages not delivered**
 ```bash
-# 检查 Redis 连接
+# check the Redis connection
 docker compose -f docker-compose.cluster.yml exec redis redis-cli ping
 
-# 检查订阅状态
+# check the subscription state
 docker compose -f docker-compose.cluster.yml exec redis redis-cli PUBSUB CHANNELS
 ```
 
-**2. 离线消息丢失**
+**2. Offline messages lost**
 ```bash
-# 检查离线消息队列
+# check the offline message queue
 docker compose -f docker-compose.cluster.yml exec redis redis-cli LLEN chirp:chat:offline:user_1
 ```
 
-**3. 性能问题**
+**3. Performance problems**
 ```bash
-# 查看 Redis 慢查询
+# look at Redis slow queries
 docker compose -f docker-compose.cluster.yml exec redis redis-cli SLOWLOG GET 10
 ```
 
 ---
 
-## 监控指标
+## Monitoring metrics
 
-### 关键指标
+### Key metrics
 
-| 指标 | 说明 | 告警阈值 |
+| Metric | Description | Alert threshold |
 |------|------|----------|
-| 连接数 | 当前活跃连接数 | > 容量的 80% |
-| 消息QPS | 每秒消息数 | > 容量的 80% |
-| 消息延迟 | 消息端到端延迟 | > 100ms |
-| Redis 连接 | Redis 连接池状态 | 耗尽 |
-| CPU 使用率 | 实例 CPU 使用率 | > 80% |
-| 内存使用率 | 实例内存使用率 | > 80% |
+| Connection count | Current active connection count | > 80% of capacity |
+| Message QPS | Messages per second | > 80% of capacity |
+| Message latency | End-to-end message latency | > 100ms |
+| Redis connections | Redis connection pool state | exhausted |
+| CPU usage | Instance CPU usage | > 80% |
+| Memory usage | Instance memory usage | > 80% |
 
-### 日志
+### Logs
 
 ```bash
-# 查看服务日志
+# view service logs
 docker compose -f docker-compose.cluster.yml logs -f chat-1
 
-# 查看所有服务日志
+# view all service logs
 docker compose -f docker-compose.cluster.yml logs -f
 ```
 
 ---
 
-## 下一步
+## Next steps
 
-1. **性能优化**
-   - 添加消息批处理
-   - 实现连接池复用
-   - 启用 Redis Pipeline
+1. **Performance optimization**
+   - add message batching
+   - implement connection pool reuse
+   - enable Redis Pipeline
 
-2. **高可用**
-   - Redis Sentinel 自动故障转移
-   - MySQL 主从自动切换
-   - 服务健康检查和自动重启
+2. **High availability**
+   - Redis Sentinel automatic failover
+   - MySQL master/slave automatic switchover
+   - service health checks and automatic restart
 
-3. **监控**
-   - Prometheus 指标导出
-   - Grafana 可视化面板
-   - 告警规则配置
+3. **Monitoring**
+   - Prometheus metrics export
+   - Grafana dashboards
+   - alert rule configuration
 
-4. **安全**
-   - TLS/SSL 加密连接
-   - 认证和授权
-   - 防火墙和网络隔离
+4. **Security**
+   - TLS/SSL encrypted connections
+   - authentication and authorization
+   - firewall and network isolation

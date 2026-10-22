@@ -1,0 +1,71 @@
+---
+layout: home
+title: 首页
+hero:
+  name: Chirp
+  image:
+    src: /logo.svg
+  tagline: 面向游戏开发的轻量实时通信后端骨架
+  actions:
+    - text: 核心说明
+      link: /zh/CORE
+      theme: primary
+    - text: 快速开始
+      link: /zh/guide/getting-started
+      theme: secondary
+    - text: English
+      link: /
+      theme: alt
+features:
+  - icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M9.5 14.5 14.5 9.5"/><path d="M7.5 16.5 6 18a3.5 3.5 0 1 1-5-5l1.5-1.5"/><path d="M16.5 7.5 18 6a3.5 3.5 0 1 1 5 5l-1.5 1.5"/></svg>'
+    title: 核心链路
+    details: 当前建议优先验证 gateway + auth + chat。
+  - icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M3 8.5h18"/><path d="M3 15.5h18"/><circle cx="8" cy="8.5" r="2"/><circle cx="16" cy="15.5" r="2"/><path d="M16 8.5h2"/><path d="M6 15.5h2"/></svg>'
+    title: 双平面架构
+    details: 游戏平面与 App 平面独立部署，跨平面通信是 chat 原生能力——同协议直连、注册白名单、版本协商。
+  - icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M4 12h5"/><path d="M15 6.5h5"/><path d="M15 17.5h5"/><path d="M9 12c3.5 0 3.5-5.5 6-5.5"/><path d="M9 12c3.5 0 3.5 5.5 6 5.5"/></svg>'
+    title: 双协议接入
+    details: TCP 和 WebSocket 使用同一套长度前缀 Protobuf Packet 协议。
+  - icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><circle cx="12" cy="12" r="8.5" stroke-dasharray="3.2 3.2"/><path d="M12 7.5v4.5l3 1.8"/></svg>'
+    title: 明确能力边界
+    details: 可选 Redis 增强；社交、语音、通知、搜索、SDK 完成度不一致，见能力矩阵。
+footer: Apache-2.0 许可证 | Copyright © 2024-Present Chirp Project
+---
+
+## 当前定位
+
+Chirp 目前是“可运行的核心通信骨架 + 一批实验性扩展”，不是所有目录都同等成熟的完整产品套件。
+
+优先阅读：
+
+- [核心说明](/zh/CORE)：当前可用链路、协议、服务边界和本地验证命令
+- [能力矩阵](/zh/CAPABILITY_MATRIX)：各服务、SDK、应用的真实完成度
+- [导言](/zh/guide/introduction)：文档定位、当前支持路径和边界说明
+- [安装](/zh/guide/installation)：开发环境和依赖准备
+- [快速开始](/zh/guide/getting-started)：本地构建、Docker Compose 和冒烟测试（smoke test）
+- [API 概述](/zh/api/overview)：Packet envelope、消息 ID 和核心流程
+- [整体架构](/zh/architecture)：服务拓扑、数据流和架构判断
+
+## 文档分层
+
+| 层级 | 代表页面 | 用途 |
+| --- | --- | --- |
+| 当前运行时 | `CORE`, `CAPABILITY_MATRIX`, `guide/getting-started`, `api/overview`, `architecture`, `server_plane` | 当前可用链路、协议和边界约束 |
+| 入门指南 | `guide/introduction`, `guide/installation`, `guide/getting-started`, `guide/deployment` | 环境准备、本地构建和验证 |
+| 专题 / 历史 | `design-notes/DEPLOYMENT`, `design-notes/DISTRIBUTED_DEPLOYMENT`, `design-notes/SCALABILITY*`, `design-notes/game_chat_*`, `design-notes/npc_dialog_system`, `design-notes/INTEGRATION_TEST_FIXES` | 设计记录、演进方案和旧版说明 |
+| 兼容页 | `API`, `QUICKSTART` | 兼容入口，优先跳转到维护中的页面 |
+
+## 核心服务
+
+| 服务 | 默认端口 | 当前状态 | 说明 |
+| --- | --- | --- | --- |
+| Gateway | TCP 5000 / WS 5001 | Supported | 登录、登出、心跳（heartbeat）、会话绑定、可选 Redis 跨实例踢人（kick） |
+| Auth | TCP 6000 | Supported | 基础令牌流程（token flow）；依赖满足时构建增强认证实现 |
+| Chat | TCP 7000 / WS 7001 | Supported | 私聊、历史、离线队列（offline queue）；依赖满足时构建增强存储路径 |
+| Server Gateway | TCP 8100 | Experimental | 服务平面枢纽：游戏服出站长连接（persistent connection）+ `service_id`+secret 凭证，消息注入、事件离线排队重投，见[服务器平面](/zh/server_plane) |
+| NPC Dialog | 无监听端口 | Experimental | 纯服务器平面客户端：消费 `npc.player_message` 事件，按关键词规则回复并注入 chat，见[服务器平面](/zh/server_plane) |
+| Search | TCP 5007 | Supported | 消息搜索：SQLite FTS5 索引，2248/2249 复合游标分页；两个 SDK gateway 经 `--search_host` 转发（降级不踢） |
+
+## 关键边界
+
+当前架构对“游戏聊天后端骨架、本地验证、协议接入和二次开发”是合理的。它还不是生产级统一通信平台：SDK gateway 配置 `--chat_host` 后将聊天业务包(2xxx)经每客户端管道转发给 chat（chat 侧重放登录鉴权），2248 检索包可经 `--search_host`（目标端口 `--search_port`，默认 5007）转发 search 服务，social/voice 等平面仍各自独立接入；服务器平面的注入链路已在回环级打通（chat 侧消费注入消息，NPC 对话环路有进程级冒烟测试 `--smoke-npc`），部分高级能力缺少统一会话和验证链路。
