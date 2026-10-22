@@ -39,14 +39,14 @@ jobs:
       run:
         working-directory: apps/web_companion
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@v7.0.1
 
-    - uses: pnpm/action-setup@v6
+    - uses: pnpm/action-setup@v6.1.0
       with:
         # Same major as local and docs.yml; the lockfile is v9 format.
         version: 12
 
-    - uses: actions/setup-node@v6
+    - uses: actions/setup-node@v7.1.0
       with:
         # Pinned to the version development actually runs (vite 8 needs
         # >=22.12; 24 is the current dev node, CI verifies what devs use).
@@ -87,18 +87,18 @@ jobs:
     # checked-in files never silently diverge from the .proto sources.
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@v7.0.1
 
     - name: Install protobuf compiler
       run: |
         timeout 900 sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 update || true
         timeout 300 sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y protobuf-compiler
 
-    - uses: pnpm/action-setup@v6
+    - uses: pnpm/action-setup@v6.1.0
       with:
         version: 12
 
-    - uses: actions/setup-node@v6
+    - uses: actions/setup-node@v7.1.0
       with:
         # Pinned to the version development actually runs (vite 8 needs
         # >=22.12; 24 is the current dev node, CI verifies what devs use).

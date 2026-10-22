@@ -58,7 +58,7 @@ jobs:
             build_type: Release
 
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@v7.0.1
       with:
         submodules: recursive
 

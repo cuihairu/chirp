@@ -29,7 +29,7 @@ jobs:
   test:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@v7.0.1
 
     # The committed proto/go gencode was produced by protoc 33.4 (the vcpkg
     # toolchain) + protoc-gen-go v1.36.12; a different pairing emits
@@ -41,7 +41,7 @@ jobs:
         unzip -q -o /tmp/protoc.zip -d "$RUNNER_TEMP/protoc33"
         "$RUNNER_TEMP/protoc33/bin/protoc" --version
 
-    - uses: actions/setup-go@v7
+    - uses: actions/setup-go@v7.0.0
       with:
         go-version: 'stable'
 

@@ -24,7 +24,7 @@ jobs:
   test:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@v7.0.1
 
     # The committed proto/csharp gencode was produced by protoc 33.4 (the
     # vcpkg toolchain); the runner's older apt protoc emits different C#
@@ -46,7 +46,7 @@ jobs:
         git diff --exit-code -- proto/csharp \
           || (echo "::error::proto/csharp is stale — run gen_proto.sh and commit" && exit 1)
 
-    - uses: actions/setup-dotnet@v6
+    - uses: actions/setup-dotnet@v6.0.0
       with:
         dotnet-version: 10.x
 

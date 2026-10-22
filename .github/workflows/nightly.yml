@@ -98,7 +98,7 @@ jobs:
             host_sdks: false
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@v7.0.1
       with:
         submodules: recursive
 
@@ -175,7 +175,7 @@ jobs:
 
     - name: Setup Go
       if: matrix.host_sdks
-      uses: actions/setup-go@v7
+      uses: actions/setup-go@v7.0.0
       with:
         go-version: 'stable'
 
@@ -185,12 +185,12 @@ jobs:
         go vet ./sdks/go/... ./proto/go/...
         go build ./sdks/go/...
 
-    - uses: pnpm/action-setup@v6
+    - uses: pnpm/action-setup@v6.1.0
       with:
         # Same major as local and docs.yml; the lockfile is v9 format.
         version: 12
 
-    - uses: actions/setup-node@v7
+    - uses: actions/setup-node@v7.1.0
       with:
         node-version: 24
         cache: pnpm
@@ -234,7 +234,7 @@ jobs:
       run: pnpm pack
 
     - name: Setup Rust
-      uses: dtolnay/rust-toolchain@stable
+      uses: dtolnay/rust-toolchain@v1
       with:
         targets: ${{ matrix.rust_target }}
 
@@ -505,7 +505,7 @@ jobs:
 
         find "$leg" -type f | sort
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7.0.2
       with:
         name: daily-leg-${{ matrix.arch }}
         path: leg
@@ -525,18 +525,18 @@ jobs:
     # Release notes 的最近提交摘要要走 git log(48h 窗口 + 回落最近 10 条),
     # 浅取 200 条足够;工作区此前为空,checkout 不与 stage/dist 冲突。
     - name: Checkout (release notes commit history)
-      uses: actions/checkout@v7
+      uses: actions/checkout@v7.0.1
       with:
         fetch-depth: 200
 
     - name: Download linux-x64 leg (required)
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8.0.2
       with:
         name: daily-leg-linux-x64
         path: stage
 
     - name: Download linux-arm64 leg (optional — degraded publish when red)
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8.0.2
       with:
         name: daily-leg-linux-arm64
         path: stage
@@ -544,7 +544,7 @@ jobs:
       id: arm_leg
 
     - name: Download darwin-arm64 leg (optional — degraded publish when red)
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8.0.2
       with:
         name: daily-leg-darwin-arm64
         path: stage
@@ -552,7 +552,7 @@ jobs:
       id: darwin_leg
 
     - name: Download windows-x64 leg (optional — degraded publish when red)
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8.0.2
       with:
         name: daily-leg-windows-x64
         path: stage
@@ -695,7 +695,7 @@ jobs:
         mv "$out" SHA256SUMS
         cat SHA256SUMS
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7.0.2
       with:
         name: daily-build
         path: dist
