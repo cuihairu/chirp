@@ -12,5 +12,10 @@
     "eslint": "^9.0.0",
     "typescript": "5.9.3",
     "typescript-eslint": "^8.71.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "@vitest/mocker@<4.1.12": "4.1.12"
+    }
   }
 }
