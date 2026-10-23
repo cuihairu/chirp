@@ -14,6 +14,7 @@ packages:
 # 安全下限;pnpm 只认这里的 overrides,不读 package.json 的 overrides 字段)。
 overrides:
   source-map-js: ^1.2.2
+  '@vitest/mocker@<4.1.12': 4.1.12
 
 # 平移自根 package.json 的 allowScripts(esbuild@0.28.2)。
 # pnpm 默认不跑依赖的生命周期脚本,未显式决定时 CI 里直接报错退出
