@@ -5,6 +5,7 @@ hero:
   name: Chirp
   image:
     src: /logo.svg
+    width: 160
   tagline: 面向游戏开发的轻量实时通信后端骨架
   actions:
     - text: 核心说明

@@ -5,6 +5,7 @@ hero:
   name: Chirp
   image:
     src: /logo.svg
+    width: 160
   tagline: A lightweight real-time communication backend skeleton for game development
   actions:
     - text: Core
