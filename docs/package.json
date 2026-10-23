@@ -21,11 +21,5 @@
   "license": "MIT",
   "engines": {
     "node": ">=18"
-  },
-  "pnpm": {
-    "overrides": {
-      "dompurify@<3.4.17": "3.4.17",
-      "vite@<6.4.4": "6.4.4"
-    }
   }
 }
