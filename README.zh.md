@@ -7,13 +7,7 @@
 <h1 align="center">chirp</h1>
 
 <p align="center">
-<a href="https://github.com/cuihairu/chirp/releases"><img alt="Status" src="https://img.shields.io/badge/status-in%20development-orange"></a>
-<a href="https://github.com/cuihairu/chirp/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/cuihairu/chirp/actions/workflows/ci.yml/badge.svg"></a>
-<a href="https://codecov.io/gh/cuihairu/chirp"><img alt="codecov" src="https://codecov.io/gh/cuihairu/chirp/branch/main/graph/badge.svg"></a>
-![C++](https://img.shields.io/badge/C%2B%2B-23-00599C?logo=cplusplus&logoColor=white)
-![CMake](https://img.shields.io/badge/CMake-3.21%2B-064F8C?logo=cmake&logoColor=white)
-![Platform](https://img.shields.io/badge/platform-Linux-FCC624?logo=linux&logoColor=black)
-![License](https://img.shields.io/badge/license-Apache--2.0-green)
+<a href="https://github.com/cuihairu/chirp/releases"><img alt="Status" src="https://img.shields.io/badge/status-in%20development-orange"></a> <a href="https://github.com/cuihairu/chirp/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/cuihairu/chirp/actions/workflows/ci.yml/badge.svg"></a> <a href="https://codecov.io/gh/cuihairu/chirp"><img alt="codecov" src="https://codecov.io/gh/cuihairu/chirp/branch/main/graph/badge.svg"></a> ![C++](https://img.shields.io/badge/C%2B%2B-23-00599C?logo=cplusplus&logoColor=white) ![CMake](https://img.shields.io/badge/CMake-3.21%2B-064F8C?logo=cmake&logoColor=white) ![Platform](https://img.shields.io/badge/platform-Linux-FCC624?logo=linux&logoColor=black) ![License](https://img.shields.io/badge/license-Apache--2.0-green)
 </p>
 
 ## 演示站点
