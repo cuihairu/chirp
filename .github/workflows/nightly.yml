@@ -198,6 +198,14 @@ jobs:
           pnpm-lock.yaml
           apps/desktop/pnpm-lock.yaml
 
+    # Windows runner 的 Defender 实时扫描会短暂锁住 pnpm store 里的包文件,
+    # 硬链接导入即报 "process cannot access the file ... (os error 32)",
+    # 三晚连续红且每次中招文件不同;装依赖前关掉实时监控。
+    - name: Disable Defender realtime scan (pnpm store file locks)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: Set-MpPreference -DisableRealtimeMonitoring $true
+
     - name: Install desktop dependencies
       working-directory: apps/desktop
       run: pnpm install --frozen-lockfile
