@@ -1,5 +1,5 @@
 import { Box, Dialog, DialogContent, DialogTitle, Paper, Typography } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/DeleteOutline';
+import DeleteIcon from '@mui/icons-material/DeleteOutlined';
 import EditIcon from '@mui/icons-material/EditOutlined';
 import FlagIcon from '@mui/icons-material/FlagOutlined';
 import ReplyIcon from '@mui/icons-material/ReplyOutlined';
