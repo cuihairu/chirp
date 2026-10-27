@@ -13,3 +13,6 @@
       **禁止为对齐文档去改业务代码**；已废弃功能明确标注或删除；命令行示例逐条验证；
       构建通过后 commit+push，回报改动文件清单。
       **已清（2026-10-19，见 git commit「docs: update stale service and sdk facts against code」差异集）**：四个 fork 审计簇（README/首页、guide、架构、API+SDK）逐主张对照 `2778f8a` 源码，23 项实证差异全修（明细入台账 R1022）：套件数 44→45、React 19+MUI 9、smoke 清单补 `--smoke-search`、`--search_host`/`--search_port` 归属修正、notification 调用方认证与 metrics 发布面同步 2778f8a、CHIRP_CRASH_* 环境变量族、CORE.md 虚构服务名改名、App Gateway 聚合面表述重写、npc_dialog 路径、web_companion 第五条 voice WS 与脚本路径、architecture 仓库分层补 social/voice/party/npc_dialog 与 7xxx 块、会话键 `<device>`→`<platform>`、overview 补 1020/2209/2210/2213/2214/错误码 14/party 小节、SDK 三套件当日实跑改数（sdk_core 140 例 10 套件 60 环回、Unity 141 例 + coverlet 同口径复测 98.5%(1739/1766)、TS vitest 149 例 10 文件）、Packet 四字段、Go `SetDevicePresenceHandler`、README 双语补「本地测试口径」对称节。历史时点记录（design-notes 等）按惯例不改写；未为对齐文档改任何业务代码。
+
+- [x] README 徽章在 HTML 块内不渲染，改为 img 标签（2026-10-27）：
+      `4d8c5f9`。README.md / README.zh.md 的 `<p align="center">` 徽章块内 4 个 `![alt](url)` 全部改 `<img alt src>`（GitHub 不解析 HTML 块内 markdown，原写法线上显示原文）；块内 `grep -c '!\['` 两文件均 0，徽章仍单行，logo/标题/版本号未动。
