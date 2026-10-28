@@ -23,5 +23,10 @@ overrides:
 # 运行时一并移除——依赖树里已无该包。)
 allowBuilds:
   esbuild: true
-
   typescript-eslint@8.70.0: patches/typescript-eslint@8.70.0.patch
+
+# 同 apps/desktop:Windows CI 上 Defender 会短暂锁住 store 文件,硬链接
+# 导入即 os error 32;copy 导入只读 store,AV 锁不再能打断安装
+# (pnpm 12 不认 npm_config_package_import_method 环境变量,只能写在这)。
+packageImportMethod: copy
+

@@ -206,15 +206,12 @@ jobs:
       shell: pwsh
       run: |
         Set-MpPreference -DisableRealtimeMonitoring $true
-        # DisableRealtimeMonitoring alone no longer sticks on windows-latest
-        # (two nights of os error 32 after it ran clean), so also exclude the
-        # pnpm store and workspace from scanning...
+        # DisableRealtimeMonitoring may not stick on windows-latest and pnpm 12
+        # ignores npm_config_* env vars, so the reliable guard lives in
+        # pnpm-workspace.yaml (packageImportMethod: copy): imports only read
+        # the store, so an AV-held store file cannot fail the install.
         Add-MpPreference -ExclusionPath 'D:\.pnpm-store'
         Add-MpPreference -ExclusionPath 'D:\a'
-        # ...and stop hard-linking store files into node_modules: copied
-        # imports only read the store, so an AV-held store file cannot fail
-        # the install.
-        "npm_config_package_import_method=copy" | Out-File -Append $env:GITHUB_ENV
 
     - name: Install desktop dependencies
       working-directory: apps/desktop
