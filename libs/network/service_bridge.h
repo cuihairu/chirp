@@ -46,7 +46,7 @@ namespace chirp::gateway {
 // one-in-flight async queue (a blocking write here would stall the whole
 // gateway).
 //
-// Known limits (by design, recorded in TODO.md): the internal connection has
+// Known limits (by design, recorded in todo.md): the internal connection has
 // no application-layer heartbeat (backends have no idle timeout, so this
 // matches the direct-entry path), each client holds one backend connection,
 // and the token is replayed verbatim - auth-enhanced (MySQL) tokens are not

@@ -29,3 +29,14 @@
 
 - [ ] 消息压缩·鸿蒙 ArkTS 解压消费面——待 OHOS 工具链（hvigor/ohpm/DevEco，HarmonyOS NEXT 口径——OpenHarmony SDK 不作数）编译验证；iOS 半边已验证（`1a78f8e`，macOS runner run 38706660284 全绿，登录已声明 `supports_gzip`＝ChatPipeline.swift:178）。
       证据（2026-10-28 巡检，BLOCKED 待 OHOS 工具链）：`hvigorw/hvigor/ohpm/hdc/DevEco` PATH 探测全部 ABSENT；`/opt/ohos-sdk` 仅含 `native/` 切片（apiVersion 12 / 5.0.0.71，无 ets/API 层），无论口径均不覆盖 ArkTS 构建面；`.github/workflows/` 无 ohos/hvigor/ohpm/harmony 引用（matches 0）。消费面源码在位：`apps/harmony/entry/src/main/ets/common/HarmonyGzip.ts`（文件头自记 12 符号已静态核对、编译验证待工具链）+ `AppServices.ts` 装配，`build-profile.json5` 钉 `5.0.0(12)` / runtimeOS HarmonyOS。手动动作：装 HarmonyOS NEXT SDK + hvigor/ohpm（或提供 OHOS runner），到位首务即编译 `HarmonyGzip.ts`。
+
+## 审核发现
+
+- [x] 审核发现：提交宣称修复 todo.md 旧引用，但仓内仍残留大写 `TODO.md` 引用，指向已不存在文件（libs/network/service_bridge.h:49）
+      **已清（本 commit）+证据**：`libs/network/service_bridge.h:49` 大写 `TODO.md`→小写 `todo.md`（纯注释，无逻辑变更）；复查 `rg -n 'TODO\.md'` 全仓仅剩本行自指，且 `TODO.md` 不存在、`todo.md` 在位。属实已修。
+- [x] 审核发现：Defender 排除路径 `D:\.pnpm-store` 不匹配 GitHub Windows runner 的默认 pnpm store（位于 `%LOCALAPPDATA%\pnpm\store`，即 `C:\Users\runneradmin\...`），仓内也无 store-dir 配置重定向，该排除实际盖不到 store，唯一生效的防护只剩 `packageImportMethod: copy`（.github/workflows/nightly.yml:213）
+      **已清（本 commit）+证据**：`.github/workflows/nightly.yml:217-218` 排除路径 `'D:\.pnpm-store'`→`"$env:LOCALAPPDATA\pnpm\store"`（Windows 默认 store 即 `%LOCALAPPDATA%\pnpm\store`）；`D:\a` 检出区排除保留。属实已修。
+- [x] 审核发现：仅 Windows nightly 的 Defender 锁问题，却把 `packageImportMethod: copy` 写进根与 apps/desktop 两处 workspace 配置，令全平台及所有本地/CI 安装都改为 copy 导入（弃硬链接、增盘增时），波及面超出被修的 Windows 腿；Windows 专病不应全局下药（pnpm-workspace.yaml:31，apps/desktop/pnpm-workspace.yaml:12）
+      **已清（本 commit）+证据**：`pnpm-workspace.yaml`（原 :31）与 `apps/desktop/pnpm-workspace.yaml`（原 :12）两处 `packageImportMethod: copy` 均已删，全局下药撤除；改由 `.github/workflows/nightly.yml:215` 仅 Windows 腿经 `GITHUB_ENV` 写 `pnpm_config_package_import_method=copy`（非 Windows 腿不跑该步，保持默认硬链接）。实测 pnpm 12.10.1：`pnpm_config_*` 环境变量生效（`config get` 返回 `copy`），而 `npm_config_*` 被忽略（返回 `undefined`）；真实安装链接数验证：默认＝硬链接（link count 4），带该环境变量＝copy（link count 1）。属实已修。
+- [x] 审核发现：CI 无任何断言校验 `packageImportMethod: copy` 确被 pnpm 采纳（如核对 node_modules 链接类型或 `pnpm config get`），若 pnpm 不再读该键或键名写错，防护静默失效，os error 32 只在深夜才再爆发（.github/workflows/nightly.yml:210）
+      **已清（本 commit）+证据**：`.github/workflows/nightly.yml:237-246` 新增「Assert pnpm copy import is active」步（`if: runner.os=='Windows'`，`shell: bash`），断言根与 `apps/desktop` 两处 `pnpm config get packageImportMethod` 均 `='copy'`；pnpm 不再读必致失败。属实已修。

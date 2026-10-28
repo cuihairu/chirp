@@ -201,16 +201,21 @@ jobs:
     # Windows runner 的 Defender 实时扫描会短暂锁住 pnpm store 里的包文件,
     # 硬链接导入即报 "process cannot access the file ... (os error 32)",
     # 三晚连续红且每次中招文件不同;装依赖前关掉实时监控。
-    - name: Disable Defender realtime scan (pnpm store file locks)
+    - name: Disable Defender realtime scan and force copy imports (pnpm store file locks)
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
         Set-MpPreference -DisableRealtimeMonitoring $true
         # DisableRealtimeMonitoring may not stick on windows-latest and pnpm 12
-        # ignores npm_config_* env vars, so the reliable guard lives in
-        # pnpm-workspace.yaml (packageImportMethod: copy): imports only read
-        # the store, so an AV-held store file cannot fail the install.
-        Add-MpPreference -ExclusionPath 'D:\.pnpm-store'
+        # ignores npm_config_* env vars, so request copy imports via pnpm's own
+        # pnpm_config_package_import_method env var. Writing it to GITHUB_ENV
+        # keeps the override on this Windows leg only - non-Windows legs never
+        # run this step, so they keep the default hardlinks. copy imports only
+        # read the store, so an AV-held store file cannot fail the install.
+        "pnpm_config_package_import_method=copy" | Out-File -FilePath $env:GITHUB_ENV -Append
+        # The runner's default pnpm store sits under %LOCALAPPDATA%, not D:\;
+        # exclude the real store so Defender does not lock its files.
+        Add-MpPreference -ExclusionPath "$env:LOCALAPPDATA\pnpm\store"
         Add-MpPreference -ExclusionPath 'D:\a'
 
     - name: Install desktop dependencies
@@ -226,6 +231,19 @@ jobs:
     # 同样吃这份安装。Verify/Pack @chirp/protocol 仍只在 x64 腿（一次）。
     - name: Install root workspace dependencies (for desktop typecheck + @chirp/protocol + tauri build)
       run: pnpm install --frozen-lockfile
+
+    # 断言 Windows 腿上 pnpm 确实采用 copy 导入:若配置键名/写法失效,防护
+    # 会静默掉回硬链接,os error 32 只在深夜才复发。两处 workspace 都要查。
+    - name: Assert pnpm copy import is active (Windows Defender guard)
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        method="$(pnpm config get packageImportMethod)"
+        echo "workspace-root packageImportMethod=$method"
+        test "$method" = "copy"
+        method="$(pnpm -C apps/desktop config get packageImportMethod)"
+        echo "apps/desktop packageImportMethod=$method"
+        test "$method" = "copy"
 
     # The desktop app carries its own vitest suite (P0 消息展示 surfaces live
     # in MainWindow/ChatPanel); run it here so a red desktop test blocks the

@@ -4,13 +4,6 @@
 packages:
   - '.'
 
-# Windows CI(pnpm 12)不吃 npm_config_package_import_method 环境变量:
-# nightly 在 tauri build 的隐式 install(pnpm run 前的 verify-deps)里仍走
-# 硬链接,撞上 Defender 对 store 文件的短暂锁即 os error 32 连续红。copy
-# 导入只读 store,被 AV 握住的 store 文件不再能打断安装;全平台生效,
-# 代价是 node_modules 不再与 store 硬链接省盘。
-packageImportMethod: copy
-
 # pnpm 12 默认不跑依赖的生命周期脚本,未显式决定时直接报错退出
 # (ERR_PNPM_IGNORED_BUILDS)。protobufjs 的 postinstall 放行条目随 ts-proto
 # 2.x 换 @bufbuild/protobuf 运行时一并移除——依赖树里已无该包。
