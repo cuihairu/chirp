@@ -6,7 +6,7 @@
       3) 表三「值得补的能力」：只做评估与分期建议，**不实现**（需用户拍板）
       每完成一项勾掉并写证据；全部测试通过后 commit+push；不 bump 版本号。
       **进度（2026-10-19）**：表一 P0/P1/P2 已清（TODO:267 `--host` 库层、269 六项、271 其余服务接线）；表二五项已清（TODO:270）；表三评估与分期建议已补齐（`docs/review/luna-review-2026-10-18.md` 表三节末新增 dated 评估节，含四行现状证据 + 分期 + 需拍板点 + 分期汇总）。**表一行 1 认证本体亦已清（TODO:268，机制已代决：共享密钥 `SERVER_AUTH_REQ` 握手，`--service_secret`/`--notification_secret` 成对）**。本整改伞全部收口；下一项「文档时效性清理」随后执行。
-      **共享检出区脏文件收口（2026-10-19）**：工作区 24 个脏文件经核验为**早于已推送提交的废弃草稿**（改动时间 01:08–01:21，早于 `e336c9c` 01:49 与 `4fb8074` 02:50；TODO.md 侧该批把「余 ③⑤ 待做」标为未清，而 origin/main 已全清）——Redis 版设备持久化与「等待 MySQL 才回 OK」两案均已被文件版 DeviceStore 与「受理+有界重试+计数」语义覆盖取代，脏文档则通篇描述 Redis 方案（落了即违文档对账令）。已备份为 `discard-superseded-draft` 标签（385523b）后整体弃置，共享检出区快进至 `origin/main`；其中唯一未被取代的片段（开发 compose 不发布 5006/5016 到宿主机）并入 TODO:268 成果。
+      **共享检出区脏文件收口（2026-10-19）**：工作区 24 个脏文件经核验为**早于已推送提交的废弃草稿**（改动时间 01:08–01:21，早于 `e336c9c` 01:49 与 `4fb8074` 02:50；todo.md 侧该批把「余 ③⑤ 待做」标为未清，而 origin/main 已全清）——Redis 版设备持久化与「等待 MySQL 才回 OK」两案均已被文件版 DeviceStore 与「受理+有界重试+计数」语义覆盖取代，脏文档则通篇描述 Redis 方案（落了即违文档对账令）。已备份为 `discard-superseded-draft` 标签（385523b）后整体弃置，共享检出区快进至 `origin/main`；其中唯一未被取代的片段（开发 compose 不发布 5006/5016 到宿主机）并入 TODO:268 成果。
 
 - [x] 文档时效性清理（2026-10-18 用户令：很多文档已过时）：
       本轮审核整改完成后执行。通读 README / docs，找出与代码不符的描述，以代码为准修正；
@@ -16,3 +16,16 @@
 
 - [x] README 徽章在 HTML 块内不渲染，改为 img 标签（2026-10-27）：
       `4d8c5f9`。README.md / README.zh.md 的 `<p align="center">` 徽章块内 4 个 `![alt](url)` 全部改 `<img alt src>`（GitHub 不解析 HTML 块内 markdown，原写法线上显示原文）；块内 `grep -c '!\['` 两文件均 0，徽章仍单行，logo/标题/版本号未动。
+
+
+## 合并自 todo.md（2026-10-28，原文件未勾项摘录，随后删除）
+
+## 移动端原生技术栈迁移（2026-09-28 启动，Android M1+M2 完成）
+
+- [ ] iOS 推送（APNs）真投递——等用户凭据（Team ID / Key ID / .p8 私钥 / Bundle ID，凭据类不代决）；凭据到位后照 `docs/guide/deployment.md` 推送出向段接线（`--push_transport http` + `--apns-*` 旗标）真机联调，验收＝真实投递可达（生产需出向 h2 反代，`--apns-endpoint` 指向它；仓内无待补实现）。
+      证据（2026-10-28 巡检，BLOCKED 待用户凭据）：仓内 `find . -name '*.p8'`＝0，`$HOME` 下亦 0；`docker-compose.yml` 与 `deployments/docker/docker-compose.deploy.yml` 无任何 `--apns-*`/凭据接线（grep matches 0）；`services/app/notification/src/main.cc:132-143` 旗标面与 `docs/guide/deployment.md` 出向 runbook 在位、无默认凭据。手动动作：用户给四项凭据（sandbox 加 `--apns-sandbox`；生产加出向 h2 反代 + `--apns-endpoint` 指向它），再按 runbook 接线真机联调。
+
+## 近期批次（2026-10-08 起）
+
+- [ ] 消息压缩·鸿蒙 ArkTS 解压消费面——待 OHOS 工具链（hvigor/ohpm/DevEco，HarmonyOS NEXT 口径——OpenHarmony SDK 不作数）编译验证；iOS 半边已验证（`1a78f8e`，macOS runner run 38706660284 全绿，登录已声明 `supports_gzip`＝ChatPipeline.swift:178）。
+      证据（2026-10-28 巡检，BLOCKED 待 OHOS 工具链）：`hvigorw/hvigor/ohpm/hdc/DevEco` PATH 探测全部 ABSENT；`/opt/ohos-sdk` 仅含 `native/` 切片（apiVersion 12 / 5.0.0.71，无 ets/API 层），无论口径均不覆盖 ArkTS 构建面；`.github/workflows/` 无 ohos/hvigor/ohpm/harmony 引用（matches 0）。消费面源码在位：`apps/harmony/entry/src/main/ets/common/HarmonyGzip.ts`（文件头自记 12 符号已静态核对、编译验证待工具链）+ `AppServices.ts` 装配，`build-profile.json5` 钉 `5.0.0(12)` / runtimeOS HarmonyOS。手动动作：装 HarmonyOS NEXT SDK + hvigor/ohpm（或提供 OHOS runner），到位首务即编译 `HarmonyGzip.ts`。
