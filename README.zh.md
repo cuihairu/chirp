@@ -205,7 +205,7 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 3. ~~`app_gateway` 与推送桥接（APNs/FCM，经 notification 服务）~~（部分交付：`app_gateway` 5200/5201、notification 协议面 5006/5016、chat 离线消息触发推送；`--push_transport http` 已是真实 HTTP(S) 投递，APNs 官方 HTTP/2 端点需前置协议转换，真实凭据接入留待部署环境）
 4. ~~NPC 对话服务落地（依赖注入通道 + 事件通道）~~（chat 识别 `npc:` 前缀私聊转 `npc.player_message` 事件，`npc_dialog` 服务经关键词规则引擎回复并走注入通道投递；`./test_services.sh --smoke-npc` 进程级验证）
 
-当前焦点与架构债（P0 公共代码沉淀、P1 登录语义统一、两条 smoke 纳入 CI 等）统一维护在 [TODO.md](TODO.md)，本节不再重复。
+当前焦点与架构债（P0 公共代码沉淀、P1 登录语义统一、两条 smoke 纳入 CI 等）统一维护在 [todo.md](todo.md)，本节不再重复。
 
 ## 工程结构
 

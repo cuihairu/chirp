@@ -199,7 +199,7 @@ The spoke side never sees a `player_id`; the hub side never sees a plaintext `ga
 
 ## Implementation status
 
-Reconciled with `TODO.md` and `CAPABILITY_MATRIX.md` (2026-09-22):
+Reconciled with `todo.md` and `CAPABILITY_MATRIX.md` (2026-09-22):
 
 | Module | Status |
 | --- | --- |

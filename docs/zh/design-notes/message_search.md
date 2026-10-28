@@ -182,4 +182,4 @@ search 批的 web/desktop 消费链至此全部收口。
   补 sender_kind 列，否则 StoreMessage 静默失败（本地库踩过）。
 - ✅ 文档对账：本文件 §5、docs/api/overview.md（2122-2124 行、
   2248/2249 行、5007 状态行）、CAPABILITY_MATRIX（两边缘行）、
-  TODO.md（search 拍板条目）随各增量同步。
+  todo.md（search 拍板条目）随各增量同步。

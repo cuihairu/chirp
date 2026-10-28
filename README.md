@@ -206,7 +206,7 @@ Completed milestones:
 3. ~~`app_gateway` and push bridging (APNs/FCM, via the notification service)~~ (partially delivered: `app_gateway` 5200/5201, notification protocol plane 5006/5016, chat offline messages triggering pushes; `--push_transport http` performs real HTTP(S) delivery, the official APNs HTTP/2 endpoint needs a protocol conversion proxy in front, wiring up real credentials is left to the deployment environment)
 4. ~~NPC dialogue service implemented (injection channel + event channel)~~ (chat recognizes `npc:`-prefixed direct messages and converts them into `npc.player_message` events; the `npc_dialog` service replies via a keyword rule engine and delivers over the injection channel; process-level verification via `./test_services.sh --smoke-npc`)
 
-Current focus and architectural debt (P0 shared-code consolidation, P1 unified login semantics, adding two smoke legs to CI, etc.) are maintained in [TODO.md](TODO.md); this section no longer duplicates them.
+Current focus and architectural debt (P0 shared-code consolidation, P1 unified login semantics, adding two smoke legs to CI, etc.) are maintained in [todo.md](todo.md); this section no longer duplicates them.
 
 ## Repository Layout
 

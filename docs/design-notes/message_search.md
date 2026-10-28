@@ -180,4 +180,4 @@ The web/desktop consumption chain for the search batch is now fully closed.
   to add the sender_kind column, otherwise StoreMessage fails silently (hit this locally).
 - ✅ Documentation reconciliation: this file §5, docs/api/overview.md (the 2122-2124 rows,
   the 2248/2249 rows, the 5007 status row), CAPABILITY_MATRIX (the two edge rows),
-  and TODO.md (the search decision entry) were kept in sync with each increment.
+  and todo.md (the search decision entry) were kept in sync with each increment.

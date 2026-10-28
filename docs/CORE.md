@@ -139,7 +139,7 @@ same HS256 contract for `LOGIN_REQ` under `--jwt_secret`——the deployment con
 and the edge service the same secret, and the client's raw token is passed through the
 gateway → chat pipe unchanged (`--smoke-jwt` covers this end to end). The auth scaffold fallback
 requires `--allow_scaffold_login 1` (off by default). Revocation is still bounded by TTL——the
-(Redis-based revocation) hybrid variant is deferred to P3 (TODO.md); the gateway login path via the
+(Redis-based revocation) hybrid variant is deferred to P3 (todo.md); the gateway login path via the
 `AuthClient` RPC is unchanged.
 
 ### Server plane (Server plane, 5xxx)

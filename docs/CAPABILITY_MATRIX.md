@@ -59,7 +59,7 @@ This document describes the repository's current implementation state by runtime
 | CI treats test failures as hard failures | `ci.yml` runs Debug + Release builds + `ctest`, plus a coverage job: any package whose line coverage drops below 100% (excluding registered exemptions) fails | Supported |
 | Process-level smoke coverage | All ten `test_services.sh` legs — `--smoke / --smoke-chat / --smoke-sdk / --smoke-npc / --smoke-edge / --smoke-jwt / --smoke-redis / --smoke-game / --smoke-voice / --smoke-party` — are verified locally one by one and run in the CI smoke job (`--smoke-redis` uses a docker redis to verify cross-instance kicks); there is also a `--smoke-search` leg (real chat+search+game_sdk_gateway processes with both bridges, a seeded private chat lands in MySQL via the chat bridge, and a client's 2248 hits after retrying via the gateway search bridge), landed 2026-10-09 and running in the CI smoke job, passing the search mysql coordinates explicitly per the effective coordinates (search's `--mysql_host` has no default, so it must be explicit when CI has no env) | Supported |
 | Docker Compose path for core services | In place | Supported |
-| Roadmap consistent with default build artifacts | Yes — TODO.md is the living roadmap (rewritten 2026-09); completed items are struck through in README.md | Supported |
+| Roadmap consistent with default build artifacts | Yes — todo.md is the living roadmap (rewritten 2026-09); completed items are struck through in README.md | Supported |
 
 ## Recommended external framing
 

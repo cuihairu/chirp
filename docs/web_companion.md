@@ -2,7 +2,7 @@
 
 # Web Companion App (apps/web_companion)
 
-Status: **Experimental** —— phase one delivered: login, private chat, groups, friends and presence; phase two delivered: party (third WS) and device management (fourth WS, via app_gateway). It runs on the **transitional path** (the browser connects directly to the WS edges of chat 7001, social 8001, party 7501 and app_gateway 5201), not the final topology; the unified edge depends on the P1 login-semantics unification (see [TODO.md](https://github.com/cuihairu/chirp/blob/main/TODO.md))).
+Status: **Experimental** —— phase one delivered: login, private chat, groups, friends and presence; phase two delivered: party (third WS) and device management (fourth WS, via app_gateway). It runs on the **transitional path** (the browser connects directly to the WS edges of chat 7001, social 8001, party 7501 and app_gateway 5201), not the final topology; the unified edge depends on the P1 login-semantics unification (see [todo.md](https://github.com/cuihairu/chirp/blob/main/todo.md))).
 
 ## What it is
 

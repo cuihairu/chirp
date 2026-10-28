@@ -135,7 +135,7 @@ token 一律 `AUTH_FAILED` 拒绝。登录语义已在 2026-09 拉齐:auth-enhan
 `--jwt_secret` 下对 `LOGIN_REQ` 强制同一套 HS256 契约——部署约定是给 auth 和
 边缘服务发同一把密钥,客户端的原始 token 经 gateway → chat 管道原样透传
 (`--smoke-jwt` 端到端覆盖)。auth 的 scaffold 回退需要 `--allow_scaffold_login 1`
-(默认关)。吊销目前仍以 TTL 为界——(Redis 吊销的)混合变体推迟到 P3(TODO.md);
+(默认关)。吊销目前仍以 TTL 为界——(Redis 吊销的)混合变体推迟到 P3(todo.md);
 经 `AuthClient` RPC 的 gateway 登录路径不变。
 
 ### 服务面(Server plane,5xxx)

@@ -34,7 +34,7 @@ LICENSE
 PROJECT_COMPLETE.md
 README.md
 README.zh.md
-TODO.md
+todo.md
 apps/.keep
 apps/admin_dashboard/.gitignore
 apps/admin_dashboard/index.html
@@ -1129,7 +1129,7 @@ tools/benchmark/ws_ping_client.cc
 tools/crash_probe/CMakeLists.txt
 tools/crash_probe/crash_probe.cc
 vcpkg.json
-[0m→ [0mRead TODO.md 
+[0m→ [0mRead todo.md 
 [0m→ [0mRead README.md 
 [0m→ [0mRead docs/审计-专项审查-投递认证与状态一致性.md 
 [0m→ [0mRead docs/审计-文档一致性.md 
@@ -1164,7 +1164,7 @@ vcpkg.json
 [0m✱ [0mGrep "allow_scaffold_login|dev_secret|jwt_secret" [90min services/app/auth/src · 15 matches[0m
 [0m→ [0mRead tests/unit/CMakeLists.txt [90m[limit=90][0m
 [0m→ [0mRead services/app/auth/src/main_enhanced.cc [90m[offset=178, limit=115][0m
-[0m→ [0mRead TODO.md [90m[offset=187, limit=75][0m
+[0m→ [0mRead todo.md [90m[offset=187, limit=75][0m
 [0m→ [0mRead apps/admin_dashboard/src/App.tsx [90m[offset=45, limit=50][0m
 [0m→ [0mRead services/app/notification/src/notification_service.h [90m[offset=160, limit=55][0m
 [0m$ [0mgrep -c '^add_executable(' tests/unit/CMakeLists.txt && grep -c '^add_test(' tests/unit/CMakeLists.txt && grep -n '^add_test(' tests/unit/CMakeLists.txt | tail
@@ -1201,7 +1201,7 @@ vcpkg.json
 [0m✱ [0mGrep "GetSessions|JwtVerifyHS256|aud|iss" [90min libs/common/login_token_verifier.cc · 3 matches[0m
 [0m✱ [0mGrep "AddUser|Bind|local.*history|user_to_groups_|std::unordered_map" [90min services/shared/chat/src/group_manager.h · 7 matches[0m
 [0m✱ [0mGrep "token_secret.*GetArg|token_secret.*default|GetArg\(argc, argv, "--token_secret"" [90min services/shared/chat/src · 3 matches[0m
-[0m$ [0mgrep -nE '^- \[ \]' TODO.md && grep -n '^add_test(' tests/unit/CMakeLists.txt | wc -l && nl -ba proto/game_server_gateway.proto | head -8
+[0m$ [0mgrep -nE '^- \[ \]' todo.md && grep -n '^add_test(' tests/unit/CMakeLists.txt | wc -l && nl -ba proto/game_server_gateway.proto | head -8
 195:- [ ] iOS 推送（APNs）——真投递凭据项（保持挂起不代决；解锁条件：用户给 APNs 凭据——Team ID / Key ID / .p8 私钥 / Bundle ID——到位后落地 iOS 端真实投递联调。**2026-10-15 分批落地：ES256 provider JWT 签名侧已补**（`services/app/notification/src/apns_jwt.{h,cc}`——`.p8` PEM 载入（inline bytes 或 `--apns-key` 文件）、P-256 曲线校验、DER→JWS raw 签名转换；`NotificationService::ApnsBearerToken` 50 分钟窗口缓存 + `Authorization: Bearer` 注入；notification 单测 14 例含往返验签/拒 RSA/P-384/坏 PEM/缓存窗口/无凭据免头）**。余下卡点：真投递凭据（Team ID / Key ID / .p8 / Bundle ID，用户项）与 APNs 必需 HTTP/2（HTTP/1.1 传输，生产需前置协议转换）——凭据到位即可联调，无待补实现
 251:- [ ] 消息压缩·iOS Swift / 鸿蒙 ArkTS 解压消费面（**iOS 半边已验证，鸿蒙待工具链（2026-10-15）**）。**iOS**（1a78f8e）：`apps/ios/Sources/CChirpGzip/chirp_gzip.c`（zlib inflate 15+32 + 16 MiB 上限）+ `Sources/ChirpProtocol/Gzip.swift` 薄封装 + `MessageSpec.swift` 拆封钩子 + `ChatPipeline.swift` 挂载 + `Tests/ChirpProtocolTests/GzipTests.swift`（原语 8 例 + 管线 4 例共 12）——**2026-10-15 经 build/pnpm-migration → main 的 PR CI 在 macOS runner 编译通过并全绿**（GzipTests 12/12、swift test 包全量 245/245，run 38706660284；测试面首编修正 4 个 commit：Data/[UInt8] 转换、`Chirp_Common_ErrorCode.ok` 前置形态、闭包 map 替代 keypath、`with` 闭包内 `try serializedData`）；登录**已声明** `supports_gzip`（ChatPipeline.swift:178），消费面拆封已经单测验证，余下真机联调不设卡。**鸿蒙**（2026-10-15 落码）：ArkTS 无 DecompressionStream，共享协议核 `gzip.ts` 加 `setGzipDecompressor` 注入缝（两包同步 + vitest：protocol 137/137、sdks/ts 147/147），`apps/harmony/entry/src/main/ets/common/HarmonyGzip.ts` 用 `@ohos.zlib`（API 12 `createZipSync().inflateInit2(strm, 31)` 单趟 + 16 MiB 定宽缓冲）实现平台解压器，AppServices 装配时装入；登录**未声明** `supports_gzip`（声明以编译验证为前置——服务端对未声明会话永远发明文，明文路径不受影响）。**2026-10-15 符号级静态核对**：文件用到的 12 个符号逐条对照官方 `interface_sdk-js/api/@ohos.zlib.d.ts` 全部存在且签名一致（`createZipSync`/`inflateInit2`/`inflate`/`inflateEnd` 均 `@since 12 dynamic`，与本工程 compatibleSdkVersion 5.0.0(12) 对齐；`ReturnStatus.OK=0`/`STREAM_END=1`、`CompressFlushMode.FINISH=4`、ZStream 五字段齐备）——核对中发现 `ZStream.totalOut` 在 d.ts 里声明为 `long`（官方 API 文档表格作 `number`），直接喂 `ArrayBuffer.slice(begin: number)` 有类型不匹配风险，已改 `Number(strm.totalOut ?? 0)` 归一（两种 `long` 口径下均成立）。**余下卡点**：鸿蒙本机与 CI 均无 hvigor/ohpm/DevEco，仅剩编译器级验证（符号面已核对））
 45
@@ -1235,15 +1235,15 @@ vcpkg.json
 | `DURABLE` 表示历史消息持久化到 MySQL，重启不丢。 | `docs/design-notes/communication_core.md:75-82` | 增强形态异步写 MySQL，失败只打日志；处理器仍返回 `OK`。该路径不能保证收到 `OK` 的消息已持久化。 | `services/shared/chat/src/main_enhanced.cc:400-412`；`services/shared/chat/src/hybrid_message_store.cc:180-203` |
 | 单测套件数为 40；或为 44。CI 覆盖率门槛为 98%。 | `IMPLEMENTATION_SUMMARY.md:20,24`；`docs/CAPABILITY_MATRIX.md:57-59` | 单测 CMake 中有 45 条 `add_test` 声明；覆盖脚本默认门槛为 100%，CI 调用该脚本。 | `tests/unit/CMakeLists.txt:69-1193`（45 条声明）；`scripts/run_coverage.sh:28`；`.github/workflows/ci.yml:51-53` |
 | 协议定义包含 `proto/server_gateway.proto`。 | `IMPLEMENTATION_SUMMARY.md:7` | 当前文件为 `proto/game_server_gateway.proto`，包名为 `chirp.game_server_gateway`。 | `proto/game_server_gateway.proto:1-5` |
-| TODO 尚有 195、211、251 三项未完成。 | `docs/审计-文档一致性.md:488,261` | 当前 `TODO.md:211` 是已完成项；当前未完成项为 195、251 两项。 | `TODO.md:195,211,251` |
+| TODO 尚有 195、211、251 三项未完成。 | `docs/审计-文档一致性.md:488,261` | 当前 `todo.md:211` 是已完成项；当前未完成项为 195、251 两项。 | `todo.md:195,211,251` |
 
 ### 表三 值得补的能力
 
 | 能力 | 为什么现在没有 | 价值高低 |
 |---|---|---|
-| 管理后台审核与运营工作流（举报队列、管理员权限及真实后端 API） | 举报台账已存在，但 TODO 明确把管理后台审核队列留作后续；后台仍未接入仓内 API 后端。`TODO.md:234`；`docs/CAPABILITY_MATRIX.md:50` | 高 |
+| 管理后台审核与运营工作流（举报队列、管理员权限及真实后端 API） | 举报台账已存在，但 TODO 明确把管理后台审核队列留作后续；后台仍未接入仓内 API 后端。`todo.md:234`；`docs/CAPABILITY_MATRIX.md:50` | 高 |
 | 推送设备持久化与重启恢复 | 当前设备注册表是进程内存容器，能力矩阵也标明设备注册表为进程内状态。`services/app/notification/src/notification_service.h:203-210`；`docs/CAPABILITY_MATRIX.md:36` | 高 |
-| APNs 原生 HTTP/2 投递传输 | 当前推送 HTTP 传输为 HTTP/1.1；文档指出 APNs 需要 HTTP/2，生产需额外协议转换代理。`services/app/notification/src/main.cc:157-160`；`TODO.md:195` | 高 |
+| APNs 原生 HTTP/2 投递传输 | 当前推送 HTTP 传输为 HTTP/1.1；文档指出 APNs 需要 HTTP/2，生产需额外协议转换代理。`services/app/notification/src/main.cc:157-160`；`todo.md:195` | 高 |
 | WebRTC 真实媒体链路与浏览器端到端验证 | 目前有语音信令，但没有真实浏览器/音频媒体 E2E；能力矩阵将媒体面明确列为未验证。`docs/CAPABILITY_MATRIX.md:34` | 中 |
 
 ## 表三评估与分期建议（2026-10-19 补齐）

@@ -2,7 +2,7 @@
 
 # Chirp Roadmap History (Archive)
 
-> Archived from TODO.md in 2026-09. This file is a historical record of the early roadmap and change log; the checked states reflect the repository as of archiving time and have been cross-checked against [../CAPABILITY_MATRIX.md](../CAPABILITY_MATRIX.md)). For current work see [TODO.md](https://github.com/cuihairu/chirp/blob/main/TODO.md)).
+> Archived from todo.md in 2026-09. This file is a historical record of the early roadmap and change log; the checked states reflect the repository as of archiving time and have been cross-checked against [../CAPABILITY_MATRIX.md](../CAPABILITY_MATRIX.md)). For current work see [todo.md](https://github.com/cuihairu/chirp/blob/main/todo.md)).
 
 ## 1. Infrastructure (Monorepo and C++)
 

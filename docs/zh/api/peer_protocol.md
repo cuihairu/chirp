@@ -199,7 +199,7 @@ spoke 侧看不到 `player_id`;hub 侧看不到 `game_user_id` 明文(除了注�
 
 ## 实现状态
 
-对齐 `TODO.md` 与 `CAPABILITY_MATRIX.md`(2026-09-22):
+对齐 `todo.md` 与 `CAPABILITY_MATRIX.md`(2026-09-22):
 
 | 模块 | 状态 |
 | --- | --- |

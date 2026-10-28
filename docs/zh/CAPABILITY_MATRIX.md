@@ -59,7 +59,7 @@
 | CI 把测试失败当硬失败 | `ci.yml` 跑 Debug + Release 构建 + `ctest`,外加一个 coverage job:任何包行覆盖跌破 100%(登记豁免除外)即失败 | Supported |
 | 进程级冒烟覆盖 | `test_services.sh --smoke / --smoke-chat / --smoke-sdk / --smoke-npc / --smoke-edge / --smoke-jwt / --smoke-redis / --smoke-game / --smoke-voice / --smoke-party` 十条腿全部本地逐条验证且跑在 CI smoke job 里(`--smoke-redis` 用 docker redis 验跨实例踢线);另有 `--smoke-search` 腿(chat+search+game_sdk_gateway 双桥真实进程,种子私聊经 chat 桥落 MySQL,客户端 2248 经 gateway search 桥重试命中),2026-10-09 落立、跑在 CI smoke job,起搜 mysql 坐标按生效坐标显式传(search 的 `--mysql_host` 无默认,CI 无 env 时必须显式) | Supported |
 | 核心服务的 Docker Compose 路径 | 已具备 | Supported |
-| 路线图与默认构建产物一致 | 是——TODO.md 是活的路线图(2026-09 重写);已完成项在 README.md 中划线 | Supported |
+| 路线图与默认构建产物一致 | 是——todo.md 是活的路线图(2026-09 重写);已完成项在 README.md 中划线 | Supported |
 
 ## 推荐的对外口径
 
