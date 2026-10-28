@@ -22,12 +22,12 @@
 
 ## 移动端原生技术栈迁移（2026-09-28 启动，Android M1+M2 完成）
 
-- [ ] iOS 推送（APNs）真投递——等用户凭据（Team ID / Key ID / .p8 私钥 / Bundle ID，凭据类不代决）；凭据到位后照 `docs/guide/deployment.md` 推送出向段接线（`--push_transport http` + `--apns-*` 旗标）真机联调，验收＝真实投递可达（生产需出向 h2 反代，`--apns-endpoint` 指向它；仓内无待补实现）。
+- [ ] iOS 推送（APNs）真投递——等用户凭据（Team ID / Key ID / .p8 私钥 / Bundle ID，凭据类不代决）；凭据到位后照 `docs/guide/deployment.md` 推送出向段接线（`--push_transport http` + `--apns-*` 旗标）真机联调，验收＝真实投递可达（生产需出向 h2 反代，`--apns-endpoint` 指向它；仓内无待补实现）。BLOCKED 缺 APNs Team ID / Key ID / .p8 私钥 / Bundle ID（及生产出向 h2 反代）。
       证据（2026-10-28 巡检，BLOCKED 待用户凭据）：仓内 `find . -name '*.p8'`＝0，`$HOME` 下亦 0；`docker-compose.yml` 与 `deployments/docker/docker-compose.deploy.yml` 无任何 `--apns-*`/凭据接线（grep matches 0）；`services/app/notification/src/main.cc:132-143` 旗标面与 `docs/guide/deployment.md` 出向 runbook 在位、无默认凭据。手动动作：用户给四项凭据（sandbox 加 `--apns-sandbox`；生产加出向 h2 反代 + `--apns-endpoint` 指向它），再按 runbook 接线真机联调。
 
 ## 近期批次（2026-10-08 起）
 
-- [ ] 消息压缩·鸿蒙 ArkTS 解压消费面——待 OHOS 工具链（hvigor/ohpm/DevEco，HarmonyOS NEXT 口径——OpenHarmony SDK 不作数）编译验证；iOS 半边已验证（`1a78f8e`，macOS runner run 38706660284 全绿，登录已声明 `supports_gzip`＝ChatPipeline.swift:178）。
+- [ ] 消息压缩·鸿蒙 ArkTS 解压消费面——待 OHOS 工具链（hvigor/ohpm/DevEco，HarmonyOS NEXT 口径——OpenHarmony SDK 不作数）编译验证；iOS 半边已验证（`1a78f8e`，macOS runner run 38706660284 全绿，登录已声明 `supports_gzip`＝ChatPipeline.swift:178）。BLOCKED 缺 HarmonyOS NEXT 工具链/runner（hvigor、ohpm、DevEco；OpenHarmony SDK 不作数）。
       证据（2026-10-28 巡检，BLOCKED 待 OHOS 工具链）：`hvigorw/hvigor/ohpm/hdc/DevEco` PATH 探测全部 ABSENT；`/opt/ohos-sdk` 仅含 `native/` 切片（apiVersion 12 / 5.0.0.71，无 ets/API 层），无论口径均不覆盖 ArkTS 构建面；`.github/workflows/` 无 ohos/hvigor/ohpm/harmony 引用（matches 0）。消费面源码在位：`apps/harmony/entry/src/main/ets/common/HarmonyGzip.ts`（文件头自记 12 符号已静态核对、编译验证待工具链）+ `AppServices.ts` 装配，`build-profile.json5` 钉 `5.0.0(12)` / runtimeOS HarmonyOS。手动动作：装 HarmonyOS NEXT SDK + hvigor/ohpm（或提供 OHOS runner），到位首务即编译 `HarmonyGzip.ts`。
 
 ## 审核发现
@@ -40,3 +40,4 @@
       **已清（本 commit）+证据**：`pnpm-workspace.yaml`（原 :31）与 `apps/desktop/pnpm-workspace.yaml`（原 :12）两处 `packageImportMethod: copy` 均已删，全局下药撤除；改由 `.github/workflows/nightly.yml:215` 仅 Windows 腿经 `GITHUB_ENV` 写 `pnpm_config_package_import_method=copy`（非 Windows 腿不跑该步，保持默认硬链接）。实测 pnpm 12.10.1：`pnpm_config_*` 环境变量生效（`config get` 返回 `copy`），而 `npm_config_*` 被忽略（返回 `undefined`）；真实安装链接数验证：默认＝硬链接（link count 4），带该环境变量＝copy（link count 1）。属实已修。
 - [x] 审核发现：CI 无任何断言校验 `packageImportMethod: copy` 确被 pnpm 采纳（如核对 node_modules 链接类型或 `pnpm config get`），若 pnpm 不再读该键或键名写错，防护静默失效，os error 32 只在深夜才再爆发（.github/workflows/nightly.yml:210）
       **已清（本 commit）+证据**：`.github/workflows/nightly.yml:237-246` 新增「Assert pnpm copy import is active」步（`if: runner.os=='Windows'`，`shell: bash`），断言根与 `apps/desktop` 两处 `pnpm config get packageImportMethod` 均 `='copy'`；pnpm 不再读必致失败。属实已修。
+- [x] 审核通过：1e62b39c..de5a53a 无发现
