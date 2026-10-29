@@ -42,4 +42,8 @@
       **已清（本 commit）+证据**：`.github/workflows/nightly.yml:237-246` 新增「Assert pnpm copy import is active」步（`if: runner.os=='Windows'`，`shell: bash`），断言根与 `apps/desktop` 两处 `pnpm config get packageImportMethod` 均 `='copy'`；pnpm 不再读必致失败。属实已修。
 - [x] 审核通过：1e62b39c..de5a53a 无发现
 - [x] 审核发现：de5a53a..HEAD 未发现问题
-       **已核（2026-10-29）+证据**：`git log --format='%H %s' de5a53a..HEAD`＝仅 `9381586 docs: mark blocked ledger items for apns and arkts`，`git diff --stat de5a53a..HEAD`＝仅 `todo.md`（5 行，3+/2-，纯账本标注，无代码/构建/测试改动），区间内无问题发现。属实已核。
+       **已核（2026-10-29，复核 2026-10-29 修订）+证据**：`git log --format='%H %s' de5a53a..HEAD`＝`0aafd03 docs: verify no findings in de5a53a..HEAD range`＋`9381586 docs: mark blocked ledger items for apns and arkts` 两行；`git diff --stat de5a53a..HEAD`＝仅 `todo.md`（7 行，5+/2-，纯账本标注，无代码/构建/测试改动），区间内无问题发现。属实已核。
+- [x] 审核发现：`todo.md:45` 证据称 `de5a53a..HEAD` 仅含 `9381586` 一个提交，实际还含 `0aafd03`（`git log de5a53a..HEAD` 为 `0aafd03`+`9381586` 两行），文档与实现不一致（todo.md:45）
+      **已清（本 commit）+证据**：`todo.md:45` 已改为列全两行提交（`0aafd03`＋`9381586`）；复跑 `git log --format='%H %s' de5a53a..HEAD`＝`0aafd039... docs: verify no findings in de5a53a..HEAD range`＋`9381586c... docs: mark blocked ledger items for apns and arkts`，与所记一致。属实已修。
+- [x] 审核发现：`todo.md:45` 证据称 `git diff --stat de5a53a..HEAD` 为「5 行，3+/2-」，实际为「5 行新增，2 行删除」（5+/2-），插入行数统计错误（todo.md:45）
+      **已清（本 commit）+证据**：`todo.md:45` 已改为 `git diff --numstat de5a53a..HEAD` 实测 `5	2	todo.md`（5+/2-，stat 头为 `todo.md | 7 +++++--`）；复跑输出与所记一致。属实已修。
