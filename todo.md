@@ -42,8 +42,12 @@
       **已清（本 commit）+证据**：`.github/workflows/nightly.yml:237-246` 新增「Assert pnpm copy import is active」步（`if: runner.os=='Windows'`，`shell: bash`），断言根与 `apps/desktop` 两处 `pnpm config get packageImportMethod` 均 `='copy'`；pnpm 不再读必致失败。属实已修。
 - [x] 审核通过：1e62b39c..de5a53a 无发现
 - [x] 审核发现：de5a53a..HEAD 未发现问题
-       **已核（2026-10-29，复核 2026-10-29 修订）+证据**：`git log --format='%H %s' de5a53a..HEAD`＝`0aafd03 docs: verify no findings in de5a53a..HEAD range`＋`9381586 docs: mark blocked ledger items for apns and arkts` 两行；`git diff --stat de5a53a..HEAD`＝仅 `todo.md`（7 行，5+/2-，纯账本标注，无代码/构建/测试改动），区间内无问题发现。属实已核。
+       **已核（2026-10-29，复核 2026-10-29 修订）+证据**：审核时点固定区间 `git log --format='%H %s' de5a53a..85c4ee4`＝`85c4ee4 docs: fix audit findings on de5a53a..HEAD range evidence`＋`0aafd03 docs: verify no findings in de5a53a..HEAD range`＋`9381586 docs: mark blocked ledger items for apns and arkts` 三行；`git diff --numstat de5a53a..85c4ee4`＝`9	2	todo.md`（9+/2-，stat 头 11 行，纯账本标注，无代码/构建/测试改动），区间内无问题发现。属实已核。
 - [x] 审核发现：`todo.md:45` 证据称 `de5a53a..HEAD` 仅含 `9381586` 一个提交，实际还含 `0aafd03`（`git log de5a53a..HEAD` 为 `0aafd03`+`9381586` 两行），文档与实现不一致（todo.md:45）
-      **已清（本 commit）+证据**：`todo.md:45` 已改为列全两行提交（`0aafd03`＋`9381586`）；复跑 `git log --format='%H %s' de5a53a..HEAD`＝`0aafd039... docs: verify no findings in de5a53a..HEAD range`＋`9381586c... docs: mark blocked ledger items for apns and arkts`，与所记一致。属实已修。
+      **已清（本 commit）+证据**：`todo.md:45` 已改为列全两行提交（`0aafd03`＋`9381586`）；复跑 `git log --format='%H %s' de5a53a..85c4ee4`＝`85c4ee4 docs: fix audit findings on de5a53a..HEAD range evidence`＋`0aafd039... docs: verify no findings in de5a53a..HEAD range`＋`9381586c... docs: mark blocked ledger items for apns and arkts` 三行，与所记一致。属实已修。
 - [x] 审核发现：`todo.md:45` 证据称 `git diff --stat de5a53a..HEAD` 为「5 行，3+/2-」，实际为「5 行新增，2 行删除」（5+/2-），插入行数统计错误（todo.md:45）
-      **已清（本 commit）+证据**：`todo.md:45` 已改为 `git diff --numstat de5a53a..HEAD` 实测 `5	2	todo.md`（5+/2-，stat 头为 `todo.md | 7 +++++--`）；复跑输出与所记一致。属实已修。
+      **已清（85c4ee4 后续修订）+证据**：`todo.md:45` 已改为 `git diff --numstat de5a53a..85c4ee4` 实测 `9	2	todo.md`（9+/2-，stat 头为 `todo.md | 11 +++++++++--`）；复跑输出与所记一致。属实已修。
+- [x] 审核发现：新增证据把 `de5a53a..HEAD` 的提交列表写成 `0aafd03`＋`9381586` 两项，遗漏了当前 `HEAD` `85c4ee4`，实际为三项（todo.md:45）
+      **已清（本 commit）+证据**：`todo.md:45` 已改为固定区间 `de5a53a..85c4ee4` 并列全三项提交（`85c4ee4`＋`0aafd03`＋`9381586`）；复跑 `git log --format='%H %s' de5a53a..85c4ee4` 实得同三行，与所记一致。属实已修。
+- [x] 审核发现：新增证据把 `de5a53a..HEAD` 的差异写成 `todo.md` 7 行、5+/2-，实际为 11 行、9+/2-（`9	2	todo.md`）（todo.md:45）
+      **已清（本 commit）+证据**：`todo.md:45` 已改为固定区间 `git diff --numstat de5a53a..85c4ee4` 实测 `9	2	todo.md`（9+/2-，stat 头为 `todo.md | 11 +++++++++--`）；复跑输出与所记一致。属实已修。
