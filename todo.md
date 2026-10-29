@@ -41,3 +41,5 @@
 - [x] 审核发现：CI 无任何断言校验 `packageImportMethod: copy` 确被 pnpm 采纳（如核对 node_modules 链接类型或 `pnpm config get`），若 pnpm 不再读该键或键名写错，防护静默失效，os error 32 只在深夜才再爆发（.github/workflows/nightly.yml:210）
       **已清（本 commit）+证据**：`.github/workflows/nightly.yml:237-246` 新增「Assert pnpm copy import is active」步（`if: runner.os=='Windows'`，`shell: bash`），断言根与 `apps/desktop` 两处 `pnpm config get packageImportMethod` 均 `='copy'`；pnpm 不再读必致失败。属实已修。
 - [x] 审核通过：1e62b39c..de5a53a 无发现
+- [x] 审核发现：de5a53a..HEAD 未发现问题
+       **已核（2026-10-29）+证据**：`git log --format='%H %s' de5a53a..HEAD`＝仅 `9381586 docs: mark blocked ledger items for apns and arkts`，`git diff --stat de5a53a..HEAD`＝仅 `todo.md`（5 行，3+/2-，纯账本标注，无代码/构建/测试改动），区间内无问题发现。属实已核。
