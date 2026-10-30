@@ -28,7 +28,7 @@
 
 ## 近期批次（2026-10-08 起）
 
-- [ ] 消息压缩·鸿蒙 ArkTS 解压消费面——待 OHOS 工具链（hvigor/ohpm/DevEco，HarmonyOS NEXT 口径——OpenHarmony SDK 不作数）编译验证；iOS 半边已验证（`1a78f8e`，macOS runner run 38706660284 全绿，登录已声明 `supports_gzip`＝ChatPipeline.swift:178）。BLOCKED 缺 HarmonyOS NEXT 工具链/runner（hvigor、ohpm、DevEco；OpenHarmony SDK 不作数）。
+- [ ] 消息压缩·鸿蒙 ArkTS 解压消费面——待 OHOS 工具链（hvigor/ohpm/DevEco，HarmonyOS NEXT 口径——OpenHarmony SDK 不作数）编译验证；iOS 半边已验证（`1a78f8e`，macOS runner run 38706660284 全绿，登录已声明 `supportsGzip`＝ChatPipeline.swift:178）。BLOCKED 缺 HarmonyOS NEXT 工具链/runner（hvigor、ohpm、DevEco；OpenHarmony SDK 不作数）。
       已代决:按 docs/review/2026-10-30-decisions.md 执行(2026-10-30)——暂缓待 HarmonyOS NEXT 工具链/runner;消费面源码在位,工具链到位首务编译 HarmonyGzip.ts;不降格用 OpenHarmony SDK、不声明未验平台支持
       证据（2026-10-28 巡检，BLOCKED 待 OHOS 工具链）：`hvigorw/hvigor/ohpm/hdc/DevEco` PATH 探测全部 ABSENT；`/opt/ohos-sdk` 仅含 `native/` 切片（apiVersion 12 / 5.0.0.71，无 ets/API 层），无论口径均不覆盖 ArkTS 构建面；`.github/workflows/` 无 ohos/hvigor/ohpm/harmony 引用（matches 0）。消费面源码在位：`apps/harmony/entry/src/main/ets/common/HarmonyGzip.ts`（文件头自记 12 符号已静态核对、编译验证待工具链）+ `AppServices.ts` 装配，`build-profile.json5` 钉 `5.0.0(12)` / runtimeOS HarmonyOS。手动动作：装 HarmonyOS NEXT SDK + hvigor/ohpm（或提供 OHOS runner），到位首务即编译 `HarmonyGzip.ts`。
 
@@ -53,3 +53,8 @@
       **已清（本 commit）+证据**：`todo.md:45` 已改为固定区间 `de5a53a..85c4ee4` 并列全三项提交（`85c4ee4`＋`0aafd03`＋`9381586`）；复跑 `git log --format='%H %s' de5a53a..85c4ee4` 实得同三行，与所记一致。属实已修。
 - [x] 审核发现：新增证据把 `de5a53a..HEAD` 的差异写成 `todo.md` 7 行、5+/2-，实际为 11 行、9+/2-（`9	2	todo.md`）（todo.md:45）
       **已清（本 commit）+证据**：`todo.md:45` 已改为固定区间 `git diff --numstat de5a53a..85c4ee4` 实测 `9	2	todo.md`（9+/2-，stat 头为 `todo.md | 11 +++++++++--`）；复跑输出与所记一致。属实已修。
+
+- [x] 审核发现：决策文档取证断言「`$HOME` 下亦 0」不实，实测 `find "$HOME" -name '*.p8'` 返回 3 个文件（`~/.cargo/registry/.../ring-0.17.14/tests/` 下 ring 测试密钥，非 APNs 凭据但属 `.p8`），表述与仓库事实不符（docs/review/2026-10-30-decisions.md:14）
+      **已清（本 commit）+证据**：复跑 `find "$HOME" -name '*.p8'` 实得 3 文件（`~/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ring-0.17.14/tests/` 下 `ecdsa_test_private_key_p256.p8`、`rsa_test_private_key_2048.p8`、`ed25519_test_private_key.p8`，均为 ring 测试密钥，非 APNs 凭据）；`docs/review/2026-10-30-decisions.md:14` 已改为「`$HOME` 下 3 个 `.p8` 均为 ring 测试密钥(非 APNs 凭据)」。属实已修。
+- [x] 审核发现：决策文档称 iOS 已声明 `supports_gzip`＝`ChatPipeline.swift:178`，但该行 Swift 属性名实为 `supportsGzip`（`request.supportsGzip = true`；`supports_gzip` 仅 proto 字段名），符号名引用与源码不符（docs/review/2026-10-30-decisions.md:38）
+      **已清（本 commit）+证据**：`apps/ios/Sources/ChirpProtocol/ChatPipeline.swift:178` 实测 `request.supportsGzip = true`（`supports_gzip` 仅 proto 字段名，见 `auth.pb.swift:53` `public var supportsGzip`）；`docs/review/2026-10-30-decisions.md:37-38` 已改为「已声明 `supportsGzip`＝`ChatPipeline.swift:178`」。属实已修。

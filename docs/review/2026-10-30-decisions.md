@@ -11,7 +11,7 @@
 **现状**:仓内无待补实现——旗标面与出向 runbook 在位(`services/app/notification/src/main.cc:132-143`
 `--apns-*` 旗标、`docs/guide/deployment.md` 出向段),无默认凭据。BLOCKED:缺 APNs 四项凭据
 (Team ID / Key ID / `.p8` 私钥 / Bundle ID);生产另需出向 h2 反代(`--apns-endpoint` 指向它)。
-取证:`find . -name '*.p8'` = 0,`$HOME` 下亦 0;`docker-compose*.yml` 无任何 `--apns-*`/凭据接线。
+取证:`find . -name '*.p8'` = 0,`$HOME` 下 3 个 `.p8` 均为 ring 测试密钥(非 APNs 凭据);`docker-compose*.yml` 无任何 `--apns-*`/凭据接线。
 
 ### 推荐决策
 **暂缓** — 凭据类不代决;凭据到位后照 runbook 接线真机联调,验收 = 真实投递可达。
@@ -34,7 +34,7 @@
 
 **现状**:消费面源码在位(`apps/harmony/entry/src/main/ets/common/HarmonyGzip.ts` 文件头自记 12 符号
 已静态核对、`AppServices.ts` 装配,`build-profile.json5` 钉 `5.0.0(12)` / runtimeOS HarmonyOS);
-iOS 半边已验证(`1a78f8e`,macOS runner run 38706660284 全绿,已声明 `supports_gzip`
+iOS 半边已验证(`1a78f8e`,macOS runner run 38706660284 全绿,已声明 `supportsGzip`
 = `ChatPipeline.swift:178`)。BLOCKED:缺 HarmonyOS NEXT 工具链(hvigor / ohpm / DevEco;
 OpenHarmony SDK 不作数)。取证:`hvigorw/hvigor/ohpm/hdc/DevEco` PATH 全部 ABSENT;
 `/opt/ohos-sdk` 仅 `native/` 切片(apiVersion 12,无 ets/API 层);`.github/workflows/` 无 ohos 引用。
