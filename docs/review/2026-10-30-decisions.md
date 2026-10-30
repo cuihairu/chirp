@@ -25,6 +25,8 @@
 ### 立即执行动作
 无。此项需用户输入:Team ID / Key ID / `.p8` 私钥 / Bundle ID(生产另需出向 h2 反代)。
 
+> **待用户**: APNs 四项凭据(Team ID / Key ID / `.p8` 私钥 / Bundle ID;生产另需出向 h2 反代)——到位后照 `docs/guide/deployment.md` 出向段接线真机联调;当前无需任何免凭据动作。
+
 ### 明确不做 / 延后什么
 - 不 mock 掉 APNs 当验收、不硬造凭据、不接线生产推送通道。
 
@@ -50,6 +52,8 @@ OpenHarmony SDK 不作数)。取证:`hvigorw/hvigor/ohpm/hdc/DevEco` PATH 全部
 
 ### 立即执行动作
 无。此项需用户输入:安装 HarmonyOS NEXT SDK + hvigor/ohpm,或提供 OHOS runner。
+
+> **待用户**: HarmonyOS NEXT 工具链/runner(hvigor + ohpm + DevEco;OpenHarmony SDK 不作数)——消费面源码在位,工具链到位首务编译 `HarmonyGzip.ts`;当前无需任何免凭据动作。
 
 ### 明确不做 / 延后什么
 - 不把 OpenHarmony SDK 当 HarmonyOS NEXT 验收、不声明鸿蒙 gzip 支持于未验状态。
