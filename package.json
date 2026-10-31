@@ -7,10 +7,10 @@
     "docs:serve": "pnpm -C docs run serve"
   },
   "devDependencies": {
-    "@babel/core": "^7.29.7",
+    "@babel/core": "^8.0.9",
     "@bufbuild/protobuf": "^2.16.0",
     "eslint": "^10.13.0",
     "typescript": "6.0.3",
-    "typescript-eslint": "^8.72.0"
+    "typescript-eslint": "^8.72.1"
   }
 }
