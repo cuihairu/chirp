@@ -26,8 +26,8 @@
     "@chirp/app-protocol": "file:../shared/protocol"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.2",
     "@eslint/js": "^10.0.1",
-    "@testing-library/dom": "^9.3.4",
     "@testing-library/react": "^16.3.3",
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
