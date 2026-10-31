@@ -24,13 +24,13 @@
 
 - [ ] iOS 推送（APNs）真投递——等用户凭据（Team ID / Key ID / .p8 私钥 / Bundle ID，凭据类不代决）；凭据到位后照 `docs/guide/deployment.md` 推送出向段接线（`--push_transport http` + `--apns-*` 旗标）真机联调，验收＝真实投递可达（生产需出向 h2 反代，`--apns-endpoint` 指向它；仓内无待补实现）。BLOCKED 缺 APNs Team ID / Key ID / .p8 私钥 / Bundle ID（及生产出向 h2 反代）。
       已代决:按 docs/review/2026-10-30-decisions.md 执行(2026-10-30)——暂缓待用户四项凭据(凭据类不代决);旗标面/出向 runbook 在位,凭据到位照 runbook 接线真机联调,不 mock APNs 验收
-      证据（2026-10-28 巡检，BLOCKED 待用户凭据）：仓内 `find . -name '*.p8'`＝0，`$HOME` 下亦 0；`docker-compose.yml` 与 `deployments/docker/docker-compose.deploy.yml` 无任何 `--apns-*`/凭据接线（grep matches 0）；`services/app/notification/src/main.cc:132-143` 旗标面与 `docs/guide/deployment.md` 出向 runbook 在位、无默认凭据。手动动作：用户给四项凭据（sandbox 加 `--apns-sandbox`；生产加出向 h2 反代 + `--apns-endpoint` 指向它），再按 runbook 接线真机联调。
+      证据（2026-10-28 巡检，BLOCKED 待用户凭据）：仓内 `find . -name '*.p8'`＝0，`$HOME` 下亦 0；`docker-compose.yml` 与 `deployments/docker/docker-compose.deploy.yml` 无任何 `--apns-*`/凭据接线（grep matches 0）；`services/app/notification/src/main.cc:132-143` 旗标面与 `docs/guide/deployment.md` 出向 runbook 在位、无默认凭据。手动动作：用户给四项凭据（sandbox 加 `--apns-sandbox`；生产加出向 h2 反代 + `--apns-endpoint` 指向它），再按 runbook 接线真机联调。复核（2026-11-01，BLOCKED 仍成立）：`find . -path ./node_modules -prune -o -name '*.p8'`＝0，`~/.ssh`/`~/.config`/`~/workspaces` 等亦 0；`docker-compose.yml`/`deployments/docker/docker-compose.deploy.yml` `grep -c apns`＝0/0；`env | grep -i apns`＝无。凭据未到位，条件未变。
 
 ## 近期批次（2026-10-08 起）
 
 - [ ] 消息压缩·鸿蒙 ArkTS 解压消费面——待 OHOS 工具链（hvigor/ohpm/DevEco，HarmonyOS NEXT 口径——OpenHarmony SDK 不作数）编译验证；iOS 半边已验证（`1a78f8e`，macOS runner run 38706660284 全绿，登录已声明 `supportsGzip`＝ChatPipeline.swift:178）。BLOCKED 缺 HarmonyOS NEXT 工具链/runner（hvigor、ohpm、DevEco；OpenHarmony SDK 不作数）。
       已代决:按 docs/review/2026-10-30-decisions.md 执行(2026-10-30)——暂缓待 HarmonyOS NEXT 工具链/runner;消费面源码在位,工具链到位首务编译 HarmonyGzip.ts;不降格用 OpenHarmony SDK、不声明未验平台支持
-      证据（2026-10-28 巡检，BLOCKED 待 OHOS 工具链）：`hvigorw/hvigor/ohpm/hdc/DevEco` PATH 探测全部 ABSENT；`/opt/ohos-sdk` 仅含 `native/` 切片（apiVersion 12 / 5.0.0.71，无 ets/API 层），无论口径均不覆盖 ArkTS 构建面；`.github/workflows/` 无 ohos/hvigor/ohpm/harmony 引用（matches 0）。消费面源码在位：`apps/harmony/entry/src/main/ets/common/HarmonyGzip.ts`（文件头自记 12 符号已静态核对、编译验证待工具链）+ `AppServices.ts` 装配，`build-profile.json5` 钉 `5.0.0(12)` / runtimeOS HarmonyOS。手动动作：装 HarmonyOS NEXT SDK + hvigor/ohpm（或提供 OHOS runner），到位首务即编译 `HarmonyGzip.ts`。
+      证据（2026-10-28 巡检，BLOCKED 待 OHOS 工具链）：`hvigorw/hvigor/ohpm/hdc/DevEco` PATH 探测全部 ABSENT；`/opt/ohos-sdk` 仅含 `native/` 切片（apiVersion 12 / 5.0.0.71，无 ets/API 层），无论口径均不覆盖 ArkTS 构建面；`.github/workflows/` 无 ohos/hvigor/ohpm/harmony 引用（matches 0）。消费面源码在位：`apps/harmony/entry/src/main/ets/common/HarmonyGzip.ts`（文件头自记 12 符号已静态核对、编译验证待工具链）+ `AppServices.ts` 装配，`build-profile.json5` 钉 `5.0.0(12)` / runtimeOS HarmonyOS。手动动作：装 HarmonyOS NEXT SDK + hvigor/ohpm（或提供 OHOS runner），到位首务即编译 `HarmonyGzip.ts`。复核（2026-11-01，BLOCKED 仍成立）：`hvigorw/hvigor/ohpm/hdc/DevEco` PATH 探测全部 ABSENT；`/opt/ohos-sdk` 仅 `native/`（无 ets/API）；`.github/workflows/` 无 ohos/hvigor/ohpm/harmony 引用（matches 0）。工具链未到位，条件未变。
 
 ## 审核发现
 
