@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="1580" viewBox="0 0 1280 1580" role="img" aria-labelledby="title desc" xml:lang="en">
 <title id="title">Chirp · Two-Plane Communication Architecture</title>
-<desc id="desc">Two independently deployable units: the game plane and the App plane. The game plane is self-sufficient: game clients enter game_chat through game_sdk_gateway (game tokens verified locally), and the game backend injects through game_server_gateway. The App plane is an optional add-on: the companion app enters app_chat (hub) through app_sdk_gateway, app_auth serves only the App plane, app_notification pushes offline, Redis holds session claims and identity bindings. Cross-plane is a native chat capability: game_chat registers into app_chat (whitelist / version negotiation), channel messages flow up, player replies inject down. Both plane SDK gateways forward 2248 search queries to chirp_search (SQLite FTS5) via --search_host. Dashed edges are cross-component forwarding, solid edges are business data.</desc>
+<desc id="desc">Two independently deployable units: the game plane and the App plane. The game plane is self-sufficient: game clients enter game_chat through game_sdk_gateway (game tokens verified locally), and the game backend injects through game_server_gateway. The App plane is an optional add-on: the companion app enters app_chat (hub) through app_sdk_gateway, app_auth serves only the App plane, app_notification pushes offline. Redis is shared by both planes: the game plane holds cross-instance session claims (chirp:sess per edge instance, cross-instance kick), the App plane holds identity bindings, subscriptions, and unread counts. Cross-plane is a native chat capability: game_chat registers into app_chat (whitelist / version negotiation), channel messages flow up, player replies inject down. Both plane SDK gateways forward 2248 search queries to chirp_search (SQLite FTS5) via --search_host. Dashed edges are cross-component forwarding, solid edges are business data.</desc>
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="context-stroke"/></marker></defs>
 <style>text{font-family:Arial,'Noto Sans CJK SC','Microsoft YaHei',sans-serif;fill:#172b4d}.title{font-size:30px;font-weight:700}.name{font-size:22px;font-weight:700}.body{font-size:16px;fill:#435570}.small{font-size:14px;fill:#52647b}.plane{font-size:19px;font-weight:700;fill:#334155}.label{font-size:15px;fill:#435570;paint-order:stroke;stroke:#f8fafc;stroke-width:5px;stroke-linejoin:round}.edge{fill:none;stroke-linejoin:round}.control{stroke-dasharray:7 5}</style>
 <rect width="1280" height="1580" rx="20" fill="#f8fafc"/>
@@ -23,6 +23,8 @@
 <path id="game-client-edge" data-from="game-client" data-to="game-sdk-gateway" d="M320 255 V345" class="edge" style="stroke:#475569;stroke-width:2" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
 <path d="M320 460 V560" fill="none" stroke="#f8fafc" stroke-width="9"/>
 <path id="game-edge-chat" data-from="game-sdk-gateway" data-to="game-chat" d="M320 460 V560" class="edge" style="stroke:#475569;stroke-width:2" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<path d="M560 402 H660 V1110 H720" fill="none" stroke="#f8fafc" stroke-width="9"/>
+<path id="game-claim-redis" data-from="game-sdk-gateway" data-to="redis" d="M560 402 H660 V1110 H720" class="edge control" style="stroke:#a855f7;stroke-width:2" marker-end="url(#arrow)"/>
 <path d="M320 1055 V965" fill="none" stroke="#f8fafc" stroke-width="9"/>
 <path id="backend-server-gateway" data-from="game-backend" data-to="game-server-gateway" d="M320 1055 V965" class="edge" style="stroke:#475569;stroke-width:2" marker-end="url(#arrow)"/>
 <path d="M320 850 V760" fill="none" stroke="#f8fafc" stroke-width="9"/>
@@ -91,7 +93,7 @@
 <text x="992" y="939" class="body" text-anchor="start">separate process · vendor constraints</text></g>
 <g id="redis" data-node="redis"><rect x="720" y="1055" width="480" height="95" rx="14" fill="#fdf2f8" stroke="#f5a8c8" stroke-width="1.5"/>
 <text x="742" y="1090" class="name" text-anchor="start">Redis</text>
-<text x="742" y="1119" class="body" text-anchor="start">session claims · identity bindings / subscriptions / unread counts</text></g>
+<text x="742" y="1119" class="body" text-anchor="start">session claims (both planes) · identity bindings / subscriptions / unread counts</text></g>
 
 <g id="chirp-search" data-node="chirp-search"><rect x="340" y="1310" width="600" height="110" rx="14" fill="#edf5ff" stroke="#93b9e3" stroke-width="1.5"/>
 <text x="362" y="1346" class="name" text-anchor="start">chirp_search</text>
@@ -108,6 +110,7 @@
 <text x="1115" y="812" class="label" text-anchor="start" style="fill:#c2410c">offline push trigger</text>
 <text transform="translate(690 900) rotate(-90)" class="label" text-anchor="start" style="fill:#7c3aed">bindings / subscriptions / unread</text>
 <text x="848" y="1015" class="label" text-anchor="start">session claim</text>
+<text transform="translate(648 980) rotate(-90)" class="label" text-anchor="start" style="fill:#a855f7">cross-instance session claim (game)</text>
 <text x="675" y="622" class="label" text-anchor="middle" style="fill:#2563eb">registration + channel messages up →</text>
 <text x="675" y="742" class="label" text-anchor="middle" style="fill:#087f5b">← player reply injection down</text>
 <text transform="translate(50 800) rotate(-90)" class="label" text-anchor="start">2248 → search</text>
