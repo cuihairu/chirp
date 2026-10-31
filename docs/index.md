@@ -33,6 +33,8 @@ features:
 footer: Apache-2.0 License | Copyright © 2024-Present Chirp Project
 ---
 
+![Chirp two-plane communication architecture](/images/architecture-en.svg)
+
 ## Current positioning
 
 Chirp today is "a runnable core communication skeleton + a batch of experimental extensions", not a product suite in which every directory is equally mature.

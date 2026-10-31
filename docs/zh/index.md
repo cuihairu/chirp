@@ -33,6 +33,8 @@ features:
 footer: Apache-2.0 许可证 | Copyright © 2024-Present Chirp Project
 ---
 
+![Chirp 双平面通信架构](/images/architecture-zh.svg)
+
 ## 当前定位
 
 Chirp 目前是“可运行的核心通信骨架 + 一批实验性扩展”，不是所有目录都同等成熟的完整产品套件。

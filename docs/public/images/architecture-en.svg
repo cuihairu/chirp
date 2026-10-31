@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="1580" viewBox="0 0 1280 1580" role="img" aria-labelledby="title desc" xml:lang="en">
+<title id="title">Chirp · Two-Plane Communication Architecture</title>
+<desc id="desc">Two independently deployable units: the game plane and the App plane. The game plane is self-sufficient: game clients enter game_chat through game_sdk_gateway (game tokens verified locally), and the game backend injects through game_server_gateway. The App plane is an optional add-on: the companion app enters app_chat (hub) through app_sdk_gateway, app_auth serves only the App plane, app_notification pushes offline. Redis is shared by both planes: the game plane holds cross-instance session claims (chirp:sess per edge instance, cross-instance kick), the App plane holds identity bindings, subscriptions, and unread counts. Cross-plane is a native chat capability: game_chat registers into app_chat (whitelist / version negotiation), channel messages flow up, player replies inject down. Both plane SDK gateways forward 2248 search queries to chirp_search (SQLite FTS5) via --search_host. Dashed edges are cross-component forwarding, solid edges are business data.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="context-stroke"/></marker></defs>
+<style>text{font-family:Arial,'Noto Sans CJK SC','Microsoft YaHei',sans-serif;fill:#172b4d}.title{font-size:30px;font-weight:700}.name{font-size:22px;font-weight:700}.body{font-size:16px;fill:#435570}.small{font-size:14px;fill:#52647b}.plane{font-size:19px;font-weight:700;fill:#334155}.label{font-size:15px;fill:#435570;paint-order:stroke;stroke:#f8fafc;stroke-width:5px;stroke-linejoin:round}.edge{fill:none;stroke-linejoin:round}.control{stroke-dasharray:7 5}</style>
+<rect width="1280" height="1580" rx="20" fill="#f8fafc"/>
+<text x="40" y="48" class="title" text-anchor="start">Chirp · Two-Plane Communication Architecture</text>
+<text x="40" y="80" class="body" text-anchor="start">Game plane deploys independently · App plane is an optional add-on · Cross-plane is a native chat capability (registration / whitelist / version negotiation)</text>
+
+<g id="game-plane-scope" data-node="game-plane-scope"><rect x="40" y="110" width="560" height="1130" rx="18" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="8 6"/>
+<text x="62" y="146" class="plane" text-anchor="start">Game plane · independent deployment unit</text>
+<text x="62" y="170" class="small" text-anchor="start">depends on no App-plane component (authentication included)</text></g>
+<g id="app-plane-scope" data-node="app-plane-scope"><rect x="680" y="110" width="560" height="1130" rx="18" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="8 6"/>
+<text x="702" y="146" class="plane" text-anchor="start">App plane · optional add-on</text>
+<text x="702" y="170" class="small" text-anchor="start">deployed only when a companion app exists</text></g>
+
+<path d="M80 415 H60 V1350 H360" fill="none" stroke="#f8fafc" stroke-width="9"/>
+<path id="game-search-bridge" data-from="game-sdk-gateway" data-to="chirp-search" d="M80 415 H60 V1350 H360" class="edge control" style="stroke:#64748b;stroke-width:2" marker-end="url(#arrow)"/>
+<path d="M1200 415 H1220 V1350 H920" fill="none" stroke="#f8fafc" stroke-width="9"/>
+<path id="app-search-bridge" data-from="app-sdk-gateway" data-to="chirp-search" d="M1200 415 H1220 V1350 H920" class="edge control" style="stroke:#64748b;stroke-width:2" marker-end="url(#arrow)"/>
+
+<path d="M320 255 V345" fill="none" stroke="#f8fafc" stroke-width="9"/>
+<path id="game-client-edge" data-from="game-client" data-to="game-sdk-gateway" d="M320 255 V345" class="edge" style="stroke:#475569;stroke-width:2" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<path d="M320 460 V560" fill="none" stroke="#f8fafc" stroke-width="9"/>
+<path id="game-edge-chat" data-from="game-sdk-gateway" data-to="game-chat" d="M320 460 V560" class="edge" style="stroke:#475569;stroke-width:2" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<path d="M560 402 H660 V1110 H720" fill="none" stroke="#f8fafc" stroke-width="9"/>
+<path id="game-claim-redis" data-from="game-sdk-gateway" data-to="redis" d="M560 402 H660 V1110 H720" class="edge control" style="stroke:#a855f7;stroke-width:2" marker-end="url(#arrow)"/>
+<path d="M320 1055 V965" fill="none" stroke="#f8fafc" stroke-width="9"/>
+<path id="backend-server-gateway" data-from="game-backend" data-to="game-server-gateway" d="M320 1055 V965" class="edge" style="stroke:#475569;stroke-width:2" marker-end="url(#arrow)"/>
+<path d="M320 850 V760" fill="none" stroke="#f8fafc" stroke-width="9"/>
+<path id="server-gateway-inject" data-from="game-server-gateway" data-to="game-chat" d="M320 850 V760" class="edge" style="stroke:#c2410c;stroke-width:2" marker-end="url(#arrow)"/>
+
+<path d="M960 255 V345" fill="none" stroke="#f8fafc" stroke-width="9"/>
+<path id="app-client-edge" data-from="app-client" data-to="app-sdk-gateway" d="M960 255 V345" class="edge" style="stroke:#475569;stroke-width:2" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<path d="M1000 460 V560" fill="none" stroke="#f8fafc" stroke-width="9"/>
+<path id="app-edge-chat" data-from="app-sdk-gateway" data-to="app-chat" d="M1000 460 V560" class="edge" style="stroke:#475569;stroke-width:2" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<path d="M760 460 V850" fill="none" stroke="#f8fafc" stroke-width="9"/>
+<path id="app-edge-auth" data-from="app-sdk-gateway" data-to="app-auth" d="M760 460 V850" class="edge" style="stroke:#475569;stroke-width:2" marker-end="url(#arrow)"/>
+<path d="M1100 760 V850" fill="none" stroke="#f8fafc" stroke-width="9"/>
+<path id="chat-notify" data-from="app-chat" data-to="app-notification" d="M1100 760 V850" class="edge" style="stroke:#c2410c;stroke-width:2" marker-end="url(#arrow)"/>
+<path d="M790 700 H700 V1105 H730" fill="none" stroke="#f8fafc" stroke-width="9"/>
+<path id="chat-redis" data-from="app-chat" data-to="redis" d="M790 700 H700 V1105 H730" class="edge" style="stroke:#7c3aed;stroke-width:2" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<path d="M835 965 V1055" fill="none" stroke="#f8fafc" stroke-width="9"/>
+<path id="auth-redis" data-from="app-auth" data-to="redis" d="M835 965 V1055" class="edge" style="stroke:#475569;stroke-width:2" marker-end="url(#arrow)"/>
+
+<path d="M560 635 H790" fill="none" stroke="#f8fafc" stroke-width="9"/>
+<path id="peer-register" data-from="game-chat" data-to="app-chat" d="M560 635 H790" class="edge" style="stroke:#2563eb;stroke-width:3" marker-end="url(#arrow)"/>
+<path d="M790 705 H560" fill="none" stroke="#f8fafc" stroke-width="9"/>
+<path id="peer-inject" data-from="app-chat" data-to="game-chat" d="M790 705 H560" class="edge" style="stroke:#087f5b;stroke-width:3" marker-end="url(#arrow)"/>
+
+<g id="game-client" data-node="game-client"><rect x="80" y="165" width="480" height="90" rx="14" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
+<text x="102" y="199" class="name" text-anchor="start">Game client</text>
+<text x="102" y="228" class="body" text-anchor="start">Game SDKs (Unity / Unreal / Cocos / Laya / Godot / WeChat Mini Game)</text></g>
+<g id="game-sdk-gateway" data-node="game-sdk-gateway"><rect x="80" y="345" width="480" height="115" rx="14" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="102" y="380" class="name" text-anchor="start">game_sdk_gateway (edge)</text>
+<text x="102" y="409" class="body" text-anchor="start">TCP 5000 / WS 5001 · stateless connection management</text>
+<text x="102" y="434" class="body" text-anchor="start">login · heartbeat · session binding · optional Redis cross-instance kick</text></g>
+<g id="game-chat" data-node="game-chat"><rect x="80" y="560" width="480" height="200" rx="14" fill="#eef8f5" stroke="#86c9b3" stroke-width="1.5"/>
+<text x="102" y="596" class="name" text-anchor="start">game_chat (spoke)</text>
+<text x="102" y="626" class="body" text-anchor="start">verifies game tokens locally (--token_secret) · no external auth service</text>
+<text x="102" y="653" class="body" text-anchor="start">channels · history · offline queue · single writer</text>
+<text x="102" y="680" class="body" text-anchor="start">→ registers into app_chat (hub): whitelist / version negotiation</text>
+<text x="102" y="707" class="body" text-anchor="start">→ channel messages up · ← player reply injection</text>
+<text x="102" y="734" class="small" text-anchor="start">same chirp_chat binary, role chosen by startup flags</text></g>
+<g id="game-server-gateway" data-node="game-server-gateway"><rect x="80" y="850" width="480" height="115" rx="14" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="102" y="885" class="name" text-anchor="start">game_server_gateway (optional)</text>
+<text x="102" y="914" class="body" text-anchor="start">game-backend outbound connection · service_id + secret</text>
+<text x="102" y="939" class="body" text-anchor="start">message injection · event delivery · offline queue with redelivery</text></g>
+<g id="game-backend" data-node="game-backend"><rect x="80" y="1055" width="480" height="95" rx="14" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
+<text x="102" y="1090" class="name" text-anchor="start">Game backend</text>
+<text x="102" y="1119" class="body" text-anchor="start">issues game-scoped HS256 JWT · service credentials</text></g>
+
+<g id="app-client" data-node="app-client"><rect x="720" y="165" width="480" height="90" rx="14" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
+<text x="742" y="199" class="name" text-anchor="start">Companion App</text>
+<text x="742" y="228" class="body" text-anchor="start">WebSocket / TLS · platform user token</text></g>
+<g id="app-sdk-gateway" data-node="app-sdk-gateway"><rect x="720" y="345" width="480" height="115" rx="14" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="742" y="380" class="name" text-anchor="start">app_sdk_gateway (edge)</text>
+<text x="742" y="409" class="body" text-anchor="start">WS-first · optional TLS · stateless connection management</text>
+<text x="742" y="434" class="body" text-anchor="start">mobile-tuned heartbeats · session binding</text></g>
+<g id="app-chat" data-node="app-chat"><rect x="790" y="560" width="410" height="200" rx="14" fill="#eef2ff" stroke="#a5b4fc" stroke-width="1.5"/>
+<text x="812" y="596" class="name" text-anchor="start">app_chat (hub)</text>
+<text x="812" y="626" class="body" text-anchor="start">aggregates cross-game channels · injects private-message copies</text>
+<text x="812" y="653" class="body" text-anchor="start">identity binding player_id ↔ game_user_id</text>
+<text x="812" y="680" class="body" text-anchor="start">whitelist --allowed_peers · version negotiation</text>
+<text x="812" y="707" class="small" text-anchor="start">cross-game channels auto-prefixed with {game_id}:</text></g>
+<g id="app-auth" data-node="app-auth"><rect x="720" y="850" width="230" height="115" rx="14" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="742" y="885" class="name" text-anchor="start">app_auth</text>
+<text x="742" y="914" class="body" text-anchor="start">platform user tokens</text>
+<text x="742" y="939" class="body" text-anchor="start">serves the App plane only</text></g>
+<g id="app-notification" data-node="app-notification"><rect x="970" y="850" width="230" height="115" rx="14" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="992" y="885" class="name" text-anchor="start">app_notification</text>
+<text x="992" y="914" class="body" text-anchor="start">APNs / FCM offline push</text>
+<text x="992" y="939" class="body" text-anchor="start">separate process · vendor constraints</text></g>
+<g id="redis" data-node="redis"><rect x="720" y="1055" width="480" height="95" rx="14" fill="#fdf2f8" stroke="#f5a8c8" stroke-width="1.5"/>
+<text x="742" y="1090" class="name" text-anchor="start">Redis</text>
+<text x="742" y="1119" class="body" text-anchor="start">session claims (both planes) · identity bindings / subscriptions / unread counts</text></g>
+
+<g id="chirp-search" data-node="chirp-search"><rect x="340" y="1310" width="600" height="110" rx="14" fill="#edf5ff" stroke="#93b9e3" stroke-width="1.5"/>
+<text x="362" y="1346" class="name" text-anchor="start">chirp_search</text>
+<text x="362" y="1375" class="body" text-anchor="start">TCP 5007 · SQLite FTS5 · message search 2248 / 2249 composite-cursor pagination</text>
+<text x="362" y="1400" class="small" text-anchor="start">both SDK gateways forward via --search_host · degrades to SERVER_UNAVAILABLE without kicking the client</text></g>
+
+<text x="335" y="300" class="label" text-anchor="start">TCP / WS</text>
+<text x="335" y="515" class="label" text-anchor="start">per-client pipe · login replay</text>
+<text x="335" y="1005" class="label" text-anchor="start" style="fill:#475569">↑ outbound · service credentials</text>
+<text x="335" y="800" class="label" text-anchor="start" style="fill:#c2410c">inject messages / events ↑</text>
+<text x="1015" y="300" class="label" text-anchor="start">WS / TLS</text>
+<text x="1015" y="515" class="label" text-anchor="start">per-client pipe</text>
+<text transform="translate(748 660) rotate(-90)" class="label" text-anchor="start" style="fill:#475569">LOGIN_REQ → app_auth verify</text>
+<text x="1115" y="812" class="label" text-anchor="start" style="fill:#c2410c">offline push trigger</text>
+<text transform="translate(690 900) rotate(-90)" class="label" text-anchor="start" style="fill:#7c3aed">bindings / subscriptions / unread</text>
+<text x="848" y="1015" class="label" text-anchor="start">session claim</text>
+<text transform="translate(648 980) rotate(-90)" class="label" text-anchor="start" style="fill:#a855f7">cross-instance session claim (game)</text>
+<text x="675" y="622" class="label" text-anchor="middle" style="fill:#2563eb">registration + channel messages up →</text>
+<text x="675" y="742" class="label" text-anchor="middle" style="fill:#087f5b">← player reply injection down</text>
+<text transform="translate(50 800) rotate(-90)" class="label" text-anchor="start">2248 → search</text>
+<text transform="translate(1232 800) rotate(-90)" class="label" text-anchor="start">2248 → search</text>
+<text x="60" y="1300" class="small" text-anchor="start">Dashed: cross-component forwarding / control · Solid: business data · Plain crossing is not a connection</text>
+<text x="60" y="1470" class="small" text-anchor="start">Experimental: chirp_social 8000/8001 · chirp_voice 9000/9001 · chirp_party 7500/7501 · chirp_npc_dialog (no listening port)</text>
+<text x="60" y="1495" class="small" text-anchor="start">Repo layering: proto/ · libs/{common,network} · services/{shared/chat,game,app,search,social,voice,party} · sdks/{core,go,ts,unity,unreal} · apps/{cli_client,load_tester,web_companion}</text>
+<text x="60" y="1520" class="small" text-anchor="start">The same chirp_chat binary deploys as game_chat / app_chat / distributed form; each cross-plane link is one persistent connection per instance, accepted concurrently by the hub.</text>
+</svg>
