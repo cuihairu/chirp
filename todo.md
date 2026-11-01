@@ -92,3 +92,5 @@
 - [x] 审核发现：`0bac7926..HEAD` 是随 HEAD 漂移的裸区间，当前 `HEAD`=`819016a` 时实含 5 提交（新增当前 HEAD `819016a`），而 `todo.md:89/:91` 证据按 `d1a6c9a` 时点列为 4 提交，且区间 stat 从 `todo.md | 10 +++++++---` 漂移为 `12 +++++++++---`，证据未钉定提交区间（`819016a:todo.md:89`、`819016a:todo.md:91`）
       **已清（本 commit）+证据**：属实。`git log --format='%h %s' 0bac7926..819016a` 实得 `819016a`/`d1a6c9a`/`f56e3cf`/`1b13549`/`09b7702` 5 行；`git diff --stat 0bac7926..819016a -- todo.md`＝`12 +++++++++---`。已修：行 89/91 的审核时点区间改为固定 `0bac7926..d1a6c9a`，该区间复测实得 4 提交且 `todo.md`＝`10 +++++++---`（7+/3-），不再随当前 HEAD 漂移。
       **全量测试（本 commit）+证据**：`pnpm -r test`＝apps/shared/protocol 139/139、apps/web_companion 355/355、sdks/ts 149/149（合计 643 pass）；`pnpm -r typecheck` 三包 done；`pnpm -r build` web_companion 通过；apps/desktop `pnpm test`＝62/62、`pnpm typecheck` 通过；apps/admin_dashboard `pnpm test`＝25/25；CMake ctest＝45/45 通过（`ctest --test-dir /home/cui/.scratch/chirp-build --output-on-failure -j$(nproc)`，Total Tests 45，100% passed）。修复 commit：`836b523`。
+
+- [ ] **UI-AUDIT · P2 · 界面审核(impeccable 流程)**:原生桌面界面此前不在 web 界面审核范围,补审——按 impeccable 审计(层级/排版/对比度 a11y/布局/边界态),报告+截图入 docs/review/,坏损当场修。
