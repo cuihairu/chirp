@@ -1,6 +1,8 @@
 [English](README.md) | [中文](README.zh.md)
 
-<p align="center"><a href="https://chirp.cuihairu.sitehttps://chirp.cuihairu.site/"><img src="https://img.shields.io/badge/docs-docs-blue" alt="docs"></a> <a href="https://chirp.cuihairu.site/"><img src="https://img.shields.io/badge/docs-docs-blue" alt="docs"></a></p>
+<p align="center">
+  <img src="docs/public/logo.svg" width="64" height="64" alt="Chirp Logo"> <a href="https://cuihairu.github.io/chirp//"><img src="https://img.shields.io/badge/docs-blue" alt="docs"></a>
+</p>
 
 <h1 align="center">chirp</h1>
 
