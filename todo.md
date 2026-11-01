@@ -109,3 +109,16 @@
       **已清（无待改，被后续提交取代）+证据**：属实。`git show 9d8e200:README.md | sed -n 3p` 实得 `<img src="docs/public/logo.svg" width="64" height="64" alt="Chirp Logo">`（保留），`git show 8e86873:README.md | sed -n 3p` 实得徽章行无 logo 图（仅两个 docs 徽章），移除属实。logo 已由下一提交 `709d98a` 恢复：`git show 709d98a:README.md | sed -n 3,4p` 实得 `  <img src="docs/public/logo.svg" width="64" height="64" alt="Chirp Logo"> <a href="...">`；当前 HEAD README.md:4 亦保留 logo。`docs/public/logo.svg` 在位（`ls docs/public/logo.svg`）。
 - [x] 审核发现：`709d98a` 的 docs 徽章 `href` 尾部多了一个 `/`，形成 `https://cuihairu.github.io/chirp//`（README.md:4）、`https://cuihairu.github.io/chirp/zh//`（README.zh.md:4），URL 冗余双斜杠、链接表述不规范（浏览器虽会归一化，但不应提交此类 URL）（README.md:4、README.zh.md:4）
       **已清（本 commit）+证据**：属实。修复前 `README.md:4` href 实为 `https://cuihairu.github.io/chirp//`、`README.zh.md:4` 实为 `https://cuihairu.github.io/chirp/zh//`（双斜杠，`rg -n 'github\\.io/chirp//'` 命中 2）。已修：`README.md:4`→`https://cuihairu.github.io/chirp/`、`README.zh.md:4`→`https://cuihairu.github.io/chirp/zh/`（各去冗余 `/`）。复测 `rg -n 'github\\.io/chirp//|github\\.io/chirp/zh//' README.md README.zh.md`＝0；`sed -n 4p README.md` 与 `sed -n 4p README.zh.md` 各仅一个尾斜杠。
+
+## 代码深审发现（2026-11-01，requesting-code-review 流程，全部 P3 防御缺口，未修）
+
+- [ ] 代码深审 P3-1：JWT 签名密钥默认值 `change_this_secret_in_production` 是潜在隐患——现两个生产入口均 `RequireArg` 门禁（缺参拒启），默认值实际是死代码，但未来直建 `Config` 的路径会静默用已知密钥（services/app/auth/src/auth_service.h:30）
+      证据（2026-11-01）：`main_enhanced.cc:361` 与 `main.cc:183` 均 `RequireArg(argc,argv,"--jwt_secret",...)`；`libs/common/required_arg.h:13-33` 缺参即 false 并报「no built-in default」；全仓 `AuthService::Config{}` 仅 `main_enhanced.cc:354`（门禁前）与 tests/unit/*。修法：默认改空串使误用快速失败。未修。
+- [ ] 代码深审 P3-2：benchmark 导出器把 operator 控制的表名无校验拼进 SQL（tools/benchmark/chat_mysql_exporter.cc:117）
+      证据（2026-11-01）：`WriteInsert`/`WriteSchema` 直接拼 `table`（:100/:117），来源 `GetArg(--history_table,"chat_messages")`（:197-198）——离线导出工具、operator 自跑 .sql，非不可信输入、非服务端。修法：校验 `[A-Za-z0-9_]+`。未修。
+- [ ] 代码深审 P3-3：HTTP 响应 Content-Length 数字解析无溢出守卫，超长数字串使 size_t 回绕，可绕过 `max_body_bytes` 检查并驱动错误 `buf.resize`（services/app/notification/src/http_push_transport.cc:196-203）
+      证据（2026-11-01）：`parsed = parsed*10 + c` 无上界检查；回绕值可能 < `max_body_bytes` 过 :458 检查，:467 `buf.resize(content_length)` 截断/悬至 deadline。仅畸形/恶意 provider 端点（含 operator 配的 `--apns-endpoint` 反代）可达，默认配置不可达。修法：parsed>max_body 即停。未修。
+- [ ] 代码深审 P3-4：DNS 解析在连接 deadline 之外——`resolver.resolve`（:309）是阻塞同步调用，先于 deadline timer（:318），慢解析不受 `connect_timeout_ms` 约束（services/app/notification/src/http_push_transport.cc:309）
+      证据（2026-11-01）：`connect_timeout_ms` 仅覆盖 TCP 连接与 TLS 握手，不覆盖解析。修法：async_resolve 或并入 deadline。未修。
+- [ ] 代码深审 P3-5：设备存储 `registered_at` 用 `strtoll` 解析但未校验 endptr/errno，坏行静默归 0（services/app/notification/src/device_store.h:169）
+      证据（2026-11-01）：`std::strtoll(cells[5].c_str(), nullptr, 10)` 双参数形式，无 endptr/errno 检查；仅手工改 `--device_store_file` 快照可达（服务端原子 tmp+rename 写入）。修法：带 endptr/errno 校验，失败按现有 Warn 跳过。未修。
