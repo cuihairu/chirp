@@ -1,7 +1,7 @@
 [English](README.md) | [中文](README.zh.md)
 
 <p align="center">
-  <img src="docs/public/logo.svg" width="64" height="64" alt="Chirp Logo"> <a href="https://cuihairu.github.io/chirp//"><img src="https://img.shields.io/badge/docs-blue" alt="docs"></a>
+  <img src="docs/public/logo.svg" width="64" height="64" alt="Chirp Logo"> <a href="https://cuihairu.github.io/chirp/"><img src="https://img.shields.io/badge/docs-blue" alt="docs"></a>
 </p>
 
 <h1 align="center">chirp</h1>
