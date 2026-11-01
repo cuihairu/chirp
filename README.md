@@ -1,8 +1,6 @@
 [English](README.md) | [中文](README.zh.md)
 
-<p align="center">
-  <img src="docs/public/logo.svg" width="64" height="64" alt="Chirp Logo">
-</p>
+<p align="center"><img src="docs/public/logo.svg" width="64" height="64" alt="Chirp Logo"> <a href="https://chirp.cuihairu.site/"><img src="https://img.shields.io/badge/docs-docs-blue" alt="docs"></a></p>
 
 <h1 align="center">chirp</h1>
 
