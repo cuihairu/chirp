@@ -700,6 +700,7 @@ TEST_F(AuthServiceTest, LoginFailsWhenSessionLimitReachedWithoutKick) {
 
 TEST_F(AuthServiceTest, LoginKicksPreviousSessionsWhenConfigured) {
   AuthService::Config cfg;
+  cfg.jwt_secret = "test_jwt_secret";
   cfg.redis_config.port = fake_->port();
   cfg.rate_limiter_config.max_login_attempts_per_minute = 100;
   cfg.rate_limiter_config.max_login_attempts_per_hour = 100;
@@ -919,10 +920,21 @@ TEST_F(AuthServiceTest, InitializeFailsWhenSessionStoreHasNoConnection) {
 
 TEST_F(AuthServiceTest, InitializeContinuesWhenRedisIsDown) {
   AuthService::Config cfg;
+  cfg.jwt_secret = "test_jwt_secret";
   cfg.redis_config.port = 1;  // nothing listens there
   AuthService svc(io_, cfg);
   fake_mysql::PushRows({{"users"}});
   EXPECT_TRUE(svc.Initialize());  // Redis is optional; rate limiting degrades
+}
+
+TEST_F(AuthServiceTest, InitializeFailsWhenJwtSecretEmpty) {
+  // Config{} now defaults to an empty jwt_secret (no built-in default by
+  // design); Initialize must reject it up front instead of silently signing
+  // tokens with a shared known key on a path that bypassed RequireArg.
+  AuthService::Config cfg;  // jwt_secret left empty on purpose
+  cfg.redis_config.port = 1;  // nothing listens there; guard fires before stores
+  AuthService svc(io_, cfg);
+  EXPECT_FALSE(svc.Initialize());
 }
 
 TEST_F(AuthServiceTest, GetUserSessionsMapsStoreRows) {

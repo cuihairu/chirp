@@ -114,8 +114,9 @@
 
 ## 代码深审发现（2026-11-01，requesting-code-review 流程，全部 P3 防御缺口，未修）
 
-- [ ] 代码深审 P3-1：JWT 签名密钥默认值 `change_this_secret_in_production` 是潜在隐患——现两个生产入口均 `RequireArg` 门禁（缺参拒启），默认值实际是死代码，但未来直建 `Config` 的路径会静默用已知密钥（services/app/auth/src/auth_service.h:30）
+- [x] 代码深审 P3-1：JWT 签名密钥默认值 `change_this_secret_in_production` 是潜在隐患——现两个生产入口均 `RequireArg` 门禁（缺参拒启），默认值实际是死代码，但未来直建 `Config` 的路径会静默用已知密钥（services/app/auth/src/auth_service.h:30）
       证据（2026-11-01）：`main_enhanced.cc:361` 与 `main.cc:183` 均 `RequireArg(argc,argv,"--jwt_secret",...)`；`libs/common/required_arg.h:13-33` 缺参即 false 并报「no built-in default」；全仓 `AuthService::Config{}` 仅 `main_enhanced.cc:354`（门禁前）与 tests/unit/*。修法：默认改空串使误用快速失败。未修。
+      **已清（本 commit）+证据（2026-11-03）**：`auth_service.h:30` 默认 `"change_this_secret_in_production"`→空串（空默认仅直建 `Config{}` 会取到；`JwtSignHS256` 空密钥仍可算签名，故仅改默认不足），`auth_service.cc:Initialize()` 首部新增空 secret 守卫（Error 日志+return false，早于任何 store 探测）；生产入口不受影响——`main_enhanced.cc:361`/`main.cc:183` RequireArg 拒空值，`main_enhanced.cc:433` 已处理 Initialize false→return 1。回归：`tests/unit/auth_service_test.cc` 新增 `InitializeFailsWhenJwtSecretEmpty`（默认 Config 空 secret→Initialize false）；两处先前依赖旧默认的测试（`LoginKicksPreviousSessionsWhenConfigured`、`InitializeContinuesWhenRedisIsDown`）补显式 `cfg.jwt_secret`。验证：auth_service_tests 47/47、auth_enhanced_session_tests 11/11、auth_basic_session_tests 14/14 全绿。
 - [ ] 代码深审 P3-2：benchmark 导出器把 operator 控制的表名无校验拼进 SQL（tools/benchmark/chat_mysql_exporter.cc:117）
       证据（2026-11-01）：`WriteInsert`/`WriteSchema` 直接拼 `table`（:100/:117），来源 `GetArg(--history_table,"chat_messages")`（:197-198）——离线导出工具、operator 自跑 .sql，非不可信输入、非服务端。修法：校验 `[A-Za-z0-9_]+`。未修。
 - [ ] 代码深审 P3-3：HTTP 响应 Content-Length 数字解析无溢出守卫，超长数字串使 size_t 回绕，可绕过 `max_body_bytes` 检查并驱动错误 `buf.resize`（services/app/notification/src/http_push_transport.cc:196-203）

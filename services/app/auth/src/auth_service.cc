@@ -43,6 +43,12 @@ AuthService::~AuthService() {
 bool AuthService::Initialize() {
   Logger::Instance().Info("Initializing AuthService...");
 
+  if (config_.jwt_secret.empty()) {
+    Logger::Instance().Error(
+        "jwt_secret is empty: pass an explicit --jwt_secret (no built-in default)");
+    return false;
+  }
+
   if (!user_store_->Initialize()) {
     Logger::Instance().Error("Failed to initialize UserStore");
     return false;

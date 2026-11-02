@@ -27,7 +27,11 @@ public:
   /// @brief Configuration
   struct Config {
     // JWT settings
-    std::string jwt_secret = "change_this_secret_in_production";
+    // Empty by default: production entries gate this via RequireArg (no built-in
+    // default by design); a path that constructs Config{} directly must fail the
+    // Initialize() empty-secret guard instead of silently signing with a known
+    // shared secret.
+    std::string jwt_secret;
     int64_t access_token_ttl_seconds = 3600;      // 1 hour
     int64_t refresh_token_ttl_seconds = 2592000;  // 30 days
     int64_t session_ttl_seconds = 86400;          // 24 hours
