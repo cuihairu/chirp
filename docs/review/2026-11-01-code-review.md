@@ -1,8 +1,9 @@
 # Code Deep Review — 2026-11-01
 
 > Scope: full-repo security static scan + hidden-bug hunt + quality gate (requesting-code-review process, steps ①–⑥).
-> Coverage note: the C++ core is gated in CI by `-Werror` (compiler-as-bug-hunter) and a 100% branch coverage gate
-> (`scripts/run_coverage.sh`, FAIL_UNDER=100) plus TSan-instrumented tests for the transport seam; the static scan and
+> Coverage note: the C++ core is gated in CI by `-Werror` (compiler-as-bug-hunter) and a 100% per-package line-coverage
+> gate (`scripts/run_coverage.sh`, FAIL_UNDER=100); branch/function coverage is reported as informational and is not
+> gated. The transport seam is covered by the same unit tests but is not TSan-instrumented; the static scan and
 > targeted deep reads below are the *additional* human pass on top of that automated surface. No `compile_commands.json`
 > existed (the coverage build tree had been cleaned), so `clang-tidy` could not be driven reliably; the bug hunt used
 > targeted reads of the highest-risk/newest code instead. This is stated so the coverage is not overstated.
@@ -102,6 +103,13 @@ secret was traced to its gates (below). No P0/P1/P2; three P3 robustness gaps in
   service under the registry lock with an atomic tmp+rename, so corruption is not expected in normal operation.
 - **Fix (low)**: parse with `endptr`/`errno` checks and skip the row on failure (the row is already `Warn`-logged on
   other decode failures).
+
+## ④ Findings review & severity
+
+The five findings below were reviewed as low-risk defensive gaps rather than live vulnerabilities: production
+entry-point gates, operator-only CLI input, or corrupted local snapshot input bound each reachability claim. They were
+recorded as P3 items in `todo.md` for bounded hardening; no P0/P1/P2 finding warranted an immediate source change in
+this review.
 
 ## ⑤ P0/P1 fix decision
 
