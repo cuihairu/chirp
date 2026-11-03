@@ -310,36 +310,56 @@ asio::ip::tcp::socket ConnectTcpWithDeadline(asio::io_context& io,
                                              std::uint16_t port,
                                              int timeout_ms,
                                              std::error_code* ec) {
-  asio::ip::tcp::resolver resolver(io);
-  const auto endpoints = resolver.resolve(host, std::to_string(port), *ec);
-  if (*ec) {
-    return asio::ip::tcp::socket(io);
-  }
-
+  auto resolver = std::make_shared<asio::ip::tcp::resolver>(io);
   auto socket = std::make_shared<asio::ip::tcp::socket>(io);
   auto timer = std::make_shared<asio::steady_timer>(io);
+  auto endpoints = std::make_shared<asio::ip::tcp::resolver::results_type>();
   bool settled = false;
-  std::error_code connect_ec;
+  bool resolving = true;
+  std::error_code phase_ec;
+  // A single deadline covers both name resolution and the TCP connect so a
+  // slow resolver can never outlive connect_timeout_ms.
   timer->expires_after(std::chrono::milliseconds(timeout_ms));
   timer->async_wait([&](const std::error_code& wait_ec) {
-    if (!wait_ec) {  // deadline: abort the connect
+    if (!wait_ec) {  // deadline: abort whichever phase is in flight
       std::error_code cancel_ec;
-      socket->cancel(cancel_ec);
+      if (resolving) {
+        resolver->cancel();
+      } else {
+        socket->cancel(cancel_ec);
+      }
     }
   });
 
-  asio::async_connect(*socket, endpoints,
-                      [&, socket, timer](const std::error_code& e,
-                                         const asio::ip::tcp::endpoint&) {
-                        settled = true;
-                        connect_ec = e;
-                        timer->cancel();
-                      });
+  resolver->async_resolve(
+      host, std::to_string(port),
+      [&, socket, timer, endpoints, resolver](
+          const std::error_code& e,
+          asio::ip::tcp::resolver::results_type results) {
+        if (e) {
+          settled = true;
+          resolving = false;
+          phase_ec = e;
+          timer->cancel();
+          return;
+        }
+        *endpoints = std::move(results);
+        resolving = false;
+        asio::async_connect(
+            *socket, *endpoints,
+            [&, socket, timer, endpoints, resolver](
+                const std::error_code& e2,
+                const asio::ip::tcp::endpoint&) {
+              settled = true;
+              phase_ec = e2;
+              timer->cancel();
+            });
+      });
   // Callers reuse the context for a second phase (the TLS handshake), and
   // a run() set must be preceded by restart() once a previous one drained.
   io.restart();
   io.run();
-  *ec = settled ? connect_ec : asio::error::operation_aborted;
+  *ec = settled ? phase_ec : asio::error::operation_aborted;
   return std::move(*socket);
 }
 
