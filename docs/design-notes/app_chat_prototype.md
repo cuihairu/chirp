@@ -1,4 +1,4 @@
-> 🌐 Language: [中文](../zh/design-notes/app_chat_prototype.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/design-notes/app_chat_prototype.md) | **English** (this page)
 
 # App chat prototype and in-game integration
 
@@ -150,7 +150,7 @@ graph TD
     GW -.-> PLANES
 ```
 
-Key points (for the access semantics see [SDK overview](../sdk/index.md)) and [SDK hooks](sdk_hooks.md)):
+Key points (for the access semantics see [SDK overview](../sdk/index.md) and [SDK hooks](sdk_hooks.md)):
 
 - **The game side only deals with events and Tasks**: callbacks such as `OnChatMessage` are already dispatched back to the main thread by the engine shell; request-response goes through the spec table (`RequestAsync`, correlated by sequence number, throws on timeout);
 - **The send-side pre-check happens inside the SDK**: after registering `WordFilterSync` as an interceptor, the whole `SendMessageAsync` pipeline passes the word list first; the word list is pushed by the server, the client adjudicates a prediction of the server's adjudication;

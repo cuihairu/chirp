@@ -1,4 +1,4 @@
-> 🌐 Language: **中文** (this page) | [English](../CORE.md))
+> 🌐 Language: **中文** (this page) | [English](../CORE.md)
 
 # Chirp 核心
 
@@ -14,10 +14,10 @@
 | app_auth | TCP 6000 | Supported | App 平面认证(`services/app/auth/`):token 校验路径;增强版 `chirp_app_auth_enhanced` 依赖本地库,是条件性的 |
 | Chat | TCP 7000 / WS 7001 | Supported | 私聊、群组、历史、离线队列,可选的 Redis/MySQL 增强路径 |
 | Server Gateway | TCP 8100 | Experimental | 可信服务面枢纽:游戏后端用 `service_id` + secret 认证,注入系统/NPC 消息,并接收排队到 ack 为止的事件 |
-| NPC Dialog | 无监听 | Experimental | server plane 客户端:用关键词规则回复 `npc.player_message` 事件,并把回复注回 chat(见 [server_plane.md](server_plane.md))) |
+| NPC Dialog | 无监听 | Experimental | server plane 客户端:用关键词规则回复 `npc.player_message` 事件,并把回复注回 chat(见 [server_plane.md](server_plane.md)) |
 | Search | TCP 5007 | Supported | 消息搜索:SQLite FTS5 索引,2248/2249 复合游标分页;两个 SDK gateway 配 `--search_host`(默认 5007)转发,降级不踢 |
 | Notification | TCP 5006 / WS 5016 | Experimental | 设备注册表与推送面(6xxx);provider 投递默认记日志(`--push_transport logging`),`--push_transport http` 打开真实 HTTP(S) provider POST(`HttpPushTransport`,https 端点 TLS 1.2+ 证书校验;APNs 官方端点要求 HTTP/2,生产部署需前置协议转换) |
-| app_sdk_gateway | TCP 5200 / WS 5201 | Experimental | App 客户端边缘(`services/app/sdk_gateway/`):登录/心跳/会话绑定,设备 6xxx 消息转发到 Notification(仅限已认证会话)、WP-8 玩家 RPC(5013-5034)与 2248 检索转发;玩家聚合逻辑(跨游戏频道/身份目录)落在 app_chat 的 PlayerDirectory,经 hub 路由;聚合面的产品化仍是 [architecture.md](architecture.md)) 描述的两平面方向 |
+| app_sdk_gateway | TCP 5200 / WS 5201 | Experimental | App 客户端边缘(`services/app/sdk_gateway/`):登录/心跳/会话绑定,设备 6xxx 消息转发到 Notification(仅限已认证会话)、WP-8 玩家 RPC(5013-5034)与 2248 检索转发;玩家聚合逻辑(跨游戏频道/身份目录)落在 app_chat 的 PlayerDirectory,经 hub 路由;聚合面的产品化仍是 [architecture.md](architecture.md) 描述的两平面方向 |
 
 最小可用拓扑:
 
@@ -49,7 +49,7 @@ graph TD
 - 私聊和历史直接走 `chat`。
 - SDK gateway 配置 `--chat_host` 后把客户端 2xxx 业务包经每客户端 `ServiceBridge` 管道逐帧转发给 chat(chat 侧重放登录鉴权;chat 桥断开按既有语义踢下线)。2248 在 2xxx 通配前先行拦截:配置 `--search_host`(默认 5007)转发 search 服务,search 桥失败降级回 `SERVER_UNAVAILABLE` 不踢客户端,未配置时落回 chat 通配。
 - social(3xxx)/voice(4xxx) 不在转发路径;未配置 `--chat_host` 时 2xxx 不转发。gateway 登录与 chat 侧鉴权是两道独立的门。
-- 游戏面(game plane)和应用面(app plane)是两套独立系统:各自有自己的 chat(`game_chat` / `app_chat`,同一二进制、分开部署)和自己的边缘。游戏面自洽:游戏后端签发 token,`game_chat` 本地校验(`--token_secret`),不依赖外部 auth。应用面有自己的 auth(`app_auth`)。跨面通信是 chat 的内建能力:`game_chat` 用原生 peer 注册协议(带白名单与版本协商)注册进 `app_chat`——见 [architecture.md](architecture.md))。
+- 游戏面(game plane)和应用面(app plane)是两套独立系统:各自有自己的 chat(`game_chat` / `app_chat`,同一二进制、分开部署)和自己的边缘。游戏面自洽:游戏后端签发 token,`game_chat` 本地校验(`--token_secret`),不依赖外部 auth。应用面有自己的 auth(`app_auth`)。跨面通信是 chat 的内建能力:`game_chat` 用原生 peer 注册协议(带白名单与版本协商)注册进 `app_chat`——见 [architecture.md](architecture.md)。
 - Redis 和 MySQL 路径一律视为可选增强,除非部署明确启用。
 
 ## 协议
@@ -71,7 +71,7 @@ message Packet {
 }
 ```
 
-`sequence` 负责一问一答的配对;`request_id` 负责跨平面、跨服务的日志关联,两者互相独立(生成与透传规则见 [API 总览](api/overview.md)))。
+`sequence` 负责一问一答的配对;`request_id` 负责跨平面、跨服务的日志关联,两者互相独立(生成与透传规则见 [API 总览](api/overview.md))。
 
 重要映射:
 
@@ -142,7 +142,7 @@ token 一律 `AUTH_FAILED` 拒绝。登录语义已在 2026-09 拉齐:auth-enhan
 
 `chirp_game_server_gateway`(TCP 8100)在另一个信任面上讲同一套 Packet 帧:
 peer 是游戏后端和内部服务,以 `service_id` + secret 认证——从来不是用户账号。
-完整契约见 [Server Plane](server_plane.md))。
+完整契约见 [Server Plane](server_plane.md)。
 
 | Packet 的 `msg_id` | Packet 的 `body` |
 | --- | --- |
@@ -232,11 +232,11 @@ docker compose up --build
 - NPC 对话系统设计(`services/game/npc_dialog` 落地的关键词规则服务范围更窄;设计笔记描述的是更完整的愿景)
 - 分布式聊天的替代目标与可扩展性示例
 
-现状以 [能力矩阵](CAPABILITY_MATRIX.md)) 为准。
+现状以 [能力矩阵](CAPABILITY_MATRIX.md) 为准。
 
 ## 细节页面
 
-- [入门指南](guide/getting-started.md))
-- [API 总览](api/overview.md))
-- [整体架构](architecture.md))
-- [能力矩阵](CAPABILITY_MATRIX.md))
+- [入门指南](guide/getting-started.md)
+- [API 总览](api/overview.md)
+- [整体架构](architecture.md)
+- [能力矩阵](CAPABILITY_MATRIX.md)

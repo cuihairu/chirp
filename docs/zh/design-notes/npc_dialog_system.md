@@ -1,4 +1,4 @@
-> 🌐 Language: **中文** (this page) | [English](../../design-notes/npc_dialog_system.md))
+> 🌐 Language: **中文** (this page) | [English](../../design-notes/npc_dialog_system.md)
 
 # NPC 对话系统设计文档 (NPC Dialog System Design)
 

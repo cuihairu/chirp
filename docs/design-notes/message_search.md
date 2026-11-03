@@ -1,4 +1,4 @@
-> 🌐 Language: [中文](../zh/design-notes/message_search.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/design-notes/message_search.md) | **English** (this page)
 
 # Message Search — Decision Record and Delivery Notes
 

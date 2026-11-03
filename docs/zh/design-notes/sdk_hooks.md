@@ -1,4 +1,4 @@
-> 🌐 Language: **中文** (this page) | [English](../../design-notes/sdk_hooks.md))
+> 🌐 Language: **中文** (this page) | [English](../../design-notes/sdk_hooks.md)
 
 # SDK 钩子接口设计
 

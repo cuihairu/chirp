@@ -1,4 +1,4 @@
-> 🌐 Language: [中文](../zh/design-notes/sdk_compatibility.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/design-notes/sdk_compatibility.md) | **English** (this page)
 
 # SDK Engine Compatibility
 

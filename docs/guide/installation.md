@@ -1,4 +1,4 @@
-> 🌐 Language: [中文](../zh/guide/installation.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/guide/installation.md) | **English** (this page)
 
 # Installation Guide
 
@@ -248,6 +248,6 @@ netstat -an | grep 6379
 
 ## Next steps
 
-- [Getting Started](getting-started.md))
-- [Overall Architecture](../architecture.md))
-- [Deployment Guide](deployment.md))
+- [Getting Started](getting-started.md)
+- [Overall Architecture](../architecture.md)
+- [Deployment Guide](deployment.md)

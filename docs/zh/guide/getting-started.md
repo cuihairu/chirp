@@ -1,4 +1,4 @@
-> 🌐 Language: **中文** (this page) | [English](../../guide/getting-started.md))
+> 🌐 Language: **中文** (this page) | [English](../../guide/getting-started.md)
 
 # 快速上手
 
@@ -108,4 +108,4 @@ TCP 和 WebSocket 承载的都是:
 - 聊天消息目前直连 Chat 服务,不经过 Gateway。
 - Social、voice、notification、search、移动应用、管理后台和各 SDK 包装层并非都达到生产可用。
 
-精确状态见 [Overall Architecture](../architecture.md)) 与 [Capability Matrix](../CAPABILITY_MATRIX.md))。
+精确状态见 [Overall Architecture](../architecture.md) 与 [Capability Matrix](../CAPABILITY_MATRIX.md)。

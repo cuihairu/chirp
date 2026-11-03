@@ -1,4 +1,4 @@
-> 🌐 Language: **中文** (this page) | [English](../../sdk/index.md))
+> 🌐 Language: **中文** (this page) | [English](../../sdk/index.md)
 
 # SDK 总览
 

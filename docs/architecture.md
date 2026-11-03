@@ -1,4 +1,4 @@
-> 🌐 Language: [中文](zh/architecture.md)) | **English** (this page)
+> 🌐 Language: [中文](zh/architecture.md) | **English** (this page)
 
 # Chirp Overall Architecture
 

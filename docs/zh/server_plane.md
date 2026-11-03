@@ -1,8 +1,8 @@
-> 🌐 Language: **中文** (this page) | [English](../server_plane.md))
+> 🌐 Language: **中文** (this page) | [English](../server_plane.md)
 
 # Server Plane:游戏后端集成
 
-状态:**实验性(Experimental)**——枢纽(`chirp_game_server_gateway`)、chat 侧消费者、Redis Streams broker 回退都已实现并经单测验证(行覆盖 100%):chat 以内部 peer 身份拨入,注入消息走与玩家消息相同的存储/投递尾段。两平面拓扑见[整体架构](architecture.md))。
+状态:**实验性(Experimental)**——枢纽(`chirp_game_server_gateway`)、chat 侧消费者、Redis Streams broker 回退都已实现并经单测验证(行覆盖 100%):chat 以内部 peer 身份拨入,注入消息走与玩家消息相同的存储/投递尾段。两平面拓扑见[整体架构](architecture.md)。
 
 > **架构注记(2026-09-21;2026-09-22 落地)。** 目标拓扑:`game_chat` 用原生 peer 注册协议(带白名单与版本协商)注册进 `app_chat`,没有外部桥接进程。身份绑定、频道订阅和未读红点账本都由 `app_chat` 内部处理(`PlayerDirectory`);扇入投递随之上移——`game_chat` 把频道消息经 peer 上行交给 `app_chat`,由它按订阅扇出。`chirp_game_server_gateway` 保持其原有职责:游戏后端注入 + 可靠事件下行,不再承载 WP-8 的任何数据面。
 
@@ -20,7 +20,7 @@ server plane 是游戏后端与 chirp 通话的方式。它刻意与玩家边缘
 
 `service_id` + secret 这一对是 appkey/appSecret 式凭证:它标识接入的后端,长期有效。由此有两条铁律:
 
-- **永远不要带进客户端。** 凡打进游戏客户端或应用二进制的东西,等同于公开。客户端持有的是短时效用户 token;游戏后端在玩家自身登录之后兑换/派生这些 token。见[凭证模型](architecture.md#凭证模型))。
+- **永远不要带进客户端。** 凡打进游戏客户端或应用二进制的东西,等同于公开。客户端持有的是短时效用户 token;游戏后端在玩家自身登录之后兑换/派生这些 token。见[凭证模型](architecture.md#凭证模型)。
 - **永远不要用它冒充用户。** 注入携带 `sender_kind`(`SYSTEM` / `NPC` / `SERVICE`)正是为了 server plane 可以行动而不假装成某个玩家账号。
 
 ## 运行

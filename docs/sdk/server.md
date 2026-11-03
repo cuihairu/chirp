@@ -1,4 +1,4 @@
-> 🌐 Language: [中文](../zh/sdk/server.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/sdk/server.md) | **English** (this page)
 
 # Server SDK (game backend integration)
 

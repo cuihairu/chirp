@@ -1,10 +1,10 @@
-> 🌐 Language: **中文** (this page) | [English](../../design-notes/game_chat_architecture.md))
+> 🌐 Language: **中文** (this page) | [English](../../design-notes/game_chat_architecture.md)
 
 # 游戏聊天架构笔记
 
 本页作为游戏聊天场景的设计笔记(design-notes)保留。应用聊天 UI 的当前原型线框与游戏内集成图,见[应用聊天原型](app_chat_prototype.md)。
 
-当前的仓库架构、服务边界、协议基线与架构合理性评审,请先读 [Overall Architecture](../architecture.md))。
+当前的仓库架构、服务边界、协议基线与架构合理性评审,请先读 [Overall Architecture](../architecture.md)。
 
 ## 当前位置
 
@@ -12,7 +12,7 @@
 
 - `gateway` 是登录/会话边缘,目前处理登录、登出、心跳和可选的 Redis 支撑跨实例踢线。
 - `chat` 目前是独立的 TCP/WebSocket 服务,是当前聊天冒烟测试的实际入口。
-- Social、voice、notification、search、SDK 包装层、移动应用和管理后台,除非 [Capability Matrix](../CAPABILITY_MATRIX.md)) 另有说明,均为实验性或演示面。
+- Social、voice、notification、search、SDK 包装层、移动应用和管理后台,除非 [Capability Matrix](../CAPABILITY_MATRIX.md) 另有说明,均为实验性或演示面。
 
 ## 设计意图
 
@@ -56,6 +56,6 @@ graph TD
 
 ## 实操建议
 
-- 本地验证用 [Overall Architecture](../architecture.md)) 描述的当前直连 `chat` 路径。
+- 本地验证用 [Overall Architecture](../architecture.md) 描述的当前直连 `chat` 路径。
 - 产品架构上,等网关路由实现后优先收敛到单一公网边缘。
 - social、voice、search、推送或高级聊天功能,在有配套测试和明确的运行时拓扑之前,不要写成"受支持"。

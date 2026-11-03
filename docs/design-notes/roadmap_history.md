@@ -1,12 +1,12 @@
-> 🌐 Language: [中文](../zh/design-notes/roadmap_history.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/design-notes/roadmap_history.md) | **English** (this page)
 
 # Chirp Roadmap History (Archive)
 
-> Archived from todo.md in 2026-09. This file is a historical record of the early roadmap and change log; the checked states reflect the repository as of archiving time and have been cross-checked against [../CAPABILITY_MATRIX.md](../CAPABILITY_MATRIX.md)). For current work see [todo.md](https://github.com/cuihairu/chirp/blob/main/todo.md)).
+> Archived from todo.md in 2026-09. This file is a historical record of the early roadmap and change log; the checked states reflect the repository as of archiving time and have been cross-checked against [../CAPABILITY_MATRIX.md](../CAPABILITY_MATRIX.md). For current work see [todo.md](https://github.com/cuihairu/chirp/blob/main/todo.md).
 
 ## 1. Infrastructure (Monorepo and C++)
 
-> Note: sections 1–6 below are the historical roadmap; the checked states were aligned with the [capability matrix](../CAPABILITY_MATRIX.md)) in 2026-09. `[x]` only means the code exists; items without an annotation are core Supported paths, and items annotated **Experimental** / **Demo** / **Stub** must not be treated as stable capabilities.
+> Note: sections 1–6 below are the historical roadmap; the checked states were aligned with the [capability matrix](../CAPABILITY_MATRIX.md) in 2026-09. `[x]` only means the code exists; items without an annotation are core Supported paths, and items annotated **Experimental** / **Demo** / **Stub** must not be treated as stable capabilities.
 
 - [x] **Project scaffolding**: set up the `libs`, `services`, `proto` directory structure.
 - [x] **Build system**: root `CMakeLists.txt` and per-module configuration.

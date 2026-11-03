@@ -1,4 +1,4 @@
-> 🌐 Language: **中文** (this page) | [English](../../design-notes/sdk_compatibility.md))
+> 🌐 Language: **中文** (this page) | [English](../../design-notes/sdk_compatibility.md)
 
 # SDK 引擎兼容性
 

@@ -1,4 +1,4 @@
-> 🌐 Language: **中文** (this page) | [English](../../sdk/server.md))
+> 🌐 Language: **中文** (this page) | [English](../../sdk/server.md)
 
 # 服务端 SDK(游戏后端接入)
 

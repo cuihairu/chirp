@@ -1,4 +1,4 @@
-> 🌐 Language: [中文](../zh/sdk/unity3d.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/sdk/unity3d.md) | **English** (this page)
 
 # Unity3D
 

@@ -1,8 +1,8 @@
-> 🌐 Language: [中文](../zh/design-notes/SCALABILITY_CHAT_IMPLEMENTATION.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/design-notes/SCALABILITY_CHAT_IMPLEMENTATION.md) | **English** (this page)
 
 # Chat Service Distributed Refactoring Example
 
-> Status note: this document is a distributed Chat refactoring example with implementation notes. For the actual current architecture boundaries, defer to [Overall Architecture](../architecture.md)) and the [Capability Matrix](../CAPABILITY_MATRIX.md)).
+> Status note: this document is a distributed Chat refactoring example with implementation notes. For the actual current architecture boundaries, defer to [Overall Architecture](../architecture.md) and the [Capability Matrix](../CAPABILITY_MATRIX.md).
 
 > Note: the code embedded in this document is an early snapshot; the live implementation is `services/shared/chat/src/main_distributed.cc` (which already includes per-device offline buckets, an ack ledger, and the `--token_secret`/`--notification_host` startup parameters).
 

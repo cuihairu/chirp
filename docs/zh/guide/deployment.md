@@ -1,8 +1,8 @@
-> 🌐 Language: **中文** (this page) | [English](../../guide/deployment.md))
+> 🌐 Language: **中文** (this page) | [English](../../guide/deployment.md)
 
 # 部署指南
 
-> 状态说明:成熟主线是 `game_sdk_gateway + auth + game_chat`,其余服务为 Experimental。本页只写仓库里实际存在的东西:服务配置以命令行参数为主(完整样例见 `docker-compose.yml`;chat 存储层另有 `CHIRP_*` 环境变量读取点,见 `services/shared/chat/src/message_store_config.cc`),Kubernetes 清单在 `deploy/k8s/`——那是早期模板,env 配置名与当前代码对不上,本仓 CI 也不验证它,不要直接当生产基线;没有 Grafana 仪表盘。各服务能力边界以[能力矩阵](../CAPABILITY_MATRIX.md))为准。
+> 状态说明:成熟主线是 `game_sdk_gateway + auth + game_chat`,其余服务为 Experimental。本页只写仓库里实际存在的东西:服务配置以命令行参数为主(完整样例见 `docker-compose.yml`;chat 存储层另有 `CHIRP_*` 环境变量读取点,见 `services/shared/chat/src/message_store_config.cc`),Kubernetes 清单在 `deploy/k8s/`——那是早期模板,env 配置名与当前代码对不上,本仓 CI 也不验证它,不要直接当生产基线;没有 Grafana 仪表盘。各服务能力边界以[能力矩阵](../CAPABILITY_MATRIX.md)为准。
 
 ## Docker Compose 部署
 
@@ -14,7 +14,7 @@ docker compose logs -f
 docker compose down
 ```
 
-第一次部署时,先关注 redis、auth、gateway、chat 四个服务,见 [CORE.md](../CORE.md))。
+第一次部署时,先关注 redis、auth、gateway、chat 四个服务,见 [CORE.md](../CORE.md)。
 
 `docker-compose.cluster.yml`(单机集群形态,带 haproxy)、`deploy/haproxy.cfg`、`deploy/deploy-cluster.sh`、`deploy/k8s/*.yaml` 和 `scripts/build-cluster.sh` 都在树里;其中 k8s 清单是早期模板(见顶部状态说明),haproxy 配置与集群 compose 脚本与当前服务名/端口的对应关系用前先核对一遍。
 
@@ -94,7 +94,7 @@ backend gateway_servers
 
 ## 容量参考
 
-数据来自 2026-09-27 的[网关容量基准](../design-notes/capacity_benchmark.md)),口径是单机实测:
+数据来自 2026-09-27 的[网关容量基准](../design-notes/capacity_benchmark.md),口径是单机实测:
 
 - 并发在线连接:12000/12000 登录在线,0 握手超时(200 conn/s 铺开 60 秒的纯容量档)
 - 建连速率:无并发流量时 200 conn/s 干净;建连与消息发送重叠时 50 conn/s 也会打穿(steady500 档 165/500 管道握手超时)
@@ -138,6 +138,6 @@ docker compose logs --tail=50
 
 ## 相关页面
 
-- [总体架构](../architecture.md))
-- [可扩展性笔记](../design-notes/SCALABILITY.md))
-- [API 总览](../api/overview.md))
+- [总体架构](../architecture.md)
+- [可扩展性笔记](../design-notes/SCALABILITY.md)
+- [API 总览](../api/overview.md)

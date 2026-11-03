@@ -1,4 +1,4 @@
-> 🌐 Language: **中文** (this page) | [English](../../design-notes/message_search.md))
+> 🌐 Language: **中文** (this page) | [English](../../design-notes/message_search.md)
 
 # 消息搜索（message search）定案与落地记录
 

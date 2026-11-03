@@ -1,4 +1,4 @@
-> 🌐 Language: [中文](../zh/sdk/wechat-minigame.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/sdk/wechat-minigame.md) | **English** (this page)
 
 # WeChat Mini Game
 

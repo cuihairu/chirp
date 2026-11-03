@@ -1,10 +1,10 @@
-> 🌐 Language: **中文** (this page) | [English](../../guide/integration-pitfalls.md))
+> 🌐 Language: **中文** (this page) | [English](../../guide/integration-pitfalls.md)
 
 # 接入避坑指南
 
 面向第一次接入 chirp 的游戏客户端/服务端团队。这里的每一条都是**服务端会拒收或静默改变行为**的语义,客户端不处理就会表现成"消息丢了""发不出去""莫名被踢"。阈值与默认值以代码为准,本文标注对应默认值;部署侧可用启动参数覆盖,见各服务 `--help`。
 
-消息帧格式、msg-id 总表与错误码总表见 [API 总览](../api/overview.md))。
+消息帧格式、msg-id 总表与错误码总表见 [API 总览](../api/overview.md)。
 
 ## 发送侧:六道防线一条链
 
@@ -176,7 +176,7 @@ client.SendMessage(opts, "gg", [](const std::error_code& ec,
 - 注入消息带 `inject_id` 幂等键:同 id 重发不会产生重复消息,重试安全(2026-10-19 起 chat 消费端按进程内 TTL 窗去重,缺省 5 分钟、`--inject_idempotency_ttl_ms` 可调;窗过期或部署多实例时同 id 仍会各落一条——跨实例真幂等待共享表拍板)。
 - 注入回 `OK` 只表示服务平面受理,不确认玩家侧送达;离线玩家走离线队列。
 - 认证被拒表现为周期性重试告警(固定延迟,无限重试),不会主动退出——凭据配错要盯启动日志。
-- Go SDK 语义与 C++ 参考实现逐项对齐,细节见 [服务端 SDK](../sdk/server.md))。
+- Go SDK 语义与 C++ 参考实现逐项对齐,细节见 [服务端 SDK](../sdk/server.md)。
 
 ## 快速自查清单
 
@@ -194,8 +194,8 @@ client.SendMessage(opts, "gg", [](const std::error_code& ec,
 
 ## 相关文档
 
-- [API 总览](../api/overview.md)):帧格式、msg-id 总表、错误码总表
-- [服务器平面](../server_plane.md)):5xxx 契约与语义
-- [peer 注册协议](../api/peer_protocol.md)):跨平面 spoke/hub 握手
-- [SDK 钩子接口](../design-notes/sdk_hooks.md)):拦截器/存储/认证提供方
-- [游戏聊天功能清单](../design-notes/game_chat_features.md)):功能设计原案
+- [API 总览](../api/overview.md):帧格式、msg-id 总表、错误码总表
+- [服务器平面](../server_plane.md):5xxx 契约与语义
+- [peer 注册协议](../api/peer_protocol.md):跨平面 spoke/hub 握手
+- [SDK 钩子接口](../design-notes/sdk_hooks.md):拦截器/存储/认证提供方
+- [游戏聊天功能清单](../design-notes/game_chat_features.md):功能设计原案

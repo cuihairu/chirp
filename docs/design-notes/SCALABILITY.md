@@ -1,8 +1,8 @@
-> 🌐 Language: [中文](../zh/design-notes/SCALABILITY.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/design-notes/SCALABILITY.md) | **English** (this page)
 
 # Chirp Distributed Scaling Plan
 
-> Status note: this document is a scalability design and evolution document, not a current production capacity commitment. For current implementation boundaries, read [Overall Architecture](../architecture.md)) and [Capability Matrix](../CAPABILITY_MATRIX.md)) first. Paths such as `chirp_chat_distributed`, enhanced storage, and the distribution of Social/Voice should be understood as experimental capabilities.
+> Status note: this document is a scalability design and evolution document, not a current production capacity commitment. For current implementation boundaries, read [Overall Architecture](../architecture.md) and [Capability Matrix](../CAPABILITY_MATRIX.md) first. Paths such as `chirp_chat_distributed`, enhanced storage, and the distribution of Social/Voice should be understood as experimental capabilities.
 
 ## Current architecture analysis
 

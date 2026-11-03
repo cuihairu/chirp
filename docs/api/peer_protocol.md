@@ -1,10 +1,10 @@
-> 🌐 Language: [中文](../zh/api/peer_protocol.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/api/peer_protocol.md) | **English** (this page)
 
 # Chat Peer registration protocol (5050-5053)
 
 Last reconciled: 2026-09-22, aligned with `proto/gateway.proto` and `libs/network/chat_peer_{hub,link}.{h,cc}` (wired in both the basic and the enhanced form of chat).
 
-`game_chat` (spoke) and `app_chat` (hub) are the same `chirp_chat` binary, with the role chosen by startup arguments. The spoke joins the hub through the built-in peer registration protocol — registration, the allowlist and version negotiation are all native chat capabilities, with no external bridging process. This page is the protocol-level source of truth for that chain; for the overall architecture see [Overall architecture](../architecture.md)).
+`game_chat` (spoke) and `app_chat` (hub) are the same `chirp_chat` binary, with the role chosen by startup arguments. The spoke joins the hub through the built-in peer registration protocol — registration, the allowlist and version negotiation are all native chat capabilities, with no external bridging process. This page is the protocol-level source of truth for that chain; for the overall architecture see [Overall architecture](../architecture.md).
 
 ## Frames and envelope
 
@@ -14,7 +14,7 @@ The peer link uses the same binary framing as the client link:
 TCP stream: [uint32_be payload_size][chirp.gateway.Packet protobuf bytes]
 ```
 
-`Packet{msg_id, sequence, request_id, body}`, with `body` parsed per the table below (a peer outbound packet's default `request_id` is filled in by a per-connection monotonic generator — one for the hub and one for the spoke each; explicit values pass through without rewriting, see [Communication Core 4.3](../design-notes/communication_core.md))):
+`Packet{msg_id, sequence, request_id, body}`, with `body` parsed per the table below (a peer outbound packet's default `request_id` is filled in by a per-connection monotonic generator — one for the hub and one for the spoke each; explicit values pass through without rewriting, see [Communication Core 4.3](../design-notes/communication_core.md)):
 
 | msg_id | Value | Direction | body |
 | --- | --- | --- | --- |

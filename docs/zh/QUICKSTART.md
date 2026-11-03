@@ -1,8 +1,8 @@
-> 🌐 Language: **中文** (this page) | [English](../QUICKSTART.md))
+> 🌐 Language: **中文** (this page) | [English](../QUICKSTART.md)
 
 # Chirp 快速上手
 
-受维护的快速上手指南已迁移到 [guide/getting-started.md](guide/getting-started.md))。
+受维护的快速上手指南已迁移到 [guide/getting-started.md](guide/getting-started.md)。
 
 本地最小路径:
 
@@ -29,4 +29,4 @@ ctest --preset dev
 ./test_services.sh --smoke-search # 检索平面:FTS5 索引 + gateway --search_host 管道(需 MySQL)
 ```
 
-启用非核心服务前,先读 [Core](CORE.md)) 和 [Capability Matrix(能力矩阵)](CAPABILITY_MATRIX.md))。
+启用非核心服务前,先读 [Core](CORE.md) 和 [Capability Matrix(能力矩阵)](CAPABILITY_MATRIX.md)。

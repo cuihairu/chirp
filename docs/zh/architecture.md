@@ -1,4 +1,4 @@
-> 🌐 Language: **中文** (this page) | [English](../architecture.md))
+> 🌐 Language: **中文** (this page) | [English](../architecture.md)
 
 # Chirp 整体架构
 
@@ -209,7 +209,7 @@ sequenceDiagram
 2. 解析 `player_id → game_user_id`。
 3. 将消息注入到该 `game_id` 对应的已注册 `game_chat` peer。
 
-游戏侧收到的是普通注入——它不知道消息来自 App 玩家。（2026-09-22 已落地:`PlayerDirectory::RelayGameReply` + `ChatPeerHub::service_id_for_game` + `IdentityRegistry::ResolveGameUser`,回码 OK/SERVER_UNAVAILABLE/INVALID_PARAM,详见 server_plane.md「跨平面回复」。)
+游戏侧收到的是普通注入——它不知道消息来自 App 玩家。(2026-09-22 已落地:`PlayerDirectory::RelayGameReply` + `ChatPeerHub::service_id_for_game` + `IdentityRegistry::ResolveGameUser`,回码 OK/SERVER_UNAVAILABLE/INVALID_PARAM,详见 server_plane.md「跨平面回复」。)
 
 ### 游戏后端注入系统消息
 

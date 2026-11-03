@@ -1,8 +1,8 @@
-> 🌐 Language: [中文](../zh/design-notes/DISTRIBUTED_DEPLOYMENT.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/design-notes/DISTRIBUTED_DEPLOYMENT.md) | **English** (this page)
 
 # Chirp distributed extension - complete guide
 
-> Status note: this document describes the distributed extension plan and deployment examples. For the currently supported default path and the experimental boundary, use [Overall Architecture](../architecture.md)) and the [Capability Matrix](../CAPABILITY_MATRIX.md)); do not read the capacity numbers or cluster examples directly as load-tested production commitments.
+> Status note: this document describes the distributed extension plan and deployment examples. For the currently supported default path and the experimental boundary, use [Overall Architecture](../architecture.md) and the [Capability Matrix](../CAPABILITY_MATRIX.md); do not read the capacity numbers or cluster examples directly as load-tested production commitments.
 
 ## Overview
 

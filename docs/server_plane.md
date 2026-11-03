@@ -1,8 +1,8 @@
-> 🌐 Language: [中文](zh/server_plane.md)) | **English** (this page)
+> 🌐 Language: [中文](zh/server_plane.md) | **English** (this page)
 
 # Server Plane: game backend integration
 
-Status: **Experimental**——the hub (`chirp_game_server_gateway`), the chat-side consumer, and the Redis Streams broker fallback are all implemented and verified by unit tests (100% line coverage): chat dials in as an internal peer, and injected messages go through the same storage/delivery tail as player messages. The two-plane topology is in [overall architecture](architecture.md)).
+Status: **Experimental**——the hub (`chirp_game_server_gateway`), the chat-side consumer, and the Redis Streams broker fallback are all implemented and verified by unit tests (100% line coverage): chat dials in as an internal peer, and injected messages go through the same storage/delivery tail as player messages. The two-plane topology is in [overall architecture](architecture.md).
 
 > **Architecture note (2026-09-21; landed 2026-09-22).** Target topology: `game_chat` registers into `app_chat` using the native peer registration protocol (with whitelist and version negotiation), with no external bridging process. Identity binding, channel subscriptions, and the unread badge ledger are all handled internally by `app_chat` (`PlayerDirectory`); fan-in delivery moved up accordingly——`game_chat` hands channel messages over the peer to `app_chat`, which fans them out by subscription. `chirp_game_server_gateway` keeps its original duties: game backend injection + reliable event delivery downward; it no longer carries any data face of WP-8.
 
@@ -20,7 +20,7 @@ The game backend does not have to re-implement this wire contract from scratch: 
 
 The `service_id` + secret pair is an appkey/appSecret-style credential: it identifies the connecting backend and is long-lived. This gives two iron rules:
 
-- **Never take it into a client.** Anything baked into a game client or app binary is effectively public. Clients hold short-lived user tokens; the game backend exchanges/derives these tokens after the player's own login. See [credential model](architecture.md#credential-model)).
+- **Never take it into a client.** Anything baked into a game client or app binary is effectively public. Clients hold short-lived user tokens; the game backend exchanges/derives these tokens after the player's own login. See [credential model](architecture.md#credential-model).
 - **Never use it to impersonate a user.** Injections carry `sender_kind` (`SYSTEM` / `NPC` / `SERVICE`) precisely so the server plane can act without pretending to be some player account.
 
 ## Running it

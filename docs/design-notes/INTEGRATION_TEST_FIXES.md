@@ -1,4 +1,4 @@
-> 🌐 Language: [中文](../zh/design-notes/INTEGRATION_TEST_FIXES.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/design-notes/INTEGRATION_TEST_FIXES.md) | **English** (this page)
 
 # Integration Test Fix Summary
 

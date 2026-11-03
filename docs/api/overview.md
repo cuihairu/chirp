@@ -1,12 +1,12 @@
-> 🌐 Language: [中文](../zh/api/overview.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/api/overview.md) | **English** (this page)
 
 # API Overview
 
 Chirp runs Protocol Buffers over TCP or WebSocket. The currently supported protocol surface is built around `chirp.gateway.Packet`.
 
-For implementation status see the [capability matrix](../CAPABILITY_MATRIX.md)). Some proto messages exist for roadmap or experimental services — do not assume they are covered by the default runtime.
+For implementation status see the [capability matrix](../CAPABILITY_MATRIX.md). Some proto messages exist for roadmap or experimental services — do not assume they are covered by the default runtime.
 
-Before integrating, read the [integration pitfalls guide](../guide/integration-pitfalls.md)) — server-side defenses such as send cadence, message length, repeat-mute and sensitive words all reject with dedicated codes, and raw-protocol integrators are most likely to trip on exactly these.
+Before integrating, read the [integration pitfalls guide](../guide/integration-pitfalls.md) — server-side defenses such as send cadence, message length, repeat-mute and sensitive words all reject with dedicated codes, and raw-protocol integrators are most likely to trip on exactly these.
 
 ## Packet format
 
@@ -35,7 +35,7 @@ message Packet {
 
 `body` carries the serialized protobuf message selected by `msg_id`.
 
-`sequence` and `request_id` have separated semantics (see §4.3 of the [Communication Core design note](../design-notes/communication_core.md))):
+`sequence` and `request_id` have separated semantics (see §4.3 of the [Communication Core design note](../design-notes/communication_core.md)):
 
 - `sequence`: a monotonic sequence number within a connection, the local correlation key for request-response pairing. Responses and notifications come back with the same value as the request, and the client uses it to match `RESP`/`NOTIFY` back to the request. **0 = server-initiated (kicks, notifications), pairing not required**.
 - `request_id`: a distributed correlation id for cross-plane / cross-service log tracing, unrelated to pairing. **0 = not provided by the caller** — the default generation is filled in across the chain: the gateway's `ServiceBridge` falls back to "generated within the connection" (monotonically increasing) for client outbound 2xxx packets and service-plane outbound packets; the chat direct entry point (bare-protocol clients) falls back to a process-level monotonic value; the peer surface (`ChatPeerHub`/`ChatPeerLink`) generates monotonically within each of its own connections on outbound (both directions, hub→spoke and spoke→hub); the SDK send side (`MakePacket` in `sdks/core`, `rawSend` in `sdks/ts` and `apps/shared/protocol`) generates it automatically. Explicitly supplied values are passed through verbatim along the forwarding chain and never rewritten; the gateway does not rewrite a `request_id` the client already carries, and SDKs / integrators may bring their own correlation key (such as a game-server request ticket).
@@ -56,7 +56,7 @@ Mapping example:
 
 ## Current endpoints
 
-Services are organized by game plane / App plane, and the binary names carry a plane prefix (see the binary-naming convention section of the [capability matrix](../CAPABILITY_MATRIX.md)) for the complete mapping).
+Services are organized by game plane / App plane, and the binary names carry a plane prefix (see the binary-naming convention section of the [capability matrix](../CAPABILITY_MATRIX.md) for the complete mapping).
 
 ### Game plane (game clients / game backends integrate here)
 
@@ -65,7 +65,7 @@ Services are organized by game plane / App plane, and the binary names carry a p
 | Game SDK Gateway | `chirp_game_sdk_gateway` | 5000 | 5001 | Supported | Login, heartbeat, kick-out, session claim; 2xxx chat packets are forwarded to game_chat via ServiceBridge |
 | Game Chat | `chirp_chat` (built from `services/shared/chat`, the deployment role is distinguished by startup arguments) | 7000 | 7001 | Supported | The chat server; the game backend issues tokens and chat verifies signatures locally with `--token_secret`, a self-contained loop |
 | Game Server Gateway | `chirp_game_server_gateway` | 8100 | - | Supported | The game backend's injection hub: message injection + event delivery, `service_id` + secret trust gate |
-| Chat Peer port | (game_chat's `--hub_peer_port`) | 8200 | - | Supported | The outbound target for game_chat registering as a spoke to the app_chat hub; see the [peer protocol](peer_protocol.md)) |
+| Chat Peer port | (game_chat's `--hub_peer_port`) | 8200 | - | Supported | The outbound target for game_chat registering as a spoke to the app_chat hub; see the [peer protocol](peer_protocol.md) |
 
 ### App plane (companion App / platform side)
 
@@ -85,11 +85,11 @@ Services are organized by game plane / App plane, and the binary names carry a p
 | Party | 7500 | 7501 | Experimental (party snapshot surface `chirp_party`, invite-based joining) |
 | Search | 5007 | - | Supported (SQLite FTS5 index, per-client pipe via the gateway, 2248/2249, degrades without kicking) |
 
-Per the framing in [Communication Core](../design-notes/communication_core.md)), social/voice/search are application/plugin surfaces outside Communication and are not on the core validation path.
+Per the framing in [Communication Core](../design-notes/communication_core.md), social/voice/search are application/plugin surfaces outside Communication and are not on the core validation path.
 
 ## Pipe classification
 
-Connections fall into three classes by trust surface, and credential verification, rate limiting and logging all branch on the class (see §4.4 of the [Communication Core design note](../design-notes/communication_core.md)) for the concept convergence):
+Connections fall into three classes by trust surface, and credential verification, rate limiting and logging all branch on the class (see §4.4 of the [Communication Core design note](../design-notes/communication_core.md) for the concept convergence):
 
 | Pipe | Connection | Credential | Carries |
 | --- | --- | --- | --- |
@@ -118,7 +118,7 @@ Both planes accept `LOGIN_REQ`; the game plane's token is issued by the game bac
 
 ### Chat (Chat, 2xxx)
 
-The send path passes through a set of server-side defenses in a fixed order on the server (for details and default thresholds see the [integration pitfalls guide](../guide/integration-pitfalls.md))): login check → content length (`CONTENT_TOO_LONG`) → world channel level threshold (`LEVEL_REQUIRED`, `--world_channel_min_level` defaults to 0 = off) → fuzzy rate limit (`RATE_LIMITED`) → send cadence (`RATE_LIMITED`) → repeat message mute (`RATE_LIMITED`) → sensitive words (`WORD_FILTERED` or silent replacement) → group channel gate (channels hit by the group ledger: non-members get `AUTH_FAILED`, muted members get `MUTED`; channels outside the ledger do not pass through this gate).
+The send path passes through a set of server-side defenses in a fixed order on the server (for details and default thresholds see the [integration pitfalls guide](../guide/integration-pitfalls.md)): login check → content length (`CONTENT_TOO_LONG`) → world channel level threshold (`LEVEL_REQUIRED`, `--world_channel_min_level` defaults to 0 = off) → fuzzy rate limit (`RATE_LIMITED`) → send cadence (`RATE_LIMITED`) → repeat message mute (`RATE_LIMITED`) → sensitive words (`WORD_FILTERED` or silent replacement) → group channel gate (channels hit by the group ledger: non-members get `AUTH_FAILED`, muted members get `MUTED`; channels outside the ledger do not pass through this gate).
 
 | MsgID | Name | Direction | Notes |
 | --- | --- | --- | --- |
@@ -145,13 +145,13 @@ The send path passes through a set of server-side defenses in a fixed order on t
 | 2235-2238 | Channel block (do not disturb) | client <-> Chat | `SET_CHANNEL_MUTE` / `GET_CHANNEL_MUTES`; only WORLD/GUILD/TEAM can be blocked |
 | 2239-2244 | Message sender blocklist | client <-> Chat | `BLOCK/UNBLOCK_MESSAGE_SENDER`, `GET_BLOCKED_SENDERS`; acts only on message delivery and is fully independent of the social-plane 3011 blocklist |
 | 2245-2247 | Word-list push | client <-> Chat | `WORD_FILTER_FETCH` conditional GET + `WORD_FILTER_UPDATE_NOTIFY` hot update; bodies see chat.proto `WordFilter*` |
-| 2248 / 2249 | Server-side message search | client <-> search | `SEARCH_MESSAGE_REQ` / `RESP`; forwarded via the gateway's per-client pipe to `chirp_search` (5007), a SQLite FTS5 index with composite-cursor pagination; the decision record is in [design-notes/message_search](../design-notes/message_search.md)) |
+| 2248 / 2249 | Server-side message search | client <-> search | `SEARCH_MESSAGE_REQ` / `RESP`; forwarded via the gateway's per-client pipe to `chirp_search` (5007), a SQLite FTS5 index with composite-cursor pagination; the decision record is in [design-notes/message_search](../design-notes/message_search.md) |
 
 For clients integrating through `chirp_game_sdk_gateway` / `chirp_app_sdk_gateway`, 2xxx messages are forwarded by ServiceBridge (formerly ChatBridge, renamed when search was wired in) by destination: business packets go to the matching chat instance, 2248 goes to the search instance (accessed via `--search_host`; a search-bridge failure degrades without kicking the client), with semantics identical to a direct connection; the game plane's cross-plane interception (content prefix) and defense thresholds take effect the same way.
 
 ### Social / voice / experimental surfaces (3xxx/4xxx)
 
-3001-3029 (social: friends/blacklist/presence/come-online notifications) and 4001+ (voice rooms) are provided by experimental services and are not on a supported path; check the [capability matrix](../CAPABILITY_MATRIX.md)) before integrating.
+3001-3029 (social: friends/blacklist/presence/come-online notifications) and 4001+ (voice rooms) are provided by experimental services and are not on a supported path; check the [capability matrix](../CAPABILITY_MATRIX.md) before integrating.
 
 | MsgID | Name | Direction | Semantics |
 | --- | --- | --- | --- |
@@ -177,7 +177,7 @@ For clients integrating through `chirp_game_sdk_gateway` / `chirp_app_sdk_gatewa
 | 5052 | `CHANNEL_MESSAGE_NOTIFY` | spoke -> hub channel-message uplink |
 | 5053 | `PEER_INJECT_MESSAGE_NOTIFY` | hub -> spoke cross-plane reply injection |
 
-Status: the 5xxx contract is Supported; the 5013-5030 responses land on the **app_chat main port** (TCP 7000), not on 8100. The full contract (dial-out, at-least-once event delivery, injection validation, peer protocol) is in [Server plane](../server_plane.md)) and the [peer protocol](peer_protocol.md)); the complete msg-id to body mapping is in the [core doc](../CORE.md)).
+Status: the 5xxx contract is Supported; the 5013-5030 responses land on the **app_chat main port** (TCP 7000), not on 8100. The full contract (dial-out, at-least-once event delivery, injection validation, peer protocol) is in [Server plane](../server_plane.md) and the [peer protocol](peer_protocol.md); the complete msg-id to body mapping is in the [core doc](../CORE.md).
 
 ### Notification / device plane (6xxx)
 
@@ -201,7 +201,7 @@ Authentication rules:
 
 ### Party (7xxx)
 
-`chirp_party` (7500/7501, Experimental) provides the party snapshot surface: 7001-7027 covers create/join/leave/kick plus PARTY_JOINED/LEFT/KICKED notifies (bodies are `chirp.party.*`), invite-based joining with no join codes; current status in the [capability matrix](../zh/CAPABILITY_MATRIX.md)).
+`chirp_party` (7500/7501, Experimental) provides the party snapshot surface: 7001-7027 covers create/join/leave/kick plus PARTY_JOINED/LEFT/KICKED notifies (bodies are `chirp.party.*`), invite-based joining with no join codes; current status in the [capability matrix](../zh/CAPABILITY_MATRIX.md).
 
 ## Login flows
 
@@ -262,14 +262,14 @@ Message ──send──► Accepted ──► Persisted ──► (Queued | Del
 | Semantic | Meaning | Current counterpart |
 | --- | --- | --- |
 | BEST_EFFORT | Best effort, no delivery guarantee | The offline device push bridge (fire-and-forget); after `TARGET_OFFLINE` is enqueued the only redelivery is at the next login, with no delivery guarantee for the push itself |
-| AT_LEAST_ONCE | At least once, redeliver until acknowledged | Service-plane injection: hub ack + Redis Streams PEL replay (NPC/system messages, see [Server plane](../server_plane.md))) |
+| AT_LEAST_ONCE | At least once, redeliver until acknowledged | Service-plane injection: hub ack + Redis Streams PEL replay (NPC/system messages, see [Server plane](../server_plane.md)) |
 | DURABLE | Persisted, survives a restart | Chat messages are archived to MySQL history (the `messages` table); redelivery and history share the same source |
 
 What the response codes mean: `OK` = accepted by the service plane (possibly already persisted, not necessarily delivered); `TARGET_OFFLINE` = accepted and entered the offline queue; `KICK`/`RATE_LIMITED` and the like = not accepted. Whether the player side really reached Delivered/Acknowledged is answered by offline redelivery and read receipts (`read_receipts`) — two chains independent of the send response code.
 
-Delivery dedup (P1-5): `ChatMessage.delivery_id` is the subject of a single delivery — empty = the first online delivery (identical in meaning to `message_id`); offline-redelivery copies get an independently minted server value; an ack-timeout requeue redelivery **preserves the original value** (redeliveries of the same delivery share one id). Division of labor on the consumer side: the UI dedupes idempotently by `message_id`, the transport layer dedupes by `delivery_id`; read receipts are message-level (subjected to `message_id`) and do not change with the delivery count. **Delivery acks explicitly carry the delivery subject**: `MessageAck.delivery_id` (and `MessageNack.delivery_id`) — when non-empty the server matches the in-flight delivery exactly by delivery subject (several deliveries of the same `message_id` do not interfere with each other); empty = old clients / first-delivery scenario, matching the first delivery by `message_id` for compatibility. The conceptual model's origin: the [Communication Core design note](../design-notes/communication_core.md)).
+Delivery dedup (P1-5): `ChatMessage.delivery_id` is the subject of a single delivery — empty = the first online delivery (identical in meaning to `message_id`); offline-redelivery copies get an independently minted server value; an ack-timeout requeue redelivery **preserves the original value** (redeliveries of the same delivery share one id). Division of labor on the consumer side: the UI dedupes idempotently by `message_id`, the transport layer dedupes by `delivery_id`; read receipts are message-level (subjected to `message_id`) and do not change with the delivery count. **Delivery acks explicitly carry the delivery subject**: `MessageAck.delivery_id` (and `MessageNack.delivery_id`) — when non-empty the server matches the in-flight delivery exactly by delivery subject (several deliveries of the same `message_id` do not interfere with each other); empty = old clients / first-delivery scenario, matching the first delivery by `message_id` for compatibility. The conceptual model's origin: the [Communication Core design note](../design-notes/communication_core.md).
 
-Sender kind (the ActorKind convergence): `ChatMessage.sender_kind` (field 12) distinguishes `SENDER_USER` (0, an ordinary player) / `SENDER_SYSTEM` (1) / `SENDER_NPC` (2) / `SENDER_SERVICE` (3), with the value domain aligned to `game_server_gateway.SenderKind`. **Clients cannot forge it**: `SendMessageRequest` has no such field, so a player's send is always USER; non-player identities can only go through service-plane injection (see [Server plane](../server_plane.md))), and injection validation rejects UNKNOWN and passes the value through per the contract. The value is faithful across the whole chain: storage (a `messages.sender_kind` column + the Redis mirror), offline redelivery, history dispatch and cross-plane fan-out copies all carry the original value. The BOT and GM identities are not implemented (no producer, and no reserved enum value on the protocol surface).
+Sender kind (the ActorKind convergence): `ChatMessage.sender_kind` (field 12) distinguishes `SENDER_USER` (0, an ordinary player) / `SENDER_SYSTEM` (1) / `SENDER_NPC` (2) / `SENDER_SERVICE` (3), with the value domain aligned to `game_server_gateway.SenderKind`. **Clients cannot forge it**: `SendMessageRequest` has no such field, so a player's send is always USER; non-player identities can only go through service-plane injection (see [Server plane](../server_plane.md)), and injection validation rejects UNKNOWN and passes the value through per the contract. The value is faithful across the whole chain: storage (a `messages.sender_kind` column + the Redis mirror), offline redelivery, history dispatch and cross-plane fan-out copies all carry the original value. The BOT and GM identities are not implemented (no producer, and no reserved enum value on the protocol surface).
 
 ## WebSocket usage
 
@@ -321,8 +321,8 @@ The SDK transport-layer errors (`NotConnected`/`Timeout`/`Closed`/`Kicked`/`BadR
 
 ## Related documents
 
-- [Integration pitfalls guide](../guide/integration-pitfalls.md)) — the thresholds, trigger conditions and client-side responses for the server-side defenses
-- [Overall architecture](../architecture.md))
-- [Capability matrix](../CAPABILITY_MATRIX.md))
-- [Core doc](../CORE.md))
-- [Peer registration protocol](peer_protocol.md))
+- [Integration pitfalls guide](../guide/integration-pitfalls.md) — the thresholds, trigger conditions and client-side responses for the server-side defenses
+- [Overall architecture](../architecture.md)
+- [Capability matrix](../CAPABILITY_MATRIX.md)
+- [Core doc](../CORE.md)
+- [Peer registration protocol](peer_protocol.md)

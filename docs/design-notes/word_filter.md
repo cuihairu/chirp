@@ -1,4 +1,4 @@
-> 🌐 Language: [中文](../zh/design-notes/word_filter.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/design-notes/word_filter.md) | **English** (this page)
 
 # Word Filter Algorithm Specification
 

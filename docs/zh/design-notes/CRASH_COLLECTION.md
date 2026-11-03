@@ -1,4 +1,4 @@
-> 🌐 Language: **中文** (this page) | [English](../../design-notes/CRASH_COLLECTION.md))
+> 🌐 Language: **中文** (this page) | [English](../../design-notes/CRASH_COLLECTION.md)
 
 # 崩溃采集（Crashpad）设计简档
 

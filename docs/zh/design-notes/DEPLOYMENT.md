@@ -1,8 +1,8 @@
-> 🌐 Language: **中文** (this page) | [English](../../design-notes/DEPLOYMENT.md))
+> 🌐 Language: **中文** (this page) | [English](../../design-notes/DEPLOYMENT.md)
 
 # 部署笔记(历史)
 
-> 本文是早期的部署笔记,混有已过时的模板内容。现行部署指南是 [guide/deployment.md](../guide/deployment.md))(Docker Compose、真实二进制路径、真实命令行参数、实测容量数据);需要下部署结论时以那一页为准。
+> 本文是早期的部署笔记,混有已过时的模板内容。现行部署指南是 [guide/deployment.md](../guide/deployment.md)(Docker Compose、真实二进制路径、真实命令行参数、实测容量数据);需要下部署结论时以那一页为准。
 
 ## 服务依赖
 
@@ -58,11 +58,11 @@ cmake --build --preset dev
 ctest --preset dev
 ```
 
-服务配置以命令行参数为准,样例见 `docker-compose.yml` 与 [guide/deployment.md](../guide/deployment.md));chat 存储层另有 `CHIRP_*` 环境变量读取点(`message_store_config.cc`)。日志是纯文本行(`YYYY-MM-DD HH:MM:SS [LEVEL] [tid=...] 消息`,`libs/common/logger.*`),没有 JSON 结构化输出。
+服务配置以命令行参数为准,样例见 `docker-compose.yml` 与 [guide/deployment.md](../guide/deployment.md);chat 存储层另有 `CHIRP_*` 环境变量读取点(`message_store_config.cc`)。日志是纯文本行(`YYYY-MM-DD HH:MM:SS [LEVEL] [tid=...] 消息`,`libs/common/logger.*`),没有 JSON 结构化输出。
 
 ## 容量
 
-容量口径以 [capacity_benchmark.md](capacity_benchmark.md)) 的实测为准:单机 12000 并发登录在线、200 conn/s 干净建连(有并发流量时 50 conn/s 也会打穿)、稳态私聊吞吐受 1 秒/用户 pacing 约束。本文不再维护估算表。
+容量口径以 [capacity_benchmark.md](capacity_benchmark.md) 的实测为准:单机 12000 并发登录在线、200 conn/s 干净建连(有并发流量时 50 conn/s 也会打穿)、稳态私聊吞吐受 1 秒/用户 pacing 约束。本文不再维护估算表。
 
 ## 备份与网络安全
 

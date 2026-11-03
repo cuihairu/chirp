@@ -1,4 +1,4 @@
-> 🌐 Language: **中文** (this page) | [English](../../sdk/godot.md))
+> 🌐 Language: **中文** (this page) | [English](../../sdk/godot.md)
 
 # Godot
 

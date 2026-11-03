@@ -1,4 +1,4 @@
-> 🌐 Language: [中文](../zh/design-notes/game_combat_best_practices.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/design-notes/game_combat_best_practices.md) | **English** (this page)
 
 # Game Combat System Best Practices
 

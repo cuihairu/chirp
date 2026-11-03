@@ -1,4 +1,4 @@
-> 🌐 Language: [中文](../zh/design-notes/game_chat_features.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/design-notes/game_chat_features.md) | **English** (this page)
 
 # Game chat features
 

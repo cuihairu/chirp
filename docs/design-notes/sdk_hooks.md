@@ -1,4 +1,4 @@
-> 🌐 Language: [中文](../zh/design-notes/sdk_hooks.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/design-notes/sdk_hooks.md) | **English** (this page)
 
 # SDK Hook Interface Design
 

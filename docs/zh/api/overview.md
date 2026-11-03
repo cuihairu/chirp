@@ -1,12 +1,12 @@
-> 🌐 Language: **中文** (this page) | [English](../../api/overview.md))
+> 🌐 Language: **中文** (this page) | [English](../../api/overview.md)
 
 # API 总览
 
 Chirp 在 TCP 或 WebSocket 上跑 Protocol Buffers。当前受支持的协议面围绕 `chirp.gateway.Packet` 展开。
 
-实现状态请看 [能力矩阵](../CAPABILITY_MATRIX.md))。部分 proto 消息为路线图或实验性服务而存在,不要默认它们受默认运行时支持。
+实现状态请看 [能力矩阵](../CAPABILITY_MATRIX.md)。部分 proto 消息为路线图或实验性服务而存在,不要默认它们受默认运行时支持。
 
-接入前建议先读 [接入避坑指南](../guide/integration-pitfalls.md))——发送节奏、消息长度、重复禁言、敏感词等服务端防线都会以专码拒收,裸协议接入方最容易在这些地方踩坑。
+接入前建议先读 [接入避坑指南](../guide/integration-pitfalls.md)——发送节奏、消息长度、重复禁言、敏感词等服务端防线都会以专码拒收,裸协议接入方最容易在这些地方踩坑。
 
 ## 包格式
 
@@ -35,7 +35,7 @@ message Packet {
 
 `body` 装的是所选 `msg_id` 对应的序列化 protobuf 消息。
 
-`sequence` 与 `request_id` 语义分离(见 [Communication Core 设计笔记](../design-notes/communication_core.md)) 4.3):
+`sequence` 与 `request_id` 语义分离(见 [Communication Core 设计笔记](../design-notes/communication_core.md) 4.3):
 
 - `sequence`:连接内单调序号,请求-响应配对的本地关联键。响应与通知以请求同值返回,客户端用它把 `RESP`/`NOTIFY` 对回请求。**0 = 服务端发起(踢人、通知),不要求配对**。
 - `request_id`:分布式关联 id,跨平面/跨服务日志追踪用,与配对无关。**0 = 调用方未提供**——缺省生成沿全链补齐:网关 `ServiceBridge` 对客户端出站的 2xxx 包与服务面出站包按「连接内生成」兜底(单调自增);chat 直连入口(裸协议客户端)按进程级单调兜底;peer 面(`ChatPeerHub`/`ChatPeerLink`)出站各自连接内单调生成(hub→spoke 与 spoke→hub 双向);SDK 发送侧(`sdks/core` `MakePacket`、`sdks/ts` 与 `apps/shared/protocol` `rawSend`)自动生成。显式给出的值沿转发链路原样透传、不改写,网关不重写客户端已带的 `request_id`,SDK/接入方可直接携带自己的关联键(如游戏服请求单号)。
@@ -56,7 +56,7 @@ message Packet {
 
 ## 当前端点
 
-服务按游戏平面 / App 平面组织,二进制命名带平面前缀(完整对照见 [能力矩阵](../CAPABILITY_MATRIX.md)) 的二进制命名约定段)。
+服务按游戏平面 / App 平面组织,二进制命名带平面前缀(完整对照见 [能力矩阵](../CAPABILITY_MATRIX.md) 的二进制命名约定段)。
 
 ### 游戏平面(游戏客户端/游戏后端接入这里)
 
@@ -65,7 +65,7 @@ message Packet {
 | Game SDK Gateway | `chirp_game_sdk_gateway` | 5000 | 5001 | Supported | 登录、心跳、踢出、会话 claim;2xxx 聊天包经 ServiceBridge 转发到 game_chat |
 | Game Chat | `chirp_chat`(由 `services/shared/chat` 构建,部署角色由启动参数区分) | 7000 | 7001 | Supported | 聊天服务端;游戏后端签发 token + `--token_secret` 本地验签,自足闭环 |
 | Game Server Gateway | `chirp_game_server_gateway` | 8100 | - | Supported | 游戏后端注入枢纽:消息注入 + 事件下发,`service_id` + secret 信任门 |
-| Chat Peer 口 | (game_chat 的 `--hub_peer_port`) | 8200 | - | Supported | game_chat 作为 spoke 注册到 app_chat hub 的出站目标;见 [peer 协议](peer_protocol.md)) |
+| Chat Peer 口 | (game_chat 的 `--hub_peer_port`) | 8200 | - | Supported | game_chat 作为 spoke 注册到 app_chat hub 的出站目标;见 [peer 协议](peer_protocol.md) |
 
 ### App 平面(伴侣 App / 平台侧)
 
@@ -85,11 +85,11 @@ message Packet {
 | Party | 7500 | 7501 | Experimental(组队快照面 `chirp_party`,邀请制入队) |
 | Search | 5007 | - | Supported(SQLite FTS5 索引,per-client pipe 经 gateway,2248/2249,降级不踢) |
 
-按 [Communication Core](../design-notes/communication_core.md)) 的口径,social/voice/search 是 Communication 之外的应用面/插件面,不在核心验证路径内。
+按 [Communication Core](../design-notes/communication_core.md) 的口径,social/voice/search 是 Communication 之外的应用面/插件面,不在核心验证路径内。
 
 ## Pipe 分类
 
-连接按信任面分三类,凭证校验、限流与日志按类别分流(概念收敛见 [Communication Core 设计笔记](../design-notes/communication_core.md)) §4.4):
+连接按信任面分三类,凭证校验、限流与日志按类别分流(概念收敛见 [Communication Core 设计笔记](../design-notes/communication_core.md) §4.4):
 
 | Pipe | 连接 | 凭证 | 承担 |
 | --- | --- | --- | --- |
@@ -118,7 +118,7 @@ message Packet {
 
 ### 聊天(Chat,2xxx)
 
-发送链路在服务端经过一组顺序固定的防线(细节与默认阈值见 [接入避坑指南](../guide/integration-pitfalls.md))):登录校验 → 内容长度(`CONTENT_TOO_LONG`)→ 世界频道等级门槛(`LEVEL_REQUIRED`,`--world_channel_min_level` 缺省 0 关闭)→ 模糊限流(`RATE_LIMITED`)→ 发送节奏(`RATE_LIMITED`)→ 重复禁言(`RATE_LIMITED`)→ 敏感词(`WORD_FILTERED` 或静默替换)→ 群频道门(命中群台账的频道:非成员 `AUTH_FAILED`、被禁言成员 `MUTED`;台账外频道不经此门)。
+发送链路在服务端经过一组顺序固定的防线(细节与默认阈值见 [接入避坑指南](../guide/integration-pitfalls.md)):登录校验 → 内容长度(`CONTENT_TOO_LONG`)→ 世界频道等级门槛(`LEVEL_REQUIRED`,`--world_channel_min_level` 缺省 0 关闭)→ 模糊限流(`RATE_LIMITED`)→ 发送节奏(`RATE_LIMITED`)→ 重复禁言(`RATE_LIMITED`)→ 敏感词(`WORD_FILTERED` 或静默替换)→ 群频道门(命中群台账的频道:非成员 `AUTH_FAILED`、被禁言成员 `MUTED`;台账外频道不经此门)。
 
 | MsgID | 名称 | 方向 | 说明 |
 | --- | --- | --- | --- |
@@ -145,13 +145,13 @@ message Packet {
 | 2235-2238 | 频道屏蔽(免打扰) | 客户端 <-> Chat | `SET_CHANNEL_MUTE` / `GET_CHANNEL_MUTES`;仅 WORLD/GUILD/TEAM 可屏蔽 |
 | 2239-2244 | 消息黑名单 | 客户端 <-> Chat | `BLOCK/UNBLOCK_MESSAGE_SENDER`、`GET_BLOCKED_SENDERS`;只作用于消息投递,与社交面 3011 黑名单互相独立 |
 | 2245-2247 | 词库下发 | 客户端 <-> Chat | `WORD_FILTER_FETCH` 条件 GET + `WORD_FILTER_UPDATE_NOTIFY` 热更新;body 见 chat.proto `WordFilter*` |
-| 2248 / 2249 | 服务端消息搜索 | 客户端 <-> search | `SEARCH_MESSAGE_REQ` / `RESP`;经 gateway per-client pipe 转发 `chirp_search`(5007),SQLite FTS5 索引,复合游标分页;决策记录见 [design-notes/message_search](../design-notes/message_search.md)) |
+| 2248 / 2249 | 服务端消息搜索 | 客户端 <-> search | `SEARCH_MESSAGE_REQ` / `RESP`;经 gateway per-client pipe 转发 `chirp_search`(5007),SQLite FTS5 索引,复合游标分页;决策记录见 [design-notes/message_search](../design-notes/message_search.md) |
 
 经 `chirp_game_sdk_gateway` / `chirp_app_sdk_gateway` 接入的客户端,2xxx 消息由 ServiceBridge(原 ChatBridge,search 接线起更名)按目的地转发:业务包到对应 chat 实例,2248 到 search 实例(--search_host 接入;search 桥失败降级不踢客户端),语义与直连相同;游戏平面的跨平面拦截(内容前缀)与防线阈值同样生效。
 
 ### 社交/语音/实验面(3xxx/4xxx)
 
-3001-3029(社交:好友/黑名单/在线状态/上线通知)与 4001+(语音房)由实验性服务提供,不在受支持路径内;接入前先核对 [能力矩阵](../CAPABILITY_MATRIX.md))。
+3001-3029(社交:好友/黑名单/在线状态/上线通知)与 4001+(语音房)由实验性服务提供,不在受支持路径内;接入前先核对 [能力矩阵](../CAPABILITY_MATRIX.md)。
 
 | MsgID | 名称 | 方向 | 语义 |
 | --- | --- | --- | --- |
@@ -177,7 +177,7 @@ message Packet {
 | 5052 | `CHANNEL_MESSAGE_NOTIFY` | spoke -> hub 频道消息上行 |
 | 5053 | `PEER_INJECT_MESSAGE_NOTIFY` | hub -> spoke 跨平面回复注入 |
 
-状态:5xxx 契约 Supported;5013-5030 应答在 **app_chat 主端口**(TCP 7000),不在 8100。完整契约(拨出、至少一次事件投递、注入校验、peer 协议)在[服务器平面](../server_plane.md))与 [peer 协议](peer_protocol.md));完整的 msg-id 到 body 映射在 [核心文档](../CORE.md))。
+状态:5xxx 契约 Supported;5013-5030 应答在 **app_chat 主端口**(TCP 7000),不在 8100。完整契约(拨出、至少一次事件投递、注入校验、peer 协议)在[服务器平面](../server_plane.md)与 [peer 协议](peer_protocol.md);完整的 msg-id 到 body 映射在 [核心文档](../CORE.md)。
 
 ### Notification / 设备面(6xxx)
 
@@ -201,7 +201,7 @@ message Packet {
 
 ### 组队(7xxx)
 
-`chirp_party`(7500/7501,Experimental)提供组队快照面:7001-7027 覆盖建队/入队/离队/踢人与 PARTY_JOINED/LEFT/KICKED 等 notify(body 为 `chirp.party.*`),邀请制入队、无 join code;状态详见[能力矩阵](../CAPABILITY_MATRIX.md))。
+`chirp_party`(7500/7501,Experimental)提供组队快照面:7001-7027 覆盖建队/入队/离队/踢人与 PARTY_JOINED/LEFT/KICKED 等 notify(body 为 `chirp.party.*`),邀请制入队、无 join code;状态详见[能力矩阵](../CAPABILITY_MATRIX.md)。
 
 ## 登录流程
 
@@ -262,14 +262,14 @@ Message ──发送──► Accepted ──► Persisted ──► (Queued | D
 | 语义 | 含义 | 当前对应 |
 | --- | --- | --- |
 | BEST_EFFORT | 尽力而为,不保证送达 | 离线的设备推送桥(发完即忘);`TARGET_OFFLINE` 入队后仅下次登录补投,不保证推送送达 |
-| AT_LEAST_ONCE | 至少一次,重投直到确认 | 服务面注入:hub ack + Redis Streams PEL 重放(NPC/系统消息,见 [服务器平面](../server_plane.md))) |
+| AT_LEAST_ONCE | 至少一次,重投直到确认 | 服务面注入:hub ack + Redis Streams PEL 重放(NPC/系统消息,见 [服务器平面](../server_plane.md)) |
 | DURABLE | 持久化,重启不丢 | 聊天消息落 MySQL 历史(`messages` 表),补投与历史同源 |
 
 各回码含义:`OK` = 服务面已受理(可能已持久化,不一定送达);`TARGET_OFFLINE` = 受理并进入离线队列;`KICK`/`RATE_LIMITED` 等 = 未受理。玩家侧是否真正 Delivered/Acknowledged 由离线补投与已读回执(`read_receipts`)回答,与发送回码是两条独立链。
 
-投递去重(P1-5):`ChatMessage.delivery_id` 是单次投递的主语——空 = 首次在线投递(与 `message_id` 同义);离线补投副本由服务端铸造独立值;ack 超时回队重投**保留原值**(同一次投递的重投同 id)。消费端分工:UI 幂等按 `message_id`,传输层去重按 `delivery_id`;已读回执是消息级(`message_id` 主语),不随投递次数变化。**投递 ack 显式携带投递主语**:`MessageAck.delivery_id`(及 `MessageNack.delivery_id`)——非空时服务端按投递主语精确匹配在途投递(同一 `message_id` 的多笔投递互不干扰);空 = 旧客户端/首投场景,按 `message_id` 兼容匹配首投。概念模型出处:[Communication Core 设计笔记](../design-notes/communication_core.md))。
+投递去重(P1-5):`ChatMessage.delivery_id` 是单次投递的主语——空 = 首次在线投递(与 `message_id` 同义);离线补投副本由服务端铸造独立值;ack 超时回队重投**保留原值**(同一次投递的重投同 id)。消费端分工:UI 幂等按 `message_id`,传输层去重按 `delivery_id`;已读回执是消息级(`message_id` 主语),不随投递次数变化。**投递 ack 显式携带投递主语**:`MessageAck.delivery_id`(及 `MessageNack.delivery_id`)——非空时服务端按投递主语精确匹配在途投递(同一 `message_id` 的多笔投递互不干扰);空 = 旧客户端/首投场景,按 `message_id` 兼容匹配首投。概念模型出处:[Communication Core 设计笔记](../design-notes/communication_core.md)。
 
-发送者类型(ActorKind 收敛):`ChatMessage.sender_kind`(字段 12)区分 `SENDER_USER`(0,普通玩家)/`SENDER_SYSTEM`(1)/`SENDER_NPC`(2)/`SENDER_SERVICE`(3),值域与 `game_server_gateway.SenderKind` 对齐。**客户端不可伪造**:`SendMessageRequest` 无此字段,玩家发送恒为 USER;非玩家身份只能走服务面注入(见 [服务器平面](../server_plane.md))),注入校验拒 UNKNOWN 并按契约直传。该值全链保真:存储(`messages.sender_kind` 列 + Redis 镜像)、离线补投、历史下发、跨平面扇出副本都带原值。BOT/GM 两类身份未实现(无生产者,协议面未预留枚举值)。
+发送者类型(ActorKind 收敛):`ChatMessage.sender_kind`(字段 12)区分 `SENDER_USER`(0,普通玩家)/`SENDER_SYSTEM`(1)/`SENDER_NPC`(2)/`SENDER_SERVICE`(3),值域与 `game_server_gateway.SenderKind` 对齐。**客户端不可伪造**:`SendMessageRequest` 无此字段,玩家发送恒为 USER;非玩家身份只能走服务面注入(见 [服务器平面](../server_plane.md)),注入校验拒 UNKNOWN 并按契约直传。该值全链保真:存储(`messages.sender_kind` 列 + Redis 镜像)、离线补投、历史下发、跨平面扇出副本都带原值。BOT/GM 两类身份未实现(无生产者,协议面未预留枚举值)。
 
 ## WebSocket 用法
 
@@ -321,8 +321,8 @@ SDK 的传输层错误(`NotConnected`/`Timeout`/`Closed`/`Kicked`/`BadResponse`)
 
 ## 相关文档
 
-- [接入避坑指南](../guide/integration-pitfalls.md))——服务端防线的阈值、触发条件与客户端应对
-- [整体架构](../architecture.md))
-- [能力矩阵](../CAPABILITY_MATRIX.md))
-- [核心文档](../CORE.md))
-- [peer 注册协议](peer_protocol.md))
+- [接入避坑指南](../guide/integration-pitfalls.md)——服务端防线的阈值、触发条件与客户端应对
+- [整体架构](../architecture.md)
+- [能力矩阵](../CAPABILITY_MATRIX.md)
+- [核心文档](../CORE.md)
+- [peer 注册协议](peer_protocol.md)

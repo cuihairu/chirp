@@ -1,4 +1,4 @@
-> 🌐 Language: [中文](../zh/design-notes/capacity_benchmark.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/design-notes/capacity_benchmark.md) | **English** (this page)
 
 # Gateway concurrent-connection capacity benchmark (measured)
 

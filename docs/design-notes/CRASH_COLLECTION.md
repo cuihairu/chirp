@@ -1,4 +1,4 @@
-> 🌐 Language: [中文](../zh/design-notes/CRASH_COLLECTION.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/design-notes/CRASH_COLLECTION.md) | **English** (this page)
 
 # Crash collection (Crashpad) design brief
 

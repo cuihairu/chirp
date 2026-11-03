@@ -1,8 +1,8 @@
-> 🌐 Language: **中文** (this page) | [English](../../design-notes/SCALABILITY_SUMMARY.md))
+> 🌐 Language: **中文** (this page) | [English](../../design-notes/SCALABILITY_SUMMARY.md)
 
 # Chirp 分布式扩展总结
 
-> 状态说明：本文是扩展性设计总结，包含容量估算和演进计划。当前默认支持路径、实验性能力和未完成边界请以 [整体架构](../architecture.md)) 与 [能力矩阵](../CAPABILITY_MATRIX.md)) 为准。
+> 状态说明：本文是扩展性设计总结，包含容量估算和演进计划。当前默认支持路径、实验性能力和未完成边界请以 [整体架构](../architecture.md) 与 [能力矩阵](../CAPABILITY_MATRIX.md) 为准。
 
 ## 架构扩展能力分析
 

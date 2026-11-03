@@ -1,8 +1,8 @@
-> 🌐 Language: [中文](../zh/guide/deployment.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/guide/deployment.md) | **English** (this page)
 
 # Deployment Guide
 
-> Status note: the mature mainline is `game_sdk_gateway + auth + game_chat`, and the remaining services are Experimental. This page only covers what actually exists in the repo: service configuration is mainly command-line arguments (full examples in `docker-compose.yml`; the chat storage layer has additional `CHIRP_*` environment variable read points, see `services/shared/chat/src/message_store_config.cc`), and the Kubernetes manifests in `deploy/k8s/` are early templates whose env configuration names no longer match the current code, which this repo's CI does not verify either, so do not treat them as a production baseline; there are no Grafana dashboards. Each service's capability boundaries are defined by the [Capability Matrix](../CAPABILITY_MATRIX.md)).
+> Status note: the mature mainline is `game_sdk_gateway + auth + game_chat`, and the remaining services are Experimental. This page only covers what actually exists in the repo: service configuration is mainly command-line arguments (full examples in `docker-compose.yml`; the chat storage layer has additional `CHIRP_*` environment variable read points, see `services/shared/chat/src/message_store_config.cc`), and the Kubernetes manifests in `deploy/k8s/` are early templates whose env configuration names no longer match the current code, which this repo's CI does not verify either, so do not treat them as a production baseline; there are no Grafana dashboards. Each service's capability boundaries are defined by the [Capability Matrix](../CAPABILITY_MATRIX.md).
 
 ## Docker Compose deployment
 
@@ -14,7 +14,7 @@ docker compose logs -f
 docker compose down
 ```
 
-On a first deployment, focus on the four services redis, auth, gateway and chat, see [CORE.md](../CORE.md)).
+On a first deployment, focus on the four services redis, auth, gateway and chat, see [CORE.md](../CORE.md).
 
 `docker-compose.cluster.yml` (single-machine cluster form, with haproxy), `deploy/haproxy.cfg`, `deploy/deploy-cluster.sh`, `deploy/k8s/*.yaml` and `scripts/build-cluster.sh` are all in the tree; the k8s manifests are early templates (see the status note at the top), and the correspondence between the haproxy configuration and the cluster compose script and the current service names/ports should be checked before use.
 
@@ -94,7 +94,7 @@ Multiple gateway instances need Redis configured (`--redis_host`), otherwise cro
 
 ## Capacity reference
 
-The data comes from the [gateway capacity benchmark](../design-notes/capacity_benchmark.md)) of 2026-09-27, measured on a single machine:
+The data comes from the [gateway capacity benchmark](../design-notes/capacity_benchmark.md) of 2026-09-27, measured on a single machine:
 
 - Concurrent online connections: 12000/12000 logged in and online, 0 handshake timeouts (a pure-capacity tier spreading 200 conn/s over 60 seconds)
 - Connection establishment rate: 200 conn/s is clean with no concurrent traffic; when connection establishment overlaps with message sending, even 50 conn/s breaks through (the steady500 tier has 165/500 pipe handshake timeouts)
@@ -138,6 +138,6 @@ Database columns are additive (see the upgrade scripts), and old binaries tolera
 
 ## Related pages
 
-- [Overall Architecture](../architecture.md))
-- [Scalability notes](../design-notes/SCALABILITY.md))
-- [API Overview](../api/overview.md))
+- [Overall Architecture](../architecture.md)
+- [Scalability notes](../design-notes/SCALABILITY.md)
+- [API Overview](../api/overview.md)

@@ -1,4 +1,4 @@
-> 🌐 Language: **中文** (this page) | [English](../../design-notes/word_filter.md))
+> 🌐 Language: **中文** (this page) | [English](../../design-notes/word_filter.md)
 
 # 敏感词过滤（word filter）算法规约
 

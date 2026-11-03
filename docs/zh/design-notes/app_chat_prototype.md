@@ -1,4 +1,4 @@
-> 🌐 Language: **中文** (this page) | [English](../../design-notes/app_chat_prototype.md))
+> 🌐 Language: **中文** (this page) | [English](../../design-notes/app_chat_prototype.md)
 
 # 应用聊天原型与游戏内集成
 
@@ -147,7 +147,7 @@ graph TD
     GW -.-> PLANES
 ```
 
-要点(接入语义详见 [SDK 总览](../sdk/index.md)) 与 [SDK 钩子](sdk_hooks.md)):
+要点(接入语义详见 [SDK 总览](../sdk/index.md) 与 [SDK 钩子](sdk_hooks.md)):
 
 - **游戏侧只面对事件与 Task**:`OnChatMessage` 等回调已被引擎壳派发回主线程;请求-响应走 spec 表(`RequestAsync`,序列号关联,超时抛错);
 - **发送侧预检在 SDK 内完成**:注册 `WordFilterSync` 为拦截器后,`SendMessageAsync` 全管线先过词库;词库由服务端下发,客户端裁决预测服务端裁决;

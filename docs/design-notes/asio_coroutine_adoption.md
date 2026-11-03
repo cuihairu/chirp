@@ -1,8 +1,8 @@
-> 🌐 Language: [中文](../zh/design-notes/asio_coroutine_adoption.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/design-notes/asio_coroutine_adoption.md) | **English** (this page)
 
 # ASIO coroutines: should we, when, and how
 
-> Status: technical decision analysis (2026-09). The conclusion is "no wholesale rewrite, adopt for new modules", with the reasoning below; if the evidence changes, re-evaluate using the decision table at the end. Capability boundaries are defined by [CAPABILITY_MATRIX](../CAPABILITY_MATRIX.md)).
+> Status: technical decision analysis (2026-09). The conclusion is "no wholesale rewrite, adopt for new modules", with the reasoning below; if the evidence changes, re-evaluate using the decision table at the end. Capability boundaries are defined by [CAPABILITY_MATRIX](../CAPABILITY_MATRIX.md).
 
 ## TL;DR
 

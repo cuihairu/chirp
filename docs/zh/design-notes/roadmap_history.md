@@ -1,12 +1,12 @@
-> 🌐 Language: **中文** (this page) | [English](../../design-notes/roadmap_history.md))
+> 🌐 Language: **中文** (this page) | [English](../../design-notes/roadmap_history.md)
 
 # Chirp 路线图历史(存档)
 
-> 2026-09 自 todo.md 归档。本文件是早期路线图与更新日志的历史记录;勾选状态反映归档时点的仓库状态,并已与 [../CAPABILITY_MATRIX.md](../CAPABILITY_MATRIX.md)) 交叉核对。当前工作请看 [todo.md](https://github.com/cuihairu/chirp/blob/main/todo.md))。
+> 2026-09 自 todo.md 归档。本文件是早期路线图与更新日志的历史记录;勾选状态反映归档时点的仓库状态,并已与 [../CAPABILITY_MATRIX.md](../CAPABILITY_MATRIX.md) 交叉核对。当前工作请看 [todo.md](https://github.com/cuihairu/chirp/blob/main/todo.md)。
 
 ## 1. 基础设施(Monorepo 与 C++)
 
-> 注：以下第 1–6 节为历史 roadmap，勾选状态已于 2026-09 按 [能力矩阵](../CAPABILITY_MATRIX.md)) 对齐。`[x]` 仅表示代码存在；未标注的为核心 Supported 路径，标注 **Experimental** / **Demo** / **Stub** 的不应视为稳定能力。
+> 注：以下第 1–6 节为历史 roadmap，勾选状态已于 2026-09 按 [能力矩阵](../CAPABILITY_MATRIX.md) 对齐。`[x]` 仅表示代码存在；未标注的为核心 Supported 路径，标注 **Experimental** / **Demo** / **Stub** 的不应视为稳定能力。
 
 - [x] **项目脚手架**:搭建 `libs`、`services`、`proto` 目录结构。
 - [x] **构建系统**:根 `CMakeLists.txt` 与各模块配置。

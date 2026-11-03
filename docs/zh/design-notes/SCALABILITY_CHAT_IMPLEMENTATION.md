@@ -1,8 +1,8 @@
-> 🌐 Language: **中文** (this page) | [English](../../design-notes/SCALABILITY_CHAT_IMPLEMENTATION.md))
+> 🌐 Language: **中文** (this page) | [English](../../design-notes/SCALABILITY_CHAT_IMPLEMENTATION.md)
 
 # Chat 服务分布式改造示例
 
-> 状态说明：本文是分布式 Chat 改造示例和实现笔记。实际当前架构边界请以 [整体架构](../architecture.md)) 与 [能力矩阵](../CAPABILITY_MATRIX.md)) 为准。
+> 状态说明：本文是分布式 Chat 改造示例和实现笔记。实际当前架构边界请以 [整体架构](../architecture.md) 与 [能力矩阵](../CAPABILITY_MATRIX.md) 为准。
 
 > 注：文中嵌入代码为早期快照，现役实现以 `services/shared/chat/src/main_distributed.cc` 为准（已含 per-device 离线桶、ack 台账、`--token_secret`/`--notification_host` 启动参数）。
 

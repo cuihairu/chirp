@@ -1,10 +1,10 @@
-> 🌐 Language: **中文** (this page) | [English](../../api/peer_protocol.md))
+> 🌐 Language: **中文** (this page) | [English](../../api/peer_protocol.md)
 
 # Chat Peer 注册协议(5050-5053)
 
 最后核对:2026-09-22,对齐 `proto/gateway.proto` 与 `libs/network/chat_peer_{hub,link}.{h,cc}`(chat 的 basic 与 enhanced 两个形态都接线)。
 
-`game_chat`(spoke)与 `app_chat`(hub)是同一个 `chirp_chat` 二进制,通过启动参数选择角色。spoke 通过内置的 peer 注册协议接入 hub,注册、白名单、版本协商都是 chat 的原生能力——没有外部桥接进程。本文是这条链路的协议级事实来源;整体架构见[整体架构](../architecture.md))。
+`game_chat`(spoke)与 `app_chat`(hub)是同一个 `chirp_chat` 二进制,通过启动参数选择角色。spoke 通过内置的 peer 注册协议接入 hub,注册、白名单、版本协商都是 chat 的原生能力——没有外部桥接进程。本文是这条链路的协议级事实来源;整体架构见[整体架构](../architecture.md)。
 
 ## 帧与信封
 
@@ -14,7 +14,7 @@ peer 链路与客户端链路使用同一套二进制帧:
 TCP 流:[uint32_be payload_size][chirp.gateway.Packet protobuf bytes]
 ```
 
-`Packet{msg_id, sequence, request_id, body}`,`body` 按下表解析(peer 出站包缺省 `request_id` 由连接内单调生成器补齐,hub 与 spoke 各自;显式值透传不改写,见 [Communication Core 4.3](../design-notes/communication_core.md))):
+`Packet{msg_id, sequence, request_id, body}`,`body` 按下表解析(peer 出站包缺省 `request_id` 由连接内单调生成器补齐,hub 与 spoke 各自;显式值透传不改写,见 [Communication Core 4.3](../design-notes/communication_core.md)):
 
 | msg_id | 值 | 方向 | body |
 | --- | --- | --- | --- |

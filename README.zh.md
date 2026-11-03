@@ -1,7 +1,7 @@
 [English](README.md) | [中文](README.zh.md)
 
 <p align="center">
-  <img src="docs/public/logo.svg" width="64" height="64" alt="Chirp Logo"> 
+  <img src="docs/public/logo.svg" width="64" height="64" alt="Chirp Logo">
 </p>
 
 <h1 align="center">chirp</h1>

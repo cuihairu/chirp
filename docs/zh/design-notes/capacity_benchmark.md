@@ -1,4 +1,4 @@
-> 🌐 Language: **中文** (this page) | [English](../../design-notes/capacity_benchmark.md))
+> 🌐 Language: **中文** (this page) | [English](../../design-notes/capacity_benchmark.md)
 
 # 网关并发连接容量基准（实测）
 

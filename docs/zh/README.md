@@ -1,4 +1,4 @@
-> 🌐 Language: **中文** (this page) | [English](README.md))
+> 🌐 Language: **中文** (this page) | [English](README.md)
 
 # Chirp 文档
 
@@ -6,13 +6,13 @@
 
 ## 先读这几篇
 
-- [Core](CORE.md)):当前运行时契约的浓缩版事实来源
-- [Capability Matrix(能力矩阵)](CAPABILITY_MATRIX.md)):按服务、SDK 和应用划分的现状
-- [Introduction(简介)](guide/introduction.md)):给新读者的定位页,很短
-- [Installation(安装)](guide/installation.md)):环境搭建与依赖说明
-- [Getting Started(快速上手)](guide/getting-started.md)):构建、Docker Compose 与冒烟测试(smoke test)
-- [API Overview(API 总览)](api/overview.md)):包封包格式、消息 ID 与核心流程
-- [Overall Architecture(总体架构)](architecture.md)):拓扑、服务边界与架构评审结论
+- [Core](CORE.md):当前运行时契约的浓缩版事实来源
+- [Capability Matrix(能力矩阵)](CAPABILITY_MATRIX.md):按服务、SDK 和应用划分的现状
+- [Introduction(简介)](guide/introduction.md):给新读者的定位页,很短
+- [Installation(安装)](guide/installation.md):环境搭建与依赖说明
+- [Getting Started(快速上手)](guide/getting-started.md):构建、Docker Compose 与冒烟测试(smoke test)
+- [API Overview(API 总览)](api/overview.md):包封包格式、消息 ID 与核心流程
+- [Overall Architecture(总体架构)](architecture.md):拓扑、服务边界与架构评审结论
 
 ## 页面地图
 
@@ -29,7 +29,7 @@ Chirp 目前比较准确的描述是:
 - 一个试验场:分布式聊天、更完整的认证、语音、社交、搜索、通知与 SDK 相关工作都在这里试
 - 移动端和管理端的演示/占位仓库
 
-请不要把这个仓库里的每个服务、SDK 或应用都当成稳定能力来介绍。现状以 [Capability Matrix](CAPABILITY_MATRIX.md)) 为准。
+请不要把这个仓库里的每个服务、SDK 或应用都当成稳定能力来介绍。现状以 [Capability Matrix](CAPABILITY_MATRIX.md) 为准。
 
 ## 文档写作规则
 
@@ -40,4 +40,4 @@ Chirp 目前比较准确的描述是:
 - `Demo`:适合本地探索,不是稳定的后端契约
 - `Stub`:未完成或由 mock 驱动
 
-能更新 [Core](CORE.md))、[Getting Started](guide/getting-started.md))、[API Overview](api/overview.md)) 或 [Overall Architecture](architecture.md)),就不要再另起一篇重叠的总览。
+能更新 [Core](CORE.md)、[Getting Started](guide/getting-started.md)、[API Overview](api/overview.md) 或 [Overall Architecture](architecture.md),就不要再另起一篇重叠的总览。

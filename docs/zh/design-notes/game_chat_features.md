@@ -1,4 +1,4 @@
-> 🌐 Language: **中文** (this page) | [English](../../design-notes/game_chat_features.md))
+> 🌐 Language: **中文** (this page) | [English](../../design-notes/game_chat_features.md)
 
 # 游戏聊天特征
 

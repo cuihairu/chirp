@@ -1,4 +1,4 @@
-> 🌐 Language: **中文** (this page) | [English](../../sdk/cocos-creator.md))
+> 🌐 Language: **中文** (this page) | [English](../../sdk/cocos-creator.md)
 
 # Cocos Creator
 
@@ -27,7 +27,7 @@ ws.binaryType = "arraybuffer";
 | `msg_map.ts` | 消息 ID ↔ 请求/响应类型映射表 |
 | `chirp_client.ts` | 客户端状态机(连接/心跳/重连/序列号关联) |
 
-该实现有 149 例 vitest 单测(`*.test.ts`,行覆盖按 CI 阈值门禁(`vitest.config.ts`:lines/branches/functions/statements ≥90%)兜底,语义与 unity 端逐项对齐。
+该实现有 149 例 vitest 单测(`*.test.ts`,行覆盖按 CI 阈值门禁(`vitest.config.ts`:lines/branches/functions/statements ≥90%))兜底,语义与 unity 端逐项对齐。
 
 ## 生命周期
 

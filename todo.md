@@ -141,3 +141,8 @@
 - [ ] 审核发现：新增截图 `docs/review/desktop-audit/02-main-window.png` 实际为登录页（含「请填写用户 ID」校验错误态）而非主窗口，文件名与内容不符；且 `01-login.png`/`02-main-window.png` 均未被任何 md/html/配置引用（孤儿资产）（docs/review/desktop-audit/02-main-window.png）
 - [ ] 审核发现：ac014e0 把 2026-11-01 深审报告改为「transport seam 未做 TSan 检测」，但同仓 `docs/CAPABILITY_MATRIX.md:34-35`、`docs/zh/CAPABILITY_MATRIX.md:34-35`、`docs/review/luna-review-2026-10-18.md:1258`、`docs/zh/review/luna-review-2026-10-18.md:1258` 仍断言语音/组队信令面「TSan-clean/TSan 干净」，既无 TSan 构建配置可支撑，又与本轮修正后结论自相矛盾（docs/CAPABILITY_MATRIX.md:34）
 - [ ] 审核发现：todo.md 本轮新增证据称 `git grep -i -E 'fsanitize([=:])thread|(^|[^a-z])(TSan|ThreadSanitizer)([^a-z]|$)' -- .`「仅命中 pb.h 宏、http_push_transport.cc:253、tests/unit/* 三处注释」，但实测该命令还命中 `docs/CAPABILITY_MATRIX.md:34,35`、`docs/zh/CAPABILITY_MATRIX.md:34,35`、两个 luna-review:1258 及 `proto/cpp/proto/auth.pb.cc:1202,1614`（TSanWrite），枚举不完整（todo.md:130）
+
+## 本轮审核发现（2026-11-03，ac014e0583c2..HEAD，只审不改）
+
+- [ ] 审核发现：新加的 jwt_secret 空值守卫只判 `empty()`，`RequireArg` 也只拒 `argv[i+1][0]=='\0'`——全空白密钥（如 `" "`）在两处都放行并被用于 HMAC 签名，fail-fast 意图可被空白串绕过；且无最小长度校验（错误文案建议 32+ 字节但未强制）。属 P3 加固缺口（services/app/auth/src/auth_service.cc:46、libs/common/required_arg.h:16、tests/unit/common_test.cc:654）
+- [ ] 审核发现：空密钥守卫仅存在于 `Initialize()` 首部；`TokenGenerator::GenerateAccessToken`（auth_service.cc:500）与 `JwtVerifyHS256`（auth_service.cc:333）调用点本身对 `config_.jwt_secret` 为空无任何防护——若未来新增「构造后不调用 Initialize 直接 Login/Register」的路径，仍会以空密钥签发/校验；现有测试只覆盖 `Initialize` 返回 false，未覆盖签发/校验面对空密钥的行为。属 P3 纵深防御/测试缺口（services/app/auth/src/auth_service.cc:333、:500）

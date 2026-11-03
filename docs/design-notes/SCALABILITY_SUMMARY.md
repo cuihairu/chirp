@@ -1,8 +1,8 @@
-> 🌐 Language: [中文](../zh/design-notes/SCALABILITY_SUMMARY.md)) | **English** (this page)
+> 🌐 Language: [中文](../zh/design-notes/SCALABILITY_SUMMARY.md) | **English** (this page)
 
 # Chirp Distributed Scaling Summary
 
-> Status note: this document is a scalability design summary including capacity estimates and an evolution plan. For the current default supported paths, experimental capabilities and unfinished boundaries, defer to [Overall Architecture](../architecture.md)) and [Capability Matrix](../CAPABILITY_MATRIX.md)).
+> Status note: this document is a scalability design summary including capacity estimates and an evolution plan. For the current default supported paths, experimental capabilities and unfinished boundaries, defer to [Overall Architecture](../architecture.md) and [Capability Matrix](../CAPABILITY_MATRIX.md).
 
 ## Architecture scaling capability analysis
 
