@@ -204,6 +204,7 @@ TEST(HttpPushTransportScriptedTest, MalformedStatusLinesYieldEmpty) {
       "HTTP/1.1 200\r\nContent-Length:  \r\n\r\n",   // CL with blanks only
       "HTTP/1.1 200\r\nContent-Length: 1a\r\n\r\n",  // CL with non-digits
       "HTTP/1.1 200\r\nContent-Length: x2\r\n\r\n",  // CL not digit-first
+      "HTTP/1.1 200\r\nContent-Length: 18446744073709551616\r\n\r\n",  // CL overflow
   };
   for (const std::string& head : heads) {
     auto connection = std::make_unique<ScriptedConnection>(

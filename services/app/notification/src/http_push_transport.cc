@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <limits>
 #include <chrono>
 #ifdef _WIN32
 #include <winsock2.h>
@@ -199,7 +200,11 @@ bool ParseResponseHead(std::string* buf, std::size_t head_end, int* status,
         if (c < '0' || c > '9') {
           return false;
         }
-        parsed = parsed * 10 + static_cast<std::size_t>(c - '0');
+        const std::size_t digit = static_cast<std::size_t>(c - '0');
+        if (parsed > (std::numeric_limits<std::size_t>::max() - digit) / 10) {
+          return false;
+        }
+        parsed = parsed * 10 + digit;
       }
       *has_length = true;
       *length = parsed;
