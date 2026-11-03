@@ -16,6 +16,7 @@
 // before, memory-only.
 
 #include <cstdint>
+#include <cerrno>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -166,7 +167,17 @@ class DeviceStore {
                                       ": skipping row with invalid base64");
       return false;
     }
-    device->registered_at = std::strtoll(cells[5].c_str(), nullptr, 10);
+    errno = 0;
+    char* endptr = nullptr;
+    const long long parsed_at =
+        std::strtoll(cells[5].c_str(), &endptr, 10);
+    if (endptr == cells[5].c_str() || *endptr != '\0' ||
+        errno == ERANGE) {
+      common::Logger::Instance().Warn("device store " + path_ +
+                                      ": skipping row with invalid registered_at");
+      return false;
+    }
+    device->registered_at = parsed_at;
     device->is_active = cells[6] == "1";
     return true;
   }

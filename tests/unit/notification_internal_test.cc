@@ -397,6 +397,11 @@ TEST(NotificationDeviceStoreTest, SkipsMalformedLinesButKeepsValid) {
     out << "!!!not-base64\tcells\there\tmore\tstuff\t1\tmore\tcells\there\tand\tthere\n";
     out << "only-three\tcells\there\n";
     out << "\n";
+    // Invalid registered_at values (non-digit prefix, trailing junk,
+    // out-of-range) must each be skipped rather than silently becoming 0.
+    out << "YQ\tdXNlcg\tYW5kcm9pZA\t\t\tNaN\t1\t\t\t\t\n";
+    out << "YQ\tdXNlcg\tYW5kcm9pZA\t\t\t123abc\t1\t\t\t\t\n";
+    out << "YQ\tdXNlcg\tYW5kcm9pZA\t\t\t99999999999999999999\t1\t\t\t\t\n";
   }
   // A CRLF-terminated row (hand-edited file on Windows) still loads: the
   // trailing \r is trimmed before parsing.
