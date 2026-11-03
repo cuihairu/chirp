@@ -201,7 +201,7 @@ Authentication rules:
 
 ### Party (7xxx)
 
-`chirp_party` (7500/7501, Experimental) provides the party snapshot surface: 7001-7027 covers create/join/leave/kick plus PARTY_JOINED/LEFT/KICKED notifies (bodies are `chirp.party.*`), invite-based joining with no join codes; current status in the [capability matrix](../zh/CAPABILITY_MATRIX.md).
+`chirp_party` (7500/7501, Experimental) provides the party snapshot surface: 7001-7027 covers create/join/leave/kick plus PARTY_JOINED/LEFT/KICKED notifies (bodies are `chirp.party.*`), invite-based joining with no join codes; current status in the [capability matrix](../CAPABILITY_MATRIX.md).
 
 ## Login flows
 
