@@ -138,7 +138,9 @@ public:
 
   // Abruptly resets every open connection (SO_LINGER 0 -> RST to the peer).
   void ResetConnections() {
-    asio::post(io_, [this] {
+    std::promise<void> done;
+    auto done_future = done.get_future();
+    asio::post(io_, [this, &done] {
       std::lock_guard<std::mutex> lock(mu_);
       for (auto& c : conns_) {
         if (c->sock.is_open()) {
@@ -147,7 +149,9 @@ public:
           c->sock.close(ec);
         }
       }
+      done.set_value();
     });
+    done_future.wait();
   }
 
   // Closes the listener: new connects are refused, existing connections keep
@@ -161,7 +165,9 @@ public:
 
   // Gracefully closes every open connection (peer sees EOF on read).
   void CloseConnections() {
-    asio::post(io_, [this] {
+    std::promise<void> done;
+    auto done_future = done.get_future();
+    asio::post(io_, [this, &done] {
       std::lock_guard<std::mutex> lock(mu_);
       for (auto& c : conns_) {
         if (c->sock.is_open()) {
@@ -169,7 +175,9 @@ public:
           c->sock.close(ec);
         }
       }
+      done.set_value();
     });
+    done_future.wait();
   }
 
   // Bytes written to the socket immediately after accept (e.g. a fake HTTP

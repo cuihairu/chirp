@@ -96,6 +96,15 @@ std::string BytesToHex(std::string_view value) {
   return oss.str();
 }
 
+bool IsValidSqlIdentifier(const std::string& value) {
+  if (value.empty()) {
+    return false;
+  }
+  return std::all_of(value.begin(), value.end(), [](unsigned char c) {
+    return std::isalnum(c) || c == '_';
+  });
+}
+
 void WriteSchema(std::ostream& out, const std::string& table) {
   out << "CREATE TABLE IF NOT EXISTS `" << table << "` (\n"
       << "  `message_id` varchar(128) NOT NULL,\n"
@@ -197,6 +206,11 @@ int main(int argc, char** argv) {
   const std::string history_table = GetArg(argc, argv, "--history_table", "chat_messages");
   const std::string offline_table = GetArg(argc, argv, "--offline_table", "chat_offline_messages");
   const bool include_offline = GetBoolArg(argc, argv, "--include_offline", true);
+
+  if (!IsValidSqlIdentifier(history_table) || !IsValidSqlIdentifier(offline_table)) {
+    std::cerr << "table names must contain only letters, digits, and underscores\n";
+    return 1;
+  }
 
   chirp::network::RedisClient redis(redis_host, redis_port);
 
