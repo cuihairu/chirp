@@ -937,6 +937,42 @@ TEST_F(AuthServiceTest, InitializeFailsWhenJwtSecretEmpty) {
   EXPECT_FALSE(svc.Initialize());
 }
 
+TEST_F(AuthServiceTest, InitializeFailsWhenJwtSecretWhitespaceOnly) {
+  // A whitespace-only value is not a usable signing key either: HMAC over a
+  // blank key is a known-key signature, so the fail-fast boundary must reject
+  // it just like the empty case (RequireArg enforces this for the CLI path).
+  AuthService::Config cfg;
+  cfg.jwt_secret = "   \t  ";
+  cfg.redis_config.port = 1;  // guard fires before any store probe
+  AuthService svc(io_, cfg);
+  EXPECT_FALSE(svc.Initialize());
+}
+
+TEST_F(AuthServiceTest, BlankSecretCannotIssueOrValidateTokens) {
+  // Defense-in-depth: even if a future caller constructs AuthService and calls
+  // Login/ValidateAccessToken without Initialize(), a blank secret must not be
+  // used to sign or verify. Exercise the issuance seam through the public
+  // Login path (which reaches GenerateAccessToken) and the verification seam
+  // through ValidateAccessToken.
+  AuthService::Config cfg;
+  cfg.jwt_secret = "   ";  // blank, bypasses Initialize if the caller skips it
+  cfg.redis_config.port = 1;
+  AuthService svc(io_, cfg);
+  // No Initialize() on purpose.
+
+  // Verification seam: refuse rather than HMAC-verify against a blank key.
+  EXPECT_FALSE(svc.ValidateAccessToken("a.b.c").has_value());
+
+  // Issuance seam: Login on a blank-secret service must not produce a token.
+  // The store calls happen before token generation, so script the login rows;
+  // Redis connect fails (port 1) and rate limiting degrades open, as in the
+  // existing InitializeContinuesWhenRedisIsDown test.
+  ScriptSuccessfulLogin("alice", "Str0ng!pass", 5);
+  auto result = svc.Login("alice", "Str0ng!pass", "d", "pc", "1.1.1.1");
+  EXPECT_TRUE(result.success) << result.error_message;
+  EXPECT_TRUE(result.access_token.empty());  // no blank-key signature issued
+}
+
 TEST_F(AuthServiceTest, GetUserSessionsMapsStoreRows) {
   ScriptSuccessfulInitialize();
   ASSERT_TRUE(service_->Initialize());

@@ -14,6 +14,7 @@
 #include "proto/common.pb.h"
 #include "brute_force_protector.h"
 #include "rate_limiter.h"
+#include "required_arg.h"
 #include "redis_auth_store.h"
 #include "session_store.h"
 #include "user_store.h"
@@ -155,6 +156,14 @@ public:
   const Config& GetConfig() const { return config_; }
 
 private:
+  // True when a non-blank signing secret is configured. Initialize() calls
+  // this up front; GenerateAccessToken/ValidateAccessToken re-check it as
+  // defense-in-depth so a future "construct then Login/Register without
+  // Initialize" path cannot silently sign/verify with a blank key.
+  bool HasValidJwtSecret() const {
+    return !chirp::common::IsBlankString(config_.jwt_secret);
+  }
+
   std::string GenerateAccessToken(const std::string& user_id, int64_t expires_at);
   std::string GenerateRefreshToken();
 

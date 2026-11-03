@@ -660,6 +660,25 @@ TEST(RequiredArgTest, EmptyValueFails) {
   EXPECT_NE(err.find("must not be empty"), std::string::npos);
 }
 
+TEST(RequiredArgTest, WhitespaceOnlyValueFails) {
+  char arg0[] = "prog";
+  char arg1[] = "--jwt_secret";
+  char arg2[] = "   \t  ";
+  char* argv[] = {arg0, arg1, arg2};
+  std::string out = "untouched", err;
+  EXPECT_FALSE(RequireArg(3, argv, "--jwt_secret", &out, &err));
+  EXPECT_NE(err.find("must not be empty or whitespace-only"), std::string::npos);
+  EXPECT_EQ(out, "untouched");  // no partial write on failure
+}
+
+TEST(RequiredArgTest, IsBlankStringDistinguishesCases) {
+  EXPECT_TRUE(chirp::common::IsBlankString(""));
+  EXPECT_TRUE(chirp::common::IsBlankString("   "));
+  EXPECT_TRUE(chirp::common::IsBlankString("\t\r\n"));
+  EXPECT_FALSE(chirp::common::IsBlankString("s3cret"));
+  EXPECT_FALSE(chirp::common::IsBlankString(" s3cret"));
+}
+
 TEST(RequiredArgTest, FlagWithoutValueFails) {
   char arg0[] = "prog";
   char arg1[] = "--jwt_secret";

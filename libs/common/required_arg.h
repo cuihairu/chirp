@@ -1,8 +1,23 @@
 #pragma once
 
+#include <cctype>
 #include <string>
+#include <string_view>
 
 namespace chirp::common {
+
+// True when the string is empty or contains only whitespace. Used for
+// signing secrets: a whitespace-only value is just as useless as an empty
+// one (HMAC over a blank key is a known-key signature), so fail-fast callers
+// must reject it at the same boundary as the empty case.
+inline bool IsBlankString(std::string_view s) {
+  for (char c : s) {
+    if (!std::isspace(static_cast<unsigned char>(c))) {
+      return false;
+    }
+  }
+  return true;
+}
 
 // Parse "--flag value" from argv with the same pairing as the per-service
 // GetArg helpers, but with no fallback: returns false and fills `err` when
@@ -14,9 +29,9 @@ inline bool RequireArg(int argc, char* argv[], const std::string& flag,
                        std::string* out, std::string* err) {
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == flag && i + 1 < argc) {
-      if (argv[i + 1][0] == '\0') {
+      if (IsBlankString(argv[i + 1])) {
         if (err) {
-          *err = flag + " must not be empty (pass an explicit value)";
+          *err = flag + " must not be empty or whitespace-only (pass an explicit value)";
         }
         return false;
       }

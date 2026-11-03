@@ -5,6 +5,7 @@
 #include "jwt.h"
 #include "logger.h"
 #include "password_hasher.h"
+#include "required_arg.h"
 #include "store_factory.h"
 #include "token_generator.h"
 
@@ -43,9 +44,10 @@ AuthService::~AuthService() {
 bool AuthService::Initialize() {
   Logger::Instance().Info("Initializing AuthService...");
 
-  if (config_.jwt_secret.empty()) {
+  if (!HasValidJwtSecret()) {
     Logger::Instance().Error(
-        "jwt_secret is empty: pass an explicit --jwt_secret (no built-in default)");
+        "jwt_secret is empty or whitespace-only: pass an explicit --jwt_secret "
+        "(no built-in default; a signing secret must be a non-blank value)");
     return false;
   }
 
@@ -327,6 +329,11 @@ std::optional<std::string> AuthService::ValidateAccessToken(const std::string& t
     return std::nullopt;
   }
 
+  if (!HasValidJwtSecret()) {
+    Logger::Instance().Debug("JWT validation skipped: no non-blank jwt_secret configured");
+    return std::nullopt;
+  }
+
   chirp::common::JwtClaims claims;
   std::string err;
 
@@ -497,6 +504,12 @@ bool AuthService::ChangePassword(const std::string& user_id,
 }
 
 std::string AuthService::GenerateAccessToken(const std::string& user_id, int64_t expires_at) {
+  if (!HasValidJwtSecret()) {
+    Logger::Instance().Error(
+        "refusing to issue access token: no non-blank jwt_secret configured "
+        "(Initialize() must be called with a valid secret)");
+    return {};
+  }
   return TokenGenerator::GenerateAccessToken(user_id, config_.jwt_secret,
                                             expires_at - NowSeconds());
 }
