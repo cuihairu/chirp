@@ -14,7 +14,8 @@ inline bool IsValidSqlIdentifier(const std::string& value) {
     return false;
   }
   return std::all_of(value.begin(), value.end(), [](unsigned char c) {
-    return std::isalnum(c) || c == '_';
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+           (c >= '0' && c <= '9') || c == '_';
   });
 }
 

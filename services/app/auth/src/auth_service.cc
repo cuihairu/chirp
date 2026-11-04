@@ -165,6 +165,22 @@ AuthService::LoginResult AuthService::Login(std::string_view identifier,
     }
   }
 
+  // Generate access token before creating a persistent session: an issuance
+  // failure must not leave an active session behind.
+  int64_t access_expires_at = NowSeconds() + config_.access_token_ttl_seconds;
+  result.access_token = GenerateAccessToken(user_data->user_id, access_expires_at);
+  if (result.access_token.empty()) {
+    result.success = false;
+    result.error_code = chirp::common::INTERNAL_ERROR;
+    result.error_message =
+        "Failed to issue access token: jwt_secret is not configured";
+    Logger::Instance().Error(
+        "Login failed for user: " + user_data->user_id +
+        " — access token issuance returned empty (invalid jwt_secret)");
+    return result;
+  }
+  result.access_token_expires_at = access_expires_at * 1000;  // Convert to ms
+
   // Create session
   CreateSessionRequest session_req;
   session_req.user_id = user_data->user_id;
@@ -181,23 +197,6 @@ AuthService::LoginResult AuthService::Login(std::string_view identifier,
   }
 
   result.session_id = session_data->session_id;
-
-  // Generate access token
-  int64_t access_expires_at = NowSeconds() + config_.access_token_ttl_seconds;
-  result.access_token = GenerateAccessToken(user_data->user_id, access_expires_at);
-  if (result.access_token.empty()) {
-    // A blank/whitespace-only secret (or any other issuance failure) must not
-    // surface as a successful login: the caller would forward an empty token.
-    result.success = false;
-    result.error_code = chirp::common::INTERNAL_ERROR;
-    result.error_message =
-        "Failed to issue access token: jwt_secret is not configured";
-    Logger::Instance().Error(
-        "Login failed for user: " + user_data->user_id +
-        " — access token issuance returned empty (invalid jwt_secret)");
-    return result;
-  }
-  result.access_token_expires_at = access_expires_at * 1000;  // Convert to ms
 
   // Generate refresh token
   std::string refresh_token = GenerateRefreshToken();

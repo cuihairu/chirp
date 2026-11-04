@@ -701,6 +701,11 @@ TEST(SqlIdentifierTest, RejectsUnsafeTableNames) {
   EXPECT_FALSE(chirp::common::IsValidSqlIdentifier("chat-messages"));
   EXPECT_FALSE(chirp::common::IsValidSqlIdentifier("`chat`"));
   EXPECT_FALSE(chirp::common::IsValidSqlIdentifier("chat messages"));
+  // Bytes >=0x80 must not be accepted even under a non-C locale (e.g. UTF-8):
+  // isalnum is locale-dependent and may classify them as alphanumeric.
+  EXPECT_FALSE(chirp::common::IsValidSqlIdentifier("chat\xE4\xB8\xAD"));   // "chat中"
+  EXPECT_FALSE(chirp::common::IsValidSqlIdentifier("t\xC3\xA9st"));         // "tést"
+  EXPECT_FALSE(chirp::common::IsValidSqlIdentifier("\x80table"));
 }
 
 } // namespace

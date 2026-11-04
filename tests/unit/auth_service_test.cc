@@ -976,6 +976,13 @@ TEST_F(AuthServiceTest, BlankSecretCannotIssueOrValidateTokens) {
   auto result = svc.Login("alice", "Str0ng!pass", "d", "pc", "1.1.1.1");
   EXPECT_FALSE(result.success) << result.error_message;
   EXPECT_TRUE(result.access_token.empty());  // no blank-key signature issued
+  // No session may be left behind: the token check runs before CreateSession,
+  // so no INSERT INTO sessions should have been issued on this path.
+  EXPECT_TRUE(result.session_id.empty());
+  for (const auto& q : fake_mysql::TakeQueries()) {
+    EXPECT_EQ(q.find("INSERT INTO sessions"), std::string::npos)
+        << "leaked session row: " << q;
+  }
 }
 
 TEST_F(AuthServiceTest, GetUserSessionsMapsStoreRows) {
