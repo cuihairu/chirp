@@ -960,8 +960,13 @@ TEST_F(AuthServiceTest, BlankSecretCannotIssueOrValidateTokens) {
   AuthService svc(io_, cfg);
   // No Initialize() on purpose.
 
-  // Verification seam: refuse rather than HMAC-verify against a blank key.
-  EXPECT_FALSE(svc.ValidateAccessToken("a.b.c").has_value());
+  // Verification seam: issue a real JWT under a known non-blank key, then
+  // prove the blank-key service refuses it. A malformed "a.b.c" would be
+  // rejected by JwtVerifyHS256 even without the HasValidJwtSecret guard, so
+  // it cannot demonstrate that a blank key is never used for HMAC verify.
+  const std::string valid_token = TokenGenerator::GenerateAccessToken(
+      "user_1", "known_secret", 60);
+  EXPECT_FALSE(svc.ValidateAccessToken(valid_token).has_value());
 
   // Issuance seam: Login on a blank-secret service must not produce a token.
   // The store calls happen before token generation, so script the login rows;
@@ -969,7 +974,7 @@ TEST_F(AuthServiceTest, BlankSecretCannotIssueOrValidateTokens) {
   // existing InitializeContinuesWhenRedisIsDown test.
   ScriptSuccessfulLogin("alice", "Str0ng!pass", 5);
   auto result = svc.Login("alice", "Str0ng!pass", "d", "pc", "1.1.1.1");
-  EXPECT_TRUE(result.success) << result.error_message;
+  EXPECT_FALSE(result.success) << result.error_message;
   EXPECT_TRUE(result.access_token.empty());  // no blank-key signature issued
 }
 

@@ -17,6 +17,7 @@
 #include "jwt.h"
 #include "required_arg.h"
 #include "sha256.h"
+#include "sql_identifier.h"
 
 namespace chirp::common {
 namespace {
@@ -686,6 +687,20 @@ TEST(RequiredArgTest, FlagWithoutValueFails) {
   std::string out, err;
   EXPECT_FALSE(RequireArg(2, argv, "--jwt_secret", &out, &err));
   EXPECT_NE(err.find("--jwt_secret is required"), std::string::npos);
+}
+
+TEST(SqlIdentifierTest, AcceptsBareBareTableNames) {
+  EXPECT_TRUE(chirp::common::IsValidSqlIdentifier("chat_messages"));
+  EXPECT_TRUE(chirp::common::IsValidSqlIdentifier("chat_offline_messages"));
+  EXPECT_TRUE(chirp::common::IsValidSqlIdentifier("a1_2b"));
+}
+
+TEST(SqlIdentifierTest, RejectsUnsafeTableNames) {
+  EXPECT_FALSE(chirp::common::IsValidSqlIdentifier(""));
+  EXPECT_FALSE(chirp::common::IsValidSqlIdentifier("chat;DROP TABLE"));
+  EXPECT_FALSE(chirp::common::IsValidSqlIdentifier("chat-messages"));
+  EXPECT_FALSE(chirp::common::IsValidSqlIdentifier("`chat`"));
+  EXPECT_FALSE(chirp::common::IsValidSqlIdentifier("chat messages"));
 }
 
 } // namespace

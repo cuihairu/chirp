@@ -402,6 +402,9 @@ TEST(NotificationDeviceStoreTest, SkipsMalformedLinesButKeepsValid) {
     out << "YQ\tdXNlcg\tYW5kcm9pZA\t\t\tNaN\t1\t\t\t\t\n";
     out << "YQ\tdXNlcg\tYW5kcm9pZA\t\t\t123abc\t1\t\t\t\t\n";
     out << "YQ\tdXNlcg\tYW5kcm9pZA\t\t\t99999999999999999999\t1\t\t\t\t\n";
+    // strtoll accepts a leading sign; negative values must be rejected too.
+    out << "YQ\tdXNlcg\tYW5kcm9pZA\t\t\t-123\t1\t\t\t\t\n";
+    out << "YQ\tdXNlcg\tYW5kcm9pZA\t\t\t+123\t1\t\t\t\t\n";
   }
   // A CRLF-terminated row (hand-edited file on Windows) still loads: the
   // trailing \r is trimmed before parsing.

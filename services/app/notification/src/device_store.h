@@ -177,6 +177,11 @@ class DeviceStore {
                                       ": skipping row with invalid registered_at");
       return false;
     }
+    if (cells[5].empty() || cells[5].front() < '0' || cells[5].front() > '9') {
+      common::Logger::Instance().Warn("device store " + path_ +
+                                      ": skipping row with signed registered_at");
+      return false;
+    }
     device->registered_at = parsed_at;
     device->is_active = cells[6] == "1";
     return true;

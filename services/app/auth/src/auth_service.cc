@@ -185,6 +185,18 @@ AuthService::LoginResult AuthService::Login(std::string_view identifier,
   // Generate access token
   int64_t access_expires_at = NowSeconds() + config_.access_token_ttl_seconds;
   result.access_token = GenerateAccessToken(user_data->user_id, access_expires_at);
+  if (result.access_token.empty()) {
+    // A blank/whitespace-only secret (or any other issuance failure) must not
+    // surface as a successful login: the caller would forward an empty token.
+    result.success = false;
+    result.error_code = chirp::common::INTERNAL_ERROR;
+    result.error_message =
+        "Failed to issue access token: jwt_secret is not configured";
+    Logger::Instance().Error(
+        "Login failed for user: " + user_data->user_id +
+        " — access token issuance returned empty (invalid jwt_secret)");
+    return result;
+  }
   result.access_token_expires_at = access_expires_at * 1000;  // Convert to ms
 
   // Generate refresh token
@@ -255,6 +267,16 @@ AuthService::RefreshResult AuthService::RefreshAccessToken(const std::string& re
   // Generate new access token
   int64_t access_expires_at = NowSeconds() + config_.access_token_ttl_seconds;
   result.access_token = GenerateAccessToken(refresh_data->user_id, access_expires_at);
+  if (result.access_token.empty()) {
+    result.success = false;
+    result.error_code = chirp::common::INTERNAL_ERROR;
+    result.error_message =
+        "Failed to issue access token: jwt_secret is not configured";
+    Logger::Instance().Error(
+        "Token refresh failed for user: " + refresh_data->user_id +
+        " — access token issuance returned empty (invalid jwt_secret)");
+    return result;
+  }
   result.access_token_expires_at = access_expires_at * 1000;
 
   result.user_id = refresh_data->user_id;
