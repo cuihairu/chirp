@@ -193,6 +193,8 @@ AuthService::LoginResult AuthService::Login(std::string_view identifier,
     result.success = false;
     result.error_code = chirp::common::INTERNAL_ERROR;
     result.error_message = "Failed to create session";
+    result.access_token.clear();
+    result.access_token_expires_at = 0;
     return result;
   }
 

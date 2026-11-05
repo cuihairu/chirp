@@ -741,6 +741,8 @@ TEST_F(AuthServiceTest, LoginFailsWhenSessionCannotBeCreated) {
   auto result = service_->Login("alice", "Str0ng!pass", "d", "pc", "1.1.1.1");
   EXPECT_FALSE(result.success);
   EXPECT_EQ(result.error_code, chirp::common::INTERNAL_ERROR);
+  EXPECT_TRUE(result.access_token.empty());
+  EXPECT_EQ(result.access_token_expires_at, 0);
 }
 
 TEST_F(AuthServiceTest, RefreshTokenFlow) {
