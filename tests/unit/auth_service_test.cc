@@ -987,6 +987,31 @@ TEST_F(AuthServiceTest, BlankSecretCannotIssueOrValidateTokens) {
   }
 }
 
+TEST_F(AuthServiceTest, BlankSecretRefreshCannotIssueAccessToken) {
+  // Refresh-path sibling of BlankSecretCannotIssueOrValidateTokens: the
+  // refresh flow reaches GenerateAccessToken only after the refresh token and
+  // its session both verify, so the blank-secret guard there is the last line
+  // of defense before a blank key could sign. The refresh must fail with an
+  // empty token instead of producing a known-key signature.
+  AuthService::Config cfg;
+  cfg.jwt_secret = "   ";  // blank, bypasses Initialize if the caller skips it
+  cfg.redis_config.port = 1;
+  AuthService svc(io_, cfg);
+  // No Initialize() on purpose.
+
+  std::vector<std::optional<std::string>> token_row = {
+      "1", "tok_1", "user_1", "sess_1", "d", "placeholder", "1",
+      "99999999999999", "0", "0"};
+  std::vector<std::optional<std::string>> session_row = {
+      "1", "sess_1", "user_1", "d", "pc", "1", "99999999999999", "1", "1"};
+  fake_mysql::PushRows({token_row});    // VerifyRefreshToken
+  fake_mysql::PushRows({session_row});  // GetSession
+  auto result = svc.RefreshAccessToken("rt_any");
+  EXPECT_FALSE(result.success) << result.error_message;
+  EXPECT_TRUE(result.access_token.empty());  // no blank-key signature issued
+  EXPECT_EQ(result.error_code, chirp::common::INTERNAL_ERROR);
+}
+
 TEST_F(AuthServiceTest, GetUserSessionsMapsStoreRows) {
   ScriptSuccessfulInitialize();
   ASSERT_TRUE(service_->Initialize());

@@ -154,19 +154,23 @@ KNOWN_UNCOVERABLE = {
     # against a packet-blackhole address. Sandboxes whose gateway SYN-proxies
     # every destination complete the handshake instead, so no
     # environment-independent unit test can hit this arm deterministically.
-    # (Lines track ConnectTcpWithDeadline's timer lambda; keep in sync with
-    # the branch-level entry for the same lambda below. Re-pinned 302/303 ->
-    # 321/322 for the socket-lifetime fix's +19-line upstream drift
-    # (36e294c); block layout unchanged.)
-    ("services/app/notification/src/http_push_transport.cc", 321),
-    ("services/app/notification/src/http_push_transport.cc", 322),
+    # (Lines track ConnectTcpWithDeadline's timer lambda, whose fired body
+    # now spans three statements: the cancel_ec decl plus both cancel calls.
+    # Keep in sync with the branch-level entry for the same lambda below.
+    # Re-pinned 302/303 -> 321/322 for the socket-lifetime fix's +19-line
+    # upstream drift (36e294c), then 321/322 -> 325/327/329 when the resolve
+    # phase was added to ConnectTcpWithDeadline.)
+    ("services/app/notification/src/http_push_transport.cc", 325),
+    ("services/app/notification/src/http_push_transport.cc", 327),
+    ("services/app/notification/src/http_push_transport.cc", 329),
     # Connect's success-path "new TcpHttpConnection" lines carry only the
     # bad_alloc unwind block of the make_unique call; the live block of the
     # statement sits on the neighbouring return line and is covered by the
     # loopback tests. Same for the SSL factory's plain-scheme fallthrough.
-    # (Re-pinned 351/523 -> 370/542 for the same 36e294c drift.)
-    ("services/app/notification/src/http_push_transport.cc", 370),
-    ("services/app/notification/src/http_push_transport.cc", 542),
+    # (Re-pinned 351/523 -> 370/542 for the same 36e294c drift, then
+    # 370/542 -> 395/567 for the resolve-phase addition's +25-line drift.)
+    ("services/app/notification/src/http_push_transport.cc", 395),
+    ("services/app/notification/src/http_push_transport.cc", 567),
     # Frame encoder guards: needs a >4GiB message / a Message whose
     # SerializeToArray disagrees with ByteSizeLong. L12's untaken arms are
     # the >UINT32_MAX / >INT_MAX sides of the size check (same 4GiB wall).
@@ -334,10 +338,13 @@ KNOWN_UNCOVERABLE = {
     ("libs/common/src/metrics_http_server.cc", 144),
     ("libs/common/src/metrics_http_server.cc", 145),
     # AuthService ConfirmPasswordReset expired-token branch: tokens live 1h
-    # and there is no injectable clock to age one past its expiry.
-    ("services/app/auth/src/auth_service.cc", 429),
-    ("services/app/auth/src/auth_service.cc", 430),
-    ("services/app/auth/src/auth_service.cc", 431),
+    # and there is no injectable clock to age one past its expiry. The body
+    # carries GCOVR_EXCL_LINE comments, but the gcov-JSON aggregator here
+    # does not honour gcovr pragmas, so the lines stay pinned instead.
+    # (Re-pinned 429/430/431 -> 465/466/467 for upstream drift.)
+    ("services/app/auth/src/auth_service.cc", 465),
+    ("services/app/auth/src/auth_service.cc", 466),
+    ("services/app/auth/src/auth_service.cc", 467),
     # PresenceManager CleanupOfflineUsers erase: last_seen is written only
     # from the internal clock, so no test can age an entry past the 24h cutoff.
     ("services/social/src/presence_manager.cc", 408),
@@ -384,6 +391,14 @@ KNOWN_UNCOVERABLE = {
     # conn from peers_ (or the conn is displaced) on the same hub thread, so
     # no SendInject can ever target a closing connection.
     ("libs/network/chat_peer_hub.cc", 429),
+    # RedisClient::Checkout's idle_conn declaration line: gcc15 attributes
+    # the default construction of the local unique_ptr to EH-cleanup arcs
+    # only, so the line reads 0-folded although every Checkout call executes
+    # it (the empty-pool break itself is covered by every first command).
+    # Confirmed compiler-attribution artifact via a gcc13/gcc15 minimal
+    # repro; the CI compiler (ubuntu-22.04 gcc11) does not emit the line as
+    # uncovered at all, so this pin is a local-parity shim only.
+    ("libs/network/redis_client.cc", 97),
     # base64 DecodeTable function-local static: gcov counts the guard's
     # exception-cleanup arcs, but MakeDecodeTable is non-throwing so those
     # arcs can never fire.
@@ -437,13 +452,19 @@ KNOWN_UNCOVERABLE = {
     # (line 261) is the same shape with the same justification.
     ("services/app/notification/src/http_push_transport.cc", 261),
     # ConnectTcpWithDeadline timer lambda: the wait_ec-false arm only fires
-    # when the timer expires before async_connect settles - the same
-    # environment race already excluded on the two lines above. The SSL
-    # handshake deadline lambda (545) and both factories' success-path
-    # return lines (350 / 562: asio chrono comparison that never flips for
-    # a future deadline, plus bad_alloc unwind) repeat the pattern.
-    ("services/app/notification/src/http_push_transport.cc", 350),
-    ("services/app/notification/src/http_push_transport.cc", 562),
+    # when the timer expires before async_resolve/async_connect settles -
+    # the same environment race already excluded on the entries above (the
+    # branch-level pin below keeps in sync). The SSL handshake deadline
+    # lambda body (590/591) repeats the pattern: every handshake in the
+    # tests settles on the loopback server and cancels the timer first, so
+    # its fired-body lines never run. The factories' expires_after
+    # chrono-comparison lines (322 / 587) carry the live block only on newer
+    # gcc; the CI compiler leaves unwind-only attribution there (pin history:
+    # 350/562 pre-resolve-phase, comment re-pinned with the region).
+    ("services/app/notification/src/http_push_transport.cc", 322),
+    ("services/app/notification/src/http_push_transport.cc", 587),
+    ("services/app/notification/src/http_push_transport.cc", 590),
+    ("services/app/notification/src/http_push_transport.cc", 591),
     # ReadReceiptManager ChannelKey npos arm: ChannelKey always builds
     # `std::to_string(type) + ":" + channel_id` (read_receipt_manager.h:65),
     # so find(':') never returns npos and the defense arm is dead code.
@@ -827,26 +848,28 @@ KNOWN_UNCOVERABLE_ARMS = {
         "entry, so a closing registered conn always still owns its table "
         "entry; the else is defensive against a future reordering"),
     # -- notification push transport / service (2026-09-27 gap sweep) -------
-    ("services/app/notification/src/http_push_transport.cc", 63): ((8, 9),
+    ("services/app/notification/src/http_push_transport.cc", 68): ((8, 9),
         "ParseHttpUrl path-assignment EH-pad arcs: the two 0/0 edges hang off "
         "the THROW targets of the inlined `path_slash == npos ? \"/\" : "
-        "url.substr(path_slash)` string write (same shape as line 62) and "
-        "need an allocation failure inside the assignment"),
-    ("services/app/notification/src/http_push_transport.cc", 167): ((1, 3),
+        "url.substr(path_slash)` string write (same shape as line 67) and "
+        "need an allocation failure inside the assignment (re-pinned "
+        "63 -> 68 for upstream drift)"),
+    ("services/app/notification/src/http_push_transport.cc", 187): ((1, 3),
         "ParseResponseHead header-loop guard-fire arms: the caller only "
         "parses a head whose \\r\\n\\r\\n terminator it already located at "
         "head_end, so from any pos < head_end find(\"\\r\\n\", pos) lands at "
         "or before head_end - neither the npos arm nor the past-head_end arm "
-        "can fire (line 166 exempts the loop-condition siblings)"),
-    ("services/app/notification/src/http_push_transport.cc", 352): ((4, 6, 7),
+        "can fire (re-pinned 167 -> 187 for upstream drift)"),
+    ("services/app/notification/src/http_push_transport.cc", 396): ((4, 6, 7),
         "TcpHttpConnectionFactory::Connect construction line: the untaken "
         "arms are the EH-pad-internal arcs of the `new "
         "TcpHttpConnection(io, make_unique<socket>(...))` chain (bad_alloc "
-        "unwind, same family as the line-350 success-path return) plus one "
-        "always-false inlined-block edge on that chain"),
-    ("services/app/notification/src/http_push_transport.cc", 524): ((4, 6, 7),
+        "unwind) plus one always-false inlined-block edge on that chain "
+        "(re-pinned 352 -> 396 for the resolve-phase drift)"),
+    ("services/app/notification/src/http_push_transport.cc", 568): ((4, 6, 7),
         "SslHttpConnectionFactory::Connect construction line: identical "
-        "block topology to the Tcp variant on line 352"),
+        "block topology to the Tcp variant on line 396 (re-pinned "
+        "524 -> 568 for the resolve-phase drift)"),
     ("services/app/notification/src/notification_service.cc", 48): ((4, 5),
         "ctor make_shared<LoggingPushTransport> EH-pad-internal arcs: only "
         "an allocation failure inside the fallback construction can enter "
@@ -863,14 +886,15 @@ KNOWN_UNCOVERABLE_ARMS = {
     ("services/app/notification/src/notification_service.cc", 409): ((1,),
         "CleanupInactiveDevices user-index miss: same co-maintained-map "
         "invariant as line 130"),
-    ("services/app/notification/src/http_push_transport.cc", 534): ((3,),
+    ("services/app/notification/src/http_push_transport.cc", 578): ((3,),
         "is_ip_literal lambda digit-range lower-bound arm (c < '0'): the "
-        "lambda only runs after a successful TCP connect (line 519 returns "
-        "first otherwise), and every host string getaddrinfo resolves "
-        "without environment control is digits+dots (numeric IPv4), colon-"
-        "bearing (IPv6, short-circuited at line 532), or lettered (letters "
-        "fail the c <= '9' upper-bound arm, which tests cover) - no "
-        "resolvable name can evaluate a char below '0' here"),
+        "lambda only runs after a successful TCP connect and an https "
+        "scheme (the plain-scheme fallthrough returns first otherwise), and "
+        "every host string getaddrinfo resolves without environment control "
+        "is digits+dots (numeric IPv4), colon-bearing (IPv6, short-circuited "
+        "at line 576), or lettered (letters fail the c <= '9' upper-bound "
+        "arm, which tests cover) - no resolvable name can evaluate a char "
+        "below '0' here (re-pinned 534 -> 578 for the resolve-phase drift)"),
     # -- 覆盖率批次8（2026-09-29 陈旧行钉审计：降格迁移）------------------
     # Each of these lines carried a whole-line KNOWN_UNCOVERABLE pin while
     # every block on the line actually executed (count>0, unexecuted_block
@@ -952,18 +976,33 @@ KNOWN_UNCOVERABLE_ARMS = {
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
     ("sdks/core/src/sdk_client.cc", 991): ((3, 4, 6, 7),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("services/app/auth/src/auth_service.cc", 76): ((0, 1),
-        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("services/app/auth/src/auth_service.cc", 80): ((0,),
-        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("services/app/auth/src/auth_service.cc", 428): ((2,),
-        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("services/app/auth/src/auth_service.cc", 84): ((0, 1),
+        "Register rate-limit-denied branch: struct-init/assignment EH-pad "
+        "arcs of the result assembly, dead in every gcda context (batch-8 "
+        "migration from a stale whole-line pin; re-pinned 76 -> 84 for "
+        "upstream drift)"),
+    ("services/app/auth/src/auth_service.cc", 88): ((0,),
+        "Register rate-limit-denied return: dead arm(s) in every gcda "
+        "context (batch-8 migration from a stale whole-line pin; re-pinned "
+        "80 -> 88 for upstream drift)"),
+    ("services/app/auth/src/auth_service.cc", 464): ((2,),
+        "ConfirmPasswordReset expired-token condition arm (batch-8 "
+        "migration from a stale whole-line pin; re-pinned 428 -> 464 for "
+        "upstream drift)"),
     ("services/app/auth/src/mysql_session_store.cc", 180): ((12, 13, 14, 15),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("services/app/notification/src/http_push_transport.cc", 218): ((3,),
-        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("services/app/notification/src/http_push_transport.cc", 301): ((0,),
-        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("services/app/notification/src/http_push_transport.cc", 242): ((3,),
+        "WaitReadable revents-mask arm: poll is requested with POLLIN only, "
+        "so rc>0 with revents carrying none of POLLIN|POLLHUP|POLLERR means "
+        "POLLNVAL - the fd closed underneath the live connection, which the "
+        "transport never does while waiting (batch-8 migration from a stale "
+        "whole-line pin; re-pinned 218 -> 242 for upstream drift)"),
+    ("services/app/notification/src/http_push_transport.cc", 324): ((0,),
+        "ConnectTcpWithDeadline timer condition's deadline-fired arm: the "
+        "wait_ec-false direction never fires against the loopback servers "
+        "the tests settle every phase with (same race as the whole-line "
+        "pins above; batch-8 migration from a stale whole-line pin, "
+        "re-pinned 301 -> 324 for the resolve-phase drift)"),
     ("services/game/server_gateway/src/stream_broker.cc", 184): ((6, 7),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
     ("services/game/server_gateway/src/stream_broker.cc", 196): ((4, 5),
@@ -1135,6 +1174,14 @@ for name, t, c, _ in report:
     pkgs[pkg][1] += t
 
 failed = False
+# Missing-line diagnostics: CI logs only carry this stdout, so list the
+# uncovered lines of every package under the threshold right in the table.
+misses = defaultdict(list)
+for name, _t, _c, _miss in report:
+    pkg = os.path.dirname(os.path.relpath(name, root)) or "."
+    for ln in sorted(data[name]):
+        if executable_line(name, ln) and data[name][ln] == 0:
+            misses[pkg].append(f"{os.path.relpath(name, root)}:{ln}")
 for pkg in sorted(pkgs):
     c, t = pkgs[pkg]
     p = 100.0 * c / t if t else 100.0
@@ -1142,6 +1189,8 @@ for pkg in sorted(pkgs):
     if p < fail_under:
         failed = True
     print(f"{status:3}  {p:6.2f}%  {c:5}/{t:<5}  {pkg}")
+    if p < fail_under:
+        print(f"      missing lines: {', '.join(misses.get(pkg, []))}")
 
 # ---------------------------------------------------------------------------
 # Branch / function coverage. Informational for now: the gate above stays
