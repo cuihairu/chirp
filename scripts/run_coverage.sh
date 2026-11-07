@@ -123,7 +123,7 @@ INCLUDE_PREFIXES = (
     os.path.join(root, "services") + os.sep,
     os.path.join(root, "sdks", "core", "src") + os.sep,
 )
-EXCLUDE = (".pb.cc", "/proto/", "examples/")
+EXCLUDE = (".pb.cc", "/proto/", "examples/", "/apps/ios/.build/", "/third_party/", "/vcpkg/")
 
 def is_excluded(path):
     if any(tag in path for tag in EXCLUDE):

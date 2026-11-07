@@ -1,0 +1,55 @@
+# Codecov configuration — keep the denominator equal to real hand-written source.
+#
+# Why this file exists (2026-11-08): without it, codecov's total was 66.39% over
+# 102,922 lines while the uploaded lcov carried only 164 files / 9,956 lines at
+# 99.8%. The gap was build artifacts and generated code that no hand-written
+# source owns:
+#   - apps/ios/.build/**   ~360k lines of Xcode/SPM build cache
+#   - **/*.pb.cc           ~133k lines of protoc output
+#   - third_party/**, vcpkg/**  vendored dependencies
+# Counting those as 0%-covered source makes the gate meaningless: it can never
+# reach 98% no matter how good the tests are.
+#
+# The gate this repo actually wants: hand-written first-party C++ stays >= 98%.
+
+codecov:
+  require_ci_to_pass: false
+  notify:
+    after_n_builds: 1
+
+coverage:
+  precision: 2
+  round: down
+  range: "90...100"
+
+  status:
+    project:
+      default:
+        target: 98%
+        threshold: 0%
+        informational: false
+    patch:
+      default:
+        target: 98%
+        threshold: 0%
+        informational: false
+
+# Files that must never enter the denominator.
+ignore:
+  - "apps/ios/.build"
+  - "apps/ios/.build/**"
+  - "**/*.pb.cc"
+  - "**/*.pb.h"
+  - "proto/**"
+  - "third_party/**"
+  - "vcpkg/**"
+  - "apps/ios/Pods/**"
+  - "build/**"
+  - "build-cov/**"
+  - "**/node_modules/**"
+  - "**/examples/**"
+
+comment:
+  layout: "reach,diff,flags,tree"
+  behavior: default
+  require_changes: false
