@@ -49,7 +49,7 @@ jobs:
       run: ./gen_proto.sh
 
     - name: Run tests with coverage
-      run: scripts/run_coverage.sh
+      run: scripts/run_coverage.sh --fail-under 98
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v7.1.1
