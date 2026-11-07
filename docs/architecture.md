@@ -307,6 +307,101 @@ Any failure in the game plane leaves the App plane untouched, and vice versa (an
 | Apps / tooling | `apps/*`, `tools/*` | demos, smoke clients, benchmarks |
 | Delivery | `docker-compose.yml`, `deploy/`, `scripts/` | orchestration and verification |
 
+## Abstraction Layers
+
+The path table above describes where code lives. The eight layers below describe what a unit owns at runtime. Terms are defined in the [glossary](glossary.md).
+
+### L1 — Contract and codec
+
+| Aspect | Location and lifecycle |
+| --- | --- |
+| Implementation | Source schemas live in `proto/*.proto`; `Packet` is the universal envelope (`proto/gateway.proto:358`) and `MsgID` partitions planes (`proto/gateway.proto:11`). |
+| Configuration schema | Protobuf field schemas are the contract; no service flag configures the wire shape. Generated TypeScript/C++/C#/Java/Go/Swift bindings are committed build inputs. |
+| Protocol files | `proto/gateway.proto`, plus per-domain `auth`, `chat`, `social`, `voice`, `party`, `app_notification`, and `game_server_gateway`. |
+| Copy | API-facing copy is documented in [API Overview](api/overview.md); this layer has no UI strings. |
+| Lifecycle | Code generation runs ahead of service builds; encoded packets live only for one wire write or read. |
+
+### L2 — Process primitives
+
+| Aspect | Location and lifecycle |
+| --- | --- |
+| Implementation | Logging, JWT, metrics, crash capture, required arguments, and the optional file-backed `Config` (`libs/common/config.h:10`). |
+| Configuration schema | `RequireArg` defines mandatory startup inputs (`libs/common/required_arg.h:28`); metrics flags select the optional endpoint (`libs/common/include/common/metrics_http_server.h:17`). |
+| Protocol files | None; this layer is in-process. |
+| Copy | Log and crash diagnostics originate here and are consumed by operators. |
+| Lifecycle | Crash capture initializes before parsing; metrics listeners stop with the owning service (`libs/common/crash_handler.h:33`). |
+
+### L3 — Connection and distributed transport
+
+| Aspect | Location and lifecycle |
+| --- | --- |
+| Implementation | TCP/WebSocket servers, sessions, framing, Redis clients/pub-sub, session claims, and trusted-peer helpers (`libs/network/tcp_server.h:14`, `libs/network/websocket_server.h:13`). |
+| Configuration schema | Listener host/port and callback wiring are constructor inputs; Redis host/port/TTL are service flags consumed by `RedisSessionManager` (`libs/network/redis_session_manager.h:26`). |
+| Protocol files | Consumes `gateway.proto`; chat peer registration adds its 5050–5053 block. |
+| Copy | No end-user copy; failure text is operational logging. |
+| Lifecycle | A listener starts before `io_context::run`; Redis claims publish kicks to the previous owner and expire independently (`libs/network/redis_session_manager.h:26`). |
+
+### L4 — Client access and platform control
+
+| Aspect | Location and lifecycle |
+| --- | --- |
+| Implementation | `game_sdk_gateway`, `app_sdk_gateway`, enhanced auth, and push notification. The game edge starts at `services/game/sdk_gateway/src/main.cc:375`; notification starts at `services/app/notification/src/main.cc:86`. |
+| Configuration schema | Edge/auth/notification flags configure listeners, auth backends, provider keys, TLS, device persistence, and secrets; notification persistence is opt-in (`services/app/notification/src/device_store.h:36`). |
+| Protocol files | `auth.proto`, `app_notification.proto`, and `gateway.proto`. |
+| Copy | Server-side copy is logs and protocol error codes; client-facing strings remain in each app layer. |
+| Lifecycle | Edges bind TCP/WS, authenticate, bind or claim local sessions, then bridge or dispatch; app auth starts only with a signing secret (`services/game/sdk_gateway/src/main.cc:375`). |
+
+### L5 — Chat business core
+
+| Aspect | Location and lifecycle |
+| --- | --- |
+| Implementation | Enhanced/distributed chat owns delivery, history, groups, moderation, peer registration, and the player directory (`services/shared/chat/src/main_enhanced.cc:1152`). |
+| Configuration schema | `MessageStoreConfig` centralizes Redis, MySQL, migration, delivery, history, and ACK limits (`services/shared/chat/src/message_store_config.h:10`); `PlayerDirectory::Options` adds Redis-backed registries and fan-out bounds (`services/shared/chat/src/player_directory.h:52`). |
+| Protocol files | `chat.proto`, plus `game_server_gateway.proto` and the peer-registration block in `gateway.proto`. |
+| Copy | Feature behavior is documented in [Server Plane](server_plane.md) and design notes; errors are protocol codes. |
+| Lifecycle | Storage initializes before listeners; migration, delivery, retention, and expiry workers run on the chat `io_context` and stop in reverse dependency order (`services/shared/chat/src/main_enhanced.cc:1152`). |
+
+### L6 — Trusted server integration
+
+| Aspect | Location and lifecycle |
+| --- | --- |
+| Implementation | `game_server_gateway` accepts authenticated services and bridges injections/events (`services/game/server_gateway/src/main.cc:326`); NPC dialog consumes injected events and replies. |
+| Configuration schema | Hub flags define `service_id` secrets, heartbeat/deadline, Redis Stream, group, consumer, and claim cadence (`services/game/server_gateway/src/stream_broker.h:75`); NPC rules use TSV plus fallback reply (`services/game/npc_dialog/src/npc_engine.h:40`). |
+| Protocol files | Dedicated contract: `proto/game_server_gateway.proto`. |
+| Copy | Server-plane behavior is documented in [Server Plane](server_plane.md) and NPC design notes. |
+| Lifecycle | Service peers authenticate first, receive a server-assigned heartbeat, and are replaced as one connection per `service_id` (`services/game/server_gateway/src/service_registry.h:28`). |
+
+### L7 — Peripheral domain services
+
+| Aspect | Location and lifecycle |
+| --- | --- |
+| Implementation | Search, social, party, and voice expose independent listeners and optional Redis persistence. Their entry points are `services/search/src/main.cc:32`, `services/social/src/main.cc:1370`, `services/party/src/main.cc:1323`, and `services/voice/src/main.cc:1154`. |
+| Configuration schema | Search requires MySQL and chooses SQLite path; social/party use optional Redis; voice uses token secret, TURN URI/secret, and heartbeat timeout. State shapes are in the glossary entries for `MessageSearchIndex`, `SocialState`, `PartyState`, and `VoiceState`. |
+| Protocol files | Dedicated `social.proto`, `party.proto`, and `voice.proto`; search uses chat search messages. |
+| Copy | Feature state and degradation are described here and in [API Overview](api/overview.md). |
+| Lifecycle | Each service restores optional Redis state before listening, starts TCP/WS, starts optional metrics, then stops listeners before `io.stop()` (`services/social/src/main.cc:1370`). |
+
+### L8 — Client integration surfaces
+
+| Aspect | Location and lifecycle |
+| --- | --- |
+| Implementation | C++ core and engine adapters, TypeScript/Kotlin/C# clients, Go server client, companion web/desktop/iOS/Android/Harmony graphs, and Unreal game-thread facade. Representative constructors are `sdks/ts/src/chirp_client.ts:66`, `sdks/go/client.go:141`, and `apps/desktop/src/api/services.ts:72`. |
+| Configuration schema | Shared clients configure URL, heartbeat, missed pongs, request timeout, and reconnect backoff; app graphs resolve Vite URLs, local host fields, platform preferences, or reverse-proxy paths (`apps/web_companion/src/api/services.ts:111`). |
+| Protocol files | Consumes L1 bindings; no service adds a client-only wire field. |
+| Copy | UI strings live with each client (for example Android resources and Harmony resources); transport-level status text is shared in SDK APIs. |
+| Lifecycle | A client graph connects, logs in, starts subscriptions, degrades optional planes independently, and disconnects all owned connections on sign-out (`apps/desktop/src/App.tsx:46`). |
+
+### Why these eight layers
+
+1. Contract and codec are separated because every plane shares the same `Packet` (`proto/gateway.proto:358`) and length-prefixed wire form (`libs/network/protobuf_framing.h:12`).
+2. Process concerns are separated from I/O because crash capture, required secrets, metrics, and optional file config have distinct construction points (`libs/common/crash_handler.h:33`, `libs/common/required_arg.h:28`, `libs/common/include/common/metrics_http_server.h:17`, `libs/common/config.h:10`).
+3. Transport is separate from business state because `TcpServer`, `WebSocketServer`, and `Session` expose callbacks without chat semantics (`libs/network/tcp_server.h:14`, `libs/network/websocket_server.h:13`, `libs/network/session.h:7`).
+4. Access is separate from domain state because the gateway forwards 2xxx packets through `ServiceBridge` while backends own business behavior (`libs/network/service_bridge.h:54`).
+5. Chat is a distinct core because its storage schema and delivery workers are not generic transport concerns (`services/shared/chat/src/message_store_config.h:10`, `services/shared/chat/src/message_delivery_tracker.h:18`).
+6. Server integration is separate from client edges because it authenticates `service_id` peers, assigns heartbeats, and replaces displaced peers (`services/game/server_gateway/src/service_registry.h:28`).
+7. Peripheral domains are separate because social, party, voice, and search have dedicated listeners, protocol families, storage choices, and optional degradation (`services/social/src/main.cc:1370`, `services/party/src/main.cc:1323`, `services/voice/src/main.cc:1154`, `services/search/src/main.cc:32`).
+8. Client integration is separate because protocol state machines are shared while transports, configuration discovery, and persistent device identity are platform-specific (`sdks/ts/src/chirp_client.ts:66`, `apps/web_companion/src/api/services.ts:111`, `apps/ios/Sources/ChirpAppCore/HostConfig.swift:10`).
+
 ## Protocol Baseline
 
 All edges and trusted peers use the same framing:

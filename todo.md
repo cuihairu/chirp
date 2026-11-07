@@ -185,3 +185,39 @@
 - [x] 审核发现：APNs 复核证据「`fd -e p8` 在 repo 与 `$HOME` 均 0、无 APNs 环境变量/密钥痕迹」表述过强——`fd` 默认跳过隐藏目录，`$HOME` 的「均 0」仅覆盖非隐藏路径；`fd --hidden -e p8` 实于 `$HOME/.cargo/registry/.../ring-0.17.14/tests/` 找到 3 个 `.p8`（ring 测试私钥，非 APNs 凭据，故「凭据仍缺」结论不受影响），且相较 2026-11-04 用 `find`（遍历隐藏目录）覆盖面收窄（todo.md:25）。——已清（本 commit）+证据：属实（证据表述过强）。`todo.md:25` 2026-11-06 复核口径已改为：repo 侧 `find . -name '*.p8'`＝0；`$HOME` 侧 `fd --hidden -e p8`＝3 个 ring 测试私钥（非 APNs 凭据）、无 APNs 环境变量/密钥痕迹；「凭据仍缺」结论不受影响。
 - [x] 审核发现：todo.md:173 新断言「区间内无缺陷引入提交」与同 commit 新增的 todo.md:183 自相矛盾——后者承认 b68a34a（属区间 66837be..HEAD）引入了「结论与理由相矛盾」的缺陷记录；「无缺陷引入提交」仅当「缺陷」排除台账记录自质量问题方成立，文本未作此限定（todo.md:173）。——已清（本 commit）+证据：属实（断言未作限定）。`todo.md:173` 已限定「缺陷」指被审计内容缺陷、排除台账记录自质量问题（`b68a34a` 仅系台账记录，其自身记录质量缺陷不计入），与 `todo.md:183` 不再矛盾。
 - [x] 审核发现：APNs 复核核销记录称证据「已改为同口径 `find`（覆盖隐藏目录）」，但 `$HOME` 侧实际口径仍是 `fd --hidden`，而 fd 即便带 `--hidden` 也默认跳过 .gitignore/.ignore 命中的文件（实测合成仓库中被 .gitignore 遮蔽的 .p8：`find` 可见 2 个、`fd --hidden` 可见 0 个、加 `--no-ignore` 才可见 2 个），故 `$HOME` 覆盖面仍窄于 2026-11-04 的 find 口径，「同口径」表述不成立，todo.md:25「`$HOME` 下……仅见 3 个」的完备性断言对 find 等价口径不保（todo.md:185、todo.md:25）。——已清（本 commit）+证据：属实（记录口径误标，但完备性子断言在当前树未复现）。口径误标成立：`todo.md:185` 原称「同口径 `find`」而 `todo.md:25` 的 `$HOME` 侧实为 `fd --hidden`；fd 合成仓库实测确认 `--hidden` 仍跳过 `.gitignore`/`.ignore` 命中（find＝2、fd --hidden＝0、--no-ignore＝2）。但完备性子断言未复现：`find "$HOME" -name '*.p8'`＝3、`fd --hidden -e p8`＝3、`fd --hidden --no-ignore -e p8`＝3，三口径均为同 3 个 ring 测试私钥；`todo.md:185` 口径描述已改为如实标注 `$HOME` 侧用 `fd --hidden`，`todo.md:25` 结论「凭据仍缺」不受影响。
+
+- [ ] 审核发现：本轮 diff 未见问题（e3770fd5..HEAD）。
+
+## 源码分层分析 2026-11-07
+
+### a) 抽象层清单
+
+- L1 契约与编解码：定义消息协议并将字节流映射为进程内 Packet（proto/gateway.proto:358、libs/network/protobuf_framing.h:12）。
+- L2 进程原语：提供崩溃捕获、指标暴露、启动参数校验与配置读取（libs/common/crash_handler.h:33、libs/common/config.h:10）。
+- L3 连接与分布式传输：管理 TCP/WebSocket 连接、跨进程会话归属与平面间消息路由（libs/network/session_registry.h:29、libs/network/message_router.h:17）。
+- L4 客户端接入与平台控制：装配游戏/App 接入网关、身份认证和通知投递（services/game/sdk_gateway/src/main.cc:375、services/app/auth/src/auth_service.h:29）。
+- L5 Chat 业务核心：执行频道、消息存储、送达追踪、审查与跨面投递（services/shared/chat/src/main_enhanced.cc:1152、services/shared/chat/src/hybrid_message_store.h:66）。
+- L6 可信服务集成：桥接游戏后端、NPC/流式代理与服务注册（services/game/server_gateway/src/main.cc:326、services/game/server_gateway/src/service_registry.h:28）。
+- L7 外围领域服务：提供搜索、社交、组队与语音等独立领域（services/search/src/main.cc:32、services/social/src/main.cc:86）。
+- L8 客户端集成面：封装多语言 SDK 与配套应用的本地状态、协议适配和调用入口（sdks/ts/src/chirp_client.ts:66、apps/desktop/src/api/services.ts:72）。
+
+### b) 超大文件候选
+
+- [ ] LAY-001 [P1] 拆分 services/shared/chat/src/main.cc（2209 行）——旧装配路径集中持有业务分发、持久化配置与生命周期代码（services/shared/chat/src/main.cc:1）。
+- [ ] LAY-002 [P1] 拆分 services/shared/chat/src/main_enhanced.cc（2199 行）——入口同时包含认证调用、频道逻辑、跨面桥接与运行状态（services/shared/chat/src/main_enhanced.cc:1152）。
+- [ ] LAY-003 [P1] 拆分 services/social/src/main.cc（1464 行）——HTTP 处理、SocialState 操作与存储/好友/粉丝流程耦合在同一入口（services/social/src/main.cc:1370）。
+- [ ] LAY-004 [P1] 拆分 services/party/src/main.cc（1398 行）——HTTP、PartyState、Redis 参与者与 MySQL 记录流程集中在单入口（services/party/src/main.cc:1323）。
+- [ ] LAY-005 [P1] 拆分 apps/web_companion/src/api/chat_api.ts（1329 行）——同一文件承担 API 映射、状态聚合、推送与命令组装（apps/web_companion/src/api/chat_api.ts:1）。
+- [ ] LAY-006 [P1] 拆分 apps/desktop/src/api/chat_api.ts（1326 行）——桌面 API 层重复承担协议映射、会话状态与消息流编排（apps/desktop/src/api/chat_api.ts:1）。
+- [ ] LAY-007 [P1] 拆分 sdks/unity/Runtime/Chirp/ChirpClient.cs（1285 行）——连接、频道、成员、私信与认证事件集中在 Unity 客户端类（sdks/unity/Runtime/Chirp/ChirpClient.cs:1）。
+- [ ] LAY-008 [P1] 拆分 apps/ios/ChirpCompanion/App/AppModel.swift（1256 行）——iOS 应用模型同时处理连接状态、身份、频道与本地消息更新（apps/ios/ChirpCompanion/App/AppModel.swift:1）。
+- [ ] LAY-009 [P1] 拆分 services/voice/src/main.cc（1250 行）——语音房间的 HTTP、信令、成员状态与指标流程共用单入口（services/voice/src/main.cc:1154）。
+- [ ] LAY-010 [P1] 拆分 scripts/run_coverage.sh（1243 行）——覆盖率执行、服务编排、日志检查与汇总报告耦合在一个脚本（scripts/run_coverage.sh:1）。
+- [ ] LAY-011 [P1] 拆分 test_services.sh（1543 行）——多服务启动、协议验证、跨面流程与报告逻辑集中在一个测试脚本（test_services.sh:1）。
+
+### c) 目录/分类不合理处
+
+- [ ] `services/app` 在 CMake 中被拆为 auth/notification/sdk_gateway 多个入口，却没有 `services/app/src/main.cc` 通用装配点，目录名与实际进程边界不一致（CMakeLists.txt:292）。
+- [ ] `apps/shared/protocol` 明确不放入 `sdks`，但与 `sdks/ts` 各自维护协议编解码/流水线，跨端一致性依赖测试向量而非共享实现（apps/shared/protocol/package.json:6）。
+- [ ] `deploy/deploy-cluster.sh` 只编排 gateway/auth/chat/social/voice，未覆盖 party/notification/app gateway/server gateway/search/NPC，`deploy/k8s` 仍只由脚本创建且无清单（deploy/deploy-cluster.sh:73）。
+- [ ] `apps/admin_dashboard` 轮询 `/api/stats` 等接口，但仓库没有 `/api/*` 服务端，代理也指向未实现的 `localhost:5000`（apps/admin_dashboard/vite.config.ts:9）。

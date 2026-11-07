@@ -46,6 +46,7 @@ const config = defineConfig({
           { text: 'Core', link: '/CORE' },
           { text: 'Getting Started', link: '/guide/getting-started' },
           { text: 'Architecture', link: '/architecture' },
+          { text: 'Glossary', link: '/glossary' },
           { text: 'API', link: '/api/overview' },
           {
             text: 'SDKs',
@@ -100,6 +101,7 @@ const config = defineConfig({
               { text: 'Getting Started', link: '/guide/getting-started' },
               { text: 'Integration Pitfalls', link: '/guide/integration-pitfalls' },
               { text: 'Overall Architecture', link: '/architecture' },
+              { text: 'Glossary', link: '/glossary' },
               { text: 'Server Plane', link: '/server_plane' },
               { text: 'API Reference', link: '/api/overview' },
             ]},
@@ -207,6 +209,7 @@ const config = defineConfig({
               { text: '快速开始', link: '/zh/guide/getting-started' },
               { text: '接入避坑指南', link: '/zh/guide/integration-pitfalls' },
               { text: '整体架构', link: '/zh/architecture' },
+              { text: '术语表', link: '/zh/glossary' },
               { text: '服务器平面', link: '/zh/server_plane' },
               { text: 'API 参考', link: '/zh/api/overview' },
             ]},

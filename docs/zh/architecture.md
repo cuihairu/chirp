@@ -307,6 +307,101 @@ sequenceDiagram
 | 应用/工具 | `apps/*`、`tools/*` | 演示、smoke 客户端、基准测试 |
 | 交付 | `docker-compose.yml`、`deploy/`、`scripts/` | 编排与验证 |
 
+## 抽象层
+
+上表描述代码位置；以下八层描述运行时每个单元拥有什么。术语见[术语表](glossary.md)。
+
+### L1 — 契约与编解码
+
+| 方面 | 位置与生命周期 |
+| --- | --- |
+| 实现 | 源 schema 位于 `proto/*.proto`；`Packet` 是通用信封（`proto/gateway.proto:358`），`MsgID` 划分各平面（`proto/gateway.proto:11`）。 |
+| 配置 schema | Protobuf 字段 schema 就是契约；线格式不由服务旗标配置。TS/C++/C#/Java/Go/Swift 生成物作为已提交构建输入。 |
+| 专属协议文件 | `proto/gateway.proto`，以及 `auth`、`chat`、`social`、`voice`、`party`、`app_notification`、`game_server_gateway` 各域协议。 |
+| 文案 | API 文案落在 [API 参考](api/overview.md)；本层没有 UI 字符串。 |
+| 生命周期 | 生成先于服务构建；编码后的包只存活于一次线上读写。 |
+
+### L2 — 进程原语
+
+| 方面 | 位置与生命周期 |
+| --- | --- |
+| 实现 | 日志、JWT、指标、崩溃采集、必填参数和可选文件配置 `Config`（`libs/common/config.h:10`）。 |
+| 配置 schema | `RequireArg` 定义必填启动输入（`libs/common/required_arg.h:28`）；指标旗标选择可选端点（`libs/common/include/common/metrics_http_server.h:17`）。 |
+| 专属协议文件 | 无；本层只在进程内。 |
+| 文案 | 日志与崩溃诊断从这里产生，供运维消费。 |
+| 生命周期 | 崩溃采集先于解析；指标监听器随所属服务停止（`libs/common/crash_handler.h:33`）。 |
+
+### L3 — 连接与分布式传输
+
+| 方面 | 位置与生命周期 |
+| --- | --- |
+| 实现 | TCP/WebSocket 服务端、会话、帧、Redis 客户端/pub-sub、会话认领与可信 peer 辅助（`libs/network/tcp_server.h:14`、`libs/network/websocket_server.h:13`）。 |
+| 配置 schema | 监听 host/port 与回调由构造函数注入；Redis host/port/TTL 是服务旗标，交给 `RedisSessionManager`（`libs/network/redis_session_manager.h:26`）。 |
+| 专属协议文件 | 消费 `gateway.proto`；聊天 peer 注册新增 5050–5053 消息块。 |
+| 文案 | 无终端用户文案；失败文本是运维日志。 |
+| 生命周期 | 监听器先于 `io_context::run` 启动；Redis 认领向旧 owner 发布踢出并独立过期（`libs/network/redis_session_manager.h:26`）。 |
+
+### L4 — 客户端接入与平台控制
+
+| 方面 | 位置与生命周期 |
+| --- | --- |
+| 实现 | `game_sdk_gateway`、`app_sdk_gateway`、增强 auth 和推送通知。游戏边缘入口是 `services/game/sdk_gateway/src/main.cc:375`；通知入口是 `services/app/notification/src/main.cc:86`。 |
+| 配置 schema | 边缘/auth/通知旗标配置监听器、认证后端、提供商密钥、TLS、设备持久化和密钥；通知持久化可选（`services/app/notification/src/device_store.h:36`）。 |
+| 专属协议文件 | `auth.proto`、`app_notification.proto`、`gateway.proto`。 |
+| 文案 | 服务端只有日志和协议错误码；客户端文案保留在各自 App 层。 |
+| 生命周期 | 边缘绑定 TCP/WS、认证、绑定或认领本地会话，然后桥接或分发；App auth 必须有签名密钥才启动（`services/game/sdk_gateway/src/main.cc:375`）。 |
+
+### L5 — Chat 业务核心
+
+| 方面 | 位置与生命周期 |
+| --- | --- |
+| 实现 | enhanced/distributed chat 负责投递、历史、群组、治理、peer 注册与玩家目录（`services/shared/chat/src/main_enhanced.cc:1152`）。 |
+| 配置 schema | `MessageStoreConfig` 集中 Redis、MySQL、迁移、投递、历史和 ACK 上限（`services/shared/chat/src/message_store_config.h:10`）；`PlayerDirectory::Options` 增加 Redis 注册表与扇出上限（`services/shared/chat/src/player_directory.h:52`）。 |
+| 专属协议文件 | `chat.proto`，加 `game_server_gateway.proto` 和 `gateway.proto` 的 peer 注册块。 |
+| 文案 | 功能行为落在[服务器平面](server_plane.md)与专题设计；错误用协议码表达。 |
+| 生命周期 | 存储先于监听器初始化；迁移、投递、保留与过期 worker 运行在 chat `io_context`，关闭时按依赖反向停止（`services/shared/chat/src/main_enhanced.cc:1152`）。 |
+
+### L6 — 可信服务集成
+
+| 方面 | 位置与生命周期 |
+| --- | --- |
+| 实现 | `game_server_gateway` 接受已认证服务并桥接注入/事件（`services/game/server_gateway/src/main.cc:326`）；NPC 对话消费注入事件并回复。 |
+| 配置 schema | Hub 旗标定义 `service_id` 密钥、心跳/超时、Redis Stream、group、consumer 和认领节奏（`services/game/server_gateway/src/stream_broker.h:75`）；NPC 规则用 TSV 加兜底回复（`services/game/npc_dialog/src/npc_engine.h:40`）。 |
+| 专属协议文件 | 专属契约：`proto/game_server_gateway.proto`。 |
+| 文案 | 服务平面行为见[服务器平面](server_plane.md)与 NPC 设计。 |
+| 生命周期 | 服务 peer 先认证，接收服务端分配心跳；每个 `service_id` 只保留一条连接，旧连接被替换（`services/game/server_gateway/src/service_registry.h:28`）。 |
+
+### L7 — 外围领域服务
+
+| 方面 | 位置与生命周期 |
+| --- | --- |
+| 实现 | search、social、party、voice 暴露独立监听器与可选 Redis 持久化。入口分别是 `services/search/src/main.cc:32`、`services/social/src/main.cc:1370`、`services/party/src/main.cc:1323`、`services/voice/src/main.cc:1154`。 |
+| 配置 schema | search 强依赖 MySQL 并选择 SQLite 路径；social/party 用可选 Redis；voice 用 token secret、TURN URI/secret 和心跳超时。状态形状见术语表中 `MessageSearchIndex`、`SocialState`、`PartyState`、`VoiceState`。 |
+| 专属协议文件 | 专属 `social.proto`、`party.proto`、`voice.proto`；search 使用 chat 搜索消息。 |
+| 文案 | 领域状态与降级见本文和 [API 参考](api/overview.md)。 |
+| 生命周期 | 每个服务先恢复可选 Redis 状态再监听，随后启动 TCP/WS 和可选指标，关闭时先停监听器再 `io.stop()`（`services/social/src/main.cc:1370`）。 |
+
+### L8 — 客户端集成面
+
+| 方面 | 位置与生命周期 |
+| --- | --- |
+| 实现 | C++ 核心与引擎适配、TypeScript/Kotlin/C# 客户端、Go 服务客户端、companion web/desktop/iOS/Android/Harmony 服务图，以及 Unreal 游戏线程门面。代表构造点：`sdks/ts/src/chirp_client.ts:66`、`sdks/go/client.go:141`、`apps/desktop/src/api/services.ts:72`。 |
+| 配置 schema | 共享客户端配置 URL、心跳、未收到 pong 上限、请求超时与重连退避；App 图解析 Vite URL、本地 host 输入、平台偏好或反代路径（`apps/web_companion/src/api/services.ts:111`）。 |
+| 专属协议文件 | 消费 L1 绑定；服务端不为客户端新增私有线上字段。 |
+| 文案 | UI 字符串随各客户端（例如 Android/Harmony 资源）；传输状态语义由 SDK API 共享。 |
+| 生命周期 | 服务图连接、登录、启动订阅、让可选平面各自降级，退出时断开自有连接（`apps/desktop/src/App.tsx:46`）。 |
+
+### 拆分理由
+
+1. 契约与编解码单独成层，因为所有平面共用同一 `Packet`（`proto/gateway.proto:358`）和长度前缀线格式（`libs/network/protobuf_framing.h:12`）。
+2. 进程关注点与 I/O 分开，因为崩溃采集、必填密钥、指标和可选文件配置各有独立构造点（`libs/common/crash_handler.h:33`、`libs/common/required_arg.h:28`、`libs/common/include/common/metrics_http_server.h:17`、`libs/common/config.h:10`）。
+3. 传输与业务状态分开，因为 `TcpServer`、`WebSocketServer` 和 `Session` 只暴露回调，不含聊天语义（`libs/network/tcp_server.h:14`、`libs/network/websocket_server.h:13`、`libs/network/session.h:7`）。
+4. 接入与领域状态分开，因为网关经 `ServiceBridge` 转发 2xxx 包，业务行为留在后端（`libs/network/service_bridge.h:54`）。
+5. Chat 单独成核心，因为它的存储 schema 和投递 worker 不是通用传输关注点（`services/shared/chat/src/message_store_config.h:10`、`services/shared/chat/src/message_delivery_tracker.h:18`）。
+6. 服务集成与客户端边缘分开，因为它认证 `service_id` peer、分配心跳并替换被顶 peer（`services/game/server_gateway/src/service_registry.h:28`）。
+7. 外围领域分开，因为 social、party、voice、search 有专属监听器、协议族、存储选择和可选降级（`services/social/src/main.cc:1370`、`services/party/src/main.cc:1323`、`services/voice/src/main.cc:1154`、`services/search/src/main.cc:32`）。
+8. 客户端集成单独成层，因为协议状态机共享，而传输、配置发现和持久设备身份随平台变化（`sdks/ts/src/chirp_client.ts:66`、`apps/web_companion/src/api/services.ts:111`、`apps/ios/Sources/ChirpAppCore/HostConfig.swift:10`）。
+
 ## 协议基线
 
 所有边缘和可信 peer 使用相同的帧格式：
