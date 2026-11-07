@@ -57,6 +57,12 @@ jobs:
         files: coverage.lcov
         token: ${{ secrets.CODECOV_TOKEN }}
         fail_ci_if_error: false
+        # codecov CLI defaults run their own gcov over every .gcda in the
+        # workspace and auto-discover the resulting .gcov files (650 reports
+        # incl. STL/gtest/asio headers, tests, tools, mains) — that poisoned
+        # the denominator at 66%. Only the clean lcov from run_coverage.sh
+        # may enter the report.
+        disable_search: true
 
   smoke:
     runs-on: ubuntu-22.04
