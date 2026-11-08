@@ -186,7 +186,8 @@
 - [x] 审核发现：todo.md:173 新断言「区间内无缺陷引入提交」与同 commit 新增的 todo.md:183 自相矛盾——后者承认 b68a34a（属区间 66837be..HEAD）引入了「结论与理由相矛盾」的缺陷记录；「无缺陷引入提交」仅当「缺陷」排除台账记录自质量问题方成立，文本未作此限定（todo.md:173）。——已清（本 commit）+证据：属实（断言未作限定）。`todo.md:173` 已限定「缺陷」指被审计内容缺陷、排除台账记录自质量问题（`b68a34a` 仅系台账记录，其自身记录质量缺陷不计入），与 `todo.md:183` 不再矛盾。
 - [x] 审核发现：APNs 复核核销记录称证据「已改为同口径 `find`（覆盖隐藏目录）」，但 `$HOME` 侧实际口径仍是 `fd --hidden`，而 fd 即便带 `--hidden` 也默认跳过 .gitignore/.ignore 命中的文件（实测合成仓库中被 .gitignore 遮蔽的 .p8：`find` 可见 2 个、`fd --hidden` 可见 0 个、加 `--no-ignore` 才可见 2 个），故 `$HOME` 覆盖面仍窄于 2026-11-04 的 find 口径，「同口径」表述不成立，todo.md:25「`$HOME` 下……仅见 3 个」的完备性断言对 find 等价口径不保（todo.md:185、todo.md:25）。——已清（本 commit）+证据：属实（记录口径误标，但完备性子断言在当前树未复现）。口径误标成立：`todo.md:185` 原称「同口径 `find`」而 `todo.md:25` 的 `$HOME` 侧实为 `fd --hidden`；fd 合成仓库实测确认 `--hidden` 仍跳过 `.gitignore`/`.ignore` 命中（find＝2、fd --hidden＝0、--no-ignore＝2）。但完备性子断言未复现：`find "$HOME" -name '*.p8'`＝3、`fd --hidden -e p8`＝3、`fd --hidden --no-ignore -e p8`＝3，三口径均为同 3 个 ring 测试私钥；`todo.md:185` 口径描述已改为如实标注 `$HOME` 侧用 `fd --hidden`，`todo.md:25` 结论「凭据仍缺」不受影响。
 
-- [ ] 审核发现：本轮 diff 未见问题（e3770fd5..HEAD）。
+- [x] 审核发现：本轮 diff 未见问题（e3770fd5..HEAD，57a2a92 时点钉定）。
+      证据（2026-11-09）：区间实含 10 提交——`57a2a92`（codecov `disable_search: true`，注释充分）、`a5f2ba4`（CI `--fail-under 98` 对齐 codecov 项目目标 98%，脚本默认仍 100% 更严）、`9ff9ef7`/`fecd8ef`（coverage 门禁修复，CI coverage job 100.0% 绿）、`20ce431`（源码分层 docs）、`518b7b5`/`57ba1e6`/`d6b67e7`/`a879f28`（4 项 dependabot 例行升版，随 CI run 构建全绿）、`16f447d`（docs 复核）。区间内无缺陷引入提交，断言成立。
 
 ## 源码分层分析 2026-11-07
 
