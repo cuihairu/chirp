@@ -9,6 +9,7 @@ file(GLOB_RECURSE CHAT_BASE_SRCS "src/*.cc")
 
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*main_distributed\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*main_enhanced\\.cc")
+list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*enhanced_dispatch\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*mysql_message_store\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*message_store_factory\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*message_store_config\\.cc")
@@ -46,6 +47,9 @@ if(MYSQL_FOUND)
         src/distributed_runtime.cc
         src/delivery_ack_manager.cc
         src/main_enhanced.cc
+        # Enhanced-build dispatch and runtime state (extracted from
+        # main_enhanced.cc so the entry only wires options/lifecycle).
+        src/enhanced_dispatch.cc
         src/runtime_utils.cc
         src/group_manager.cc
         src/chat_rate_limiter.cc
