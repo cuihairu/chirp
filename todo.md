@@ -204,7 +204,8 @@
 
 ### b) 超大文件候选
 
-- [ ] LAY-001 [P1] 拆分 services/shared/chat/src/main.cc（2209 行）——旧装配路径集中持有业务分发、持久化配置与生命周期代码（services/shared/chat/src/main.cc:1）。
+- [x] LAY-001 [P1] 拆分 services/shared/chat/src/main.cc（2209 行）——旧装配路径集中持有业务分发、持久化配置与生命周期代码（services/shared/chat/src/main.cc:1）。
+      证据（2026-11-09）：commit `c03a425`。`main.cc` 2209→705 行，仅剩参数解析与装配/生命周期；`MessageStore` 整结构迁入新 `basic_message_store.h`（`chirp::chat::basic`）；`FeatureHandlers`+`HandlePacket`（38-case 分发）+会话尾辅助函数迁入新 `basic_packet_handler.{h,cc}`；`GenerateSessionId` 暴露为 `chirp::chat::basic` 供 `chat_basic_session_tests`（#include main.cc 重命名 main）直接驱动。纯代码搬移：`main()` 与原逐字节相同、搬移片段原样；ctest 45/45 绿（含 `chat_basic_session_tests` 11.5s 过）。无 pin 影响（run_coverage.sh 不引用 chat main.cc）。
 - [ ] LAY-002 [P1] 拆分 services/shared/chat/src/main_enhanced.cc（2199 行）——入口同时包含认证调用、频道逻辑、跨面桥接与运行状态（services/shared/chat/src/main_enhanced.cc:1152）。
 - [ ] LAY-003 [P1] 拆分 services/social/src/main.cc（1464 行）——HTTP 处理、SocialState 操作与存储/好友/粉丝流程耦合在同一入口（services/social/src/main.cc:1370）。
 - [ ] LAY-004 [P1] 拆分 services/party/src/main.cc（1398 行）——HTTP、PartyState、Redis 参与者与 MySQL 记录流程集中在单入口（services/party/src/main.cc:1323）。
