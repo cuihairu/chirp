@@ -246,3 +246,5 @@
 不属实（2026-11-09）：「消息接口的 limit 仅用有限性检查，非整数和超界值都能通过并引发数组长度异常」——`slice` 对非整数按截断（实测 `limit=2.5`→2 条）、超界值钳制在数据长度内（`limit=99999`→3 条）、非数值走默认 50，全程 200 无任何抛异常路径，不成立；正整数校验已随上一条加固（针对负数语义，非异常主张）。
 - [x] 审核发现：契约测试随机端口选择后未处理端口占用导致的启动失败（apps/admin_dashboard/server/admin_api.test.mjs:15）。
       属实。原测试在 19000-10999 随机取口，被占时子进程 `EADDRINUSE` 静默死、测试轮询 2.5s 后报「did not come up」伪失败。修复：`PORT=0` 交 OS 派发临时端口（消灭碰撞类），服务启动日志改打 `server.address().port` 实际端口，测试从 stdout 解析真实端口后再发请求；附带收益：启动等待从 fetch 轮询 2.5s 降为日志行即达。
+- [x] 审核发现：畸形请求目标（如 `GET //a% HTTP/1.1`）仍会使 URL 解析抛出未捕获异常并终止开发 API 服务（apps/admin_dashboard/server/admin_api.mjs:57）。
+      属实（红先行）：`//a%` 为网络路径引用，HTTP 解析器放行但 `new URL` 拒收（authority 含非法 `%`），`Invalid URL` 未捕获直接终止进程（实测进程死）。修复：`new URL` 包 try/catch，畸形目标回 400 `malformed request target` 而非崩；新增回归测试锁死（原始 socket 发 `GET //a% HTTP/1.1` 断言 400 且服务存活）。`node --test server/admin_api.test.mjs` 9/9 绿；`pnpm build` 绿。

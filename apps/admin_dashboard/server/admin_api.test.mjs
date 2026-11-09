@@ -99,6 +99,24 @@ test('a malformed Host header must not crash the server', async () => {
   assert.equal(after.status, 200);
 });
 
+test('a malformed request target must not crash the server', async () => {
+  // "GET //a% HTTP/1.1" passes the HTTP parser but new URL rejects the
+  // network-path reference (invalid percent in the authority); that throw
+  // used to escape the handler and kill the process. Speak raw HTTP.
+  const reply = await new Promise((resolve, reject) => {
+    const sock = net.connect(Number(new URL(base).port), '127.0.0.1', () => {
+      sock.write('GET //a% HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n');
+    });
+    sock.on('data', (d) => { resolve(String(d)); sock.end(); });
+    sock.on('error', reject);
+  });
+  assert.match(reply, /HTTP\/1\.1 400/);
+
+  // The server must still be alive and answering afterwards.
+  const after = await fetch(`${base}/api/stats`);
+  assert.equal(after.status, 200);
+});
+
 test('GET /api/messages/search filters and wraps in results', async () => {
   const hit = await (await fetch(`${base}/api/messages/search?q=hello`)).json();
   assert.equal(hit.results.length, 1);

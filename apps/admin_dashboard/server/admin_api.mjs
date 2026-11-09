@@ -54,7 +54,18 @@ const server = http.createServer((req, res) => {
   // reach the URL parser (a malformed Host like "a b" used to throw out of
   // new URL and take the whole dev server down). Only the path/query of the
   // request target is consumed, so the base origin is irrelevant.
-  const url = new URL(req.url, 'http://localhost');
+  //
+  // The request target itself can also be malformed: the HTTP parser accepts
+  // a network-path reference like "//a%" but URL rejects it (invalid percent
+  // in the authority), and an uncaught throw used to take the whole dev
+  // server down. Answer 400 for anything the parser cannot read instead.
+  let url;
+  try {
+    url = new URL(req.url, 'http://localhost');
+  } catch {
+    json(res, 400, { error: 'malformed request target' });
+    return;
+  }
   const path = url.pathname;
 
   if (path === '/api/stats') {
