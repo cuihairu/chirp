@@ -267,6 +267,9 @@ add_test(NAME gateway_extra_tests COMMAND gateway_extra_tests)
 # Voice service packet-handler tests (main.cc included with renamed main)
 add_executable(voice_tests
   voice_service_test.cc
+  # Packet handling and room state live here since the main.cc split; the
+  # test includes main.cc, which re-exports the handlers.
+  ${CMAKE_SOURCE_DIR}/services/voice/src/voice_dispatch.cc
 )
 
 chirp_unit_test_common_links(voice_tests)
