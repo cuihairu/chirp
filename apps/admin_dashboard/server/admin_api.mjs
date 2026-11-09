@@ -50,7 +50,11 @@ const server = http.createServer((req, res) => {
     json(res, 405, { error: 'method not allowed' });
     return;
   }
-  const url = new URL(req.url, `http://${req.headers.host}`);
+  // Parse against a fixed base: the client-supplied Host header must never
+  // reach the URL parser (a malformed Host like "a b" used to throw out of
+  // new URL and take the whole dev server down). Only the path/query of the
+  // request target is consumed, so the base origin is irrelevant.
+  const url = new URL(req.url, 'http://localhost');
   const path = url.pathname;
 
   if (path === '/api/stats') {
@@ -66,8 +70,12 @@ const server = http.createServer((req, res) => {
     return;
   }
   if (path === '/api/messages') {
-    const limit = Number(url.searchParams.get('limit') ?? 50);
-    json(res, 200, seed.messages.slice(0, Number.isFinite(limit) ? limit : 50));
+    // limit is an optional positive-integer cap; anything else (absent,
+    // non-numeric, fractional, zero, negative) falls back to the default.
+    const raw = url.searchParams.get('limit');
+    const parsed = raw === null ? 50 : Number(raw);
+    const limit = Number.isInteger(parsed) && parsed > 0 ? parsed : 50;
+    json(res, 200, seed.messages.slice(0, limit));
     return;
   }
   if (path === '/api/messages/search') {
@@ -82,5 +90,8 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`admin dashboard dev API listening on http://localhost:${PORT}`);
+  // Report the actually bound port: PORT=0 asks the OS for an ephemeral
+  // port (the contract test uses that to avoid fixed-port collisions).
+  const bound = server.address().port;
+  console.log(`admin dashboard dev API listening on port ${bound}`);
 });
