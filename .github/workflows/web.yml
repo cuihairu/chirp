@@ -19,6 +19,7 @@ on:
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
+      - 'scripts/check_protocol_lockstep.sh'
       - '.github/workflows/web.yml'
   pull_request:
     branches: [ main, develop ]
@@ -30,6 +31,7 @@ on:
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
+      - 'scripts/check_protocol_lockstep.sh'
       - '.github/workflows/web.yml'
 
 jobs:
@@ -81,6 +83,17 @@ jobs:
 
     - name: Build
       run: pnpm run build
+
+  protocol-lockstep:
+    # apps/shared/protocol 与 sdks/ts 是两份逐字镜像（边界裁决：sdks 是游戏
+    # 集成面、apps 不依赖 sdks，跨端一致性靠镜像 + 两侧测试而非共享实现）。
+    # 任何一侧单独改动在此红——改协议必须两份同步改。
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v7.0.1
+
+    - name: Check protocol lockstep
+      run: bash scripts/check_protocol_lockstep.sh
 
   proto-sync:
     # The generated TS is committed; regenerate and fail on drift so the

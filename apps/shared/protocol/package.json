@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "App-side chat protocol layer for chirp companion apps (web companion + desktop). Lives under apps/ by design: sdks/ is the game-facing integration surface, apps carry their own protocol code (same layout rule as apps/android .../protocol/ and apps/ios Sources/ChirpProtocol/). Kept in lockstep with the game SDK's test vectors; no React/DOM dependencies.",
+  "description": "App-side chat protocol layer for chirp companion apps (web companion + desktop). Lives under apps/ by design: sdks/ is the game-facing integration surface, apps carry their own protocol code (same layout rule as apps/android .../protocol/ and apps/ios Sources/ChirpProtocol/). The mirrored files in src/ are byte-identical to sdks/ts/src (enforced by scripts/check_protocol_lockstep.sh in CI); no React/DOM dependencies.",
   "exports": {
     "./*": "./src/*"
   },
