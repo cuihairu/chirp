@@ -97,3 +97,6 @@ apps/ios/xcuserdata/
 
 # crashpad 本地落盘目录(数据库布局,不手工管理)
 crash_dumps/
+
+# python 字节码(scripts/ 下的覆盖率报告/钉子表工具)
+__pycache__/
