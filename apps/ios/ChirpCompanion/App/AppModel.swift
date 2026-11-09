@@ -25,35 +25,35 @@ final class AppModel: ObservableObject {
     /// 多端在线镜像(P4b:登录清单 + notify,platform 一槽)。
     @Published private(set) var onlineDevices: [OnlineDeviceIndex.Entry] = []
     /// 设备面注册清单(P4b:GET_USER_DEVICES,设备面就绪后拉取)。
-    @Published private(set) var registeredDevices: [Chirp_AppNotification_DeviceInfo] = []
+    @Published var registeredDevices: [Chirp_AppNotification_DeviceInfo] = []
     /// 设备清单降级文案(设备面未注册/拉取失败;nil = 无事)。
-    @Published private(set) var devicesPanelNotice: String?
+    @Published var devicesPanelNotice: String?
     /// 好友名册 + 在线状态(P4c:FriendIndex/PresenceIndex 派生视图行)。
-    @Published private(set) var socialFriends: [SocialFriendRow] = []
+    @Published var socialFriends: [SocialFriendRow] = []
     /// 待我处理的入向申请(FRIEND_REQUEST_NOTIFY 累积)。
-    @Published private(set) var pendingRequests: [FriendIndex.PendingIn] = []
+    @Published var pendingRequests: [FriendIndex.PendingIn] = []
     /// 我已发出、等对方确认的申请(纯本地,刷新即丢——服务端无出向查询)。
-    @Published private(set) var pendingOutIds: [String] = []
+    @Published var pendingOutIds: [String] = []
     /// 我自己的在线状态(P4c:面板里可改,登录默认在线)。
-    @Published private(set) var myPresence: Chirp_Social_PresenceStatus = .online
+    @Published var myPresence: Chirp_Social_PresenceStatus = .online
     /// 社交面板降级文案(名册/在线状态拉取失败;nil = 无事)。
-    @Published private(set) var socialPanelNotice: String?
+    @Published var socialPanelNotice: String?
     /// 组队快照(P4d;nil=未入队,事件驱动刷新)。
-    @Published private(set) var partySnapshot: PartyIndex.Snapshot?
+    @Published var partySnapshot: PartyIndex.Snapshot?
     /// 入向我收到的组队邀请(INVITE_NOTIFY 累积,按 inviteId 去重)。
-    @Published private(set) var partyInvites: [PartyIndex.Invite] = []
+    @Published var partyInvites: [PartyIndex.Invite] = []
     /// 语音房间镜像(P4d;nil=不在房)。
-    @Published private(set) var voiceRoom: VoiceIndex.RoomSnapshot?
+    @Published var voiceRoom: VoiceIndex.RoomSnapshot?
     /// 游戏在线状态(P4d;nil=面不可用,面板降级)。
-    @Published private(set) var gamePresenceState: GamePresenceIndex.State?
+    @Published var gamePresenceState: GamePresenceIndex.State?
     /// 组队/语音面降级文案(登录被拒/失败;nil = 无事)。
-    @Published private(set) var planesNotice: String?
+    @Published var planesNotice: String?
     /// 群名单镜像(P4e:GET_USER_GROUPS 整表 + 群 notify 重拉)。
-    @Published private(set) var groupRoster: [GroupIndex.Entry] = []
+    @Published var groupRoster: [GroupIndex.Entry] = []
     /// 当前群面板的成员清单(P4e:面板打开时拉,动作后重拉)。
-    @Published private(set) var groupMembers: [Chirp_Chat_GroupMember] = []
+    @Published var groupMembers: [Chirp_Chat_GroupMember] = []
     /// 群面板降级文案(成员拉取失败;nil = 无事)。
-    @Published private(set) var groupPanelNotice: String?
+    @Published var groupPanelNotice: String?
     /// 群昵称快照修订号:.groupAliasChanged 落主线程后自增。修订号无读者,
     /// 是纯粹的重渲信号——@Published 变更触发 objectWillChange,订阅壳层
     /// 视图 body 重估后从 service.aliases 快照读到新署名。
@@ -78,14 +78,14 @@ final class AppModel: ObservableObject {
 
     /// 设备识别(首次生成即持久化);登录面展示用。
     let deviceId: String
-    private var service: ChatSessionService?
+    var service: ChatSessionService?
     /// 设备面(app_gateway 5201)注册服务与本次登录用的 host 快照。
-    private var devicePlane: DevicePlaneService?
+    var devicePlane: DevicePlaneService?
     /// 组队/语音面(P4d:party 7501 / voice 9001,各自独立连接,失败静默
     /// 降级——socket 不可用时聊天照常)。
-    private var partyPlane: PartyPlaneService?
-    private var voicePlane: VoicePlaneService?
-    private var loginHost: HostConfig?
+    var partyPlane: PartyPlaneService?
+    var voicePlane: VoicePlaneService?
+    var loginHost: HostConfig?
 
     /// 推送点击深链暂存(P5):未登录时点击先存这里,登录成功后应用为
     /// pendingChatKey;登出/被踢不吞它(tap 已被用户消费,下次登录深链
@@ -177,341 +177,6 @@ final class AppModel: ObservableObject {
         chatHistoryLoading = false
         clearTypingState()
         connectionBanner = nil
-    }
-
-    // ---- 设备面推送注册(P3) ---------------------------------------------------
-
-    /// 登录成功后:请求通知授权 + 发起 APNs token 注册(token 走 AppDelegate
-    /// 桥进 AwaitedPushTokenSource),并连设备面完成 RegisterDevice——
-    /// 无 entitlement/授权被拒/系统回调失败一律空 token 降级注册(设备清单
-    /// 仍登记,推送退化为服务端日志投递,对齐 android nopush 姿态)。
-    private func startDeviceRegistration() {
-        guard let host = loginHost, let service = service else { return }
-        let userId = service.userId
-        requestNotificationAuthorization()
-        let tokenSource = AwaitedPushTokenSource()
-        AppDelegate.tokenSink = tokenSource
-        let plane = DevicePlaneService(
-            userId: userId,
-            deviceId: deviceId,
-            deviceUrl: host.deviceUrl.absoluteString,
-            osVersion: { ProcessInfo.processInfo.operatingSystemVersionString },
-            deviceName: { UIDevice.current.name },
-            transportFactory: { DarwinWsTransport(url: $0) },
-            emit: { [weak self] event in
-                Task { @MainActor in self?.handleDeviceEvent(event) }
-            })
-        devicePlane = plane
-        plane.register(tokenSource: tokenSource).onComplete { [weak self] outcome in
-            Task { @MainActor in
-                guard let self = self, self.devicePlane === plane else { return }
-                // 终态正常路径经 Event 事件;这里只兜连接层失败。
-                if case .failure(let err) = outcome {
-                    self.toast = "设备面连接失败:\(err.localizedDescription)"
-                }
-            }
-        }
-    }
-
-    private func handleDeviceEvent(_ event: DevicePlaneService.Event) {
-        switch event {
-        case .registered:
-            toast = "设备已登记(推送目标:APNs token 或降级日志投递)"
-            loadRegisteredDevices()
-            // game_presence 与推送共用设备面:面就绪即首拉开关与清单。
-            loadGamePresence()
-        case .rejected(let code):
-            toast = "设备注册被拒:\(codeName(code))"
-        case .failed(let reason):
-            toast = "设备注册失败:\(reason)"
-        }
-    }
-
-    /// 设备面板的注册清单(P4b):设备面就绪后拉取;面板打开时可再拉刷新。
-    /// 拉取失败置降级文案,面板照开(在线端数据走 chat 面不受影响)。
-    func loadRegisteredDevices() {
-        guard let plane = devicePlane else {
-            devicesPanelNotice = "设备面未就绪(注册未完成或已断开)"
-            return
-        }
-        plane.loadDevices().onComplete { [weak self] outcome in
-            Task { @MainActor in
-                guard let self = self else { return }
-                switch outcome {
-                case .success(let resp):
-                    if resp.code == .ok {
-                        self.registeredDevices = resp.devices
-                        self.devicesPanelNotice =
-                            resp.devices.isEmpty ? "尚无注册设备" : nil
-                    } else {
-                        self.devicesPanelNotice = "设备清单拉取被拒:\(self.codeName(resp.code))"
-                    }
-                case .failure(let err):
-                    self.devicesPanelNotice = "设备清单拉取失败:\(err.localizedDescription)"
-                }
-            }
-        }
-    }
-
-    private func requestNotificationAuthorization() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) {
-            _, _ in
-            // 授权与否都发起远程通知注册:授权只影响展示,token 照取。
-            DispatchQueue.main.async {
-                UIApplication.shared.registerForRemoteNotifications()
-            }
-        }
-    }
-
-    // ---- 组队/语音/游戏状态面(P4d) -------------------------------------------
-
-    /// 登录成功后并行起组队/语音两条副平面;game_presence 复用设备面(注册
-    /// 完成事件里首拉)。任一面失败静默降级——面板照开,数据空、横幅提示。
-    private func startAuxiliaryPlanes() {
-        guard let host = loginHost, let service = service else { return }
-        let userId = service.userId
-
-        let party = PartyPlaneService(
-            userId: userId,
-            partyUrl: host.partyUrl.absoluteString,
-            transportFactory: { DarwinWsTransport(url: $0) },
-            emit: { [weak self] event in
-                Task { @MainActor in self?.handlePartyEvent(event) }
-            })
-        partyPlane = party
-        party.login().onComplete { [weak self] outcome in
-            Task { @MainActor in
-                guard let self = self, self.partyPlane === party else { return }
-                if case .failure(let err) = outcome {
-                    self.planesNotice = "组队面连接失败:\(err.localizedDescription)"
-                }
-            }
-        }
-
-        let voice = VoicePlaneService(
-            userId: userId,
-            voiceUrl: host.voiceUrl.absoluteString,
-            transportFactory: { DarwinWsTransport(url: $0) },
-            emit: { [weak self] event in
-                Task { @MainActor in self?.handleVoiceEvent(event) }
-            })
-        voicePlane = voice
-        voice.login().onComplete { [weak self] outcome in
-            Task { @MainActor in
-                guard let self = self, self.voicePlane === voice else { return }
-                if case .failure(let err) = outcome {
-                    self.planesNotice = "语音面连接失败:\(err.localizedDescription)"
-                }
-            }
-        }
-    }
-
-    /// 面板刷新按钮:双面重拉快照(组队整表/语音在房重认领);面已死则
-    /// 重新起(登录时起过的面在 teardown 前不该死,兜底而已)。
-    func refreshAuxiliaryPlanes() {
-        if partyPlane == nil || voicePlane == nil {
-            startAuxiliaryPlanes()
-            return
-        }
-        partyPlane?.fetchMyParty().onComplete { [weak self] _ in
-            Task { @MainActor in self?.rebuildPartyMirrors() }
-        }
-        voicePlane?.restoreRoom().onComplete { [weak self] _ in
-            Task { @MainActor in self?.rebuildVoiceMirror() }
-        }
-    }
-
-    private func handlePartyEvent(_ event: PartyPlaneService.Event) {
-        switch event {
-        case .loggedIn:
-            rebuildPartyMirrors()
-        case .rejected(let code):
-            planesNotice = "组队面登录被拒:\(codeName(code))"
-        case .failed(let reason):
-            planesNotice = "组队面失败:\(reason)"
-        case .changed:
-            rebuildPartyMirrors()
-        }
-    }
-
-    private func handleVoiceEvent(_ event: VoicePlaneService.Event) {
-        switch event {
-        case .loggedIn:
-            rebuildVoiceMirror()
-        case .rejected(let code):
-            planesNotice = "语音面登录被拒:\(codeName(code))"
-        case .failed(let reason):
-            planesNotice = "语音面失败:\(reason)"
-        case .changed:
-            rebuildVoiceMirror()
-        }
-    }
-
-    /// 索引 → @Published 视图面。
-    private func rebuildPartyMirrors() {
-        partySnapshot = partyPlane?.party.party()
-        partyInvites = partyPlane?.party.invites() ?? []
-    }
-
-    private func rebuildVoiceMirror() {
-        voiceRoom = voicePlane?.roomIndex.room()
-    }
-
-    // ---- 组队动作 ------------------------------------------------------------
-
-    func createPartyTapped() {
-        guard let plane = partyPlane else { return }
-        plane.createParty().onComplete { [weak self] outcome in
-            Task { @MainActor in self?.reportPlaneCode(outcome, ok: "组队已创建") }
-        }
-    }
-
-    func inviteToPartyTapped(targetUserId: String) {
-        let target = targetUserId.trimmingCharacters(in: .whitespaces)
-        guard !target.isEmpty, let plane = partyPlane else { return }
-        plane.invite(targetUserId: target).onComplete { [weak self] outcome in
-            Task { @MainActor in self?.reportPlaneCode(outcome, ok: "已向 \(target) 发出组队邀请") }
-        }
-    }
-
-    func respondToPartyInviteTapped(inviteId: String, accept: Bool) {
-        guard let plane = partyPlane else { return }
-        let promise = accept
-            ? plane.acceptInvite(inviteId: inviteId)
-            : plane.declineInvite(inviteId: inviteId)
-        promise.onComplete { [weak self] outcome in
-            Task { @MainActor in self?.reportPlaneCode(outcome, ok: accept ? "已入队" : "已拒绝邀请") }
-        }
-    }
-
-    func leavePartyTapped() {
-        guard let plane = partyPlane else { return }
-        plane.leaveParty().onComplete { [weak self] outcome in
-            Task { @MainActor in
-                guard let self = self else { return }
-                switch outcome {
-                case .success(true):
-                    self.toast = "已退队(队伍随之解散)"
-                case .success(false):
-                    self.toast = "已退队"
-                case .failure(let err):
-                    self.toast = "退队失败:\(err.localizedDescription)"
-                }
-            }
-        }
-    }
-
-    /// 就绪切换(成员面;队长动作走 kick/transfer,面板里按快照的队长位
-    /// 显隐,这里只做 ready 与 leave 两个高频动作)。
-    func togglePartyReadyTapped() {
-        guard let plane = partyPlane else { return }
-        let next = !(plane.party.selfMember(userId: currentUserId)?.ready ?? false)
-        plane.setReady(next).onComplete { [weak self] outcome in
-            Task { @MainActor in self?.reportPlaneCode(outcome, ok: next ? "已就绪" : "已取消就绪") }
-        }
-    }
-
-    // ---- 语音房间动作 ---------------------------------------------------------
-
-    func createVoiceRoomTapped(name: String) {
-        guard let plane = voicePlane else { return }
-        plane.createRoom(roomName: name).onComplete { [weak self] outcome in
-            Task { @MainActor in self?.reportPlaneCode(outcome, ok: "语音房间已创建") }
-        }
-    }
-
-    func joinVoiceRoomTapped(roomId: String) {
-        let room = roomId.trimmingCharacters(in: .whitespaces)
-        guard !room.isEmpty, let plane = voicePlane else { return }
-        plane.joinRoom(roomId: room).onComplete { [weak self] outcome in
-            Task { @MainActor in self?.reportPlaneCode(outcome, ok: "已进入语音房间") }
-        }
-    }
-
-    func leaveVoiceRoomTapped() {
-        guard let plane = voicePlane else { return }
-        plane.leaveRoom().onComplete { [weak self] outcome in
-            Task { @MainActor in
-                guard let self = self else { return }
-                switch outcome {
-                case .success(true):
-                    self.toast = "已离开语音房间"
-                case .success(false):
-                    self.toast = "不在语音房间内"
-                case .failure(let err):
-                    self.toast = "退房失败:\(err.localizedDescription)"
-                }
-            }
-        }
-    }
-
-    func toggleVoiceMuteTapped() {
-        guard let plane = voicePlane,
-            let me = plane.roomIndex.room()?.participants.first(where: {
-                $0.userId == plane.userId
-            })
-        else { return }
-        let next = !(me.muted ?? false)
-        plane.setMute(next).onComplete { [weak self] outcome in
-            Task { @MainActor in self?.reportPlaneCode(outcome, ok: next ? "已闭麦" : "已开麦") }
-        }
-    }
-
-    func toggleVoiceDeafenTapped() {
-        guard let plane = voicePlane,
-            let me = plane.roomIndex.room()?.participants.first(where: {
-                $0.userId == plane.userId
-            })
-        else { return }
-        let next = !(me.deafened ?? false)
-        plane.setDeafen(next).onComplete { [weak self] outcome in
-            Task { @MainActor in self?.reportPlaneCode(outcome, ok: next ? "已关听" : "已开听") }
-        }
-    }
-
-    // ---- 游戏在线状态动作 -----------------------------------------------------
-
-    /// 面板打开/下拉刷新时拉开关与游戏清单;失败降级为 nil。
-    func loadGamePresence() {
-        guard let plane = devicePlane else {
-            gamePresenceState = nil
-            return
-        }
-        plane.refreshGamePresence().onComplete { [weak self] _ in
-            Task { @MainActor in
-                guard let self = self, let plane = self.devicePlane else { return }
-                self.gamePresenceState =
-                    plane.gamePresence.unavailable() ? nil : plane.gamePresence.state()
-            }
-        }
-    }
-
-    func setGamePresenceEnabledTapped(_ enabled: Bool) {
-        guard let plane = devicePlane else { return }
-        plane.setGamePresenceEnabled(enabled).onComplete { [weak self] _ in
-            Task { @MainActor in
-                guard let self = self, let plane = self.devicePlane else { return }
-                self.gamePresenceState =
-                    plane.gamePresence.unavailable() ? nil : plane.gamePresence.state()
-                if enabled && self.gamePresenceState?.enabled != true {
-                    self.toast = "游戏状态开关未生效"
-                }
-            }
-        }
-    }
-
-    /// 副平面请求的统一回执:ok 只在动作语义值得提示时展示。
-    private func reportPlaneCode(
-        _ outcome: Promise<Chirp_Common_ErrorCode>.Outcome, ok: String
-    ) {
-        switch outcome {
-        case .success(let code) where code == .ok:
-            toast = ok
-        case .success(let code):
-            toast = "操作被拒:\(codeName(code))"
-        case .failure(let err):
-            toast = "操作失败:\(err.localizedDescription)"
-        }
     }
 
     // ---- 事件落位 --------------------------------------------------------------
@@ -769,332 +434,9 @@ final class AppModel: ObservableObject {
         }
     }
 
-    private func refreshSessions() {
+    /// 会话列表镜像重建(拆分后供扩展文件复用)。
+    func refreshSessions() {
         sessionSummaries = service?.sessions.summaries() ?? []
-    }
-
-    // ---- 好友/在线状态面(P4c) ---------------------------------------------
-
-    /// 好友面板的整表刷新(打开面板时调):名册换入后按名册批量拉一次在线
-    /// 状态。任一路失败置降级文案,面板照开——在线状态缺失只影响小圆点。
-    func loadFriends() {
-        guard let service = service else {
-            socialPanelNotice = "尚未登录"
-            return
-        }
-        socialPanelNotice = nil
-        service.refreshFriends()
-            .flatMap { [weak self] _ -> Promise<Chirp_Common_ErrorCode> in
-                guard let self = self, let service = self.service else {
-                    return Promise<Chirp_Common_ErrorCode>.completed(.ok)
-                }
-                return service.pullPresence(of: service.friends.friends())
-            }
-            .onComplete { [weak self] outcome in
-                Task { @MainActor in
-                    guard let self = self else { return }
-                    self.rebuildSocial()
-                    if case .failure(let err) = outcome {
-                        self.socialPanelNotice = "名册拉取失败:\(err.localizedDescription)"
-                    }
-                }
-            }
-    }
-
-    /// 改自己的在线状态(广播给好友)。失败只提示,面板状态保持原值。
-    func setMyPresence(_ status: Chirp_Social_PresenceStatus) {
-        guard let service = service else { return }
-        service.setPresence(status).onComplete { [weak self] outcome in
-            Task { @MainActor in
-                guard let self = self else { return }
-                switch outcome {
-                case .success(let code) where code == .ok:
-                    self.myPresence = status
-                case .success(let code):
-                    self.toast = "状态切换被拒:\(self.codeName(code))"
-                case .failure(let err):
-                    self.toast = "状态切换失败:\(err.localizedDescription)"
-                }
-            }
-        }
-    }
-
-    /// 发起好友申请(空 id / 自己的 id 由 service 侧守卫,这里只做去空白)。
-    func addFriendTapped(targetUserId: String) {
-        let target = targetUserId.trimmingCharacters(in: .whitespaces)
-        guard !target.isEmpty, let service = service else { return }
-        service.addFriend(targetUserId: target).onComplete { [weak self] outcome in
-            Task { @MainActor in
-                guard let self = self else { return }
-                switch outcome {
-                case .success(let code) where code == .ok:
-                    self.toast = "已向 \(target) 发出好友申请"
-                    self.rebuildSocial()
-                case .success(let code):
-                    self.toast = "申请被拒:\(self.codeName(code))"
-                case .failure(let err):
-                    self.toast = "申请失败:\(err.localizedDescription)"
-                }
-            }
-        }
-    }
-
-    /// 同意/拒绝一条入向申请;名册由 FRIEND_ACCEPTED_NOTIFY 补。
-    func respondToRequestTapped(requestId: String, accept: Bool) {
-        guard let service = service else { return }
-        service.respondToRequest(requestId: requestId, accept: accept)
-            .onComplete { [weak self] outcome in
-                Task { @MainActor in
-                    guard let self = self else { return }
-                    switch outcome {
-                    case .success(let code) where code == .ok:
-                        self.rebuildSocial()
-                    case .success(let code):
-                        self.toast = "处理被拒:\(self.codeName(code))"
-                    case .failure(let err):
-                        self.toast = "处理失败:\(err.localizedDescription)"
-                    }
-                }
-            }
-    }
-
-    /// 删好友(服务端对称幂等,对方走 notify)。
-    func removeFriendTapped(userId: String) {
-        guard let service = service else { return }
-        service.removeFriend(targetUserId: userId).onComplete { [weak self] outcome in
-            Task { @MainActor in
-                guard let self = self else { return }
-                switch outcome {
-                case .success(let code) where code == .ok:
-                    self.rebuildSocial()
-                case .success(let code):
-                    self.toast = "删除被拒:\(self.codeName(code))"
-                case .failure(let err):
-                    self.toast = "删除失败:\(err.localizedDescription)"
-                }
-            }
-        }
-    }
-
-    /// 名册/申请/在线状态 → @Published 视图行。TTL 过期(70s 无增量)的快照
-    /// 按离线渲染,漏掉的 disconnect notify 由这一层兜底。
-    private func rebuildSocial() {
-        guard let service = service else {
-            socialFriends = []
-            pendingRequests = []
-            pendingOutIds = []
-            return
-        }
-        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
-        socialFriends = service.friends.friends().map { userId in
-            let fresh = service.presence.isFresh(userId, nowMs: nowMs)
-            let entry = fresh ? service.presence.entry(userId) : nil
-            return SocialFriendRow(
-                userId: userId,
-                status: entry?.status ?? .offline,
-                statusMessage: entry?.statusMessage ?? "")
-        }
-        pendingRequests = service.friends.pendingIn()
-        pendingOutIds = service.friends.pendingOut()
-    }
-
-    // ---- 群面板(P4e,web GroupDialogs 对齐)-----------------------------------
-
-    /// 名单镜像 → @Published(sessions 列行标题也从这里取名)。
-    private func refreshGroupsRoster() {
-        groupRoster = service?.groups.entries() ?? []
-    }
-
-    /// 群设置面板打开:清旧清单再拉当前群成员(web 打开 Dialog 同款)。
-    func openGroupPanel(groupId: String) {
-        groupMembers = []
-        groupPanelNotice = nil
-        loadGroupMembers(groupId: groupId)
-    }
-
-    func loadGroupMembers(groupId: String) {
-        guard let service = service else { return }
-        service.loadGroupMembers(groupId: groupId).onComplete { [weak self] outcome in
-            Task { @MainActor in
-                guard let self = self else { return }
-                switch outcome {
-                case .success(let resp):
-                    if resp.code == .ok {
-                        self.groupMembers = resp.members
-                        self.groupPanelNotice = resp.members.isEmpty ? "尚无成员" : nil
-                    } else {
-                        self.groupPanelNotice = "成员拉取被拒:\(self.codeName(resp.code))"
-                    }
-                case .failure(let err):
-                    self.groupPanelNotice = "成员拉取失败:\(err.localizedDescription)"
-                }
-            }
-        }
-    }
-
-    /// 建群;成功即跳进新群的聊天面(web 创建后进频道同款)。
-    func createGroupTapped(name: String) {
-        let trimmed = name.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty, let service = service else { return }
-        service.createGroup(name: trimmed).onComplete { [weak self] outcome in
-            Task { @MainActor in
-                guard let self = self else { return }
-                switch outcome {
-                case .success(let groupId) where !groupId.isEmpty:
-                    self.toast = "群已创建"
-                    self.refreshSessions()
-                    self.refreshGroupsRoster()
-                    self.requestGroupChat(groupId: groupId)
-                case .success:
-                    self.toast = "建群失败(服务端拒绝或断线)"
-                case .failure(let err):
-                    self.toast = "建群失败:\(err.localizedDescription)"
-                }
-            }
-        }
-    }
-
-    /// 邀人进群(INVITE 直接入群,无待确认态——web「添加成员」同款)。
-    /// 成功后重拉成员清单(成员数与名单都是服务端权威)。
-    func inviteToGroupTapped(groupId: String, targetUserId: String) {
-        let target = targetUserId.trimmingCharacters(in: .whitespaces)
-        guard !target.isEmpty, let service = service else { return }
-        service.inviteToGroup(groupId: groupId, targetUserId: target)
-            .onComplete { [weak self] outcome in
-                Task { @MainActor in
-                    guard let self = self else { return }
-                    switch outcome {
-                    case .success(let code) where code == .ok:
-                        self.toast = "已添加 \(target)"
-                        self.loadGroupMembers(groupId: groupId)
-                    case .success(let code):
-                        self.toast = "添加被拒:\(self.codeName(code))"
-                    case .failure(let err):
-                        self.toast = "添加失败:\(err.localizedDescription)"
-                    }
-                }
-            }
-    }
-
-    /// 群主移出成员;成功后重拉成员清单。
-    func kickGroupMemberTapped(groupId: String, targetUserId: String) {
-        guard let service = service else { return }
-        service.kickMember(groupId: groupId, targetUserId: targetUserId)
-            .onComplete { [weak self] outcome in
-                Task { @MainActor in
-                    guard let self = self else { return }
-                    switch outcome {
-                    case .success(let code) where code == .ok:
-                        self.toast = "已移出 \(targetUserId)"
-                        self.loadGroupMembers(groupId: groupId)
-                    case .success(let code):
-                        self.toast = "移出被拒:\(self.codeName(code))"
-                    case .failure(let err):
-                        self.toast = "移出失败:\(err.localizedDescription)"
-                    }
-                }
-            }
-    }
-
-    /// 设置群昵称(本人或 MODERATOR+ 可改):空串=清除。回原始应答,壳层按
-    /// code 分流文案;快照经 2124 notify 折叠刷新(操作者自身在扇出名里,
-    /// 不本地改),memberRow 与消息署名随 aliases 快照重渲。
-    func setGroupAliasTapped(groupId: String, targetUserId: String, alias: String) {
-        guard let service = service else { return }
-        service.setMemberAlias(groupId: groupId, targetUserId: targetUserId, alias: alias)
-            .onComplete { [weak self] outcome in
-                Task { @MainActor in
-                    guard let self = self else { return }
-                    switch outcome {
-                    case .success(let resp) where resp.code == .ok:
-                        self.toast = alias.isEmpty ? "已清除群昵称" : "已设置群昵称"
-                    case .success(let resp):
-                        self.toast = "群昵称被拒:\(self.codeName(resp.code))"
-                    case .failure(let err):
-                        self.toast = "群昵称失败:\(err.localizedDescription)"
-                    }
-                }
-            }
-    }
-
-    /// 群禁言(MODERATOR+,seconds=0 解禁):回原始应答按 code 分流;
-    /// 成员行徽章与发送门都读服务端 muted_until_ts,经 2252 notify→重拉
-    /// 名册刷新,此处不再重拉(与 web/harmony 同款)。
-    func setGroupMuteTapped(groupId: String, targetUserId: String, seconds: Int64) {
-        guard let service = service else { return }
-        service.setGroupMute(groupId: groupId, targetUserId: targetUserId, seconds: seconds)
-            .onComplete { [weak self] outcome in
-                Task { @MainActor in
-                    guard let self = self else { return }
-                    switch outcome {
-                    case .success(let resp) where resp.code == .ok:
-                        self.toast = seconds == 0 ? "已解除禁言" : "已禁言"
-                    case .success(let resp):
-                        self.toast = "禁言被拒:\(self.codeName(resp.code))"
-                    case .failure(let err):
-                        self.toast = "禁言失败:\(err.localizedDescription)"
-                    }
-                }
-            }
-    }
-
-    /// 退群;成功由 sessionDropped 事件弹栈关面板(web onLeft 退导航同款)。
-    func leaveGroupTapped(groupId: String) {
-        guard let service = service else { return }
-        service.leaveGroup(groupId: groupId).onComplete { [weak self] outcome in
-            Task { @MainActor in
-                guard let self = self else { return }
-                switch outcome {
-                case .success(let code) where code == .ok:
-                    self.toast = "已退出群组"
-                case .success(let code):
-                    self.toast = "退群被拒:\(self.codeName(code))"
-                case .failure(let err):
-                    self.toast = "退群失败:\(err.localizedDescription)"
-                }
-            }
-        }
-    }
-
-    /// 群聊署名读数:活跃会话为群时读 aliases 快照(空=未设),其余回退空串
-    /// 由调用方回退本名/ID(web groupAliasOf 同位)。
-    func groupAlias(of userId: String) -> String {
-        guard let channel = activeChannel, channel.kind == .group, let service = self.service
-        else { return "" }
-        return service.aliases.aliasOf(groupId: channel.channelId, userId: userId)
-    }
-
-    /// 会话行/聊天面标题:DM 显示对端 id,群显示群名(名单缺名回落群 id,
-    /// web 同款)。
-    func sessionTitle(_ session: SessionIndex.Summary) -> String {
-        switch session.kind {
-        case .dm: return session.peerId
-        case .group: return groupName(session.peerId)
-        }
-    }
-
-    /// 聊天面标题(键寻址;ChatView navigationTitle 用)。
-    func chatTitle(forKey key: String) -> String {
-        guard let channel = SessionChannel(key: key, selfId: currentUserId) else {
-            return key
-        }
-        switch channel.kind {
-        case .dm: return channel.peerId
-        case .group: return groupName(channel.peerId)
-        }
-    }
-
-    /// 群名(缺名回落群 id);群主判定给设置面板用。
-    func groupName(_ groupId: String) -> String {
-        service?.groups.name(groupId: groupId) ?? groupId
-    }
-
-    var isGroupOwner: Bool {
-        guard let channel = activeChannel, channel.kind == .group,
-            let service = service,
-            let entry = service.groups.entry(groupId: channel.peerId)
-        else { return false }
-        return entry.ownerId == currentUserId
     }
 
     // ---- typing 上报/展示(P4a) ------------------------------------------------
@@ -1191,7 +533,7 @@ final class AppModel: ObservableObject {
 
     private static let typingStartInterval: TimeInterval = 3
 
-    private func codeName(_ code: Chirp_Common_ErrorCode) -> String {
+    func codeName(_ code: Chirp_Common_ErrorCode) -> String {
         "\(code)"
     }
 
@@ -1254,3 +596,4 @@ enum PresenceDot {
     case inGame
     case offline
 }
+
