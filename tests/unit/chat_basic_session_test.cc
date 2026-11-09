@@ -3898,4 +3898,113 @@ TEST(BasicMainTest, CrossPlaneHubSpokeFanoutReplyAndInject) {
   }
 }
 
+// --- SET_MEMBER_ALIAS / SET_GROUP_MUTE / REPORT_MESSAGE 分发面 --------------
+// 这三个 opcode 走 HandlePacket 的组管理/举报 case：合法 body 进共享 handlers
+// 单元，垃圾 body 必须回 INVALID_PARAM（请求不许悬着）。
+
+TEST_F(BasicChatTest, MemberAliasMuteAndReportDispatchParseAndRoute) {
+  auto alice = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+
+  chirp::chat::CreateGroupRequest create;
+  create.set_creator_id("alice");
+  create.set_group_name("g");
+  DispatchReq(chirp::gateway::CREATE_GROUP_REQ, create, alice);
+  const auto created_frames = FramesOf(*alice, chirp::gateway::CREATE_GROUP_RESP);
+  ASSERT_EQ(created_frames.size(), 1u);
+  chirp::chat::CreateGroupResponse created;
+  ASSERT_TRUE(created.ParseFromString(created_frames[0].body()));
+  ASSERT_EQ(created.code(), chirp::common::OK);
+  const std::string group_id = created.group_id();
+
+  // 备注：组长给成员（自己）设置备注 → OK。
+  chirp::chat::SetMemberAliasRequest alias;
+  alias.set_group_id(group_id);
+  alias.set_target_user_id("alice");
+  alias.set_alias("boss");
+  DispatchReq(chirp::gateway::SET_MEMBER_ALIAS_REQ, alias, alice);
+  const auto alias_frames = FramesOf(*alice, chirp::gateway::SET_MEMBER_ALIAS_RESP);
+  ASSERT_EQ(alias_frames.size(), 1u);
+  chirp::chat::SetMemberAliasResponse alias_resp;
+  ASSERT_TRUE(alias_resp.ParseFromString(alias_frames[0].body()));
+  EXPECT_EQ(alias_resp.code(), chirp::common::OK);
+
+  // 禁言：30 天内合法时长 → OK。
+  chirp::chat::SetGroupMuteRequest mute;
+  mute.set_group_id(group_id);
+  mute.set_target_user_id("alice");
+  mute.set_duration_sec(60);
+  DispatchReq(chirp::gateway::SET_GROUP_MUTE_REQ, mute, alice);
+  const auto mute_frames = FramesOf(*alice, chirp::gateway::SET_GROUP_MUTE_RESP);
+  ASSERT_EQ(mute_frames.size(), 1u);
+  chirp::chat::SetGroupMuteResponse mute_resp;
+  ASSERT_TRUE(mute_resp.ParseFromString(mute_frames[0].body()));
+  EXPECT_EQ(mute_resp.code(), chirp::common::OK);
+
+  // 举报：台账内消息（本实例投递过）→ OK 且入台账；台账外仍走分发体。
+  edits_.RegisterMessage("m-report", "alice", "spam");
+  chirp::chat::ReportMessageRequest report;
+  report.set_message_id("m-report");
+  report.set_reason("abuse");
+  DispatchReq(chirp::gateway::REPORT_MESSAGE_REQ, report, alice);
+  const auto report_frames = FramesOf(*alice, chirp::gateway::REPORT_MESSAGE_RESP);
+  ASSERT_EQ(report_frames.size(), 1u);
+  chirp::chat::ReportMessageResponse report_resp;
+  ASSERT_TRUE(report_resp.ParseFromString(report_frames[0].body()));
+  EXPECT_EQ(report_resp.code(), chirp::common::OK);
+
+  // 三个 opcode 的垃圾 body：都回 INVALID_PARAM。
+  const std::pair<chirp::gateway::MsgID, chirp::gateway::MsgID> garbage_pairs[] = {
+      {chirp::gateway::SET_MEMBER_ALIAS_REQ, chirp::gateway::SET_MEMBER_ALIAS_RESP},
+      {chirp::gateway::SET_GROUP_MUTE_REQ, chirp::gateway::SET_GROUP_MUTE_RESP},
+      {chirp::gateway::REPORT_MESSAGE_REQ, chirp::gateway::REPORT_MESSAGE_RESP},
+  };
+  for (const auto& [id, resp_id] : garbage_pairs) {
+    auto s = std::make_shared<MockSession>();
+    ASSERT_EQ(Login(s, "carol").code(), chirp::common::OK);
+    Dispatch(id, std::string("\xde\xad\xbe\xef", 4), s);
+    const auto frames = FramesOf(*s, resp_id);
+    ASSERT_EQ(frames.size(), 1u) << id;
+    chirp::chat::SetMemberAliasResponse probe;
+    ASSERT_TRUE(probe.ParseFromString(frames[0].body())) << id;
+    EXPECT_EQ(probe.code(), chirp::common::INVALID_PARAM) << id;
+  }
+}
+
+// Redis 镜像的另两条腿：撤回清理扫 Redis 设备桶（Keys + LRange/LRem），历史
+// 读走 Redis LRange（写侧 RPush 在 AddMessage）。主 fixture 的 store 无 Redis，
+// 这两条腿只有带活 Redis 桩的 store 能踩到。
+TEST_F(BasicChatTest, RedisBackedPurgeAndHistoryWalkMirrorBuckets) {
+  chirp_test::InMemoryRedis redis;
+  auto fake = std::make_unique<chirp_test::FakeRedisServer>(
+      [&redis](const std::vector<std::string>& args) { return redis.Handle(args); });
+  MessageStore redis_store(
+      std::make_shared<chirp::network::RedisClient>("127.0.0.1", fake->port()),
+      /*ttl=*/0);
+
+  // 同 message_id 双桶并存（default + 设备桶），撤回清理全数移除。
+  chirp::chat::ChatMessage m;
+  m.set_message_id("m-purge");
+  redis_store.AddOffline("bob", chirp::chat::kDefaultOfflineSlot, m);
+  redis_store.AddOffline("bob", "ios", m);
+  EXPECT_EQ(redis_store.PurgeOfflineByMessageId("bob", "m-purge"), 2u);
+  EXPECT_TRUE(redis_store.PopOffline("bob", "ios").empty());
+
+  // 历史写入走 RPush 镜像，读回走 LRange（含 has_more 标志）。
+  chirp::chat::ChatMessage h;
+  h.set_message_id("h-1");
+  h.set_channel_type(chirp::chat::PRIVATE);
+  h.set_channel_id("a|b");
+  h.set_sender_id("a");
+  h.set_content("hello");
+  redis_store.AddMessage(h);
+  bool has_more = true;
+  const auto history = redis_store.GetHistory(chirp::chat::PRIVATE, "a|b",
+                                              /*before_timestamp=*/0, /*limit=*/50,
+                                              &has_more);
+  ASSERT_EQ(history.size(), 1u);
+  EXPECT_EQ(history[0].message_id(), "h-1");
+  EXPECT_FALSE(has_more);
+}
+
 }  // namespace

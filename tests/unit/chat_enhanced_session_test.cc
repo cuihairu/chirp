@@ -318,11 +318,13 @@ class EnhancedSessionTest : public ::testing::Test {
   // Scaffold LOGIN_REQ: token doubles as the user id (the verifier stays
   // disabled - nullptr - exactly like a build without --token_secret).
   void Login(const std::shared_ptr<MockSession>& session, const std::string& token,
-             const std::string& device_id, int64_t seq, const std::string& platform = "web") {
+             const std::string& device_id, int64_t seq, const std::string& platform = "web",
+             int32_t level = 0) {
     chirp::auth::LoginRequest req;
     req.set_token(token);
     req.set_device_id(device_id);
     req.set_platform(platform);
+    req.set_level(level);
     InvokeLogin(req, session, state_, store_, router_, nullptr, nullptr, &delivery_prefs_, seq);
   }
 
@@ -2441,6 +2443,483 @@ TEST_F(EnhancedSessionTest, DmRestrictionRejectsStrangerButNotSelfOrToggleOff) {
   delivery_prefs_.SetDmRestricted("alice", false);
   EXPECT_EQ(SendPrivate(bob, "bob", "alice", "after switch off", &mid),
             chirp::common::OK);
+}
+
+// --- 覆盖率批次 24：enhanced 客户端面 20-opcode 分发体 ----------------------
+//
+// DispatchClientFeaturePacket（TODO 2026-10-02 注补齐项：这批此前只在 basic
+// 分发表，enhanced 侧请求静默悬死）经主循环拦截位调用。这里按生产装配同型
+// 构造五个 handlers 单元（共享 managers + resolve/notify 回调，形状取自
+// main_enhanced 660-701），逐 opcode 打合法帧与垃圾帧：合法帧锁「进对了
+// handler」，垃圾帧锁「解析失败回 INVALID_PARAM，请求不许悬着」。各 handler
+// 的业务语义由各自的单元测试（chat_message_handlers_test / chat_group_*）
+// 锁定，这里不重复。
+
+template <typename Resp>
+void ExpectClientFeatureResp(MockSession& s, chirp::gateway::MsgID resp_id,
+                             chirp::common::ErrorCode code) {
+  const auto frames = FramesOf(s, resp_id);
+  ASSERT_EQ(frames.size(), 1u) << resp_id;
+  EXPECT_EQ(frames[0].sequence(), 3) << resp_id;
+  Resp resp;
+  ASSERT_TRUE(resp.ParseFromString(frames[0].body())) << resp_id;
+  EXPECT_EQ(resp.code(), code) << resp_id;
+}
+
+TEST_F(EnhancedSessionTest, ClientFeatureDispatchRoutesEveryOpcode) {
+  chirp::chat::GroupManager groups;
+  chirp::chat::ReadReceiptManager receipts;
+  chirp::chat::TypingManager typing;
+  chirp::chat::ReactionManager reactions;
+  chirp::chat::ReportLedger reports;
+  chirp::chat::MessageEditManager edits(edit_config_);
+
+  chirp::chat::ChannelMemberResolver resolve_members =
+      [&groups](chirp::chat::ChannelType channel_type, const std::string& channel_id,
+                const std::string& exclude_user_id) -> std::vector<std::string> {
+    if (channel_type == chirp::chat::PRIVATE) {
+      const size_t sep = channel_id.find('|');
+      if (sep == std::string::npos || sep == 0 || sep + 1 >= channel_id.size()) {
+        return {};
+      }
+      const std::string left = channel_id.substr(0, sep);
+      const std::string right = channel_id.substr(sep + 1);
+      const std::string& other = (left == exclude_user_id) ? right : left;
+      if (other.empty() || other == exclude_user_id) {
+        return {};
+      }
+      return {other};
+    }
+    std::vector<std::string> out;
+    for (const auto& member : groups.GetMembers(channel_id)) {
+      if (member.user_id() != exclude_user_id) {
+        out.push_back(member.user_id());
+      }
+    }
+    return out;
+  };
+  chirp::chat::UserNotifier notify_member =
+      [this](const std::string& user_id, chirp::gateway::MsgID msg_id,
+             const google::protobuf::Message& body) -> bool {
+    const auto recvs = chirp::network::GetUserSessions(state_->registry, user_id);
+    if (recvs.empty()) {
+      return false;
+    }
+    const std::string payload = body.SerializeAsString();
+    for (const auto& recv : recvs) {
+      chirp::chat::runtime::SendPacket(recv, msg_id, 0, payload);
+    }
+    return true;
+  };
+  chirp::chat::ReadReceiptHandlers receipt_handlers(receipts, resolve_members, notify_member);
+  chirp::chat::GroupHandlers group_handlers(groups, notify_member);
+  chirp::chat::ReportHandlers report_handlers(reports, edits);
+  chirp::chat::TypingHandlers typing_handlers(typing, resolve_members, notify_member);
+  chirp::chat::ReactionHandlers reaction_handlers(reactions, resolve_members, notify_member);
+  chirp::chat::MessageEditHandlers edit_handlers(
+      edits, resolve_members,
+      [](chirp::chat::ChannelType, const std::string&, const std::string&) { return true; },
+      notify_member);
+
+  auto send = [&](chirp::gateway::MsgID id, const google::protobuf::Message& body)
+      -> std::shared_ptr<MockSession> {
+    chirp::gateway::Packet pkt;
+    pkt.set_msg_id(id);
+    pkt.set_sequence(3);
+    pkt.set_body(body.SerializeAsString());
+    auto s = std::make_shared<MockSession>();
+    chirp::chat::enhanced::DispatchClientFeaturePacket(
+        pkt, s, "u1", &group_handlers, &typing_handlers, &reaction_handlers,
+        &receipt_handlers, &edit_handlers, &report_handlers, &delivery_prefs_);
+    return s;
+  };
+
+  // 组面：建组 → 邀请 → 入组 → 查询/管理一路 OK。
+  chirp::chat::CreateGroupRequest create;
+  create.set_creator_id("u1");
+  create.set_group_name("devs");
+  auto s = send(chirp::gateway::CREATE_GROUP_REQ, create);
+  ExpectClientFeatureResp<chirp::chat::CreateGroupResponse>(*s, chirp::gateway::CREATE_GROUP_RESP,
+                                                            chirp::common::OK);
+  const auto created = FramesOf(*s, chirp::gateway::CREATE_GROUP_RESP);
+  chirp::chat::CreateGroupResponse created_resp;
+  ASSERT_TRUE(created_resp.ParseFromString(created[0].body()));
+  const std::string gid = created_resp.group_id();
+
+  chirp::chat::InviteToGroupRequest invite;
+  invite.set_inviter_id("u1");
+  invite.set_group_id(gid);
+  invite.set_target_user_id("u2");
+  ExpectClientFeatureResp<chirp::chat::InviteToGroupResponse>(
+      *send(chirp::gateway::INVITE_TO_GROUP_REQ, invite), chirp::gateway::INVITE_TO_GROUP_RESP,
+      chirp::common::OK);
+
+  // 入组绑定认证身份（SameUser 防伪冒）：join 必须以 u2 本人身份发出。
+  chirp::chat::JoinGroupRequest join;
+  join.set_user_id("u2");
+  join.set_group_id(gid);
+  auto s_join = std::make_shared<MockSession>();
+  {
+    chirp::gateway::Packet pkt;
+    pkt.set_msg_id(chirp::gateway::JOIN_GROUP_REQ);
+    pkt.set_sequence(3);
+    pkt.set_body(join.SerializeAsString());
+    chirp::chat::enhanced::DispatchClientFeaturePacket(
+        pkt, s_join, "u2", &group_handlers, &typing_handlers, &reaction_handlers,
+        &receipt_handlers, &edit_handlers, &report_handlers, &delivery_prefs_);
+  }
+  ExpectClientFeatureResp<chirp::chat::JoinGroupResponse>(*s_join,
+                                                          chirp::gateway::JOIN_GROUP_RESP,
+                                                          chirp::common::OK);
+
+  chirp::chat::GetGroupInfoRequest info;
+  info.set_group_id(gid);
+  ExpectClientFeatureResp<chirp::chat::GetGroupInfoResponse>(*send(chirp::gateway::GET_GROUP_INFO_REQ, info),
+                                                             chirp::gateway::GET_GROUP_INFO_RESP,
+                                                             chirp::common::OK);
+
+  chirp::chat::GetGroupMembersRequest members;
+  members.set_group_id(gid);
+  ExpectClientFeatureResp<chirp::chat::GetGroupMembersResponse>(
+      *send(chirp::gateway::GET_GROUP_MEMBERS_REQ, members), chirp::gateway::GET_GROUP_MEMBERS_RESP,
+      chirp::common::OK);
+
+  chirp::chat::GetUserGroupsRequest user_groups;
+  user_groups.set_user_id("u1");
+  ExpectClientFeatureResp<chirp::chat::GetUserGroupsResponse>(
+      *send(chirp::gateway::GET_USER_GROUPS_REQ, user_groups), chirp::gateway::GET_USER_GROUPS_RESP,
+      chirp::common::OK);
+
+  chirp::chat::SetMemberAliasRequest alias;
+  alias.set_group_id(gid);
+  alias.set_target_user_id("u1");
+  alias.set_alias("boss");
+  ExpectClientFeatureResp<chirp::chat::SetMemberAliasResponse>(
+      *send(chirp::gateway::SET_MEMBER_ALIAS_REQ, alias), chirp::gateway::SET_MEMBER_ALIAS_RESP,
+      chirp::common::OK);
+
+  chirp::chat::SetGroupMuteRequest mute;
+  mute.set_group_id(gid);
+  mute.set_target_user_id("u1");
+  mute.set_duration_sec(60);
+  ExpectClientFeatureResp<chirp::chat::SetGroupMuteResponse>(
+      *send(chirp::gateway::SET_GROUP_MUTE_REQ, mute), chirp::gateway::SET_GROUP_MUTE_RESP,
+      chirp::common::OK);
+
+  chirp::chat::SetDmRestrictionRequest dm;
+  dm.set_enabled(true);
+  {
+    auto s2 = send(chirp::gateway::SET_DM_RESTRICTION_REQ, dm);
+    ExpectClientFeatureResp<chirp::chat::SetDmRestrictionResponse>(
+        *s2, chirp::gateway::SET_DM_RESTRICTION_RESP, chirp::common::OK);
+    const auto frames = FramesOf(*s2, chirp::gateway::SET_DM_RESTRICTION_RESP);
+    chirp::chat::SetDmRestrictionResponse resp;
+    ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+    EXPECT_TRUE(resp.enabled());  // 回显生效后的开关态
+    EXPECT_TRUE(delivery_prefs_.IsDmRestricted("u1"));
+  }
+  ExpectClientFeatureResp<chirp::chat::GetDmRestrictionResponse>(
+      *send(chirp::gateway::GET_DM_RESTRICTION_REQ, chirp::chat::GetDmRestrictionRequest{}),
+      chirp::gateway::GET_DM_RESTRICTION_RESP, chirp::common::OK);
+  delivery_prefs_.SetDmRestricted("u1", false);  // 别泄漏进后面的用例
+
+  // 举报：台账内消息（编辑台账登记过）→ OK。
+  edits.RegisterMessage("m-1", "u1", "x");
+  chirp::chat::ReportMessageRequest report;
+  report.set_message_id("m-1");
+  ExpectClientFeatureResp<chirp::chat::ReportMessageResponse>(
+      *send(chirp::gateway::REPORT_MESSAGE_REQ, report), chirp::gateway::REPORT_MESSAGE_RESP,
+      chirp::common::OK);
+
+  chirp::chat::GetUnreadCountRequest unread;
+  unread.set_user_id("u1");
+  ExpectClientFeatureResp<chirp::chat::GetUnreadCountResponse>(
+      *send(chirp::gateway::GET_UNREAD_COUNT_REQ, unread), chirp::gateway::GET_UNREAD_COUNT_RESP,
+      chirp::common::OK);
+
+  // typing notify 族：无回帧（start 与 stop 都不打）。
+  chirp::chat::TypingIndicator typing_on;
+  typing_on.set_channel_id("c1");
+  typing_on.set_channel_type(chirp::chat::PRIVATE);
+  typing_on.set_user_id("u1");
+  typing_on.set_is_typing(true);
+  EXPECT_TRUE(FramesOf(*send(chirp::gateway::TYPING_INDICATOR_NOTIFY, typing_on)).empty());
+  typing_on.set_is_typing(false);
+  EXPECT_TRUE(FramesOf(*send(chirp::gateway::TYPING_INDICATOR_NOTIFY, typing_on)).empty());
+
+  chirp::chat::GetTypingUsersRequest typing_q;
+  typing_q.set_channel_id("c1");
+  ExpectClientFeatureResp<chirp::chat::GetTypingUsersResponse>(
+      *send(chirp::gateway::GET_TYPING_USERS_REQ, typing_q), chirp::gateway::GET_TYPING_USERS_RESP,
+      chirp::common::OK);
+
+  // 表情：台账外频道跳过广播但仍回 OK；加→查→删一路 OK。
+  chirp::chat::AddReactionRequest add;
+  add.set_message_id("m-1");
+  add.set_user_id("u1");
+  add.set_emoji("👍");
+  ExpectClientFeatureResp<chirp::chat::AddReactionResponse>(*send(chirp::gateway::ADD_REACTION_REQ, add),
+                                                            chirp::gateway::ADD_REACTION_RESP,
+                                                            chirp::common::OK);
+  chirp::chat::GetReactionsRequest getr;
+  getr.set_message_id("m-1");
+  ExpectClientFeatureResp<chirp::chat::GetReactionsResponse>(*send(chirp::gateway::GET_REACTIONS_REQ, getr),
+                                                             chirp::gateway::GET_REACTIONS_RESP,
+                                                             chirp::common::OK);
+  chirp::chat::RemoveReactionRequest rem;
+  rem.set_message_id("m-1");
+  rem.set_user_id("u1");
+  rem.set_emoji("👍");
+  ExpectClientFeatureResp<chirp::chat::RemoveReactionResponse>(
+      *send(chirp::gateway::REMOVE_REACTION_REQ, rem), chirp::gateway::REMOVE_REACTION_RESP,
+      chirp::common::OK);
+
+  // 编辑：台账内消息 + 频道登记（编辑按频道取数与 moderator 判定）→ OK。
+  edits.RegisterMessage("m-2", "u1", "old");
+  edit_handlers.TrackMessage("m-2", chirp::chat::PRIVATE, "u1|u2");
+  chirp::chat::EditMessageRequest edit;
+  edit.set_message_id("m-2");
+  edit.set_user_id("u1");
+  edit.set_new_content("new");
+  ExpectClientFeatureResp<chirp::chat::EditMessageResponse>(*send(chirp::gateway::EDIT_MESSAGE_REQ, edit),
+                                                            chirp::gateway::EDIT_MESSAGE_RESP,
+                                                            chirp::common::OK);
+
+  // 踢人（u1 是组长，u2 在组）→ OK；再建一支组让 u1 离开 → OK。
+  chirp::chat::KickMemberRequest kick;
+  kick.set_requester_id("u1");
+  kick.set_group_id(gid);
+  kick.set_target_user_id("u2");
+  ExpectClientFeatureResp<chirp::chat::KickMemberResponse>(*send(chirp::gateway::KICK_MEMBER_REQ, kick),
+                                                           chirp::gateway::KICK_MEMBER_RESP,
+                                                           chirp::common::OK);
+  chirp::chat::CreateGroupRequest create2;
+  create2.set_creator_id("u1");
+  create2.set_group_name("temp");
+  auto s3 = send(chirp::gateway::CREATE_GROUP_REQ, create2);
+  const auto created2 = FramesOf(*s3, chirp::gateway::CREATE_GROUP_RESP);
+  chirp::chat::CreateGroupResponse created2_resp;
+  ASSERT_TRUE(created2_resp.ParseFromString(created2[0].body()));
+  chirp::chat::LeaveGroupRequest leave;
+  leave.set_user_id("u1");
+  leave.set_group_id(created2_resp.group_id());
+  ExpectClientFeatureResp<chirp::chat::LeaveGroupResponse>(*send(chirp::gateway::LEAVE_GROUP_REQ, leave),
+                                                           chirp::gateway::LEAVE_GROUP_RESP,
+                                                           chirp::common::OK);
+
+  // 未装配/未认证的拒绝臂：prefs 空、认证空、report_handlers 空各走各的。
+  {
+    chirp::gateway::Packet pkt;
+    pkt.set_msg_id(chirp::gateway::SET_DM_RESTRICTION_REQ);
+    pkt.set_sequence(3);
+    pkt.set_body(dm.SerializeAsString());
+    auto s4 = std::make_shared<MockSession>();
+    chirp::chat::enhanced::DispatchClientFeaturePacket(
+        pkt, s4, "u1", &group_handlers, &typing_handlers, &reaction_handlers,
+        &receipt_handlers, &edit_handlers, &report_handlers, /*delivery_prefs=*/nullptr);
+    ExpectClientFeatureResp<chirp::chat::SetDmRestrictionResponse>(
+        *s4, chirp::gateway::SET_DM_RESTRICTION_RESP, chirp::common::AUTH_FAILED);
+
+    // 认证身份为空（装配齐但未登录）→ 同款 AUTH_FAILED。
+    auto s5 = std::make_shared<MockSession>();
+    chirp::chat::enhanced::DispatchClientFeaturePacket(
+        pkt, s5, "", &group_handlers, &typing_handlers, &reaction_handlers,
+        &receipt_handlers, &edit_handlers, &report_handlers, &delivery_prefs_);
+    ExpectClientFeatureResp<chirp::chat::SetDmRestrictionResponse>(
+        *s5, chirp::gateway::SET_DM_RESTRICTION_RESP, chirp::common::AUTH_FAILED);
+
+    // GET_DM_RESTRICTION：prefs 未装配同样拒绝（读侧无泄漏）。
+    chirp::gateway::Packet get_pkt;
+    get_pkt.set_msg_id(chirp::gateway::GET_DM_RESTRICTION_REQ);
+    get_pkt.set_sequence(3);
+    auto s6 = std::make_shared<MockSession>();
+    chirp::chat::enhanced::DispatchClientFeaturePacket(
+        get_pkt, s6, "u1", &group_handlers, &typing_handlers, &reaction_handlers,
+        &receipt_handlers, &edit_handlers, &report_handlers, /*delivery_prefs=*/nullptr);
+    ExpectClientFeatureResp<chirp::chat::GetDmRestrictionResponse>(
+        *s6, chirp::gateway::GET_DM_RESTRICTION_RESP, chirp::common::AUTH_FAILED);
+
+    // report_handlers 未装配：举报按未装配拒绝。
+    chirp::gateway::Packet report_pkt;
+    report_pkt.set_msg_id(chirp::gateway::REPORT_MESSAGE_REQ);
+    report_pkt.set_sequence(3);
+    report_pkt.set_body(report.SerializeAsString());
+    auto s7 = std::make_shared<MockSession>();
+    chirp::chat::enhanced::DispatchClientFeaturePacket(
+        report_pkt, s7, "u1", &group_handlers, &typing_handlers, &reaction_handlers,
+        &receipt_handlers, &edit_handlers, /*report_handlers=*/nullptr, &delivery_prefs_);
+    ExpectClientFeatureResp<chirp::chat::ReportMessageResponse>(
+        *s7, chirp::gateway::REPORT_MESSAGE_RESP, chirp::common::AUTH_FAILED);
+
+    // typing notify 垃圾 body：无回帧，仅告警后吞帧。
+    chirp::gateway::Packet typing_pkt;
+    typing_pkt.set_msg_id(chirp::gateway::TYPING_INDICATOR_NOTIFY);
+    typing_pkt.set_sequence(3);
+    typing_pkt.set_body(std::string("\xde\xad\xbe\xef", 4));
+    auto s8 = std::make_shared<MockSession>();
+    ASSERT_TRUE(chirp::chat::enhanced::DispatchClientFeaturePacket(
+        typing_pkt, s8, "u1", &group_handlers, &typing_handlers, &reaction_handlers,
+        &receipt_handlers, &edit_handlers, &report_handlers, &delivery_prefs_));
+    EXPECT_TRUE(FramesOf(*s8).empty());
+  }
+
+  // 未知 opcode：不进任何 case → 返回 false 且零帧。
+  {
+    chirp::gateway::Packet pkt;
+    pkt.set_msg_id(chirp::gateway::GET_HISTORY_REQ);
+    pkt.set_sequence(3);
+    auto s5 = std::make_shared<MockSession>();
+    EXPECT_FALSE(chirp::chat::enhanced::DispatchClientFeaturePacket(
+        pkt, s5, "u1", &group_handlers, &typing_handlers, &reaction_handlers,
+        &receipt_handlers, &edit_handlers, &report_handlers, &delivery_prefs_));
+    EXPECT_TRUE(FramesOf(*s5).empty());
+  }
+
+  // 18 个带解析臂的 opcode 各打一发垃圾 body：全部 INVALID_PARAM，不悬着
+  // （GET_DM_RESTRICTION 请求体为空、无解析臂，垃圾帧照常回当前态，不在列）。
+  const std::pair<chirp::gateway::MsgID, chirp::gateway::MsgID> pairs[] = {
+      {chirp::gateway::CREATE_GROUP_REQ, chirp::gateway::CREATE_GROUP_RESP},
+      {chirp::gateway::JOIN_GROUP_REQ, chirp::gateway::JOIN_GROUP_RESP},
+      {chirp::gateway::LEAVE_GROUP_REQ, chirp::gateway::LEAVE_GROUP_RESP},
+      {chirp::gateway::KICK_MEMBER_REQ, chirp::gateway::KICK_MEMBER_RESP},
+      {chirp::gateway::GET_GROUP_INFO_REQ, chirp::gateway::GET_GROUP_INFO_RESP},
+      {chirp::gateway::GET_GROUP_MEMBERS_REQ, chirp::gateway::GET_GROUP_MEMBERS_RESP},
+      {chirp::gateway::GET_USER_GROUPS_REQ, chirp::gateway::GET_USER_GROUPS_RESP},
+      {chirp::gateway::INVITE_TO_GROUP_REQ, chirp::gateway::INVITE_TO_GROUP_RESP},
+      {chirp::gateway::SET_MEMBER_ALIAS_REQ, chirp::gateway::SET_MEMBER_ALIAS_RESP},
+      {chirp::gateway::SET_GROUP_MUTE_REQ, chirp::gateway::SET_GROUP_MUTE_RESP},
+      {chirp::gateway::SET_DM_RESTRICTION_REQ, chirp::gateway::SET_DM_RESTRICTION_RESP},
+      {chirp::gateway::REPORT_MESSAGE_REQ, chirp::gateway::REPORT_MESSAGE_RESP},
+      {chirp::gateway::GET_UNREAD_COUNT_REQ, chirp::gateway::GET_UNREAD_COUNT_RESP},
+      {chirp::gateway::GET_TYPING_USERS_REQ, chirp::gateway::GET_TYPING_USERS_RESP},
+      {chirp::gateway::ADD_REACTION_REQ, chirp::gateway::ADD_REACTION_RESP},
+      {chirp::gateway::REMOVE_REACTION_REQ, chirp::gateway::REMOVE_REACTION_RESP},
+      {chirp::gateway::GET_REACTIONS_REQ, chirp::gateway::GET_REACTIONS_RESP},
+      {chirp::gateway::EDIT_MESSAGE_REQ, chirp::gateway::EDIT_MESSAGE_RESP},
+  };
+  for (const auto& [req_id, resp_id] : pairs) {
+    chirp::gateway::Packet pkt;
+    pkt.set_msg_id(req_id);
+    pkt.set_sequence(3);
+    pkt.set_body(std::string("\xde\xad\xbe\xef", 4));
+    auto sg = std::make_shared<MockSession>();
+    ASSERT_TRUE(chirp::chat::enhanced::DispatchClientFeaturePacket(
+        pkt, sg, "u1", &group_handlers, &typing_handlers, &reaction_handlers,
+        &receipt_handlers, &edit_handlers, &report_handlers, &delivery_prefs_)) << req_id;
+    const auto frames = FramesOf(*sg, resp_id);
+    ASSERT_EQ(frames.size(), 1u) << req_id;
+    // 垃圾帧只断「有回帧」，回码统一 INVALID_PARAM —— 各 *_RESP 都带 code。
+    chirp::chat::GetGroupInfoResponse probe;
+    ASSERT_TRUE(probe.ParseFromString(frames[0].body())) << req_id;
+    EXPECT_EQ(probe.code(), chirp::common::INVALID_PARAM) << req_id;
+  }
+}
+
+// 发送路径的表情登记：带台账的 reactions 让私聊发送把 message_id 记进频道
+// 台账（ADD/REMOVE_REACTION 反查频道依赖它）；scaffold 固定传 nullptr，这里
+// 直驱 InvokeSendMessage 补上这条腿。
+TEST_F(EnhancedSessionTest, SendPathTracksMessageForReactions) {
+  chirp::chat::ReactionManager reactions;
+  chirp::chat::ReactionHandlers reaction_handlers(
+      reactions,
+      [](chirp::chat::ChannelType, const std::string&,
+         const std::string&) -> std::vector<std::string> { return {}; },
+      [](const std::string&, chirp::gateway::MsgID,
+         const google::protobuf::Message&) { return false; });
+
+  auto alice = std::make_shared<MockSession>();
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_receiver_id("bob");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_content("track me");
+  InvokeSendMessage(req, alice, state_, store_, tracker_, /*acks=*/nullptr, &delivery_prefs_,
+                    router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"",
+                    /*npc_prefix=*/"npc:", /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
+                    recall_.handlers.get(), /*directory=*/nullptr, /*hub=*/nullptr,
+                    /*groups=*/nullptr, &reaction_handlers, &friend_graph_, /*seq=*/1);
+  const auto resps = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);
+  ASSERT_EQ(resps.size(), 1u);
+  chirp::chat::SendMessageResponse resp;
+  ASSERT_TRUE(resp.ParseFromString(resps[0].body()));
+  ASSERT_EQ(resp.code(), chirp::common::OK);
+
+  // 发送已登记 message_id → 频道台账：加表情成功且计数为 1（登记语义由
+  // TrackMessage 调用行锁定，广播面的细节在 chat_message_handlers_test）。
+  chirp::chat::AddReactionRequest add;
+  add.set_message_id(resp.message_id());
+  add.set_user_id("alice");
+  add.set_emoji("👍");
+  const auto add_resp = reaction_handlers.HandleAddReaction(add, "alice");
+  EXPECT_EQ(add_resp.code(), chirp::common::OK);
+  EXPECT_EQ(add_resp.reaction().count(), 1);
+}
+
+// 撤回通知的离线半边：接收方从未登录（无会话）→ notify 返回 false，撤回
+// 照常成立，不留任何通知帧。
+TEST_F(EnhancedSessionTest, RecallOfflineReceiverStaysSilent) {
+  auto alice = std::make_shared<MockSession>();
+  Login(alice, "alice", "a1", 1, "web", /*level=*/7);
+  // registry 绑定回读（主循环每帧取认证身份走的就是这一条）。
+  EXPECT_EQ(state_->GetUserId(alice), "alice");
+  // 登录声明的等级同样经 registry 回读（world 频道门禁的取数路径）。
+  EXPECT_EQ(state_->GetLevel(alice), 7);
+  auto bob = std::make_shared<MockSession>();
+  Login(bob, "bob", "b1", 1);
+  EXPECT_EQ(state_->GetLevel(bob), 0);  // 未声明 → 0
+  std::string mid;
+  ASSERT_EQ(SendPrivate(alice, "alice", "ghost", "to nobody", &mid), chirp::common::OK);
+  EXPECT_EQ(Recall(alice, mid, "alice").code(), chirp::common::OK);
+}
+
+// 群频道撤回走群台账：建组（alice+bob），成员解析循环进台账逐人 notify
+// （bob 未登录 → false），撤回照常成立。
+TEST_F(EnhancedSessionTest, RecallGuildMembersViaGroupLedger) {
+  chirp::chat::GroupManager groups;
+  const std::string gid = groups.CreateGroup("alice", "devs", "", "", 0, {"alice", "bob"});
+
+  chirp::chat::EditConfig cfg;
+  cfg.recall_channel_types = {chirp::chat::PRIVATE, chirp::chat::GUILD};
+  EnhancedRecallRuntime rt = MakeEnhancedRecallRuntime(state_, store_, cfg, &groups);
+
+  auto alice = std::make_shared<MockSession>();
+  Login(alice, "alice", "a1", 1);
+  // 走生产的群发扇出（组台账成员名单）：alice 在线直达 CHAT_MESSAGE_NOTIFY，
+  // bob 未登录 → 进离线队列补投。
+  chirp::chat::UserNotifier notify =
+      [this](const std::string& user_id, chirp::gateway::MsgID msg_id,
+             const google::protobuf::Message& body) -> bool {
+    const auto recvs = chirp::network::GetUserSessions(state_->registry, user_id);
+    if (recvs.empty()) {
+      return false;
+    }
+    const std::string payload = body.SerializeAsString();
+    for (const auto& recv : recvs) {
+      chirp::chat::runtime::SendPacket(recv, msg_id, 0, payload);
+    }
+    return true;
+  };
+  chirp::chat::GroupHandlers group_handlers(groups, notify);
+
+  chirp::chat::SendMessageRequest guild;
+  guild.set_sender_id("alice");
+  guild.set_channel_type(chirp::chat::GUILD);
+  guild.set_channel_id(gid);
+  guild.set_content("guild words");
+  std::string mid;
+  InvokeSendMessage(guild, alice, state_, store_, tracker_, /*acks=*/nullptr,
+                    &delivery_prefs_, router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"",
+                    /*npc_prefix=*/"npc:", /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
+                    rt.handlers.get(), /*directory=*/nullptr, /*hub=*/nullptr,
+                    &group_handlers, /*reactions=*/nullptr, &friend_graph_, /*seq=*/1);
+  ASSERT_EQ(FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP).empty(), false);
+  // bob 的离线队列拿到补投副本（扇出确实按台账走了离线腿）。
+  EXPECT_EQ(store_->GetOfflineMessages("bob", chirp::chat::kDefaultOfflineSlot).size(), 1u);
+  const auto guild_frames = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);
+  chirp::chat::SendMessageResponse guild_resp;
+  ASSERT_TRUE(guild_resp.ParseFromString(guild_frames.back().body()));
+  mid = guild_resp.message_id();
+  EXPECT_EQ(Recall(alice, mid, "alice", false, rt.handlers.get()).code(), chirp::common::OK);
 }
 
 }  // namespace

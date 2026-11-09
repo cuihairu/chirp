@@ -1748,4 +1748,52 @@ TEST_F(SocialServiceTest, LoadSkipsCorruptAndBareKeySnapshots) {
   EXPECT_TRUE(fresh->blocked.empty());
 }
 
+// --- notify prefs 请求面边界与降级 -----------------------------------------
+
+TEST_F(SocialServiceTest, SetNotifyPrefsRejectsGarbageBody) {
+  auto a = Login("user_a");
+  Deliver(chirp::gateway::SET_NOTIFY_PREFS_REQ, 1, std::string("\xde\xad\xbe\xef", 4), a);
+  chirp::social::SetNotifyPrefsResponse resp;
+  ASSERT_TRUE(LastBody(*a, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+}
+
+TEST_F(SocialServiceTest, SetNotifyPrefsRejectsAnonymousCaller) {
+  chirp::social::SetNotifyPrefsRequest req;
+  req.set_user_id("ghost");
+  Deliver(chirp::gateway::SET_NOTIFY_PREFS_REQ, 1, req.SerializeAsString(), session_);
+  chirp::social::SetNotifyPrefsResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED);
+}
+
+TEST_F(SocialServiceTest, GetNotifyPrefsRejectsGarbageBody) {
+  auto a = Login("user_a");
+  Deliver(chirp::gateway::GET_NOTIFY_PREFS_REQ, 1, std::string("\xde\xad\xbe\xef", 4), a);
+  chirp::social::GetNotifyPrefsResponse resp;
+  ASSERT_TRUE(LastBody(*a, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+}
+
+TEST_F(SocialRedisTest, SetNotifyPrefsSurvivesDeadRedis) {
+  // 写穿快照失败只留告警，在线开关照常生效并回 OK（尽力而为语义）。
+  auto dead = std::make_shared<chirp::network::RedisClient>("127.0.0.1", static_cast<uint16_t>(1));
+  auto a = Login("user_a");
+  redis_ = dead;
+  chirp::social::SetNotifyPrefsRequest set;
+  set.set_user_id("user_a");
+  set.mutable_prefs()->set_friend_online_notify(false);
+  Deliver(chirp::gateway::SET_NOTIFY_PREFS_REQ, 1, set.SerializeAsString(), a);
+  chirp::social::SetNotifyPrefsResponse resp;
+  ASSERT_TRUE(LastBody(*a, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+}
+
+TEST_F(SocialRedisTest, LoadSkipsCorruptNotifyPrefsSnapshot) {
+  mem_->SetDirect("chirp:social:notify_prefs:broken", "\xff\xfe junk");
+  auto restored = std::make_shared<SocialState>();
+  ASSERT_TRUE(LoadSocialState(redis_, restored));
+  EXPECT_EQ(restored->notify_prefs.count("broken"), 0u);
+}
+
 }  // namespace

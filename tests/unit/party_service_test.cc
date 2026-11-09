@@ -1799,4 +1799,25 @@ TEST_F(PartyServiceTest, LoadWithoutRedisIsPureInMemory) {
   EXPECT_TRUE(fresh->parties.empty());
 }
 
+// 二端幂等接受：第一台设备接受入队后，同用户第二台设备再点接受必须原样
+// 回 OK + 队伍快照（幂等臂），不重复入队、不换队、不报错。
+TEST_F(PartyServiceTest, SecondDeviceAcceptIsIdempotent) {
+  auto leader = Login("leader");
+  const std::string party_id = CreateParty(leader, "leader");
+  const std::string invite_id = Invite(leader, "leader", party_id, "joiner");
+
+  auto phone = Login("joiner", "phone", "ios");
+  const auto first = Accept(phone, "joiner", invite_id);
+  ASSERT_EQ(first.code(), chirp::common::OK);
+  ASSERT_EQ(first.party().party_id(), party_id);
+
+  auto web = Login("joiner", "web", "web");
+  const auto second = Accept(web, "joiner", invite_id);
+  EXPECT_EQ(second.code(), chirp::common::OK);
+  EXPECT_EQ(second.party().party_id(), party_id);
+  // 两台设备看到的都是同一支队伍，队伍成员表里只有一份 joiner。
+  EXPECT_EQ(GetMyParty(web, "joiner").party().party_id(), party_id);
+  EXPECT_EQ(GetMyParty(phone, "joiner").party().party_id(), party_id);
+}
+
 } // namespace
