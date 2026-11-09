@@ -64,6 +64,23 @@ void HandleDisconnect(const std::shared_ptr<SocialState>& state, const std::shar
 
 void HandlePacket(const std::shared_ptr<SocialState>& state, const std::shared_ptr<chirp::network::RedisClient>& redis, const chirp::common::LoginTokenVerifier* verifier, const std::shared_ptr<chirp::network::Session>& session, std::string&& payload);
 
+// Redis write-through helpers and presence resolution are declared here (not
+// just defined in the .cc) so social_service_test.cc — which includes main.cc
+// and drives the tables directly — resolves them via main.cc's using-block.
+void PersistFriends(const std::shared_ptr<chirp::network::RedisClient>& redis,
+                    const std::string& user_id,
+                    const std::unordered_set<std::string>& friend_ids);
+
+void PersistPending(const std::shared_ptr<chirp::network::RedisClient>& redis,
+                    const std::string& user_id,
+                    const std::unordered_map<std::string, chirp::social::FriendRequest>& pending);
+
+void PersistBlocked(const std::shared_ptr<chirp::network::RedisClient>& redis,
+                    const std::string& user_id,
+                    const std::unordered_set<std::string>& blocked_ids);
+
+chirp::social::PresenceInfo EffectivePresence(const std::shared_ptr<SocialState>& state, const std::string& user_id);
+
 int64_t NowMs();
 
 std::string RandomHex(size_t bytes);

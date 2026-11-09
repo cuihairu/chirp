@@ -744,11 +744,8 @@ void HandleDeclineInvite(const std::shared_ptr<PartyState>& state,
 // Removes user_id from party_id inside state->mu, handling leader succession
 // (earliest joined, ties by user_id) and silent auto-disband on the last
 // member. Returns false when the party doesn't exist or the user isn't in it.
-struct MemberRemoval {
-  bool disbanded = false;
-  std::string new_leader;
-  std::vector<std::string> remaining;  // member ids still in after removal
-};
+// MemberRemoval lives in party_dispatch.h (party_service_test.cc drives the
+// removal contract through main.cc's using-block).
 bool RemoveMemberLocked(PartyState& state, const std::string& party_id, const std::string& user_id,
                         MemberRemoval* out) {
   auto pit = state.parties.find(party_id);

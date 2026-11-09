@@ -56,9 +56,14 @@ uint16_t ParseU16Arg(int argc, char** argv, const std::string& key, uint16_t def
 }  // namespace
 namespace {
 using chirp::social::direct::ConsumeGamePresenceEvent;
+using chirp::social::direct::EffectivePresence;
 using chirp::social::direct::HandleDisconnect;
 using chirp::social::direct::HandlePacket;
 using chirp::social::direct::LoadSocialState;
+using chirp::social::direct::NowMs;
+using chirp::social::direct::PersistBlocked;
+using chirp::social::direct::PersistFriends;
+using chirp::social::direct::PersistPending;
 using chirp::social::direct::SocialState;
 }  // namespace
 

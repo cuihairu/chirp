@@ -293,6 +293,9 @@ add_test(NAME voice_tests COMMAND voice_tests)
 # hijack the test entry point and double-compile the handlers)
 add_executable(social_tests
   social_service_test.cc
+  # Packet handling and social state live here since the main.cc split; the
+  # test includes main.cc, which re-exports the handlers.
+  ${CMAKE_SOURCE_DIR}/services/social/src/social_dispatch.cc
 )
 
 chirp_unit_test_common_links(social_tests)
@@ -315,6 +318,9 @@ add_test(NAME social_tests COMMAND social_tests)
 # same pattern as social_tests; main.cc is NOT listed as a source)
 add_executable(party_tests
   party_service_test.cc
+  # Packet handling and party state live here since the main.cc split; the
+  # test includes main.cc, which re-exports the handlers.
+  ${CMAKE_SOURCE_DIR}/services/party/src/party_dispatch.cc
 )
 
 chirp_unit_test_common_links(party_tests)

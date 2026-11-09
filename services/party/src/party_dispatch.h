@@ -7,6 +7,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "common/login_token_verifier.h"
 #include "network/redis_client.h"
@@ -87,6 +88,17 @@ bool LoadPartyState(const std::shared_ptr<chirp::network::RedisClient>& redis, c
 void HandlePacket(const std::shared_ptr<PartyState>& state, const std::shared_ptr<chirp::network::RedisClient>& redis, const chirp::common::LoginTokenVerifier* verifier, const std::shared_ptr<chirp::network::Session>& session, std::string&& payload);
 
 void HandleDisconnect(const std::shared_ptr<PartyState>& state, const std::shared_ptr<chirp::network::RedisClient>& redis, const std::shared_ptr<chirp::network::Session>& session);
+
+// Member-removal helper is declared here (not just defined in the .cc) so
+// party_service_test.cc — which includes main.cc and drives the removal
+// contract directly — resolves it via main.cc's using-block.
+struct MemberRemoval {
+  bool disbanded = false;
+  std::string new_leader;
+  std::vector<std::string> remaining;  // member ids still in after removal
+};
+bool RemoveMemberLocked(PartyState& state, const std::string& party_id, const std::string& user_id,
+                        MemberRemoval* out);
 
 int64_t NowMs();
 

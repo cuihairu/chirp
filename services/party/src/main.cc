@@ -57,7 +57,10 @@ namespace {
 using chirp::party::direct::HandleDisconnect;
 using chirp::party::direct::HandlePacket;
 using chirp::party::direct::LoadPartyState;
+using chirp::party::direct::MemberRemoval;
+using chirp::party::direct::NowMs;
 using chirp::party::direct::PartyState;
+using chirp::party::direct::RemoveMemberLocked;
 }  // namespace
 
 int main(int argc, char** argv) {
