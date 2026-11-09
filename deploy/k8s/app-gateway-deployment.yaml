@@ -1,0 +1,130 @@
+# Kubernetes 部署配置 - Chirp App Gateway（companion 应用边，app 平面聚合入口）
+# 镜像构建:
+#   docker build -f docker/Dockerfile.service --build-arg SERVICE=app_sdk_gateway -t chirp/app-gateway:latest .
+# 说明: docker-entrypoint.sh 只 exec 二进制并透传 args —— 二进制不读环境变量，
+# 全部配置必须走容器 args（与 docker-compose.cluster.yml 的 command 同源）。
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: chirp-app-gateway
+  namespace: chirp
+  labels:
+    app: chirp-app-gateway
+spec:
+  selector:
+    app: chirp-app-gateway
+  ports:
+  - name: tcp
+    port: 5200
+    targetPort: 5200
+  - name: websocket
+    port: 5201
+    targetPort: 5201
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chirp-app-gateway
+  namespace: chirp
+  labels:
+    app: chirp-app-gateway
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: chirp-app-gateway
+  template:
+    metadata:
+      labels:
+        app: chirp-app-gateway
+    spec:
+      initContainers:
+      - name: wait-for-redis
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z redis-cluster 6379; do echo waiting for redis; sleep 2; done;']
+      - name: wait-for-auth
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z chirp-auth 6000; do echo waiting for auth; sleep 2; done;']
+      - name: wait-for-chat
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z chirp-chat 7000; do echo waiting for chat; sleep 2; done;']
+      containers:
+      - name: app-gateway
+        image: chirp/app-gateway:latest
+        imagePullPolicy: IfNotPresent
+        # 平面信任门：chat 的 --gateway_service_secret 与 search 的
+        # --gateway_service_secret 同值；notification 的 --service_secret
+        # 与 --notification_secret 同值。
+        args:
+        - "--port"
+        - "5200"
+        - "--ws_port"
+        - "5201"
+        - "--instance_id"
+        - "appgw_1"
+        - "--auth_host"
+        - "chirp-auth"
+        - "--auth_port"
+        - "6000"
+        - "--redis_host"
+        - "redis-cluster"
+        - "--redis_port"
+        - "6379"
+        - "--redis_ttl"
+        - "3600"
+        - "--chat_host"
+        - "chirp-chat"
+        - "--chat_port"
+        - "7000"
+        - "--chat_service_secret"
+        - "game-secret"
+        - "--sg_host"
+        - "chirp-chat"
+        - "--sg_port"
+        - "7000"
+        - "--sg_secret"
+        - "game-secret"
+        - "--search_host"
+        - "chirp-search"
+        - "--search_port"
+        - "5007"
+        - "--notification_host"
+        - "chirp-notification"
+        - "--notification_port"
+        - "5006"
+        - "--notification_secret"
+        - "notification-caller-secret"
+        ports:
+        - name: tcp
+          containerPort: 5200
+          protocol: TCP
+        - name: websocket
+          containerPort: 5201
+          protocol: TCP
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          tcpSocket:
+            port: 5200
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 5200
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2

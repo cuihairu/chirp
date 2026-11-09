@@ -71,19 +71,42 @@ services:
       context: .
       dockerfile: docker/Dockerfile.service
       args:
-        SERVICE: gateway
+        # Dockerfile.service 的 SERVICE 分支名是全名（无 gateway 别名）。
+        SERVICE: game_sdk_gateway
     command:
-      - "--port=5000"
-      - "--ws_port=5001"
-      - "--auth_host=auth-1"
-      - "--auth_port=6000"
-      - "--redis_host=redis"
-      - "--redis_port=6379"
-      - "--redis_ttl=3600"
-      - "--instance_id=gw_1"
+      - "--port"
+      - "5000"
+      - "--ws_port"
+      - "5001"
+      - "--auth_host"
+      - "auth-1"
+      - "--auth_port"
+      - "6000"
+      - "--redis_host"
+      - "redis"
+      - "--redis_port"
+      - "6379"
+      - "--redis_ttl"
+      - "3600"
+      - "--instance_id"
+      - "gw_1"
+      # 平面信任门：chat 的 --gateway_service_secret 与 search 的
+      # --gateway_service_secret 同值。
+      - "--chat_host"
+      - "chat-1"
+      - "--chat_port"
+      - "7000"
+      - "--chat_service_secret"
+      - "game-secret"
+      - "--search_host"
+      - "search-1"
+      - "--search_port"
+      - "5007"
     depends_on:
       - redis
       - auth-1
+      - chat-1
+      - search-1
     networks:
       - chirp_net
     deploy:
@@ -100,19 +123,39 @@ services:
       context: .
       dockerfile: docker/Dockerfile.service
       args:
-        SERVICE: gateway
+        SERVICE: game_sdk_gateway
     command:
-      - "--port=5000"
-      - "--ws_port=5001"
-      - "--auth_host=auth-2"
-      - "--auth_port=6000"
-      - "--redis_host=redis"
-      - "--redis_port=6379"
-      - "--redis_ttl=3600"
-      - "--instance_id=gw_2"
+      - "--port"
+      - "5000"
+      - "--ws_port"
+      - "5001"
+      - "--auth_host"
+      - "auth-2"
+      - "--auth_port"
+      - "6000"
+      - "--redis_host"
+      - "redis"
+      - "--redis_port"
+      - "6379"
+      - "--redis_ttl"
+      - "3600"
+      - "--instance_id"
+      - "gw_2"
+      - "--chat_host"
+      - "chat-1"
+      - "--chat_port"
+      - "7000"
+      - "--chat_service_secret"
+      - "game-secret"
+      - "--search_host"
+      - "search-1"
+      - "--search_port"
+      - "5007"
     depends_on:
       - redis
       - auth-2
+      - chat-1
+      - search-1
     networks:
       - chirp_net
     deploy:
@@ -129,19 +172,39 @@ services:
       context: .
       dockerfile: docker/Dockerfile.service
       args:
-        SERVICE: gateway
+        SERVICE: game_sdk_gateway
     command:
-      - "--port=5000"
-      - "--ws_port=5001"
-      - "--auth_host=auth-3"
-      - "--auth_port=6000"
-      - "--redis_host=redis"
-      - "--redis_port=6379"
-      - "--redis_ttl=3600"
-      - "--instance_id=gw_3"
+      - "--port"
+      - "5000"
+      - "--ws_port"
+      - "5001"
+      - "--auth_host"
+      - "auth-3"
+      - "--auth_port"
+      - "6000"
+      - "--redis_host"
+      - "redis"
+      - "--redis_port"
+      - "6379"
+      - "--redis_ttl"
+      - "3600"
+      - "--instance_id"
+      - "gw_3"
+      - "--chat_host"
+      - "chat-1"
+      - "--chat_port"
+      - "7000"
+      - "--chat_service_secret"
+      - "game-secret"
+      - "--search_host"
+      - "search-1"
+      - "--search_port"
+      - "5007"
     depends_on:
       - redis
       - auth-3
+      - chat-1
+      - search-1
     networks:
       - chirp_net
     deploy:
@@ -162,8 +225,26 @@ services:
       context: .
       dockerfile: docker/Dockerfile.service
       args:
-        SERVICE: auth
-    command: ["--port=6000", "--jwt_secret=production_jwt_secret_change_me"]
+        # 增强版认证（需要 MySQL/libsodium 的目标名）。
+        SERVICE: app_auth
+    command:
+      - "--port"
+      - "6000"
+      - "--jwt_secret"
+      - "production_jwt_secret_change_me"
+      # 不带 mysql 参数时进程默认连 127.0.0.1:3306（容器内不存在），必须显式指到 mysql。
+      - "--mysql_host"
+      - "mysql"
+      - "--mysql_port"
+      - "3306"
+      - "--mysql_user"
+      - "chirp"
+      - "--mysql_password"
+      - "chirp_password_change_me"
+      - "--mysql_database"
+      - "chirp"
+    depends_on:
+      - mysql
     networks:
       - chirp_net
 
@@ -172,8 +253,26 @@ services:
       context: .
       dockerfile: docker/Dockerfile.service
       args:
-        SERVICE: auth
-    command: ["--port=6000", "--jwt_secret=production_jwt_secret_change_me"]
+        # 增强版认证（需要 MySQL/libsodium 的目标名）。
+        SERVICE: app_auth
+    command:
+      - "--port"
+      - "6000"
+      - "--jwt_secret"
+      - "production_jwt_secret_change_me"
+      # 不带 mysql 参数时进程默认连 127.0.0.1:3306（容器内不存在），必须显式指到 mysql。
+      - "--mysql_host"
+      - "mysql"
+      - "--mysql_port"
+      - "3306"
+      - "--mysql_user"
+      - "chirp"
+      - "--mysql_password"
+      - "chirp_password_change_me"
+      - "--mysql_database"
+      - "chirp"
+    depends_on:
+      - mysql
     networks:
       - chirp_net
 
@@ -182,8 +281,26 @@ services:
       context: .
       dockerfile: docker/Dockerfile.service
       args:
-        SERVICE: auth
-    command: ["--port=6000", "--jwt_secret=production_jwt_secret_change_me"]
+        # 增强版认证（需要 MySQL/libsodium 的目标名）。
+        SERVICE: app_auth
+    command:
+      - "--port"
+      - "6000"
+      - "--jwt_secret"
+      - "production_jwt_secret_change_me"
+      # 不带 mysql 参数时进程默认连 127.0.0.1:3306（容器内不存在），必须显式指到 mysql。
+      - "--mysql_host"
+      - "mysql"
+      - "--mysql_port"
+      - "3306"
+      - "--mysql_user"
+      - "chirp"
+      - "--mysql_password"
+      - "chirp_password_change_me"
+      - "--mysql_database"
+      - "chirp"
+    depends_on:
+      - mysql
     networks:
       - chirp_net
 
@@ -198,18 +315,38 @@ services:
       args:
         SERVICE: chat_distributed
     command:
-      - "--port=7000"
-      - "--ws_port=7001"
+      - "--port"
+      - "7000"
+      - "--ws_port"
+      - "7001"
       # Signed-token login: must equal the auth nodes' --jwt_secret
       # (unified login semantics, docs/architecture.md).
-      - "--token_secret=production_jwt_secret_change_me"
-      - "--redis_host=redis"
-      - "--redis_port=6379"
-      - "--offline_ttl=604800"
-      - "--instance_id=chat_1"
+      - "--token_secret"
+      - "production_jwt_secret_change_me"
+      - "--redis_host"
+      - "redis"
+      - "--redis_port"
+      - "6379"
+      - "--offline_ttl"
+      - "604800"
+      - "--instance_id"
+      - "chat_1"
+      # game 平面信任门：gateway 的 --chat_service_secret 同值。
+      - "--gateway_service_secret"
+      - "game-secret"
+      # server 平面：hub 信任门按 service 名发放 secret（见 server-gateway-1）。
+      - "--server_gateway_host"
+      - "server-gateway-1"
+      - "--server_gateway_port"
+      - "8100"
+      - "--server_gateway_secret"
+      - "chat-secret"
+      - "--npc_service_id"
+      - "npc_dialog"
     depends_on:
       - redis
       - mysql
+      - server-gateway-1
     networks:
       - chirp_net
     deploy:
@@ -228,18 +365,38 @@ services:
       args:
         SERVICE: chat_distributed
     command:
-      - "--port=7000"
-      - "--ws_port=7001"
+      - "--port"
+      - "7000"
+      - "--ws_port"
+      - "7001"
       # Signed-token login: must equal the auth nodes' --jwt_secret
       # (unified login semantics, docs/architecture.md).
-      - "--token_secret=production_jwt_secret_change_me"
-      - "--redis_host=redis"
-      - "--redis_port=6379"
-      - "--offline_ttl=604800"
-      - "--instance_id=chat_2"
+      - "--token_secret"
+      - "production_jwt_secret_change_me"
+      - "--redis_host"
+      - "redis"
+      - "--redis_port"
+      - "6379"
+      - "--offline_ttl"
+      - "604800"
+      - "--instance_id"
+      - "chat_2"
+      # game 平面信任门：gateway 的 --chat_service_secret 同值。
+      - "--gateway_service_secret"
+      - "game-secret"
+      # server 平面：hub 信任门按 service 名发放 secret（见 server-gateway-1）。
+      - "--server_gateway_host"
+      - "server-gateway-1"
+      - "--server_gateway_port"
+      - "8100"
+      - "--server_gateway_secret"
+      - "chat-secret"
+      - "--npc_service_id"
+      - "npc_dialog"
     depends_on:
       - redis
       - mysql
+      - server-gateway-1
     networks:
       - chirp_net
     deploy:
@@ -258,18 +415,38 @@ services:
       args:
         SERVICE: chat_distributed
     command:
-      - "--port=7000"
-      - "--ws_port=7001"
+      - "--port"
+      - "7000"
+      - "--ws_port"
+      - "7001"
       # Signed-token login: must equal the auth nodes' --jwt_secret
       # (unified login semantics, docs/architecture.md).
-      - "--token_secret=production_jwt_secret_change_me"
-      - "--redis_host=redis"
-      - "--redis_port=6379"
-      - "--offline_ttl=604800"
-      - "--instance_id=chat_3"
+      - "--token_secret"
+      - "production_jwt_secret_change_me"
+      - "--redis_host"
+      - "redis"
+      - "--redis_port"
+      - "6379"
+      - "--offline_ttl"
+      - "604800"
+      - "--instance_id"
+      - "chat_3"
+      # game 平面信任门：gateway 的 --chat_service_secret 同值。
+      - "--gateway_service_secret"
+      - "game-secret"
+      # server 平面：hub 信任门按 service 名发放 secret（见 server-gateway-1）。
+      - "--server_gateway_host"
+      - "server-gateway-1"
+      - "--server_gateway_port"
+      - "8100"
+      - "--server_gateway_secret"
+      - "chat-secret"
+      - "--npc_service_id"
+      - "npc_dialog"
     depends_on:
       - redis
       - mysql
+      - server-gateway-1
     networks:
       - chirp_net
     deploy:
@@ -292,10 +469,14 @@ services:
       args:
         SERVICE: social
     command:
-      - "--port=8000"
-      - "--ws_port=8001"
-      - "--redis_host=redis"
-      - "--redis_port=6379"
+      - "--port"
+      - "8000"
+      - "--ws_port"
+      - "8001"
+      - "--redis_host"
+      - "redis"
+      - "--redis_port"
+      - "6379"
     depends_on:
       - redis
     networks:
@@ -308,12 +489,221 @@ services:
       args:
         SERVICE: social
     command:
-      - "--port=8000"
-      - "--ws_port=8001"
-      - "--redis_host=redis"
-      - "--redis_port=6379"
+      - "--port"
+      - "8000"
+      - "--ws_port"
+      - "8001"
+      - "--redis_host"
+      - "redis"
+      - "--redis_port"
+      - "6379"
     depends_on:
       - redis
+    networks:
+      - chirp_net
+
+  # ============================================
+  # Search 服务层（MySQL 回填 + 索引落盘）
+  # ============================================
+
+  search-1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: search
+    command:
+      - "--port"
+      - "5007"
+      # gateway 经 RPC 查询时的信任 secret（game gateway 的
+      # --chat_service_secret 同值）。
+      - "--gateway_service_secret"
+      - "game-secret"
+      # --mysql_host 无默认值（空则拒启），必须显式给出。
+      - "--mysql_host"
+      - "mysql"
+      - "--mysql_port"
+      - "3306"
+      - "--mysql_user"
+      - "chirp"
+      - "--mysql_password"
+      - "chirp_password_change_me"
+      - "--mysql_database"
+      - "chirp"
+      - "--db_path"
+      - "/data/search_index.db"
+      - "--token_secret"
+      - "production_jwt_secret_change_me"
+    volumes:
+      - search_data:/data
+    depends_on:
+      - mysql
+    networks:
+      - chirp_net
+
+  # ============================================
+  # Server Gateway（game/server 平面 hub）与 NPC
+  # ============================================
+
+  server-gateway-1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: game_server_gateway
+    command:
+      - "--port"
+      - "8100"
+      # hub 信任门：按接入 service 名逐个发放 secret（chat 与 npc 各一把）。
+      - "--service"
+      - "chat=chat-secret"
+      - "--service"
+      - "npc_dialog=npc-secret"
+      - "--chat_service_id"
+      - "chat"
+    networks:
+      - chirp_net
+
+  npc-1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: npc_dialog
+    command:
+      # NPC 是 hub 的出站客户端：自身无监听端口。
+      - "--server_gateway_host"
+      - "server-gateway-1"
+      - "--server_gateway_port"
+      - "8100"
+      - "--server_gateway_secret"
+      - "npc-secret"
+    depends_on:
+      - server-gateway-1
+    networks:
+      - chirp_net
+
+  # ============================================
+  # Voice / Party（房间态在内存 + Redis 快照）
+  # ============================================
+
+  voice-1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: voice
+    command:
+      - "--port"
+      - "9000"
+      - "--ws_port"
+      - "9001"
+      - "--token_secret"
+      - "production_jwt_secret_change_me"
+    networks:
+      - chirp_net
+
+  party-1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: party
+    command:
+      - "--port"
+      - "7500"
+      - "--ws_port"
+      - "7501"
+      - "--token_secret"
+      - "production_jwt_secret_change_me"
+      - "--redis_host"
+      - "redis"
+      - "--redis_port"
+      - "6379"
+    depends_on:
+      - redis
+    networks:
+      - chirp_net
+
+  # ============================================
+  # App 平面（companion 边 + 推送）
+  # ============================================
+
+  notification-1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: app_notification
+    command:
+      - "--port"
+      - "5006"
+      - "--ws_port"
+      - "5016"
+      # caller 信任门：app-gateway 的 --notification_secret 同值。
+      - "--service_secret"
+      - "notification-caller-secret"
+      - "--device_store_file"
+      - "/data/device_store.json"
+    volumes:
+      - notification_data:/data
+    networks:
+      - chirp_net
+
+  app-gateway-1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: app_sdk_gateway
+    command:
+      - "--port"
+      - "5200"
+      - "--ws_port"
+      - "5201"
+      - "--instance_id"
+      - "appgw_1"
+      - "--auth_host"
+      - "auth-1"
+      - "--auth_port"
+      - "6000"
+      - "--redis_host"
+      - "redis"
+      - "--redis_port"
+      - "6379"
+      - "--redis_ttl"
+      - "3600"
+      - "--chat_host"
+      - "chat-1"
+      - "--chat_port"
+      - "7000"
+      - "--chat_service_secret"
+      - "game-secret"
+      - "--sg_host"
+      - "chat-1"
+      - "--sg_port"
+      - "7000"
+      - "--sg_secret"
+      - "game-secret"
+      - "--search_host"
+      - "search-1"
+      - "--search_port"
+      - "5007"
+      - "--notification_host"
+      - "notification-1"
+      - "--notification_port"
+      - "5006"
+      - "--notification_secret"
+      - "notification-caller-secret"
+    depends_on:
+      - redis
+      - auth-1
+      - chat-1
+      - search-1
+      - notification-1
+    ports:
+      - "5200:5200"   # App Gateway TCP（companion 边）
+      - "5201:5201"   # App Gateway WebSocket
     networks:
       - chirp_net
 
@@ -354,3 +744,5 @@ networks:
 volumes:
   redis_data:
   mysql_data:
+  search_data:
+  notification_data:

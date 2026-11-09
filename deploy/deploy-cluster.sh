@@ -46,7 +46,10 @@ check_docker_compose() {
 
 # 检查端口占用
 check_ports() {
-    local ports=("5000" "5001" "6000" "7000" "7001" "8000" "8001" "9000" "9001" "6379" "3306")
+    # 与 docker-compose.cluster.yml 的服务面一致：haproxy 前端(5000-8001)、
+    # app-gateway(5200/5201)、server-gateway(8100)、voice(9000/9001)、
+    # party(7500/7501)、notification(5006/5016)、search(5007)、redis/mysql。
+    local ports=("5000" "5001" "5200" "5201" "6000" "7000" "7001" "7500" "7501" "8000" "8001" "8100" "9000" "9001" "5006" "5016" "5007" "6379" "3306")
     for port in "${ports[@]}"; do
         if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1 || netstat -an 2>/dev/null | grep ":$port " | grep LISTEN >/dev/null; then
             log_warn "端口 $port 已被占用"
@@ -128,7 +131,8 @@ show_status() {
 health_check() {
     log_info "执行健康检查..."
 
-    local services=("gateway" "auth" "chat" "social" "voice")
+    # 与 docker-compose.cluster.yml 的服务一一对应（检查各自 -1 实例）。
+    local services=("gateway" "auth" "chat" "social" "voice" "party" "search" "notification" "server-gateway" "npc" "app-gateway")
     local healthy=0
     local total=0
 
@@ -168,6 +172,10 @@ deploy_k8s() {
 
     log_info "部署到 Kubernetes..."
 
+    # 镜像前置条件：compose 的 build 不打 tag，k8s 需要预先构建并 tag 好的镜像
+    # （每个清单头部注明构建命令，如 chirp/auth、chirp/search 等）。
+    log_info "前置: 各服务镜像需预先 docker build -f docker/Dockerfile.service --build-arg SERVICE=<target> -t chirp/<name>:latest ."
+
     # 创建命名空间
     kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
 
@@ -178,13 +186,40 @@ deploy_k8s() {
     # 等待 Redis 就绪
     kubectl wait --for=condition=ready pod -l app=redis -n $NAMESPACE --timeout=120s
 
-    # 部署 Gateway
-    log_info "部署 Gateway..."
-    kubectl apply -f deploy/k8s/gateway-deployment.yaml
+    # 部署基础面: Auth -> Chat -> Search（依赖 MySQL/Redis,清单内含 initContainer 等待）
+    log_info "部署 Auth..."
+    kubectl apply -f deploy/k8s/auth-deployment.yaml
 
-    # 部署 Chat
     log_info "部署 Chat..."
     kubectl apply -f deploy/k8s/chat-deployment.yaml
+
+    log_info "部署 Search..."
+    kubectl apply -f deploy/k8s/search-deployment.yaml
+
+    # 部署 server 平面: hub -> npc(npc 是 hub 的出站客户端)
+    log_info "部署 Server Gateway..."
+    kubectl apply -f deploy/k8s/server-gateway-deployment.yaml
+
+    log_info "部署 NPC..."
+    kubectl apply -f deploy/k8s/npc-deployment.yaml
+
+    # 部署房间面
+    log_info "部署 Voice..."
+    kubectl apply -f deploy/k8s/voice-deployment.yaml
+
+    log_info "部署 Party..."
+    kubectl apply -f deploy/k8s/party-deployment.yaml
+
+    # 部署 app 平面: 推送 + companion 聚合边
+    log_info "部署 Notification..."
+    kubectl apply -f deploy/k8s/notification-deployment.yaml
+
+    log_info "部署 App Gateway..."
+    kubectl apply -f deploy/k8s/app-gateway-deployment.yaml
+
+    # 部署 Gateway（game 平面边,依赖 auth/chat/search）
+    log_info "部署 Gateway..."
+    kubectl apply -f deploy/k8s/gateway-deployment.yaml
 
     log_info "Kubernetes 部署完成"
     log_info "查看状态: kubectl get pods -n $NAMESPACE"

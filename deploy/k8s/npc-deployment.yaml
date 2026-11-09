@@ -1,0 +1,46 @@
+# Kubernetes 部署配置 - Chirp NPC Dialog（server 平面出站客户端，无监听端口）
+# 镜像构建:
+#   docker build -f docker/Dockerfile.service --build-arg SERVICE=npc_dialog -t chirp/npc:latest .
+# 说明: docker-entrypoint.sh 只 exec 二进制并透传 args —— 二进制不读环境变量，
+# 全部配置必须走容器 args（与 docker-compose.cluster.yml 的 command 同源）。
+# NPC 是 server-gateway 的出站客户端：自身无监听端口，故无 Service/probe。
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chirp-npc
+  namespace: chirp
+  labels:
+    app: chirp-npc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chirp-npc
+  template:
+    metadata:
+      labels:
+        app: chirp-npc
+    spec:
+      initContainers:
+      - name: wait-for-server-gateway
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z chirp-server-gateway 8100; do echo waiting for server-gateway; sleep 2; done;']
+      containers:
+      - name: npc
+        image: chirp/npc:latest
+        imagePullPolicy: IfNotPresent
+        args:
+        - "--server_gateway_host"
+        - "chirp-server-gateway"
+        - "--server_gateway_port"
+        - "8100"
+        - "--server_gateway_secret"
+        - "npc-secret"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"

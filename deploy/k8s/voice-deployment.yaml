@@ -1,0 +1,80 @@
+# Kubernetes 部署配置 - Chirp Voice Service（房间/心跳状态在进程内存）
+# 镜像构建:
+#   docker build -f docker/Dockerfile.service --build-arg SERVICE=voice -t chirp/voice:latest .
+# 说明: docker-entrypoint.sh 只 exec 二进制并透传 args —— 二进制不读环境变量，
+# 全部配置必须走容器 args（与 docker-compose.cluster.yml 的 command 同源）。
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: chirp-voice
+  namespace: chirp
+  labels:
+    app: chirp-voice
+spec:
+  selector:
+    app: chirp-voice
+  ports:
+  - name: tcp
+    port: 9000
+    targetPort: 9000
+  - name: websocket
+    port: 9001
+    targetPort: 9001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chirp-voice
+  namespace: chirp
+  labels:
+    app: chirp-voice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chirp-voice
+  template:
+    metadata:
+      labels:
+        app: chirp-voice
+    spec:
+      containers:
+      - name: voice
+        image: chirp/voice:latest
+        imagePullPolicy: IfNotPresent
+        args:
+        - "--port"
+        - "9000"
+        - "--ws_port"
+        - "9001"
+        - "--token_secret"
+        - "production_jwt_secret_change_me"
+        ports:
+        - name: tcp
+          containerPort: 9000
+          protocol: TCP
+        - name: websocket
+          containerPort: 9001
+          protocol: TCP
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          tcpSocket:
+            port: 9000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 9000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2

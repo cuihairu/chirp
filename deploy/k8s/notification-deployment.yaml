@@ -1,0 +1,91 @@
+# Kubernetes 部署配置 - Chirp Notification Service（设备注册表落盘 + APNs/FCM 推送）
+# 镜像构建:
+#   docker build -f docker/Dockerfile.service --build-arg SERVICE=app_notification -t chirp/notification:latest .
+# 说明: docker-entrypoint.sh 只 exec 二进制并透传 args —— 二进制不读环境变量，
+# 全部配置必须走容器 args（与 docker-compose.cluster.yml 的 command 同源）。
+# APNs/FCM 的 key 类参数（--apns-key/--fcm-key 等）属租户密钥，接入真实推送时
+# 用 Secret 挂载后追加到 args，这里只起无推送后端的注册/路由面。
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: chirp-notification
+  namespace: chirp
+  labels:
+    app: chirp-notification
+spec:
+  selector:
+    app: chirp-notification
+  ports:
+  - name: tcp
+    port: 5006
+    targetPort: 5006
+  - name: websocket
+    port: 5016
+    targetPort: 5016
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chirp-notification
+  namespace: chirp
+  labels:
+    app: chirp-notification
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chirp-notification
+  template:
+    metadata:
+      labels:
+        app: chirp-notification
+    spec:
+      containers:
+      - name: notification
+        image: chirp/notification:latest
+        imagePullPolicy: IfNotPresent
+        # caller 信任门：app-gateway 的 --notification_secret 同值。
+        args:
+        - "--port"
+        - "5006"
+        - "--ws_port"
+        - "5016"
+        - "--service_secret"
+        - "notification-caller-secret"
+        - "--device_store_file"
+        - "/data/device_store.json"
+        ports:
+        - name: tcp
+          containerPort: 5006
+          protocol: TCP
+        - name: websocket
+          containerPort: 5016
+          protocol: TCP
+        volumeMounts:
+        - name: notification-data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          tcpSocket:
+            port: 5006
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 5006
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+      volumes:
+      - name: notification-data
+        emptyDir: {}

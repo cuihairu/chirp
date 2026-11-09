@@ -1,0 +1,99 @@
+# Kubernetes 部署配置 - Chirp Search Service（MySQL 回填 + 索引落盘）
+# 镜像构建:
+#   docker build -f docker/Dockerfile.service --build-arg SERVICE=search -t chirp/search:latest .
+# 说明: docker-entrypoint.sh 只 exec 二进制并透传 args —— 二进制不读环境变量，
+# 全部配置必须走容器 args（与 docker-compose.cluster.yml 的 command 同源）。
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: chirp-search
+  namespace: chirp
+  labels:
+    app: chirp-search
+spec:
+  selector:
+    app: chirp-search
+  ports:
+  - name: tcp
+    port: 5007
+    targetPort: 5007
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chirp-search
+  namespace: chirp
+  labels:
+    app: chirp-search
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chirp-search
+  template:
+    metadata:
+      labels:
+        app: chirp-search
+    spec:
+      initContainers:
+      - name: wait-for-mysql
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z mysql-primary 3306; do echo waiting for mysql; sleep 2; done;']
+      containers:
+      - name: search
+        image: chirp/search:latest
+        imagePullPolicy: IfNotPresent
+        # --mysql_host 无默认值（空则拒启），必须显式给出；gateway 的
+        # --chat_service_secret 与 --gateway_service_secret 同值。
+        args:
+        - "--port"
+        - "5007"
+        - "--gateway_service_secret"
+        - "game-secret"
+        - "--mysql_host"
+        - "mysql-primary"
+        - "--mysql_port"
+        - "3306"
+        - "--mysql_user"
+        - "chirp"
+        - "--mysql_password"
+        - "chirp_password_change_me"
+        - "--mysql_database"
+        - "chirp"
+        - "--db_path"
+        - "/data/search_index.db"
+        - "--token_secret"
+        - "production_jwt_secret_change_me"
+        ports:
+        - name: tcp
+          containerPort: 5007
+          protocol: TCP
+        volumeMounts:
+        - name: search-data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        # 启动回填按 id 游标扫全表后才监听，宽限放大。
+        livenessProbe:
+          tcpSocket:
+            port: 5007
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 5
+        readinessProbe:
+          tcpSocket:
+            port: 5007
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 10
+      volumes:
+      - name: search-data
+        emptyDir: {}

@@ -1,0 +1,78 @@
+# Kubernetes 部署配置 - Chirp Server Gateway（game/server 平面 hub）
+# 镜像构建:
+#   docker build -f docker/Dockerfile.service --build-arg SERVICE=game_server_gateway -t chirp/server-gateway:latest .
+# 说明: docker-entrypoint.sh 只 exec 二进制并透传 args —— 二进制不读环境变量，
+# 全部配置必须走容器 args（与 docker-compose.cluster.yml 的 command 同源）。
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: chirp-server-gateway
+  namespace: chirp
+  labels:
+    app: chirp-server-gateway
+spec:
+  selector:
+    app: chirp-server-gateway
+  ports:
+  - name: tcp
+    port: 8100
+    targetPort: 8100
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chirp-server-gateway
+  namespace: chirp
+  labels:
+    app: chirp-server-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chirp-server-gateway
+  template:
+    metadata:
+      labels:
+        app: chirp-server-gateway
+    spec:
+      containers:
+      - name: server-gateway
+        image: chirp/server-gateway:latest
+        imagePullPolicy: IfNotPresent
+        # hub 信任门：按接入 service 名逐个发放 secret（chat 与 npc 各一把，
+        # chat 侧 --server_gateway_secret、npc 侧 --server_gateway_secret 各取对应值）。
+        args:
+        - "--port"
+        - "8100"
+        - "--service"
+        - "chat=chat-secret"
+        - "--service"
+        - "npc_dialog=npc-secret"
+        - "--chat_service_id"
+        - "chat"
+        ports:
+        - name: tcp
+          containerPort: 8100
+          protocol: TCP
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          tcpSocket:
+            port: 8100
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 8100
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
