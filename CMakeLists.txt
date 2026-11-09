@@ -288,7 +288,8 @@ add_subdirectory(libs/network)
 add_subdirectory(services/game/sdk_gateway)
 add_subdirectory(services/game/server_gateway)
 add_subdirectory(services/game/npc_dialog)
-# App plane
+# App plane — three independent processes, no shared entrypoint (see
+# services/app/README.md); each child owns its own CMake subdirectory.
 add_subdirectory(services/app/auth)
 add_subdirectory(services/app/notification)
 add_subdirectory(services/app/sdk_gateway)
