@@ -248,3 +248,5 @@
       属实。原测试在 19000-10999 随机取口，被占时子进程 `EADDRINUSE` 静默死、测试轮询 2.5s 后报「did not come up」伪失败。修复：`PORT=0` 交 OS 派发临时端口（消灭碰撞类），服务启动日志改打 `server.address().port` 实际端口，测试从 stdout 解析真实端口后再发请求；附带收益：启动等待从 fetch 轮询 2.5s 降为日志行即达。
 - [x] 审核发现：畸形请求目标（如 `GET //a% HTTP/1.1`）仍会使 URL 解析抛出未捕获异常并终止开发 API 服务（apps/admin_dashboard/server/admin_api.mjs:57）。
       属实（红先行）：`//a%` 为网络路径引用，HTTP 解析器放行但 `new URL` 拒收（authority 含非法 `%`），`Invalid URL` 未捕获直接终止进程（实测进程死）。修复：`new URL` 包 try/catch，畸形目标回 400 `malformed request target` 而非崩；新增回归测试锁死（原始 socket 发 `GET //a% HTTP/1.1` 断言 400 且服务存活）。`node --test server/admin_api.test.mjs` 9/9 绿；`pnpm build` 绿。
+- [x] 审核发现：本轮 diff 未见问题（96bb24af..HEAD）。
+      核实（2026-11-10）：区间仅含 `984e0ae`（fix(admin): return 400 on malformed request target），逐行过——服务端 `new URL` 包 try/catch 回 400（apps/admin_dashboard/server/admin_api.mjs:57-68），回归测试同款 raw-socket 惯用法（apps/admin_dashboard/server/admin_api.test.mjs:102-119），todo 勾账一致；catch 无绑定语法 Node 24 支持，try/catch 仅包 URL 构造不波及其他路由。未见新问题。证据：`node --test server/admin_api.test.mjs` 9/9 绿、`pnpm build` 绿。
