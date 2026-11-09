@@ -34,13 +34,20 @@ jobs:
         run: xcodegen generate --spec apps/ios/project.yml
 
       - name: Build the app (iOS Simulator, unsigned)
+        # Full output goes to a file; on failure the compiler error: lines are
+        # printed before the usual tail, so a red run carries its diagnosis
+        # (pipefail + tail used to swallow them).
         run: |
-          set -o pipefail
+          set +e
           xcodebuild -project apps/ios/ChirpCompanion.xcodeproj \
             -scheme ChirpCompanion \
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGNING_ALLOWED=NO build | tail -40
+            CODE_SIGNING_ALLOWED=NO build > /tmp/xcodebuild.log 2>&1
+          status=$?
+          grep -E 'error: ' /tmp/xcodebuild.log | head -40
+          tail -40 /tmp/xcodebuild.log
+          exit $status
 
       - name: Run the package tests (protocol core + app core)
         run: swift test --package-path apps/ios

@@ -1,6 +1,9 @@
 import ChirpAppCore
 import ChirpProtocol
 import ChirpProtos
+// trimmingCharacters(in:)/Date() come from Foundation; the original single-file
+// AppModel resolved them through SwiftUI/UIKit's re-export, this file cannot.
+import Foundation
 
 /// 好友/在线状态面(P4c)与群面板(P4e):名册拉取、申请/删除好友、在线状态
 /// 切换、群成员管理与署名/标题读数。AppModel 的 extension 拆分(纯搬运);
