@@ -1,0 +1,1327 @@
+// Social service packet dispatch and state (extracted from main.cc so the
+// entry only wires runtime options and lifecycle). SocialState plus the
+// friend/block/presence handlers live here; main() owns assembly.
+#include "social_dispatch.h"
+
+// NOTE: never include presence_manager.h from this TU. It declares its own
+// chirp::social::PresenceStatus enum that collides with the proto-generated
+// one used below.
+
+#include <algorithm>
+#include <chrono>
+#include <cstdint>
+#include <cstdlib>
+#include <memory>
+#include <mutex>
+#include <optional>
+#include <random>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+#include <asio.hpp>
+
+#include "common/login_token_verifier.h"
+#include "common/metrics.h"
+#include "common/metrics_http_server.h"
+#include "common/crash_handler.h"
+#include "logger.h"
+#include "network/protobuf_framing.h"
+#include "network/redis_client.h"
+#include "network/session.h"
+#include "network/device_presence.h"
+#include "network/session_registry.h"
+#include "network/tcp_server.h"
+#include "network/websocket_server.h"
+#include "proto/auth.pb.h"
+#include "proto/chat.pb.h"
+#include "proto/common.pb.h"
+#include "proto/gateway.pb.h"
+#include "proto/game_server_gateway.pb.h"
+#include "proto/social.pb.h"
+
+
+namespace chirp::social::direct {
+
+int64_t NowMs() {
+  using namespace std::chrono;
+  return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+}
+
+
+std::string RandomHex(size_t bytes) {
+  static thread_local std::mt19937_64 rng{std::random_device{}()};
+  std::uniform_int_distribution<uint32_t> dist(0, 255);
+  static const char* kHex = "0123456789abcdef";
+
+  std::string out;
+  out.resize(bytes * 2);
+  for (size_t i = 0; i < bytes; i++) {
+    uint8_t b = static_cast<uint8_t>(dist(rng));
+    out[i * 2] = kHex[(b >> 4) & 0xF];
+    out[i * 2 + 1] = kHex[b & 0xF];
+  }
+  return out;
+}
+
+// Redis snapshot keys, one per user. The values are the Stored* messages from
+// proto/social.proto (storage schema, not wire protocol).
+constexpr const char* kFriendsPrefix = "chirp:social:friends:";
+constexpr const char* kPendingPrefix = "chirp:social:pending:";
+constexpr const char* kBlockedPrefix = "chirp:social:blocked:";
+constexpr const char* kNotifyPrefsPrefix = "chirp:social:notify_prefs:";
+
+// Social service state. Lock discipline: never call a SessionRegistry free
+// function while holding `mu` - the registry has its own lock and the two are
+// always taken strictly one after the other (state mutation first, then
+// registry lookups for delivery outside the lock).
+
+void SendPacket(const std::shared_ptr<chirp::network::Session>& session,
+                chirp::gateway::MsgID msg_id,
+                int64_t seq,
+                const std::string& body) {
+  chirp::gateway::Packet pkt;
+  pkt.set_msg_id(msg_id);
+  pkt.set_sequence(seq);
+  pkt.set_body(body);
+  auto framed = chirp::network::ProtobufFraming::Encode(pkt);
+  session->Send(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
+}
+
+void SendPacketAndClose(const std::shared_ptr<chirp::network::Session>& session,
+                        chirp::gateway::MsgID msg_id,
+                        int64_t seq,
+                        const std::string& body) {
+  chirp::gateway::Packet pkt;
+  pkt.set_msg_id(msg_id);
+  pkt.set_sequence(seq);
+  pkt.set_body(body);
+  auto framed = chirp::network::ProtobufFraming::Encode(pkt);
+  session->SendAndClose(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
+}
+
+void KickSession(const std::shared_ptr<chirp::network::Session>& session, const std::string& reason) {
+  chirp::auth::KickNotify kick;
+  kick.set_reason(reason.empty() ? "kicked" : reason);
+  SendPacketAndClose(session, chirp::gateway::KICK_NOTIFY, 0, kick.SerializeAsString());
+}
+
+// Delivers a packet to every live session of user_id (all devices). Registry
+// lookups happen outside the state lock; the send itself is fire-and-forget.
+void SendToUser(const std::shared_ptr<SocialState>& state,
+                const std::string& user_id,
+                chirp::gateway::MsgID msg_id,
+                const std::string& body) {
+  for (const auto& sess : chirp::network::GetUserSessions(state->registry, user_id)) {
+    SendPacket(sess, msg_id, 0, body);
+  }
+}
+
+void BroadcastToFriends(const std::shared_ptr<SocialState>& state,
+                        const std::string& user_id,
+                        chirp::gateway::MsgID msg_id,
+                        const std::string& body) {
+  std::vector<std::string> friend_ids;
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    auto it = state->friends.find(user_id);
+    if (it != state->friends.end()) {
+      friend_ids.assign(it->second.begin(), it->second.end());
+    }
+  }
+
+  for (const auto& friend_id : friend_ids) {
+    SendToUser(state, friend_id, msg_id, body);
+  }
+}
+
+void PersistFriends(const std::shared_ptr<chirp::network::RedisClient>& redis,
+                    const std::string& user_id,
+                    const std::unordered_set<std::string>& friend_ids) {
+  if (!redis) {
+    return;
+  }
+  chirp::social::StoredFriendList stored;
+  for (const auto& id : friend_ids) {
+    stored.add_friend_user_ids(id);
+  }
+  if (!redis->Set(std::string(kFriendsPrefix) + user_id, stored.SerializeAsString())) {
+    chirp::common::Logger::Instance().Warn("social: failed to persist friends of " + user_id);
+  }
+}
+
+void PersistPending(const std::shared_ptr<chirp::network::RedisClient>& redis,
+                    const std::string& user_id,
+                    const std::unordered_map<std::string, chirp::social::FriendRequest>& pending) {
+  if (!redis) {
+    return;
+  }
+  chirp::social::StoredPendingRequests stored;
+  for (const auto& [request_id, req] : pending) {
+    // Both directions live in the shared table; each user's snapshot carries
+    // the requests they are a party to (incoming via to_user_id, outgoing
+    // via from_user_id).
+    if (req.to_user_id() != user_id && req.from_user_id() != user_id) {
+      continue;
+    }
+    (*stored.mutable_requests())[request_id] = req;
+  }
+  if (!redis->Set(std::string(kPendingPrefix) + user_id, stored.SerializeAsString())) {
+    chirp::common::Logger::Instance().Warn("social: failed to persist pending requests of " + user_id);
+  }
+}
+
+void PersistBlocked(const std::shared_ptr<chirp::network::RedisClient>& redis,
+                    const std::string& user_id,
+                    const std::unordered_set<std::string>& blocked_ids) {
+  if (!redis) {
+    return;
+  }
+  chirp::social::StoredBlockedList stored;
+  for (const auto& id : blocked_ids) {
+    stored.add_blocked_user_ids(id);
+  }
+  if (!redis->Set(std::string(kBlockedPrefix) + user_id, stored.SerializeAsString())) {
+    chirp::common::Logger::Instance().Warn("social: failed to persist blocked list of " + user_id);
+  }
+}
+
+void PersistNotifyPrefs(const std::shared_ptr<chirp::network::RedisClient>& redis,
+                        const std::string& user_id,
+                        const chirp::social::NotifyPrefs& prefs) {
+  if (!redis) {
+    return;
+  }
+  chirp::social::StoredNotifyPrefs stored;
+  stored.set_friend_online_notify(prefs.friend_online_notify());
+  if (!redis->Set(std::string(kNotifyPrefsPrefix) + user_id, stored.SerializeAsString())) {
+    chirp::common::Logger::Instance().Warn("social: failed to persist notify prefs of " + user_id);
+  }
+}
+
+// Restores friends/pending/blocked from Redis snapshots. Returns false when
+// Redis is unreachable (pure in-memory mode); a single corrupt key is skipped
+// with a warning rather than failing the load.
+bool LoadSocialState(const std::shared_ptr<chirp::network::RedisClient>& redis,
+                     const std::shared_ptr<SocialState>& state) {
+  using chirp::common::Logger;
+  if (!redis) {
+    return false;
+  }
+  if (!redis->Command({"PING"})) {
+    Logger::Instance().Warn("social: redis unreachable, starting with empty in-memory state");
+    return false;
+  }
+
+  for (const auto& key : redis->Keys(std::string(kFriendsPrefix) + "*")) {
+    const std::string user_id = key.substr(std::string_view(kFriendsPrefix).size());
+    const auto value = redis->Get(key);
+    chirp::social::StoredFriendList stored;
+    if (user_id.empty() || !value || !stored.ParseFromString(*value)) {
+      Logger::Instance().Warn("social: skipping corrupt friend snapshot " + key);
+      continue;
+    }
+    std::lock_guard<std::mutex> lock(state->mu);
+    auto& ids = state->friends[user_id];
+    for (const auto& id : stored.friend_user_ids()) {
+      ids.insert(id);
+    }
+  }
+
+  for (const auto& key : redis->Keys(std::string(kPendingPrefix) + "*")) {
+    const auto value = redis->Get(key);
+    chirp::social::StoredPendingRequests stored;
+    if (!value || !stored.ParseFromString(*value)) {
+      Logger::Instance().Warn("social: skipping corrupt pending snapshot " + key);
+      continue;
+    }
+    std::lock_guard<std::mutex> lock(state->mu);
+    for (const auto& [request_id, req] : stored.requests()) {
+      // Both parties persist the same request; the first snapshot wins and
+      // the duplicate is dropped.
+      if (state->pending_requests.find(request_id) == state->pending_requests.end()) {
+        state->pending_requests[request_id] = req;
+      }
+    }
+  }
+
+  for (const auto& key : redis->Keys(std::string(kBlockedPrefix) + "*")) {
+    const std::string user_id = key.substr(std::string_view(kBlockedPrefix).size());
+    const auto value = redis->Get(key);
+    chirp::social::StoredBlockedList stored;
+    if (user_id.empty() || !value || !stored.ParseFromString(*value)) {
+      Logger::Instance().Warn("social: skipping corrupt blocked snapshot " + key);
+      continue;
+    }
+    std::lock_guard<std::mutex> lock(state->mu);
+    auto& ids = state->blocked[user_id];
+    for (const auto& id : stored.blocked_user_ids()) {
+      ids.insert(id);
+    }
+  }
+
+  for (const auto& key : redis->Keys(std::string(kNotifyPrefsPrefix) + "*")) {
+    const std::string user_id = key.substr(std::string_view(kNotifyPrefsPrefix).size());
+    const auto value = redis->Get(key);
+    chirp::social::StoredNotifyPrefs stored;
+    if (user_id.empty() || !value || !stored.ParseFromString(*value)) {
+      Logger::Instance().Warn("social: skipping corrupt notify prefs snapshot " + key);
+      continue;
+    }
+    std::lock_guard<std::mutex> lock(state->mu);
+    chirp::social::NotifyPrefs& prefs = state->notify_prefs[user_id];
+    prefs.set_friend_online_notify(stored.friend_online_notify());
+  }
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// Shared response/notify builders
+// ---------------------------------------------------------------------------
+
+chirp::social::PresenceNotify MakePresenceNotify(const std::string& user_id,
+                                                 chirp::social::PresenceStatus status,
+                                                 const std::string& status_message) {
+  chirp::social::PresenceNotify notify;
+  notify.set_user_id(user_id);
+  notify.set_status(status);
+  notify.set_status_message(status_message);
+  notify.set_timestamp(NowMs());
+  return notify;
+}
+
+// FRIEND_ONLINE_NOTIFY(3029)：只在有效状态 OFFLINE→非 OFFLINE 跃迁时补发，
+// 逐好友过各自的 SET_NOTIFY_PREFS 开关（缺省开）。body 复用 PresenceNotify
+// （与花名册 PRESENCE_NOTIFY 同形：谁/什么状态/状态文案/时间戳），靠 msgid
+// 区分——花名册链路不受开关影响。
+bool FriendOnlineNotifyEnabled(const std::shared_ptr<SocialState>& state,
+                               const std::string& user_id) {
+  std::lock_guard<std::mutex> lock(state->mu);
+  const auto it = state->notify_prefs.find(user_id);
+  return it == state->notify_prefs.end() || it->second.friend_online_notify();
+}
+
+void BroadcastFriendOnline(const std::shared_ptr<SocialState>& state,
+                           const std::string& user_id,
+                           chirp::social::PresenceStatus now,
+                           const std::string& status_message,
+                           chirp::social::PresenceStatus before) {
+  // 没有跃迁（出发状态本来就可见），或跃迁后仍不可见（显式下线/退回游戏外），
+  // 都不算"上线"，不补发。
+  if (before != chirp::social::OFFLINE || now == chirp::social::OFFLINE) {
+    return;
+  }
+  const auto body = MakePresenceNotify(user_id, now, status_message).SerializeAsString();
+  std::vector<std::string> friend_ids;
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    auto it = state->friends.find(user_id);
+    if (it != state->friends.end()) {
+      friend_ids.assign(it->second.begin(), it->second.end());
+    }
+  }
+  for (const auto& friend_id : friend_ids) {
+    if (FriendOnlineNotifyEnabled(state, friend_id)) {
+      SendToUser(state, friend_id, chirp::gateway::FRIEND_ONLINE_NOTIFY, body);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Redis persistence. Best-effort write-through: the in-memory state is the
+// working authority, Redis only restores it after a restart, so a failed
+// write costs durability, never the in-flight request.
+// ---------------------------------------------------------------------------
+
+// Merges the base presence (connection lifecycle + explicit SET_PRESENCE)
+// with the 游戏在线状态 overlay: a non-empty overlay always presents as
+// IN_GAME regardless of the base — being in a game is the more specific
+// truth, including for a player with no social session at all (base
+// offline + in-game stays IN_GAME). The game ids ride both in
+// status_message (display: "g1,g2") and in the metadata map (machine
+// read: metadata["<game_id>"] = "1").
+chirp::social::PresenceInfo EffectivePresence(const std::shared_ptr<SocialState>& state,
+                                              const std::string& user_id) {
+  std::set<std::string> games;
+  chirp::social::PresenceInfo base;
+  bool has_base = false;
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    const auto git = state->game_presence.find(user_id);
+    if (git != state->game_presence.end()) {
+      games = git->second;
+    }
+    const auto pit = state->presence.find(user_id);
+    if (pit != state->presence.end()) {
+      base = pit->second;
+      has_base = true;
+    }
+  }
+
+  if (!games.empty()) {
+    chirp::social::PresenceInfo info;
+    info.set_user_id(user_id);
+    info.set_status(chirp::social::IN_GAME);
+    std::string joined;
+    for (const auto& game_id : games) {
+      (*info.mutable_metadata())[game_id] = "1";
+      if (!joined.empty()) {
+        joined.push_back(',');
+      }
+      joined += game_id;
+    }
+    info.set_status_message(joined);
+    info.set_last_seen(has_base ? base.last_seen() : 0);
+    return info;
+  }
+  if (!has_base) {
+    chirp::social::PresenceInfo info;
+    info.set_user_id(user_id);
+    info.set_status(chirp::social::OFFLINE);
+    return info;
+  }
+  return base;
+}
+
+// Chat-plane game-presence flip (chirp:game_presence:events): apply it to
+// the overlay and return the merged notify to fan out to friends. The
+// events only arrive while the player's switch is on — the closed state
+// never reaches this service (状态不推), so no filtering happens here.
+chirp::social::PresenceNotify ApplyGamePresenceEvent(
+    const std::shared_ptr<SocialState>& state,
+    const chirp::game_server_gateway::GamePresenceEvent& event) {
+  if (event.player_id().empty() || event.game_id().empty()) {
+    return MakePresenceNotify(event.player_id(), chirp::social::OFFLINE, "");
+  }
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    auto& games = state->game_presence[event.player_id()];
+    if (event.online()) {
+      games.insert(event.game_id());
+    } else {
+      games.erase(event.game_id());
+      if (games.empty()) {
+        state->game_presence.erase(event.player_id());
+      }
+    }
+  }
+  const auto info = EffectivePresence(state, event.player_id());
+  return MakePresenceNotify(info.user_id(), info.status(), info.status_message());
+}
+
+// Pub/sub entry point: filters the channel, parses the payload and pushes
+// the merged status to the player's friends. Kept out of the lambda so the
+// whole event path (including the malformed-payload guard) is testable.
+void ConsumeGamePresenceEvent(const std::shared_ptr<SocialState>& state,
+                              const std::string& channel,
+                              const std::string& payload) {
+  if (channel != "chirp:game_presence:events") {
+    return;
+  }
+  chirp::game_server_gateway::GamePresenceEvent event;
+  if (!event.ParseFromString(payload)) {
+    chirp::common::Logger::Instance().Warn("social: failed to parse GamePresenceEvent");
+    return;
+  }
+  const auto presence_before = EffectivePresence(state, event.player_id()).status();
+  const auto notify = ApplyGamePresenceEvent(state, event);
+  BroadcastToFriends(state, event.player_id(), chirp::gateway::PRESENCE_NOTIFY,
+                     notify.SerializeAsString());
+  BroadcastFriendOnline(state, event.player_id(), notify.status(), notify.status_message(),
+                        presence_before);
+}
+
+// Guards a business handler: the caller must be a logged-in session, and a
+// non-empty req.user_id must match the authenticated identity. Returns the
+// authenticated user id, or empty after sending an error response.
+template <typename RespT>
+std::string RequireUser(const std::shared_ptr<SocialState>& state,
+                        const std::shared_ptr<chirp::network::Session>& session,
+                        const chirp::gateway::Packet& pkt,
+                        chirp::gateway::MsgID resp_id,
+                        const std::string& req_user_id,
+                        RespT* resp) {
+  const auto authenticated = chirp::network::GetAuthenticatedSession(state->registry, session);
+  // Not every response message carries server_time (the GET_* ones don't).
+  const auto stamp = [&] {
+    if constexpr (requires { resp->set_server_time(NowMs()); }) {
+      resp->set_server_time(NowMs());
+    }
+  };
+  if (authenticated.user_id.empty()) {
+    resp->set_code(chirp::common::AUTH_FAILED);
+    stamp();
+    SendPacket(session, resp_id, pkt.sequence(), resp->SerializeAsString());
+    return {};
+  }
+  if (!req_user_id.empty() && req_user_id != authenticated.user_id) {
+    resp->set_code(chirp::common::INVALID_PARAM);
+    stamp();
+    SendPacket(session, resp_id, pkt.sequence(), resp->SerializeAsString());
+    return {};
+  }
+  return authenticated.user_id;
+}
+
+// ---------------------------------------------------------------------------
+// Handlers
+// ---------------------------------------------------------------------------
+
+// LOGIN_REQ: verifies the token (scaffold mode when no secret is configured),
+// binds the session in the registry (kicking the previous session of the same
+// (user, device) pair), marks presence ONLINE and tells the user's friends.
+void HandleLogin(const std::shared_ptr<SocialState>& state,
+                 const chirp::common::LoginTokenVerifier* verifier,
+                 const std::shared_ptr<chirp::network::Session>& session,
+                 const chirp::gateway::Packet& pkt) {
+  using chirp::common::Logger;
+
+  chirp::auth::LoginRequest login_req;
+  if (!login_req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    chirp::auth::LoginResponse resp;
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  std::string user_id;
+  if (verifier && verifier->enabled()) {
+    // Real mode: the token must be an HS256 JWT signed with the shared
+    // secret, unexpired, with the login user in "sub".
+    std::string verify_err;
+    if (!verifier->Verify(login_req.token(), NowMs(), &user_id, &verify_err)) {
+      Logger::Instance().Warn("social login rejected: " + verify_err);
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::AUTH_FAILED);
+      resp.set_server_time(NowMs());
+      SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+  } else {
+    // Scaffolding login: treat token as user_id.
+    user_id = login_req.token();
+  }
+
+  if (user_id.empty()) {
+    chirp::auth::LoginResponse resp;
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  chirp::auth::LoginResponse login_resp;
+  login_resp.set_code(chirp::common::OK);
+  login_resp.set_user_id(user_id);
+  login_resp.set_session_id("social_session_" + RandomHex(8));
+  login_resp.set_kick_previous(true);
+  login_resp.mutable_kick()->set_reason(chirp::network::LoginKickReason(login_req.platform()));
+  login_resp.set_server_time(NowMs());
+
+  // 多端在线（P0）：槽位键 (user, platform)——同 platform 顶号（KICK_NOTIFY
+  // 带新 platform 的顶号理由），跨 platform 共存。本平面不广播设备清单变更
+  // （设备在线清单属于客户端接入面：两个 sdk_gateway 与 chat 直连入口）。
+  auto old = chirp::network::BindAuthenticatedSession(
+      state->registry, user_id, login_resp.session_id(),
+      login_req.device_id(), session, login_req.platform());
+  if (old && old.get() != session.get()) {
+    KickSession(old, chirp::network::LoginKickReason(login_req.platform()));
+  }
+  // Slot accounting: a null displaced session means the (user, platform)
+  // slot is new (gauge inc); a displaced one replaced an existing slot
+  // (count unchanged - the kicked session's release lands as a no-op).
+  if (!old) {
+    CHIRP_GAUGE_INC("chirp_social_sessions");
+  }
+  CHIRP_COUNTER("chirp_social_logins_total", 1);
+
+  SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), login_resp.SerializeAsString());
+
+  // Presence: flip to ONLINE but keep the user's own status message and
+  // metadata (they belong to setPresence, not to the connection lifecycle).
+  const auto presence_before = EffectivePresence(state, user_id).status();
+  chirp::social::PresenceInfo info;
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    info = state->presence[user_id];
+    info.set_user_id(user_id);
+    info.set_status(chirp::social::ONLINE);
+    info.set_last_seen(NowMs());
+    state->presence[user_id] = info;
+  }
+
+  // Friends see the merged view: an in-game player coming online stays
+  // IN_GAME (the overlay outlives the social connection lifecycle).
+  const auto effective = EffectivePresence(state, user_id);
+  BroadcastToFriends(state, user_id, chirp::gateway::PRESENCE_NOTIFY,
+                     MakePresenceNotify(user_id, effective.status(), effective.status_message())
+                         .SerializeAsString());
+  BroadcastFriendOnline(state, user_id, effective.status(), effective.status_message(),
+                        presence_before);
+}
+
+void HandleAddFriend(const std::shared_ptr<SocialState>& state,
+                     const std::shared_ptr<chirp::network::RedisClient>& redis,
+                     const std::shared_ptr<chirp::network::Session>& session,
+                     const chirp::gateway::Packet& pkt) {
+  chirp::social::AddFriendRequest req;
+  chirp::social::AddFriendResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::ADD_FRIEND_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  const std::string user_id = RequireUser(state, session, pkt, chirp::gateway::ADD_FRIEND_RESP,
+                                          req.user_id(), &resp);
+  if (user_id.empty()) {
+    return;
+  }
+
+  const std::string& target = req.target_user_id();
+  if (target.empty() || target == user_id) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::ADD_FRIEND_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  std::string request_id;
+  int64_t timestamp = NowMs();
+  std::unordered_map<std::string, chirp::social::FriendRequest> pending_snapshot;
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+
+    auto friends_it = state->friends.find(user_id);
+    if (friends_it != state->friends.end() && friends_it->second.count(target)) {
+      resp.set_code(chirp::common::INTERNAL_ERROR);  // already friends
+      resp.set_server_time(NowMs());
+      SendPacket(session, chirp::gateway::ADD_FRIEND_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+
+    auto blocked_it = state->blocked.find(target);
+    if (blocked_it != state->blocked.end() && blocked_it->second.count(user_id)) {
+      resp.set_code(chirp::common::INTERNAL_ERROR);  // target blocked the sender
+      resp.set_server_time(NowMs());
+      SendPacket(session, chirp::gateway::ADD_FRIEND_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+
+    // Idempotent duplicate: an identical open request returns the original id.
+    for (const auto& [existing_id, existing] : state->pending_requests) {
+      if (existing.from_user_id() == user_id && existing.to_user_id() == target) {
+        request_id = existing_id;
+        timestamp = existing.timestamp();
+        break;
+      }
+    }
+
+    if (request_id.empty()) {
+      request_id = RandomHex(16);
+      chirp::social::FriendRequest friend_req;
+      friend_req.set_from_user_id(user_id);
+      friend_req.set_to_user_id(target);
+      friend_req.set_message(req.message());
+      friend_req.set_timestamp(timestamp);
+      state->pending_requests[request_id] = friend_req;
+    }
+    pending_snapshot = state->pending_requests;
+  }
+
+  PersistPending(redis, user_id, pending_snapshot);
+  PersistPending(redis, target, pending_snapshot);
+
+  // Tell the target (all their devices) about the new request.
+  chirp::social::FriendRequestNotify notify;
+  notify.set_request_id(request_id);
+  notify.set_from_user_id(user_id);
+  notify.set_message(req.message());
+  notify.set_timestamp(timestamp);
+  SendToUser(state, target, chirp::gateway::FRIEND_REQUEST_NOTIFY, notify.SerializeAsString());
+
+  resp.set_code(chirp::common::OK);
+  resp.set_request_id(request_id);
+  resp.set_server_time(NowMs());
+  SendPacket(session, chirp::gateway::ADD_FRIEND_RESP, pkt.sequence(), resp.SerializeAsString());
+}
+
+void HandleFriendRequestAction(const std::shared_ptr<SocialState>& state,
+                               const std::shared_ptr<chirp::network::RedisClient>& redis,
+                               const std::shared_ptr<chirp::network::Session>& session,
+                               const chirp::gateway::Packet& pkt) {
+  chirp::social::FriendRequestAction req;
+  chirp::social::FriendRequestActionResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::FRIEND_REQUEST_ACTION_RESP, pkt.sequence(),
+               resp.SerializeAsString());
+    return;
+  }
+
+  const std::string user_id = RequireUser(state, session, pkt,
+                                          chirp::gateway::FRIEND_REQUEST_ACTION_RESP,
+                                          req.user_id(), &resp);
+  if (user_id.empty()) {
+    return;
+  }
+
+  std::string from_user_id;
+  std::string to_user_id;
+  std::unordered_set<std::string> from_friends;
+  std::unordered_set<std::string> to_friends;
+  std::unordered_map<std::string, chirp::social::FriendRequest> pending_snapshot;
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    auto it = state->pending_requests.find(req.request_id());
+    if (it == state->pending_requests.end() || it->second.to_user_id() != user_id) {
+      // Unknown request, or not the user who received it.
+      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_server_time(NowMs());
+      SendPacket(session, chirp::gateway::FRIEND_REQUEST_ACTION_RESP, pkt.sequence(),
+                 resp.SerializeAsString());
+      return;
+    }
+
+    from_user_id = it->second.from_user_id();
+    to_user_id = it->second.to_user_id();
+    state->pending_requests.erase(it);
+
+    // The requester's mirror of this request (kept for the outgoing record)
+    // is dropped too once the request is settled.
+    for (auto mirror_it = state->pending_requests.begin();
+         mirror_it != state->pending_requests.end();) {
+      if (mirror_it->second.from_user_id() == to_user_id &&
+          mirror_it->second.to_user_id() == from_user_id &&
+          mirror_it->first != req.request_id()) {
+        mirror_it = state->pending_requests.erase(mirror_it);
+      } else {
+        ++mirror_it;
+      }
+    }
+
+    if (req.accept()) {
+      state->friends[from_user_id].insert(to_user_id);
+      state->friends[to_user_id].insert(from_user_id);
+    }
+
+    from_friends = state->friends[from_user_id];
+    to_friends = state->friends[to_user_id];
+    pending_snapshot = state->pending_requests;
+  }
+
+  PersistFriends(redis, from_user_id, from_friends);
+  PersistFriends(redis, to_user_id, to_friends);
+  PersistPending(redis, from_user_id, pending_snapshot);
+  PersistPending(redis, to_user_id, pending_snapshot);
+
+  if (req.accept()) {
+    // Both sides learn who just became their friend: user_id is always the
+    // OTHER party of the friendship (never the receiver - that would look
+    // like a self-echo). username stays empty; the server holds no profiles.
+    chirp::social::FriendAcceptedNotify to_requester;
+    to_requester.set_user_id(to_user_id);
+    to_requester.set_timestamp(NowMs());
+    SendToUser(state, from_user_id, chirp::gateway::FRIEND_ACCEPTED_NOTIFY,
+               to_requester.SerializeAsString());
+
+    chirp::social::FriendAcceptedNotify to_acceptor;
+    to_acceptor.set_user_id(from_user_id);
+    to_acceptor.set_timestamp(NowMs());
+    SendToUser(state, to_user_id, chirp::gateway::FRIEND_ACCEPTED_NOTIFY,
+               to_acceptor.SerializeAsString());
+  }
+
+  resp.set_code(chirp::common::OK);
+  resp.set_server_time(NowMs());
+  SendPacket(session, chirp::gateway::FRIEND_REQUEST_ACTION_RESP, pkt.sequence(),
+             resp.SerializeAsString());
+}
+
+void HandleRemoveFriend(const std::shared_ptr<SocialState>& state,
+                        const std::shared_ptr<chirp::network::RedisClient>& redis,
+                        const std::shared_ptr<chirp::network::Session>& session,
+                        const chirp::gateway::Packet& pkt) {
+  chirp::social::RemoveFriendRequest req;
+  chirp::social::RemoveFriendResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::REMOVE_FRIEND_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  const std::string user_id = RequireUser(state, session, pkt, chirp::gateway::REMOVE_FRIEND_RESP,
+                                          req.user_id(), &resp);
+  if (user_id.empty()) {
+    return;
+  }
+
+  const std::string& target = req.friend_user_id();
+  if (target.empty() || target == user_id) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::REMOVE_FRIEND_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  std::unordered_set<std::string> user_friends;
+  std::unordered_set<std::string> target_friends;
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    // Symmetric delete; removing a non-friend is a no-op that still succeeds
+    // (idempotent), so client retries never surface errors.
+    if (auto it = state->friends.find(user_id); it != state->friends.end()) {
+      it->second.erase(target);
+      user_friends = it->second;
+    }
+    if (auto it = state->friends.find(target); it != state->friends.end()) {
+      it->second.erase(user_id);
+      target_friends = it->second;
+    }
+  }
+
+  PersistFriends(redis, user_id, user_friends);
+  PersistFriends(redis, target, target_friends);
+
+  chirp::social::FriendRemovedNotify notify;
+  notify.set_user_id(user_id);
+  notify.set_timestamp(NowMs());
+  SendToUser(state, target, chirp::gateway::FRIEND_REMOVED_NOTIFY, notify.SerializeAsString());
+
+  resp.set_code(chirp::common::OK);
+  resp.set_server_time(NowMs());
+  SendPacket(session, chirp::gateway::REMOVE_FRIEND_RESP, pkt.sequence(), resp.SerializeAsString());
+}
+
+void HandleGetFriendList(const std::shared_ptr<SocialState>& state,
+                         const std::shared_ptr<chirp::network::Session>& session,
+                         const chirp::gateway::Packet& pkt) {
+  chirp::social::GetFriendListRequest req;
+  chirp::social::GetFriendListResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    SendPacket(session, chirp::gateway::GET_FRIEND_LIST_RESP, pkt.sequence(),
+               resp.SerializeAsString());
+    return;
+  }
+
+  const std::string user_id = RequireUser(state, session, pkt, chirp::gateway::GET_FRIEND_LIST_RESP,
+                                          req.user_id(), &resp);
+  if (user_id.empty()) {
+    return;
+  }
+
+  std::vector<std::string> ids;
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    if (auto it = state->friends.find(user_id); it != state->friends.end()) {
+      ids.assign(it->second.begin(), it->second.end());
+    }
+  }
+  std::sort(ids.begin(), ids.end());  // stable pagination order
+
+  resp.set_code(chirp::common::OK);
+  resp.set_total_count(static_cast<int32_t>(ids.size()));
+  const int32_t offset = std::max(0, req.offset());
+  const int32_t limit = req.limit() <= 0 ? static_cast<int32_t>(ids.size()) : req.limit();
+  for (int32_t i = offset; i < static_cast<int32_t>(ids.size()) && i < offset + limit; i++) {
+    auto* info = resp.add_friends();
+    info->set_user_id(ids[static_cast<size_t>(i)]);
+    info->set_status(chirp::social::ACCEPTED);
+  }
+
+  SendPacket(session, chirp::gateway::GET_FRIEND_LIST_RESP, pkt.sequence(), resp.SerializeAsString());
+}
+
+void HandleGetPendingRequests(const std::shared_ptr<SocialState>& state,
+                              const std::shared_ptr<chirp::network::Session>& session,
+                              const chirp::gateway::Packet& pkt) {
+  chirp::social::GetPendingRequestsRequest req;
+  chirp::social::GetPendingRequestsResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    SendPacket(session, chirp::gateway::GET_PENDING_REQUESTS_RESP, pkt.sequence(),
+               resp.SerializeAsString());
+    return;
+  }
+
+  const std::string user_id =
+      RequireUser(state, session, pkt, chirp::gateway::GET_PENDING_REQUESTS_RESP, req.user_id(),
+                  &resp);
+  if (user_id.empty()) {
+    return;
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    // Incoming side only; the outgoing mirror is the requester's record.
+    // Each entry carries its request id so the receiver can act on it.
+    for (const auto& [request_id, pending] : state->pending_requests) {
+      if (pending.to_user_id() == user_id) {
+        auto* entry = resp.add_requests();
+        *entry = pending;
+        entry->set_request_id(request_id);
+      }
+    }
+  }
+
+  resp.set_code(chirp::common::OK);
+  SendPacket(session, chirp::gateway::GET_PENDING_REQUESTS_RESP, pkt.sequence(),
+             resp.SerializeAsString());
+}
+
+void HandleBlockUser(const std::shared_ptr<SocialState>& state,
+                     const std::shared_ptr<chirp::network::RedisClient>& redis,
+                     const std::shared_ptr<chirp::network::Session>& session,
+                     const chirp::gateway::Packet& pkt) {
+  chirp::social::BlockUserRequest req;
+  chirp::social::BlockUserResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::BLOCK_USER_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  const std::string user_id = RequireUser(state, session, pkt, chirp::gateway::BLOCK_USER_RESP,
+                                          req.user_id(), &resp);
+  if (user_id.empty()) {
+    return;
+  }
+
+  const std::string& target = req.target_user_id();
+  if (target.empty() || target == user_id) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::BLOCK_USER_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  bool removed_friend = false;
+  std::unordered_set<std::string> user_friends;
+  std::unordered_set<std::string> target_friends;
+  std::unordered_set<std::string> user_blocked;
+  std::unordered_map<std::string, chirp::social::FriendRequest> pending_snapshot;
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    user_blocked = state->blocked[user_id];
+    user_blocked.insert(target);
+
+    // Blocking severs the friendship (and any open requests) both ways.
+    if (auto it = state->friends.find(user_id); it != state->friends.end()) {
+      removed_friend = it->second.erase(target) > 0;
+      user_friends = it->second;
+    }
+    if (auto it = state->friends.find(target); it != state->friends.end()) {
+      it->second.erase(user_id);
+      target_friends = it->second;
+    }
+    for (auto pend_it = state->pending_requests.begin();
+         pend_it != state->pending_requests.end();) {
+      const auto& r = pend_it->second;
+      const bool involved = (r.from_user_id() == user_id && r.to_user_id() == target) ||
+                            (r.from_user_id() == target && r.to_user_id() == user_id);
+      pend_it = involved ? state->pending_requests.erase(pend_it) : std::next(pend_it);
+    }
+    state->blocked[user_id] = user_blocked;
+    pending_snapshot = state->pending_requests;
+  }
+
+  PersistBlocked(redis, user_id, user_blocked);
+  PersistFriends(redis, user_id, user_friends);
+  PersistFriends(redis, target, target_friends);
+  PersistPending(redis, user_id, pending_snapshot);
+  PersistPending(redis, target, pending_snapshot);
+
+  if (removed_friend) {
+    chirp::social::FriendRemovedNotify notify;
+    notify.set_user_id(user_id);
+    notify.set_timestamp(NowMs());
+    SendToUser(state, target, chirp::gateway::FRIEND_REMOVED_NOTIFY, notify.SerializeAsString());
+  }
+
+  resp.set_code(chirp::common::OK);
+  resp.set_server_time(NowMs());
+  SendPacket(session, chirp::gateway::BLOCK_USER_RESP, pkt.sequence(), resp.SerializeAsString());
+}
+
+void HandleUnblockUser(const std::shared_ptr<SocialState>& state,
+                       const std::shared_ptr<chirp::network::RedisClient>& redis,
+                       const std::shared_ptr<chirp::network::Session>& session,
+                       const chirp::gateway::Packet& pkt) {
+  chirp::social::UnblockUserRequest req;
+  chirp::social::UnblockUserResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::UNBLOCK_USER_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  const std::string user_id = RequireUser(state, session, pkt, chirp::gateway::UNBLOCK_USER_RESP,
+                                          req.user_id(), &resp);
+  if (user_id.empty()) {
+    return;
+  }
+
+  const std::string& target = req.target_user_id();
+  if (target.empty()) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::UNBLOCK_USER_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  std::unordered_set<std::string> blocked_after;
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    if (auto it = state->blocked.find(user_id); it != state->blocked.end()) {
+      it->second.erase(target);
+      if (it->second.empty()) {
+        state->blocked.erase(it);
+      } else {
+        blocked_after = it->second;
+      }
+    }
+  }
+
+  // An empty snapshot still overwrites the Redis value - that is the delete.
+  PersistBlocked(redis, user_id, blocked_after);
+
+  resp.set_code(chirp::common::OK);
+  resp.set_server_time(NowMs());
+  SendPacket(session, chirp::gateway::UNBLOCK_USER_RESP, pkt.sequence(), resp.SerializeAsString());
+}
+
+void HandleGetBlockedList(const std::shared_ptr<SocialState>& state,
+                          const std::shared_ptr<chirp::network::Session>& session,
+                          const chirp::gateway::Packet& pkt) {
+  chirp::social::GetBlockedListRequest req;
+  chirp::social::GetBlockedListResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    SendPacket(session, chirp::gateway::GET_BLOCKED_LIST_RESP, pkt.sequence(),
+               resp.SerializeAsString());
+    return;
+  }
+
+  const std::string user_id = RequireUser(state, session, pkt, chirp::gateway::GET_BLOCKED_LIST_RESP,
+                                          req.user_id(), &resp);
+  if (user_id.empty()) {
+    return;
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    if (auto it = state->blocked.find(user_id); it != state->blocked.end()) {
+      for (const auto& id : it->second) {
+        resp.add_blocked_user_ids(id);
+      }
+    }
+  }
+
+  resp.set_code(chirp::common::OK);
+  SendPacket(session, chirp::gateway::GET_BLOCKED_LIST_RESP, pkt.sequence(),
+             resp.SerializeAsString());
+}
+
+void HandleSetPresence(const std::shared_ptr<SocialState>& state,
+                       const std::shared_ptr<chirp::network::RedisClient>& redis,
+                       const std::shared_ptr<chirp::network::Session>& session,
+                       const chirp::gateway::Packet& pkt) {
+  chirp::social::SetPresenceRequest req;
+  chirp::social::SetPresenceResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::SET_PRESENCE_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  const std::string user_id = RequireUser(state, session, pkt, chirp::gateway::SET_PRESENCE_RESP,
+                                          req.user_id(), &resp);
+  if (user_id.empty()) {
+    return;
+  }
+
+  if (!chirp::social::PresenceStatus_IsValid(req.status())) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::SET_PRESENCE_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  chirp::social::PresenceInfo info;
+  info.set_user_id(user_id);
+  info.set_status(req.status());
+  info.set_status_message(req.status_message());
+  info.set_last_seen(NowMs());
+  for (const auto& kv : req.metadata()) {
+    (*info.mutable_metadata())[kv.first] = kv.second;
+  }
+
+  const auto presence_before = EffectivePresence(state, user_id).status();
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    state->presence[user_id] = info;
+  }
+
+  // Cross-instance presence keeps the 1h TTL: a stale record is better than
+  // a permanent lie about someone's status.
+  if (redis) {
+    chirp::social::PresenceNotify stored = MakePresenceNotify(user_id, req.status(), req.status_message());
+    for (const auto& kv : req.metadata()) {
+      (*stored.mutable_metadata())[kv.first] = kv.second;
+    }
+    redis->SetEx("chirp:social:presence:" + user_id, stored.SerializeAsString(), 3600);
+  }
+
+  // The broadcast is the merged view — an explicit status never masks an
+  // active game presence (the game overlay wins, see EffectivePresence).
+  const auto effective = EffectivePresence(state, user_id);
+  BroadcastToFriends(state, user_id, chirp::gateway::PRESENCE_NOTIFY,
+                     MakePresenceNotify(user_id, effective.status(), effective.status_message())
+                         .SerializeAsString());
+  BroadcastFriendOnline(state, user_id, effective.status(), effective.status_message(),
+                        presence_before);
+
+  resp.set_code(chirp::common::OK);
+  resp.set_server_time(NowMs());
+  SendPacket(session, chirp::gateway::SET_PRESENCE_RESP, pkt.sequence(), resp.SerializeAsString());
+}
+
+void HandleGetPresence(const std::shared_ptr<SocialState>& state,
+                       const std::shared_ptr<chirp::network::Session>& session,
+                       const chirp::gateway::Packet& pkt) {
+  chirp::social::GetPresenceRequest req;
+  chirp::social::GetPresenceResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    SendPacket(session, chirp::gateway::GET_PRESENCE_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  if (chirp::network::GetAuthenticatedSession(state->registry, session).user_id.empty()) {
+    resp.set_code(chirp::common::AUTH_FAILED);
+    SendPacket(session, chirp::gateway::GET_PRESENCE_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  resp.set_code(chirp::common::OK);
+  // The merged view per user: base presence overlaid by the game presence
+  // (IN_GAME wins, game ids in status_message + metadata). EffectivePresence
+  // locks internally, so no outer lock here.
+  for (const auto& user_id : req.user_ids()) {
+    resp.add_presences()->CopyFrom(EffectivePresence(state, user_id));
+  }
+
+  SendPacket(session, chirp::gateway::GET_PRESENCE_RESP, pkt.sequence(), resp.SerializeAsString());
+}
+
+// SET_NOTIFY_PREFS_REQ（3025）：好友上线通知的用户级开关。SET 必须带 prefs
+// 子消息（proto3 对 message 字段有 presence 语义，缺 prefs 回 INVALID_PARAM，
+// 不静默当成"关"——与缺省全开保持一致）；生效值回显给客户端。
+void HandleSetNotifyPrefs(const std::shared_ptr<SocialState>& state,
+                          const std::shared_ptr<chirp::network::RedisClient>& redis,
+                          const std::shared_ptr<chirp::network::Session>& session,
+                          const chirp::gateway::Packet& pkt) {
+  chirp::social::SetNotifyPrefsRequest req;
+  chirp::social::SetNotifyPrefsResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::SET_NOTIFY_PREFS_RESP, pkt.sequence(),
+               resp.SerializeAsString());
+    return;
+  }
+
+  const std::string user_id = RequireUser(state, session, pkt,
+                                          chirp::gateway::SET_NOTIFY_PREFS_RESP,
+                                          req.user_id(), &resp);
+  if (user_id.empty()) {
+    return;
+  }
+
+  if (!req.has_prefs()) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::SET_NOTIFY_PREFS_RESP, pkt.sequence(),
+               resp.SerializeAsString());
+    return;
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    state->notify_prefs[user_id] = req.prefs();
+  }
+  PersistNotifyPrefs(redis, user_id, req.prefs());
+
+  resp.set_code(chirp::common::OK);
+  *resp.mutable_prefs() = req.prefs();
+  resp.set_server_time(NowMs());
+  SendPacket(session, chirp::gateway::SET_NOTIFY_PREFS_RESP, pkt.sequence(),
+             resp.SerializeAsString());
+}
+
+// GET_NOTIFY_PREFS_REQ（3027）：没有任何记录时也回全开（缺省语义读出来）。
+void HandleGetNotifyPrefs(const std::shared_ptr<SocialState>& state,
+                          const std::shared_ptr<chirp::network::Session>& session,
+                          const chirp::gateway::Packet& pkt) {
+  chirp::social::GetNotifyPrefsRequest req;
+  chirp::social::GetNotifyPrefsResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::GET_NOTIFY_PREFS_RESP, pkt.sequence(),
+               resp.SerializeAsString());
+    return;
+  }
+
+  const std::string user_id = RequireUser(state, session, pkt,
+                                          chirp::gateway::GET_NOTIFY_PREFS_RESP,
+                                          req.user_id(), &resp);
+  if (user_id.empty()) {
+    return;
+  }
+
+  chirp::social::NotifyPrefs prefs;
+  prefs.set_friend_online_notify(true);
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    const auto it = state->notify_prefs.find(user_id);
+    if (it != state->notify_prefs.end()) {
+      prefs = it->second;
+    }
+  }
+
+  resp.set_code(chirp::common::OK);
+  *resp.mutable_prefs() = prefs;
+  resp.set_server_time(NowMs());
+  SendPacket(session, chirp::gateway::GET_NOTIFY_PREFS_RESP, pkt.sequence(),
+             resp.SerializeAsString());
+}
+
+void HandleDisconnect(const std::shared_ptr<SocialState>& state,
+                      const std::shared_ptr<chirp::network::RedisClient>& redis,
+                      const std::shared_ptr<chirp::network::Session>& session) {
+  std::string user_id;
+  const bool released =
+      chirp::network::RemoveAuthenticatedSession(state->registry, session, &user_id);
+  if (released) {
+    CHIRP_GAUGE_DEC("chirp_social_sessions");
+  }
+  if (user_id.empty()) {
+    return;  // never logged in on this connection
+  }
+
+  // Offline is only broadcast when the LAST device went away: a released slot
+  // with remaining sessions means another device still holds the user online
+  // (a kicked session also lands here with released==false, correctly silent).
+  const bool went_offline = released && chirp::network::GetUserSessions(state->registry, user_id).empty();
+  if (!went_offline) {
+    return;
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    auto it = state->presence.find(user_id);
+    if (it != state->presence.end()) {
+      it->second.set_status(chirp::social::OFFLINE);
+      it->second.set_last_seen(NowMs());
+    }
+  }
+
+  const auto notify = MakePresenceNotify(user_id, chirp::social::OFFLINE, "");
+  if (redis) {
+    redis->SetEx("chirp:social:presence:" + user_id, notify.SerializeAsString(), 3600);
+  }
+  // The offline fan-out is the merged view: a player still bound to a game
+  // (switch on) stays IN_GAME to friends even with the last social session
+  // gone — being reachable in-game is the whole point of the feature.
+  const auto effective = EffectivePresence(state, user_id);
+  BroadcastToFriends(state, user_id, chirp::gateway::PRESENCE_NOTIFY,
+                     MakePresenceNotify(user_id, effective.status(), effective.status_message())
+                         .SerializeAsString());
+}
+
+void HandlePacket(const std::shared_ptr<SocialState>& state,
+                  const std::shared_ptr<chirp::network::RedisClient>& redis,
+                  const chirp::common::LoginTokenVerifier* verifier,
+                  const std::shared_ptr<chirp::network::Session>& session,
+                  std::string&& payload) {
+  using chirp::common::Logger;
+
+  chirp::gateway::Packet pkt;
+  if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+    Logger::Instance().Warn("failed to parse Packet from client");
+    return;
+  }
+  CHIRP_COUNTER("chirp_social_packets_total", 1);
+
+  switch (pkt.msg_id()) {
+  case chirp::gateway::LOGIN_REQ:
+    HandleLogin(state, verifier, session, pkt);
+    break;
+  case chirp::gateway::ADD_FRIEND_REQ:
+    HandleAddFriend(state, redis, session, pkt);
+    break;
+  case chirp::gateway::FRIEND_REQUEST_ACTION_REQ:
+    HandleFriendRequestAction(state, redis, session, pkt);
+    break;
+  case chirp::gateway::REMOVE_FRIEND_REQ:
+    HandleRemoveFriend(state, redis, session, pkt);
+    break;
+  case chirp::gateway::GET_FRIEND_LIST_REQ:
+    HandleGetFriendList(state, session, pkt);
+    break;
+  case chirp::gateway::GET_PENDING_REQUESTS_REQ:
+    HandleGetPendingRequests(state, session, pkt);
+    break;
+  case chirp::gateway::BLOCK_USER_REQ:
+    HandleBlockUser(state, redis, session, pkt);
+    break;
+  case chirp::gateway::UNBLOCK_USER_REQ:
+    HandleUnblockUser(state, redis, session, pkt);
+    break;
+  case chirp::gateway::GET_BLOCKED_LIST_REQ:
+    HandleGetBlockedList(state, session, pkt);
+    break;
+  case chirp::gateway::SET_PRESENCE_REQ:
+    HandleSetPresence(state, redis, session, pkt);
+    break;
+  case chirp::gateway::GET_PRESENCE_REQ:
+    HandleGetPresence(state, session, pkt);
+    break;
+  case chirp::gateway::SET_NOTIFY_PREFS_REQ:
+    HandleSetNotifyPrefs(state, redis, session, pkt);
+    break;
+  case chirp::gateway::GET_NOTIFY_PREFS_REQ:
+    HandleGetNotifyPrefs(state, session, pkt);
+    break;
+  case chirp::gateway::HEARTBEAT_PING: {
+    chirp::gateway::HeartbeatPing ping;
+    if (!ping.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      Logger::Instance().Warn("failed to parse HeartbeatPing body");
+      return;
+    }
+
+    chirp::gateway::HeartbeatPong pong;
+    pong.set_timestamp(ping.timestamp());
+    pong.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::HEARTBEAT_PONG, pkt.sequence(), pong.SerializeAsString());
+    break;
+  }
+  default:
+    Logger::Instance().Warn("social: unhandled msg_id " + std::to_string(pkt.msg_id()));
+    break;
+  }
+}
+
+
+}  // namespace chirp::social::direct
