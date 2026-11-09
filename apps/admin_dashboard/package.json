@@ -27,10 +27,12 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:api": "node server/admin_api.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:api": "node --test server/admin_api.test.mjs"
   },
   "type": "module"
 }
