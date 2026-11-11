@@ -1,5 +1,10 @@
 #include "chat_rate_limiter.h"
 
+#include <algorithm>
+#include <cerrno>
+#include <cstdlib>
+#include <limits>
+
 #include "logger.h"
 
 using Logger = chirp::common::Logger;
@@ -9,6 +14,24 @@ namespace {
 
 constexpr const char* kLoginKeyPrefix = "chirp:chat:rl:login:";
 constexpr const char* kSendKeyPrefix = "chirp:chat:rl:send:";
+
+// Non-throwing integer parse for values read back from shared Redis (same
+// shape as hybrid_message_store.cc's ParseI64): std::stoi aborts the process
+// via an unhandled invalid_argument on a stale/malformed counter, and one
+// dirty key must not take the io thread down.
+bool ParseI64(const std::string& text, int64_t* out) {
+  if (text.empty()) {
+    return false;
+  }
+  errno = 0;
+  char* end = nullptr;
+  const long long value = std::strtoll(text.c_str(), &end, 10);
+  if (end == text.c_str() || errno == ERANGE) {
+    return false;
+  }
+  *out = static_cast<int64_t>(value);
+  return true;
+}
 
 }  // namespace
 
@@ -37,11 +60,18 @@ ChatRateLimiter::Result ChatRateLimiter::Check(const std::string& key, int limit
     return result;
   }
 
-  // Counters are server-owned, so the stored value is always numeric in
-  // practice; on any transport failure both Get and SetEx fail and we fail
-  // open below, mirroring RedisAuthStore::CheckRateLimit.
+  // Counters are server-owned, so the stored value is normally numeric; on
+  // any transport failure both Get and SetEx fail and we fail open below,
+  // mirroring RedisAuthStore::CheckRateLimit. A stale or malformed counter
+  // parses as 0: the window restarts instead of aborting on std::stoi's
+  // unhandled throw.
   const auto current = redis_->Get(key);
-  const int count = current ? std::stoi(*current) : 0;
+  int64_t parsed = 0;
+  if (current) {
+    ParseI64(*current, &parsed);
+  }
+  const int count =
+      static_cast<int>(std::min<int64_t>(parsed, std::numeric_limits<int>::max()));
   if (count >= limit) {
     Logger::Instance().Warn("chat rate limit exceeded for " + key + " (" +
                             std::to_string(count) + "/" + std::to_string(limit) + ")");

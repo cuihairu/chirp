@@ -165,4 +165,34 @@ TEST_F(ChatRateLimiterTest, HeapAllocatedIdentityBuildsTheSameKey) {
   EXPECT_EQ(redis_->GetDirect("chirp:chat:rl:send:" + long_ip), "1");
 }
 
+TEST_F(ChatRateLimiterTest, DirtyCounterValueRestartsTheWindowInsteadOfCrashing) {
+  // A stale/malformed counter in shared Redis used to hit std::stoi's
+  // unhandled invalid_argument and abort the io thread; the value must
+  // parse as 0 (window restarts) instead.
+  ASSERT_TRUE(client_->SetEx("chirp:chat:rl:login:dirty", "not-a-number", 60));
+  ChatRateLimiter limiter(client_, StrictConfig());
+
+  const auto gate = limiter.CheckLogin("dirty");
+  EXPECT_TRUE(gate.allowed);
+  EXPECT_EQ(gate.current_count, 1);
+  EXPECT_EQ(redis_->GetDirect("chirp:chat:rl:login:dirty"), "1");
+
+  // The other unparsable shapes land the same way (int64 overflow, no
+  // leading digits, empty bulk): each restarts the window at 0 and records
+  // the hit as 1. A digits-prefixed value like "7x" instead parses as 7,
+  // matching the shared ParseI64 prefix semantics.
+  for (const char* bad : {"99999999999999999999999", "x7", ""}) {
+    ASSERT_TRUE(client_->SetEx("chirp:chat:rl:login:dirty", bad, 60));
+    const auto hit = limiter.CheckLogin("dirty");
+    EXPECT_TRUE(hit.allowed);
+    EXPECT_EQ(hit.current_count, 1);
+  }
+
+  // The window really rebuilt from 0: one more hit fits, the next denies.
+  EXPECT_TRUE(limiter.CheckLogin("dirty").allowed);
+  const auto locked = limiter.CheckLogin("dirty");
+  EXPECT_FALSE(locked.allowed);
+  EXPECT_EQ(locked.current_count, 2);
+}
+
 }  // namespace
