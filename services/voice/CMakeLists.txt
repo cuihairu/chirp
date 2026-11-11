@@ -34,6 +34,7 @@ if(CHIRP_ASR_WHISPER)
     find_library(WHISPER_LIBRARY NAMES whisper REQUIRED)
     target_include_directories(chirp_voice PRIVATE ${WHISPER_INCLUDE_DIR})
     target_link_libraries(chirp_voice PRIVATE ${WHISPER_LIBRARY})
+    target_compile_definitions(chirp_voice PRIVATE CHIRP_ASR_WHISPER=1)
 endif()
 
 target_include_directories(chirp_voice PRIVATE src ${CMAKE_SOURCE_DIR}/services/shared/chat/src)

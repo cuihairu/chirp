@@ -174,3 +174,26 @@ reject 策略下还造成客户端能发服务端拒的困惑）。本提案给�
   没有可预测的拒绝行为。
 - **服务端未启用时清空客户端词库**：防「本地词库比服务端狠」的误拦——服务端
   放行的消息客户端拦住，比漏拦更伤体验。
+
+## 语音敏感词链（VOICE-ASR-FILTER，2026-11 已落地）
+
+语音转写文本走**同一个** `WordFilter` 真源，但处置在 voice 侧而非 chat 侧：chat 的
+replace/reject/record 改写或拒收*消息*，语音必须作用于*成员*，所以 voice 有自己的
+`AsrDisposition`（flag/intercept/mute），由 `services/voice/src/asr/asr_filter.cc` 落地。
+
+链：`AsrProvider::Transcribe(pcm)` → `WordFilter::Hits(text)` 判定 → 按 disposition 处置。
+`Hits()` 是与 `Filter()` 共享匹配循环的只读谓词（命中数），0 即干净；命中数非零在此链
+下与四端对拍语义完全一致（大小写不敏感子串、热重载同检查）。mute 处置复用 SET_MUTE 的
+成员翻位 + 派生状态 + `PARTICIPANT_STATE_CHANGED_NOTIFY` 广播（服务端发起，含违规者本人
+——无 RESP 可确认）。kFlag 的可发布文本用 kReplace 掩码器生成（复用，不重写掩码逻辑）。
+
+### 语音链的设计取舍
+
+- **不落原始音频**：`Transcribe` 的 PCM 块只活在调用内；审计条目只记
+  speaker/room/时间/命中数元数据，绝不记转写文本（转写即用户语音）。
+- **kIntercept/kMute 的可发布文本为空**：命中文本不达任何消费方；kFlag 才放行
+  掩码后的净化文本。
+- **whisper.cpp 是 opt-in**（`CHIRP_ASR_WHISPER=ON`）：默认构建不编译该 provider，
+  CI 无 ASR 运行时；链语义由 `MockAsrProvider` 单测钉死，真 ASR 只留接口。
+- **服务端未配词库则整链直通**（无 lexicon_path 时 `Hits()` 恒 0）：同 chat 侧
+  fail-open 精神，不因缺词库拦语音。

@@ -278,6 +278,7 @@ target_link_libraries(voice_tests PRIVATE chirp_network chirp_common chirp_proto
 target_include_directories(voice_tests
   PRIVATE
   ${CMAKE_SOURCE_DIR}/services/voice/src
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include

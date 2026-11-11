@@ -21,6 +21,10 @@
 #include "proto/gateway.pb.h"
 #include "proto/voice.pb.h"
 
+namespace chirp::voice::asr {
+class AsrFilter;
+}  // namespace chirp::voice::asr
+
 namespace chirp::voice::direct {
 
 int64_t NowMs();
@@ -82,6 +86,11 @@ struct VoiceState {
   std::unordered_map<void*, int64_t> session_to_last_seen_ms;
 
   VoiceConfig cfg;
+
+  // Voice moderation chain (VOICE-ASR-FILTER), built in main() when
+  // --asr_lexicon is set: null = chain off. The media path consults it per
+  // transcribed chunk; the ASR result never leaves the filter untouched.
+  std::shared_ptr<chirp::voice::asr::AsrFilter> asr_filter;
 };
 
 void SendPacket(const std::shared_ptr<chirp::network::Session>& session,

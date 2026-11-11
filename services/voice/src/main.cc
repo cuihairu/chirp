@@ -29,6 +29,9 @@
 
 #include "voice_dispatch.h"
 
+#include "asr/asr_filter.h"
+#include "asr/whisper_cpp_provider.h"
+
 
 namespace {
 
@@ -58,6 +61,9 @@ using chirp::voice::direct::Sha1;
 using chirp::voice::direct::ScheduleHeartbeatSweep;
 using chirp::voice::direct::SweepHeartbeatTimeout;
 using chirp::voice::direct::VoiceState;
+using chirp::voice::asr::AsrFilter;
+using chirp::voice::asr::AsrFilterOptions;
+using chirp::voice::asr::WhisperCppProvider;
 
 }  // namespace
 
@@ -79,6 +85,13 @@ int main(int argc, char** argv) {
   const int64_t heartbeat_timeout =
       std::atoll(GetArg(argc, argv, "--heartbeat_timeout_ms", "75000").c_str());
   const uint16_t metrics_port = ParseU16Arg(argc, argv, "--metrics_port", 0);
+
+  // Voice moderation chain (VOICE-ASR-FILTER). Only the whisper provider is
+  // built in; --asr_lexicon enables the chain, --asr_disposition picks the
+  // hit action, --asr_model points at the ggml model file.
+  const std::string asr_lexicon = GetArg(argc, argv, "--asr_lexicon", "");
+  const std::string asr_disposition = GetArg(argc, argv, "--asr_disposition", "flag");
+  const std::string asr_model = GetArg(argc, argv, "--asr_model", "");
 
   if (!turn_uri.empty() && turn_secret.empty()) {
     Logger::Instance().Warn(
@@ -102,6 +115,27 @@ int main(int argc, char** argv) {
   state->cfg.turn_secret = turn_secret;
   state->cfg.turn_credential_ttl_seconds = turn_ttl;
   state->cfg.heartbeat_timeout_ms = heartbeat_timeout;
+
+  if (!asr_lexicon.empty()) {
+    asr::AsrFilterOptions asr_options;
+    asr_options.lexicon_path = asr_lexicon;
+    asr_options.disposition = asr_disposition;
+#ifdef CHIRP_ASR_WHISPER
+    state->asr_filter = std::make_shared<asr::AsrFilter>(
+        asr_options, std::make_unique<asr::WhisperCppProvider>(asr_model));
+    Logger::Instance().Info(
+        "voice ASR chain on: lexicon=" + asr_lexicon + " disposition=" + asr_disposition +
+        " model=" + (asr_model.empty() ? "(default)" : asr_model));
+#else
+    // The chain needs a provider; the default build ships only the mock.
+    // Reconfigure with -DCHIRP_ASR_WHISPER=ON to build the whisper provider
+    // in, then restart with --asr_model. The service runs without the chain
+    // rather than failing to start.
+    Logger::Instance().Warn(
+        "voice ASR chain requested (--asr_lexicon) but no provider is built in; "
+        "reconfigure with -DCHIRP_ASR_WHISPER=ON (chain stays off)");
+#endif
+  }
 
   chirp::network::TcpServer server(
       io, port,
