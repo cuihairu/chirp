@@ -558,6 +558,7 @@ add_executable(sdk_core_tests
   sdk_core_test.cc
   ${CMAKE_SOURCE_DIR}/sdks/core/src/sdk.cc
   ${CMAKE_SOURCE_DIR}/sdks/core/src/sdk_client.cc
+  ${CMAKE_SOURCE_DIR}/sdks/core/src/voice_client.cc
   ${CMAKE_SOURCE_DIR}/sdks/core/src/message_store.cc
 )
 

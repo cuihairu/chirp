@@ -5081,3 +5081,346 @@ TEST_F(FileMessageStoreTest, SendSideEntriesWithoutIdNeverCountUnread) {
 
 }  // namespace
 
+
+// ---------------------------------------------------------------------------
+// VoiceClient (VOICE-RT SDK 语音面): loopback 对拍 against a fake endpoint
+// that answers in the exact wire shapes the voice service emits (pinned by
+// voice_tests). Covers login identity stamping, the room/join tier fields,
+// mic-queue ops, and every voice notify callback.
+// ---------------------------------------------------------------------------
+
+#include <deque>
+
+#include "chirp/voice_client.h"
+#include "proto/voice.pb.h"
+
+namespace {
+
+using chirp::sdk::VoiceClient;
+
+// Packs a request/response body into a framed Packet (the fake gateway's
+// handlers above build these inline; this keeps the voice flow readable).
+chirp::gateway::Packet MakeLoopbackPacket(chirp::gateway::MsgID id, int64_t seq,
+                                          const std::string& body) {
+  chirp::gateway::Packet pkt;
+  pkt.set_msg_id(id);
+  pkt.set_sequence(seq);
+  pkt.set_body(body);
+  return pkt;
+}
+
+TEST_F(ChatClientLoopbackTest, VoiceClientRoomAndMicQueueLoopback) {
+  FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
+    switch (pkt.msg_id()) {
+      case chirp::gateway::LOGIN_REQ: {
+        chirp::auth::LoginResponse resp;
+        resp.set_code(chirp::common::OK);
+        resp.set_user_id("voice-user");  // scaffold: token == user_id
+        resp.set_session_id("vsess-1");
+        send(MakeLoopbackPacket(chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString()));
+        break;
+      }
+      case chirp::gateway::CREATE_ROOM_REQ: {
+        chirp::voice::CreateRoomRequest req;
+        req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+        EXPECT_EQ(req.user_id(), "voice-user");
+        chirp::voice::CreateRoomResponse resp;
+        resp.set_code(chirp::common::OK);
+        resp.set_room_id("room_voice1");
+        send(MakeLoopbackPacket(chirp::gateway::CREATE_ROOM_RESP, pkt.sequence(), resp.SerializeAsString()));
+        break;
+      }
+      case chirp::gateway::JOIN_ROOM_REQ: {
+        chirp::voice::JoinRoomRequest req;
+        req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+        EXPECT_EQ(req.user_id(), "voice-user");
+        chirp::voice::JoinRoomResponse resp;
+        resp.set_code(chirp::common::OK);
+        resp.set_room_id(req.room_id());
+        resp.add_participant_ids("voice-user");
+        resp.set_media_tier(chirp::voice::FULL_MIX);
+        resp.set_rtcp_feedback_ms(1000);
+        send(MakeLoopbackPacket(chirp::gateway::JOIN_ROOM_RESP, pkt.sequence(), resp.SerializeAsString()));
+
+        chirp::voice::ParticipantJoinedNotify joined;
+        joined.set_room_id(req.room_id());
+        joined.mutable_participant()->set_user_id("voice-user");
+        joined.set_timestamp(1);
+        send(MakeLoopbackPacket(chirp::gateway::PARTICIPANT_JOINED_NOTIFY, 0, joined.SerializeAsString()));
+        break;
+      }
+      case chirp::gateway::SET_MIC_MODE_REQ: {
+        chirp::voice::SetMicModeRequest req;
+        req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+        EXPECT_EQ(req.user_id(), "voice-user");
+        EXPECT_EQ(req.mode(), chirp::voice::MIC_MANAGED);
+        chirp::voice::MicQueueResponse resp;
+        resp.set_code(chirp::common::OK);
+        send(MakeLoopbackPacket(chirp::gateway::SET_MIC_MODE_RESP, pkt.sequence(), resp.SerializeAsString()));
+        chirp::voice::MicQueueStateNotify state;
+        state.set_room_id(req.room_id());
+        state.set_mode(chirp::voice::MIC_MANAGED);
+        send(MakeLoopbackPacket(chirp::gateway::MIC_QUEUE_STATE_NOTIFY, 0, state.SerializeAsString()));
+        break;
+      }
+      case chirp::gateway::MIC_QUEUE_APPLY_REQ: {
+        chirp::voice::MicQueueApplyRequest req;
+        req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+        EXPECT_EQ(req.user_id(), "voice-user");
+        chirp::voice::MicQueueResponse resp;
+        resp.set_code(chirp::common::OK);
+        resp.set_queue_depth(1);
+        send(MakeLoopbackPacket(chirp::gateway::MIC_QUEUE_APPLY_RESP, pkt.sequence(), resp.SerializeAsString()));
+        chirp::voice::MicQueueStateNotify state;
+        state.set_room_id(req.room_id());
+        state.set_mode(chirp::voice::MIC_MANAGED);
+        state.add_queue_user_ids("voice-user");
+        send(MakeLoopbackPacket(chirp::gateway::MIC_QUEUE_STATE_NOTIFY, 0, state.SerializeAsString()));
+        break;
+      }
+      case chirp::gateway::MIC_QUEUE_APPROVE_REQ: {
+        chirp::voice::MicQueueApproveRequest req;
+        req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+        EXPECT_EQ(req.user_id(), "voice-user");
+        EXPECT_TRUE(req.target_user_id().empty());  // approve the queue head
+        chirp::voice::MicQueueResponse resp;
+        resp.set_code(chirp::common::OK);
+        resp.set_holder_user_id("voice-user");
+        send(MakeLoopbackPacket(chirp::gateway::MIC_QUEUE_APPROVE_RESP, pkt.sequence(), resp.SerializeAsString()));
+        chirp::voice::MicQueueStateNotify state;
+        state.set_room_id(req.room_id());
+        state.set_mode(chirp::voice::MIC_MANAGED);
+        state.set_holder_user_id("voice-user");
+        send(MakeLoopbackPacket(chirp::gateway::MIC_QUEUE_STATE_NOTIFY, 0, state.SerializeAsString()));
+
+        // Voice activity on the holder's stream (volume rides along).
+        chirp::voice::SpeakingNotify speaking;
+        speaking.set_room_id(req.room_id());
+        speaking.set_user_id("voice-user");
+        speaking.set_speaking(true);
+        speaking.set_volume(73);
+        send(MakeLoopbackPacket(chirp::gateway::SPEAKING_NOTIFY, 0, speaking.SerializeAsString()));
+        break;
+      }
+      case chirp::gateway::SET_MUTE_REQ: {
+        chirp::voice::SetMuteRequest req;
+        req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+        EXPECT_EQ(req.user_id(), "voice-user");
+        EXPECT_TRUE(req.muted());
+        chirp::voice::SetMuteResponse resp;
+        resp.set_code(chirp::common::OK);
+        send(MakeLoopbackPacket(chirp::gateway::SET_MUTE_RESP, pkt.sequence(), resp.SerializeAsString()));
+        chirp::voice::ParticipantStateChangedNotify state;
+        state.set_room_id(req.room_id());
+        state.set_user_id("voice-user");
+        state.set_state(chirp::voice::MUTED);
+        send(MakeLoopbackPacket(chirp::gateway::PARTICIPANT_STATE_CHANGED_NOTIFY, 0, state.SerializeAsString()));
+        break;
+      }
+      case chirp::gateway::MIC_QUEUE_RELEASE_REQ: {
+        chirp::voice::MicQueueReleaseRequest req;
+        req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+        EXPECT_EQ(req.user_id(), "voice-user");
+        chirp::voice::MicQueueResponse resp;
+        resp.set_code(chirp::common::OK);
+        send(MakeLoopbackPacket(chirp::gateway::MIC_QUEUE_RELEASE_RESP, pkt.sequence(), resp.SerializeAsString()));
+        break;
+      }
+      case chirp::gateway::LEAVE_ROOM_REQ: {
+        chirp::voice::LeaveRoomRequest req;
+        req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+        EXPECT_EQ(req.user_id(), "voice-user");
+        chirp::voice::LeaveRoomResponse resp;
+        resp.set_code(chirp::common::OK);
+        send(MakeLoopbackPacket(chirp::gateway::LEAVE_ROOM_RESP, pkt.sequence(), resp.SerializeAsString()));
+        chirp::voice::ParticipantLeftNotify left;
+        left.set_room_id(req.room_id());
+        left.set_user_id("voice-user");
+        send(MakeLoopbackPacket(chirp::gateway::PARTICIPANT_LEFT_NOTIFY, 0, left.SerializeAsString()));
+        break;
+      }
+      default:
+        break;
+    }
+  });
+
+  VoiceClient client(ChatClientLoopbackTest::LoopbackConfig(gateway.port()));
+
+  std::promise<std::error_code> login_promise;
+  auto login_future = login_promise.get_future();
+  std::promise<chirp::voice::CreateRoomResponse> create_promise;
+  auto create_future = create_promise.get_future();
+  std::promise<chirp::voice::JoinRoomResponse> join_promise;
+  auto join_future = join_promise.get_future();
+  std::promise<chirp::voice::ParticipantJoinedNotify> joined_promise;
+  auto joined_future = joined_promise.get_future();
+  std::promise<chirp::common::ErrorCode> mode_promise;
+  auto mode_future = mode_promise.get_future();
+  std::promise<chirp::voice::MicQueueStateNotify> mode_state_promise;
+  auto mode_state_future = mode_state_promise.get_future();
+  std::promise<chirp::voice::MicQueueStateNotify> queued_state_promise;
+  auto queued_state_future = queued_state_promise.get_future();
+  std::promise<chirp::voice::MicQueueStateNotify> holder_state_promise;
+  auto holder_state_future = holder_state_promise.get_future();
+  std::promise<int32_t> volume_promise;
+  auto volume_future = volume_promise.get_future();
+  std::promise<chirp::voice::ParticipantStateChangedNotify> mute_state_promise;
+  auto mute_state_future = mute_state_promise.get_future();
+  std::promise<chirp::voice::ParticipantLeftNotify> left_promise;
+  auto left_future = left_promise.get_future();
+
+  client.SetParticipantJoinedCallback([&](chirp::voice::ParticipantJoinedNotify n) {
+    joined_promise.set_value(std::move(n));
+  });
+  // Three queue-state notifies arrive over the flow (mode switch, apply,
+  // approve); each gets its own promise so nothing double-fires.
+  auto next_queue_state = std::make_shared<
+      std::deque<std::promise<chirp::voice::MicQueueStateNotify>*>>();
+  next_queue_state->push_back(&mode_state_promise);
+  next_queue_state->push_back(&queued_state_promise);
+  next_queue_state->push_back(&holder_state_promise);
+  client.SetMicQueueStateCallback([&](chirp::voice::MicQueueStateNotify n) {
+    if (!next_queue_state->empty()) {
+      next_queue_state->front()->set_value(std::move(n));
+      next_queue_state->pop_front();
+    }
+  });
+  client.SetSpeakingCallback([&](chirp::voice::SpeakingNotify n) {
+    volume_promise.set_value(n.volume());
+  });
+  client.SetParticipantStateChangedCallback([&](chirp::voice::ParticipantStateChangedNotify n) {
+    mute_state_promise.set_value(std::move(n));
+  });
+  client.SetParticipantLeftCallback([&](chirp::voice::ParticipantLeftNotify n) {
+    left_promise.set_value(std::move(n));
+  });
+
+  client.Connect();
+  for (int i = 0; i < 2500 && client.GetState() != ConnectionState::Connected; ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  ASSERT_EQ(client.GetState(), ConnectionState::Connected);
+
+  client.Login("voice-user", [&](const std::error_code& ec, const std::string& uid) {
+    EXPECT_EQ(uid, "voice-user");
+    login_promise.set_value(ec);
+  });
+  ASSERT_EQ(login_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_FALSE(login_future.get());
+
+  client.CreateRoom(chirp::voice::GROUP, "rt room", 0, [&](const std::error_code& ec,
+                                                          chirp::voice::CreateRoomResponse resp) {
+    EXPECT_EQ(resp.code(), chirp::common::OK);
+    create_promise.set_value(ec ? chirp::voice::CreateRoomResponse{} : std::move(resp));
+  });
+  ASSERT_EQ(create_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  const auto created = create_future.get();
+  ASSERT_EQ(created.room_id(), "room_voice1");
+
+  client.JoinRoom(created.room_id(), "", [&](const std::error_code& ec,
+                                            chirp::voice::JoinRoomResponse resp) {
+    EXPECT_EQ(resp.code(), chirp::common::OK);
+    join_promise.set_value(ec ? chirp::voice::JoinRoomResponse{} : std::move(resp));
+  });
+  ASSERT_EQ(join_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  const auto joined_resp = join_future.get();
+  EXPECT_EQ(joined_resp.media_tier(), chirp::voice::FULL_MIX);
+  EXPECT_EQ(joined_resp.rtcp_feedback_ms(), 1000);
+  ASSERT_EQ(joined_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(joined_future.get().participant().user_id(), "voice-user");
+
+  // 麦序: managed -> apply -> approve head -> speak -> mute -> release -> leave.
+  client.SetMicMode(created.room_id(), chirp::voice::MIC_MANAGED,
+                    [&](const std::error_code& ec, chirp::common::ErrorCode code) {
+                      EXPECT_FALSE(ec);
+                      mode_promise.set_value(code);
+                    });
+  ASSERT_EQ(mode_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(mode_future.get(), chirp::common::OK);
+  // The mode switch state notify arrives first.
+  ASSERT_EQ(mode_state_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(mode_state_future.get().mode(), chirp::voice::MIC_MANAGED);
+
+  std::promise<chirp::common::ErrorCode> apply_promise;
+  auto apply_future = apply_promise.get_future();
+  client.ApplyForMic(created.room_id(), [&](const std::error_code& ec,
+                                            chirp::common::ErrorCode code) {
+    apply_promise.set_value(ec ? chirp::common::INTERNAL_ERROR : code);
+  });
+  ASSERT_EQ(apply_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(apply_future.get(), chirp::common::OK);
+  ASSERT_EQ(queued_state_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  const auto queued = queued_state_future.get();
+  ASSERT_EQ(queued.queue_user_ids_size(), 1);
+  EXPECT_EQ(queued.queue_user_ids(0), "voice-user");
+
+  std::promise<chirp::common::ErrorCode> approve_promise;
+  auto approve_future = approve_promise.get_future();
+  client.ApproveMic(created.room_id(), "", [&](const std::error_code& ec,
+                                               chirp::common::ErrorCode code) {
+    approve_promise.set_value(ec ? chirp::common::INTERNAL_ERROR : code);
+  });
+  ASSERT_EQ(approve_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(approve_future.get(), chirp::common::OK);
+  ASSERT_EQ(holder_state_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(holder_state_future.get().holder_user_id(), "voice-user");
+
+  // Volume callback from the speaking notify.
+  ASSERT_EQ(volume_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(volume_future.get(), 73);
+
+  std::promise<chirp::common::ErrorCode> mute_promise;
+  auto mute_future = mute_promise.get_future();
+  client.SetMute(created.room_id(), true, [&](const std::error_code& ec,
+                                              chirp::common::ErrorCode code) {
+    mute_promise.set_value(ec ? chirp::common::INTERNAL_ERROR : code);
+  });
+  ASSERT_EQ(mute_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(mute_future.get(), chirp::common::OK);
+  ASSERT_EQ(mute_state_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(mute_state_future.get().state(), chirp::voice::MUTED);
+
+  std::promise<chirp::common::ErrorCode> release_promise;
+  auto release_future = release_promise.get_future();
+  client.ReleaseMic(created.room_id(), [&](const std::error_code& ec,
+                                           chirp::common::ErrorCode code) {
+    release_promise.set_value(ec ? chirp::common::INTERNAL_ERROR : code);
+  });
+  ASSERT_EQ(release_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(release_future.get(), chirp::common::OK);
+
+  std::promise<chirp::common::ErrorCode> leave_promise;
+  auto leave_future = leave_promise.get_future();
+  client.LeaveRoom(created.room_id(), [&](const std::error_code& ec,
+                                          chirp::common::ErrorCode code) {
+    leave_promise.set_value(ec ? chirp::common::INTERNAL_ERROR : code);
+  });
+  ASSERT_EQ(leave_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(leave_future.get(), chirp::common::OK);
+  ASSERT_EQ(left_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(left_future.get().user_id(), "voice-user");
+
+  client.Disconnect();
+  for (int i = 0; i < 2500 && client.GetState() != ConnectionState::Disconnected; ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
+}
+
+}  // namespace
