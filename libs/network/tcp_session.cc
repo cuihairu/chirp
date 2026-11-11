@@ -96,6 +96,12 @@ void TcpSessionT<Stream>::DoRead() {
                                 self->on_frame_(std::static_pointer_cast<Session>(self), std::move(*frame));
                               }
                             }
+                            if (self->framer_.overflow()) {
+                              // A declared length past the cap means a hostile
+                              // or corrupt peer: drop the connection.
+                              self->DoClose();
+                              return;
+                            }
                             self->DoRead();
                           }));
 }

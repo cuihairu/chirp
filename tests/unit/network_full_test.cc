@@ -607,6 +607,34 @@ TEST(LengthPrefixedFramerTest, SplitFramesAndClear) {
   EXPECT_FALSE(f.PopFrame().has_value());
 }
 
+TEST(LengthPrefixedFramerTest, OversizeLengthDropsBufferAndFlagsOverflow) {
+  LengthPrefixedFramer f;
+  // A hostile 0xffffffff header must not park the buffer waiting on 4GiB.
+  f.Append(reinterpret_cast<const uint8_t*>("\xff\xff\xff\xff"), 4);
+  EXPECT_FALSE(f.PopFrame().has_value());
+  EXPECT_TRUE(f.overflow());
+  EXPECT_EQ(f.BufferedBytes(), 0u);
+  // Bytes appended after the flush land in a clean buffer.
+  const std::string good = LpFrame("still fine");
+  f.Append(reinterpret_cast<const uint8_t*>(good.data()), good.size());
+  auto out = f.PopFrame();
+  ASSERT_TRUE(out.has_value());
+  EXPECT_EQ(*out, "still fine");
+
+  // One byte past the cap is refused; exactly at the cap is not.
+  LengthPrefixedFramer over;
+  over.Append(reinterpret_cast<const uint8_t*>("\x01\x00\x00\x01"), 4); // 16MB + 1
+  EXPECT_FALSE(over.PopFrame().has_value());
+  EXPECT_TRUE(over.overflow());
+  EXPECT_EQ(over.BufferedBytes(), 0u);
+
+  LengthPrefixedFramer at_cap;
+  at_cap.Append(reinterpret_cast<const uint8_t*>("\x01\x00\x00\x00"), 4); // 16MB
+  EXPECT_FALSE(at_cap.PopFrame().has_value()); // incomplete, waiting on the body
+  EXPECT_FALSE(at_cap.overflow());
+  EXPECT_EQ(at_cap.BufferedBytes(), 4u);
+}
+
 TEST(ProtobufFramingTest, EncodeDecodeRoundTripAndNullOut) {
   chirp::chat::SendMessageRequest req;
   req.set_content("hello framing");
@@ -1196,6 +1224,26 @@ TEST_F(TcpSessionTest, IncompleteFrameHeldUntilMoreData) {
   session->Close();
 }
 
+TEST_F(TcpSessionTest, OversizeFrameLengthClosesSession) {
+  std::mutex mu;
+  std::vector<std::string> frames;
+  std::atomic<int> closes{0};
+  auto session = MakeSession([&](std::shared_ptr<Session>, std::string&& payload) {
+                               std::lock_guard<std::mutex> l(mu);
+                               frames.push_back(std::move(payload));
+                             },
+                             [&](std::shared_ptr<Session>) { closes.fetch_add(1); });
+
+  // Normal traffic still flows, then a hostile header kills the connection
+  // instead of the session buffering toward a multi-gigabyte frame.
+  WriteAll(client(), LpFrame("ok"));
+  WriteAll(client(), std::string("\xff\xff\xff\xff", 4));
+  EXPECT_TRUE(WaitFor([&] { return closes.load() == 1 && session->IsClosed(); }));
+  std::lock_guard<std::mutex> l(mu);
+  ASSERT_EQ(frames.size(), 1u);
+  EXPECT_EQ(frames[0], "ok");
+}
+
 // ---------------------------------------------------------------------------
 // WebSocketSession over a loopback socket pair
 // ---------------------------------------------------------------------------
@@ -1274,6 +1322,20 @@ TEST_F(WsSessionTest, BinaryFrameDeliversLpPayload) {
   }));
   EXPECT_EQ(frames[0], "ws-payload");
   session->Close();
+}
+
+TEST_F(WsSessionTest, OversizeLpLengthClosesSession) {
+  std::atomic<int> frames{0};
+  std::atomic<int> closes{0};
+  auto session = MakeSession([&](std::shared_ptr<Session>, std::string&&) { frames.fetch_add(1); },
+                             [&](std::shared_ptr<Session>) { closes.fetch_add(1); });
+  ASSERT_NO_FATAL_FAILURE(Handshake());
+
+  // A binary frame whose LP header declares more than the 16MB cap drops
+  // the connection without delivering anything.
+  SendWs(0x2, std::string("\xff\xff\xff\xff", 4));
+  EXPECT_TRUE(WaitFor([&] { return closes.load() == 1 && session->IsClosed(); }));
+  EXPECT_EQ(frames.load(), 0);
 }
 
 TEST_F(WsSessionTest, PingAnsweredWithPong) {

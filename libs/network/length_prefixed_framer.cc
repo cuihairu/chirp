@@ -15,6 +15,13 @@ std::optional<std::string> LengthPrefixedFramer::PopFrame() {
   }
   const auto* p = reinterpret_cast<const uint8_t*>(buf_.data());
   uint32_t n = ReadU32BE(p);
+  if (n > kMaxFrame) {
+    // Hostile or corrupt length: drop everything and let the caller kill the
+    // connection instead of buffering toward a multi-gigabyte frame.
+    overflow_ = true;
+    buf_.clear();
+    return std::nullopt;
+  }
   if (buf_.size() < kLenBytes + n) {
     return std::nullopt;
   }

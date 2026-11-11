@@ -181,6 +181,12 @@ void WebSocketSessionT<Stream>::ConsumeWebSocketFrames() {
           on_frame_(std::static_pointer_cast<Session>(this->shared_from_this()), std::move(*frame));
         }
       }
+      if (framer_.overflow()) {
+        // A declared length past the cap means a hostile or corrupt peer:
+        // drop the connection.
+        DoClose();
+        return;
+      }
       break;
     }
     case 0x9: { // ping
