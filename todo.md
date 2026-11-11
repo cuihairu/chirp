@@ -250,3 +250,6 @@
       属实（红先行）：`//a%` 为网络路径引用，HTTP 解析器放行但 `new URL` 拒收（authority 含非法 `%`），`Invalid URL` 未捕获直接终止进程（实测进程死）。修复：`new URL` 包 try/catch，畸形目标回 400 `malformed request target` 而非崩；新增回归测试锁死（原始 socket 发 `GET //a% HTTP/1.1` 断言 400 且服务存活）。`node --test server/admin_api.test.mjs` 9/9 绿；`pnpm build` 绿。
 - [x] 审核发现：本轮 diff 未见问题（96bb24af..HEAD）。
       核实（2026-11-10）：区间仅含 `984e0ae`（fix(admin): return 400 on malformed request target），逐行过——服务端 `new URL` 包 try/catch 回 400（apps/admin_dashboard/server/admin_api.mjs:57-68），回归测试同款 raw-socket 惯用法（apps/admin_dashboard/server/admin_api.test.mjs:102-119），todo 勾账一致；catch 无绑定语法 Node 24 支持，try/catch 仅包 URL 构造不波及其他路由。未见新问题。证据：`node --test server/admin_api.test.mjs` 9/9 绿、`pnpm build` 绿。
+
+- [ ] **VOICE-RT · P1 · 实时语音完型（对齐游密 Talk 档）**：voice 服务已有房间/TURN 凭据/心跳（services/voice/src/），补齐三块——①麦序模式（speaking queue + host 主持控制）②大规模旁路（RTCP 混音/转发分级，房间容量分级）③客户端 SDK 语音面（core SDK 加入/离开/静音/音量回调接线，四端 SDK 中至少 core+C# 落地）。验收：集成测试覆盖麦序流转与旁路分级；SDK 语音回调有对拍测试。
+- [ ] **VOICE-ASR-FILTER · P1 · 语音敏感词链**：语音流接 ASR（可插拔 provider 接口，本地 whisper.cpp 或云 ASR 均可）→ 转写文本进既有敏感词过滤器（services/shared/chat/src/word_filter.cc，四端同语义）→ 命中按策略处置（实时 mute / 事后标记 / 消息侧拦截）。验收：provider 接口 + mock ASR 单测全链（音频→文本→过滤→处置）落地；真 ASR 接入留接口即可。
