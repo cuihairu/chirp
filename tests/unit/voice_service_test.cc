@@ -104,10 +104,12 @@ class VoiceServiceTest : public ::testing::Test {
     HandlePacket(state_, session_, MakePacket(id, seq, body).SerializeAsString());
   }
 
-  // Creates a room with the given capacity and returns its id.
-  std::string CreateRoom(int32_t max_participants) {
+  // Creates a room with the given capacity and returns its id. The creator
+  // id must match the session's bound identity once CREATE_ROOM is
+  // identity-gated (audit fix), so JWT/bound-session tests pass their own.
+  std::string CreateRoom(int32_t max_participants, const std::string& creator = "creator") {
     chirp::voice::CreateRoomRequest req;
-    req.set_user_id("creator");
+    req.set_user_id(creator);
     req.set_room_type(chirp::voice::GROUP);
     req.set_room_name("test room");
     req.set_max_participants(max_participants);
@@ -692,7 +694,7 @@ TEST_F(VoiceServiceTest, JwtModeAcceptsValidTokenAndPinsIdentity) {
 
   // The pinned identity is accepted for business packets sent on the same
   // session (a fresh session would be unauthenticated).
-  const std::string room = CreateRoom(0);
+  const std::string room = CreateRoom(0, "u1");
   chirp::voice::JoinRoomRequest req;
   req.set_user_id("u1");
   req.set_room_id(room);
@@ -706,9 +708,11 @@ TEST_F(VoiceServiceTest, JwtModeAcceptsValidTokenAndPinsIdentity) {
 }
 
 TEST_F(VoiceServiceTest, JwtModeRejectsUnauthenticatedBusinessPacket) {
+  // The room is created before the verifier is installed (the target of this
+  // test is the unauthenticated join, and CREATE_ROOM is identity-gated too).
+  const std::string room = CreateRoom(0);
   chirp::common::LoginTokenVerifier verifier("s3cret");
   state_->cfg.verifier = &verifier;
-  const std::string room = CreateRoom(0);  // create itself passes: no user_id to gate
 
   chirp::voice::JoinRoomRequest req;
   req.set_user_id("u1");
@@ -729,7 +733,7 @@ TEST_F(VoiceServiceTest, JwtModeRejectsIdentityMismatch) {
   ASSERT_EQ(DoLogin(state_, session_, chirp::common::JwtSignHS256("u1", now, "s3cret", now + 600)).code(),
             chirp::common::OK);
 
-  const std::string room = CreateRoom(0);
+  const std::string room = CreateRoom(0, "u1");
   chirp::voice::JoinRoomRequest req;
   req.set_user_id("u2");  // forging someone else's identity
   req.set_room_id(room);
@@ -745,7 +749,7 @@ TEST_F(VoiceServiceTest, JwtModeRejectsIdentityMismatch) {
 TEST_F(VoiceServiceTest, ScaffoldBoundSessionRejectsMismatchedIdentity) {
   ASSERT_EQ(DoLogin(state_, session_, "u1").code(), chirp::common::OK);
 
-  const std::string room = CreateRoom(0);
+  const std::string room = CreateRoom(0, "u1");
   chirp::voice::JoinRoomRequest req;
   req.set_user_id("u2");
   req.set_room_id(room);
@@ -764,6 +768,185 @@ TEST_F(VoiceServiceTest, ScaffoldModeKeepsLegacySelfReportedJoin) {
 
   std::lock_guard<std::mutex> lock(state_->mu);
   EXPECT_EQ(state_->user_to_room["u1"], room);
+}
+
+// ===========================================================================
+// Audit 2026-11-11 fixes: LEAVE_ROOM / CREATE_ROOM identity gates, the
+// ICE/SDP relay triple gate, and the room-switch reuse of the leave teardown.
+// ===========================================================================
+
+TEST_F(VoiceServiceTest, JwtModeRejectsUnauthenticatedLeave) {
+  const std::string room = CreateRoom(0);
+  Join("u1", room);
+
+  chirp::common::LoginTokenVerifier verifier("s3cret");
+  state_->cfg.verifier = &verifier;
+
+  // An unauthenticated frame tries to drive u1 out of the room.
+  chirp::voice::LeaveRoomRequest req;
+  req.set_user_id("u1");
+  req.set_room_id(room);
+  SendPacketBody(chirp::gateway::LEAVE_ROOM_REQ, 42, req.SerializeAsString());
+
+  chirp::voice::LeaveRoomResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED);
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->user_to_room.count("u1"), 1u);
+  std::lock_guard<std::mutex> room_lock(state_->rooms[room]->mu);
+  EXPECT_EQ(state_->rooms[room]->participants.count("u1"), 1u);
+}
+
+TEST_F(VoiceServiceTest, JwtModeRejectsLeaveClaimingAnotherIdentity) {
+  chirp::common::LoginTokenVerifier verifier("s3cret");
+  state_->cfg.verifier = &verifier;
+  const int64_t now = NowMs() / 1000;
+  ASSERT_EQ(DoLogin(state_, session_, chirp::common::JwtSignHS256("u1", now, "s3cret", now + 600)).code(),
+            chirp::common::OK);
+  const std::string room = CreateRoom(0, "u1");
+
+  chirp::voice::JoinRoomRequest jreq;
+  jreq.set_user_id("u1");
+  jreq.set_room_id(room);
+  SendPacketBody(chirp::gateway::JOIN_ROOM_REQ, 43, jreq.SerializeAsString());
+
+  // The bound u1 tries to leave AS u2: the claim mismatch is rejected.
+  chirp::voice::LeaveRoomRequest req;
+  req.set_user_id("u2");
+  req.set_room_id(room);
+  SendPacketBody(chirp::gateway::LEAVE_ROOM_REQ, 44, req.SerializeAsString());
+
+  chirp::voice::LeaveRoomResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->user_to_room.count("u2"), 0u);
+  EXPECT_EQ(state_->user_to_room["u1"], room);
+}
+
+TEST_F(VoiceServiceTest, JwtModeRejectsUnauthenticatedCreateRoom) {
+  chirp::common::LoginTokenVerifier verifier("s3cret");
+  state_->cfg.verifier = &verifier;
+
+  chirp::voice::CreateRoomRequest req;
+  req.set_user_id("creator");
+  SendPacketBody(chirp::gateway::CREATE_ROOM_REQ, 45, req.SerializeAsString());
+
+  chirp::voice::CreateRoomResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED);
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_TRUE(state_->rooms.empty());
+}
+
+TEST_F(VoiceServiceTest, JwtModeRelayRequiresLogin) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+  auto u2 = Join("u2", room);
+
+  chirp::common::LoginTokenVerifier verifier("s3cret");
+  state_->cfg.verifier = &verifier;
+
+  // u1's session is unauthenticated in JWT mode: the relay drops silently.
+  chirp::voice::IceCandidateMessage msg;
+  msg.set_room_id(room);
+  msg.set_from_user_id("u1");
+  msg.set_to_user_id("u2");
+  HandlePacket(state_, u1, MakePacket(chirp::gateway::ICE_CANDIDATE_MSG, 46, msg.SerializeAsString()).SerializeAsString());
+  for (const auto& pkt : ReceivedPackets(*u2)) {
+    EXPECT_NE(pkt.msg_id(), chirp::gateway::ICE_CANDIDATE_MSG);
+  }
+}
+
+TEST_F(VoiceServiceTest, JwtModeRelayRejectsIdentityMismatch) {
+  chirp::common::LoginTokenVerifier verifier("s3cret");
+  state_->cfg.verifier = &verifier;
+  const int64_t now = NowMs() / 1000;
+  ASSERT_EQ(DoLogin(state_, session_, chirp::common::JwtSignHS256("u1", now, "s3cret", now + 600)).code(),
+            chirp::common::OK);
+  const std::string room = CreateRoom(0, "u1");
+
+  chirp::voice::JoinRoomRequest jreq;
+  jreq.set_user_id("u1");
+  jreq.set_room_id(room);
+  SendPacketBody(chirp::gateway::JOIN_ROOM_REQ, 47, jreq.SerializeAsString());
+
+  // Bound u1 relays an ICE claiming to be u2: dropped (a broadcast would
+  // come back to the sender itself, so silence on session_ proves the drop).
+  chirp::voice::IceCandidateMessage msg;
+  msg.set_room_id(room);
+  msg.set_from_user_id("u2");
+  SendPacketBody(chirp::gateway::ICE_CANDIDATE_MSG, 48, msg.SerializeAsString());
+  for (const auto& pkt : ReceivedPackets(*session_)) {
+    EXPECT_NE(pkt.msg_id(), chirp::gateway::ICE_CANDIDATE_MSG);
+  }
+}
+
+TEST_F(VoiceServiceTest, ScaffoldRelayDropsClaimedNonParticipant) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+
+  // Scaffold mode keeps the self-reported identity, but the claim must hold
+  // a seat in the room: "mallory" has none, so the frame is dropped.
+  chirp::voice::IceCandidateMessage msg;
+  msg.set_room_id(room);
+  msg.set_from_user_id("mallory");
+  auto outsider = std::make_shared<MockSession>();
+  HandlePacket(state_, outsider, MakePacket(chirp::gateway::ICE_CANDIDATE_MSG, 49, msg.SerializeAsString()).SerializeAsString());
+  for (const auto& pkt : ReceivedPackets(*u1)) {
+    EXPECT_NE(pkt.msg_id(), chirp::gateway::ICE_CANDIDATE_MSG);
+  }
+}
+
+TEST_F(VoiceServiceTest, SwitchRoomReleasesMicAndNotifiesPreviousRoom) {
+  const std::string room1 = CreateRoom(0);
+  auto u1 = Join("u1", room1);
+  auto u2 = Join("u2", room1);
+  SetManaged(room1);
+
+  // u2 applies and is approved: they hold the mic.
+  chirp::voice::MicQueueApplyRequest apply;
+  apply.set_user_id("u2");
+  apply.set_room_id(room1);
+  ASSERT_TRUE(MicOp(u2, chirp::gateway::MIC_QUEUE_APPLY_REQ,
+                    chirp::gateway::MIC_QUEUE_APPLY_RESP, 60, apply).has_value());
+
+  chirp::voice::MicQueueApproveRequest approve;
+  approve.set_user_id("creator");
+  approve.set_room_id(room1);
+  const auto approved = MicOp(session_, chirp::gateway::MIC_QUEUE_APPROVE_REQ,
+                              chirp::gateway::MIC_QUEUE_APPROVE_RESP, 61, approve);
+  ASSERT_TRUE(approved.has_value());
+  EXPECT_EQ(approved->holder_user_id(), "u2");
+
+  // Switching rooms releases the mic and announces the LEFT in room1.
+  const std::string room2 = CreateRoom(0);
+  chirp::voice::JoinRoomRequest jreq;
+  jreq.set_user_id("u2");
+  jreq.set_room_id(room2);
+  HandlePacket(state_, u2, MakePacket(chirp::gateway::JOIN_ROOM_REQ, 62, jreq.SerializeAsString()).SerializeAsString());
+
+  bool left = false;
+  for (const auto& pkt : ReceivedPackets(*u1)) {
+    if (pkt.msg_id() == chirp::gateway::PARTICIPANT_LEFT_NOTIFY) {
+      chirp::voice::ParticipantLeftNotify n;
+      ASSERT_TRUE(n.ParseFromString(pkt.body()));
+      EXPECT_EQ(n.user_id(), "u2");
+      left = true;
+    }
+  }
+  EXPECT_TRUE(left);
+
+  // The floor cleared: the queue-state broadcast after the switch carries no
+  // holder (and u2 was pulled off the queue with it).
+  const auto notifies = MicQueueNotifies(*u1);
+  ASSERT_FALSE(notifies.empty());
+  EXPECT_EQ(notifies.back().holder_user_id(), "");
+  std::lock_guard<std::mutex> lock(state_->mu);
+  ASSERT_EQ(state_->rooms.count(room1), 1u);
+  std::lock_guard<std::mutex> room_lock(state_->rooms[room1]->mu);
+  EXPECT_TRUE(state_->rooms[room1]->mic_holder_user_id.empty());
+  EXPECT_TRUE(state_->rooms[room1]->mic_queue.empty());
 }
 
 TEST_F(VoiceServiceTest, LoginKicksPreviousSession) {

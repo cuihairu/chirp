@@ -479,6 +479,17 @@ void HandleCreateRoom(const std::shared_ptr<VoiceState>& state,
     return;
   }
 
+  // Audit 2026-11-11: CREATE_ROOM was reachable unauthenticated in JWT mode.
+  // The gate pins the moderating host identity to the session's bound user.
+  chirp::voice::CreateRoomResponse auth_resp;
+  const std::optional<std::string> authorized = AuthorizeActor(state, session, pkt,
+                                                               chirp::gateway::CREATE_ROOM_RESP,
+                                                               req.user_id(), &auth_resp);
+  if (!authorized.has_value()) {
+    return;
+  }
+  const std::string actor = *authorized;
+
   std::string room_id = "room_" + RandomHex(8);
   auto room = std::make_shared<VoiceRoom>();
   room->room_id = room_id;
@@ -486,7 +497,7 @@ void HandleCreateRoom(const std::shared_ptr<VoiceState>& state,
   room->room_name = req.room_name();
   room->max_participants = req.max_participants();
   room->created_at = NowMs();
-  room->host_user_id = req.user_id();  // creator moderates the speaking queue
+  room->host_user_id = actor;  // creator moderates the speaking queue
 
   {
     std::lock_guard<std::mutex> lock(state->mu);
@@ -548,18 +559,35 @@ void HandleJoinRoom(const std::shared_ptr<VoiceState>& state,
     }
   }
 
+  // Remove from the previous room if any. The teardown reuses the same steps
+  // as leave/disconnect (audit 2026-11-11): a bare participant erase left the
+  // switcher holding the mic/queue spot and the previous room never heard a
+  // LEFT notify. Broadcasts run outside state->mu (BroadcastToRoom locks it).
+  std::shared_ptr<VoiceRoom> prev_room;
   {
     std::lock_guard<std::mutex> lock(state->mu);
-    // Remove from previous room if any
     auto prev_room_it = state->user_to_room.find(actor);
     if (prev_room_it != state->user_to_room.end()) {
       auto prev_room_it2 = state->rooms.find(prev_room_it->second);
       if (prev_room_it2 != state->rooms.end()) {
-        std::lock_guard<std::mutex> room_lock(prev_room_it2->second->mu);
-        prev_room_it2->second->participants.erase(actor);
+        prev_room = prev_room_it2->second;
+        std::lock_guard<std::mutex> room_lock(prev_room->mu);
+        prev_room->participants.erase(actor);
       }
     }
     state->user_to_room[actor] = req.room_id();
+  }
+  if (prev_room && prev_room->room_id != req.room_id()) {
+    if (DetachFromMicQueue(prev_room.get(), actor)) {
+      BroadcastMicQueueState(state, prev_room, actor);
+    }
+    chirp::voice::ParticipantLeftNotify left_notify;
+    left_notify.set_room_id(prev_room->room_id);
+    left_notify.set_user_id(actor);
+    left_notify.set_timestamp(NowMs());
+    BroadcastToRoom(prev_room, chirp::gateway::PARTICIPANT_LEFT_NOTIFY,
+                    left_notify.SerializeAsString(), state, actor);
+    MaybeReclaimRoom(state, prev_room, prev_room->room_id);
   }
 
   // Add participant to room
@@ -631,6 +659,15 @@ void HandleLeaveRoom(const std::shared_ptr<VoiceState>& state,
     return;
   }
 
+  // Audit 2026-11-11: LEAVE_ROOM ran without any identity check, so an
+  // unauthenticated JWT-mode frame could drive a bound user out of their
+  // room. The gate also rejects a bound session claiming someone else's id.
+  chirp::voice::LeaveRoomResponse auth_resp;
+  if (!AuthorizeActor(state, session, pkt, chirp::gateway::LEAVE_ROOM_RESP,
+                      req.user_id(), &auth_resp).has_value()) {
+    return;
+  }
+
   std::shared_ptr<VoiceRoom> room;
   {
     std::lock_guard<std::mutex> lock(state->mu);
@@ -680,6 +717,38 @@ std::shared_ptr<VoiceRoom> FindRoom(const std::shared_ptr<VoiceState>& state,
   std::lock_guard<std::mutex> lock(state->mu);
   auto it = state->rooms.find(room_id);
   return it == state->rooms.end() ? nullptr : it->second;
+}
+
+// Triple gate for the ICE/SDP signaling relays (audit 2026-11-11): the sender
+// must be logged in (JWT mode), claim its own bound identity and hold a seat
+// in the room - previously any frame with a guessed room id relayed through.
+// Scaffold mode keeps the legacy self-reported pass-through, so only the
+// participant check bites there. Relays carry no response frame, failures
+// drop silently.
+bool RelaySenderAllowed(const std::shared_ptr<VoiceState>& state,
+                        const std::shared_ptr<chirp::network::Session>& session,
+                        VoiceRoom* room, const std::string& claimed_user) {
+  const bool requires_login = state->cfg.verifier && state->cfg.verifier->enabled();
+  std::string bound_user;
+  bool authenticated = false;
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    authenticated = state->authenticated_sessions.count(session.get()) > 0;
+    if (authenticated) {
+      auto it = state->session_to_user.find(session.get());
+      if (it != state->session_to_user.end()) {
+        bound_user = it->second;
+      }
+    }
+  }
+  if (requires_login && !authenticated) {
+    return false;
+  }
+  if (authenticated && claimed_user != bound_user) {
+    return false;
+  }
+  std::lock_guard<std::mutex> room_lock(room->mu);
+  return room->participants.count(claimed_user) > 0;
 }
 
 // Derived presence state: deafened wins over muted wins over plain connected,
@@ -1247,7 +1316,7 @@ void HandleIceCandidate(const std::shared_ptr<VoiceState>& state,
   }
 
   const auto room = FindRoom(state, msg.room_id());
-  if (!room) {
+  if (!room || !RelaySenderAllowed(state, session, room.get(), msg.from_user_id())) {
     return;
   }
 
@@ -1269,7 +1338,7 @@ void HandleSdpOffer(const std::shared_ptr<VoiceState>& state,
   }
 
   const auto room = FindRoom(state, msg.room_id());
-  if (!room) {
+  if (!room || !RelaySenderAllowed(state, session, room.get(), msg.from_user_id())) {
     return;
   }
 
@@ -1294,7 +1363,7 @@ void HandleSdpAnswer(const std::shared_ptr<VoiceState>& state,
   }
 
   const auto room = FindRoom(state, msg.room_id());
-  if (!room) {
+  if (!room || !RelaySenderAllowed(state, session, room.get(), msg.from_user_id())) {
     return;
   }
 
