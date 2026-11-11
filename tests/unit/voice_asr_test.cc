@@ -108,6 +108,20 @@ class VoiceAsrTest : public ::testing::Test {
   std::shared_ptr<chirp::voice::direct::VoiceRoom> room_;
 };
 
+TEST(MockAsrProviderTest, EmptyPcmYieldsNoSpeechAndDataYieldsThePreset) {
+  MockAsrProvider p("hello");
+  EXPECT_TRUE(p.Transcribe("").empty());
+  EXPECT_EQ(p.Transcribe("any-pcm"), "hello");
+}
+
+TEST_F(VoiceAsrTest, EmptyTranscriptFromProviderIsNoSpeech) {
+  AsrFilter empty(filter_->options(), std::make_unique<MockAsrProvider>(""));
+  const AsrFilterResult r = empty.Inspect("fake-pcm");
+  EXPECT_EQ(r.disposition, AsrDisposition::kNone);
+  EXPECT_TRUE(r.publishable.empty());
+  EXPECT_TRUE(empty.audit_log().empty());
+}
+
 TEST(AsrDispositionTest, FromStringParsesTheThreeActionsAndFallsBackToFlag) {
   EXPECT_EQ(chirp::voice::asr::AsrDispositionFromString("mute"), AsrDisposition::kMute);
   EXPECT_EQ(chirp::voice::asr::AsrDispositionFromString("INTERCEPT"), AsrDisposition::kIntercept);

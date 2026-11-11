@@ -64,6 +64,9 @@ using chirp::voice::direct::VoiceState;
 using chirp::voice::asr::AsrFilter;
 using chirp::voice::asr::AsrFilterOptions;
 using chirp::voice::asr::WhisperCppProvider;
+// Namespace alias so main() can spell the asr types qualified (the
+// using-declarations above import the type names only, not the namespace).
+namespace asr = chirp::voice::asr;
 
 }  // namespace
 
