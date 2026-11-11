@@ -10,6 +10,7 @@
 #include <cstring>
 #include <functional>
 #include <future>
+#include <limits>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -943,8 +944,9 @@ TEST_F(EnhancedSessionTest, CoordLinkCarriesMetadataThroughNotifyHistoryAndRefil
   chirp::chat::GetHistoryRequest history_req;
   history_req.set_channel_id("alice|bob");
   history_req.set_channel_type(chirp::chat::PRIVATE);
+  history_req.set_user_id("alice");  // history reads are identity-checked
   history_req.set_limit(10);
-  HandleGetHistory(history_req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5);
+  HandleGetHistory(history_req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5, "alice");
   const auto resps = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
   ASSERT_EQ(resps.size(), 1u);
   chirp::chat::GetHistoryResponse history_resp;
@@ -1094,8 +1096,9 @@ TEST_F(EnhancedSessionTest, ItemLinkCarriesMetadataThroughNotifyHistoryAndRefill
   chirp::chat::GetHistoryRequest history_req;
   history_req.set_channel_id("alice|bob");
   history_req.set_channel_type(chirp::chat::PRIVATE);
+  history_req.set_user_id("alice");  // history reads are identity-checked
   history_req.set_limit(10);
-  HandleGetHistory(history_req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5);
+  HandleGetHistory(history_req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5, "alice");
   const auto resps = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
   ASSERT_EQ(resps.size(), 1u);
   chirp::chat::GetHistoryResponse history_resp;
@@ -1234,8 +1237,9 @@ TEST_F(EnhancedSessionTest, AchievementShareCarriesMetadataThroughNotifyHistoryA
   chirp::chat::GetHistoryRequest history_req;
   history_req.set_channel_id("alice|bob");
   history_req.set_channel_type(chirp::chat::PRIVATE);
+  history_req.set_user_id("alice");  // history reads are identity-checked
   history_req.set_limit(10);
-  HandleGetHistory(history_req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5);
+  HandleGetHistory(history_req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5, "alice");
   const auto resps = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
   ASSERT_EQ(resps.size(), 1u);
   chirp::chat::GetHistoryResponse history_resp;
@@ -1377,8 +1381,9 @@ TEST_F(EnhancedSessionTest, TradeStatusCarriesMetadataThroughNotifyHistoryAndRef
   chirp::chat::GetHistoryRequest history_req;
   history_req.set_channel_id("alice|bob");
   history_req.set_channel_type(chirp::chat::PRIVATE);
+  history_req.set_user_id("alice");  // history reads are identity-checked
   history_req.set_limit(10);
-  HandleGetHistory(history_req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5);
+  HandleGetHistory(history_req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5, "alice");
   const auto resps = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
   ASSERT_EQ(resps.size(), 1u);
   chirp::chat::GetHistoryResponse history_resp;
@@ -1517,8 +1522,9 @@ TEST_F(EnhancedSessionTest, RecruitCardsCarryMetadataThroughNotifyHistoryAndRefi
   chirp::chat::GetHistoryRequest history_req;
   history_req.set_channel_id("alice|bob");
   history_req.set_channel_type(chirp::chat::PRIVATE);
+  history_req.set_user_id("alice");  // history reads are identity-checked
   history_req.set_limit(10);
-  HandleGetHistory(history_req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5);
+  HandleGetHistory(history_req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5, "alice");
   const auto resps = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
   ASSERT_EQ(resps.size(), 1u);
   chirp::chat::GetHistoryResponse history_resp;
@@ -1954,8 +1960,9 @@ TEST_F(EnhancedSessionTest, GetHistoryServesPaginationAndTombstones) {
   chirp::chat::GetHistoryRequest history_req;
   history_req.set_channel_id("alice|bob");
   history_req.set_channel_type(chirp::chat::PRIVATE);
+  history_req.set_user_id("alice");  // history reads are identity-checked
   history_req.set_limit(2);
-  HandleGetHistory(history_req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5);
+  HandleGetHistory(history_req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5, "alice");
 
   const auto resps = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
   ASSERT_EQ(resps.size(), 1u);
@@ -1987,6 +1994,57 @@ TEST_F(EnhancedSessionTest, GetHistoryServesPaginationAndTombstones) {
   const auto* reply = by_id(m1);
   if (reply != nullptr) {  // limit=2 时旧条目可能翻页在外
     EXPECT_EQ(reply->reply_to_message_id(), "");
+  }
+}
+
+// Audit fix: enhanced GET_HISTORY runs the basic validator - an empty or
+// mismatched identity is refused with AUTH_FAILED before any store lookup -
+// and the page size clamps instead of reaching the store raw.
+TEST_F(EnhancedSessionTest, GetHistoryRejectsUnbackedIdentityAndClampsPage) {
+  LiveHistoryRecall live;
+  StartLiveHistory(live);
+  auto alice = std::make_shared<MockSession>();
+  Login(alice, "alice", "a1", 1);
+  std::string m1;
+  ASSERT_EQ(SendPrivate(alice, "alice", "bob", "one", &m1, live.store,
+                        live.recall.handlers.get()),
+            chirp::common::OK);
+  auto retriever = std::make_shared<chirp::chat::PaginatedHistoryRetriever>(live.store);
+
+  // Empty authenticated identity (never logged in): AUTH_FAILED.
+  chirp::chat::GetHistoryRequest req;
+  req.set_channel_id("alice|bob");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_user_id("alice");
+  req.set_limit(10);
+  HandleGetHistory(req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5, "");
+  const auto empty_user = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(empty_user.size(), 1u);
+  chirp::chat::GetHistoryResponse resp;
+  ASSERT_TRUE(resp.ParseFromString(empty_user[0].body()));
+  EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED);
+  EXPECT_FALSE(resp.has_more());
+
+  // Claiming someone else's identity: AUTH_FAILED, again without store work.
+  HandleGetHistory(req, alice, retriever, /*supports_gzip=*/false, /*seq=*/6, "mallory");
+  const auto forged = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(forged.size(), 2u);
+  ASSERT_TRUE(resp.ParseFromString(forged[1].body()));
+  EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED);
+
+  // Hostile page sizes (zero, negative, int32 max) clamp to the sane window
+  // and answer OK with the seeded page instead of fanning out. Frames
+  // accumulate on the session, so the expected count grows with the loop.
+  const std::vector<int32_t> bad_limits = {0, -5, std::numeric_limits<int32_t>::max()};
+  for (size_t i = 0; i < bad_limits.size(); ++i) {
+    req.set_limit(bad_limits[i]);
+    HandleGetHistory(req, alice, retriever, /*supports_gzip=*/false, /*seq=*/7, "alice");
+    const auto clamped = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+    ASSERT_EQ(clamped.size(), 3u + i);
+    chirp::chat::GetHistoryResponse ok_resp;
+    ASSERT_TRUE(ok_resp.ParseFromString(clamped[2u + i].body()));
+    EXPECT_EQ(ok_resp.code(), chirp::common::OK);
+    EXPECT_EQ(ok_resp.messages_size(), 1);
   }
 }
 

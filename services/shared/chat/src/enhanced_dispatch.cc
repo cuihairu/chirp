@@ -8,6 +8,7 @@
 // Enhanced Distributed Chat Service with Hybrid Message Store
 // Features: Redis+MySQL dual-write, message delivery tracking, pagination
 
+#include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
@@ -1028,18 +1029,41 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
   }
 }
 
-/// @brief Handle get history with pagination
+/// @brief Handle get history with pagination. Audit 2026-11-11: the request
+/// now runs the same validator as the basic build (login identity,
+/// private-channel membership) and the page size is clamped to a sane window,
+/// so a hostile limit no longer fans out into an unbounded page.
 void HandleGetHistory(const chirp::chat::GetHistoryRequest& req,
                     const std::shared_ptr<chirp::network::Session>& session,
                     const std::shared_ptr<PaginatedHistoryRetriever>& retriever,
                     bool supports_gzip,
-                    int64_t seq) {
+                    int64_t seq,
+                    const std::string& authenticated_user_id) {
+  chirp::chat::GetHistoryResponse resp;
+  const chirp::common::ErrorCode validation =
+      chirp::chat::ValidateGetHistoryRequest(req, authenticated_user_id);
+  if (validation != chirp::common::OK) {
+    resp.set_code(validation);
+    resp.set_has_more(false);
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_HISTORY_RESP, seq,
+                                     resp.SerializeAsString());
+    return;
+  }
+
+  // Same page window as the basic default: non-positive falls back to 50,
+  // oversized requests clamp instead of reaching the store raw.
+  int32_t limit = req.limit();
+  if (limit <= 0) {
+    limit = 50;
+  }
+  constexpr int32_t kMaxHistoryPageSize = 200;
+  limit = std::min(limit, kMaxHistoryPageSize);
+
   std::string channel_id = req.channel_id();
 
   auto page = retriever->GetPageBefore(channel_id, req.channel_type(),
-                                      req.before_timestamp(), req.limit());
+                                      req.before_timestamp(), limit);
 
-  chirp::chat::GetHistoryResponse resp;
   resp.set_code(chirp::common::OK);
   resp.set_has_more(page.has_more);
 

@@ -853,7 +853,8 @@ int main(int argc, char** argv) {
                                         const chirp::chat::GetHistoryRequest& req,
                                         int64_t seq) {
     HandleGetHistory(req, session, retriever,
-                     chirp::network::SessionSupportsGzip(state->registry, session.get()), seq);
+                     chirp::network::SessionSupportsGzip(state->registry, session.get()), seq,
+                     state->GetUserId(session));
   };
   handlers.on_get_history_v2 = [](const std::shared_ptr<chirp::network::Session>& session,
                                   const std::string& body,
