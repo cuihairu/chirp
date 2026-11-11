@@ -616,6 +616,42 @@ TEST_F(VoiceServiceTest, DisconnectReclaimsEmptiedRoom) {
   Join("u2", room, chirp::common::USER_NOT_FOUND);
 }
 
+TEST_F(VoiceServiceTest, DisconnectingMicHolderClearsFloor) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+  auto u2 = Join("u2", room);
+  SetManaged(room);
+
+  chirp::voice::MicQueueApplyRequest apply;
+  apply.set_user_id("u2");
+  apply.set_room_id(room);
+  ASSERT_TRUE(MicOp(u2, chirp::gateway::MIC_QUEUE_APPLY_REQ,
+                    chirp::gateway::MIC_QUEUE_APPLY_RESP, 70, apply).has_value());
+
+  chirp::voice::MicQueueApproveRequest approve;
+  approve.set_user_id("creator");
+  approve.set_room_id(room);
+  const auto approved = MicOp(session_, chirp::gateway::MIC_QUEUE_APPROVE_REQ,
+                              chirp::gateway::MIC_QUEUE_APPROVE_RESP, 71, approve);
+  ASSERT_TRUE(approved.has_value());
+  EXPECT_EQ(approved->holder_user_id(), "u2");
+
+  // The holder drops the connection: the floor clears with a queue-state
+  // broadcast to the survivors.
+  HandleDisconnect(state_, u2);
+
+  const auto notifies = MicQueueNotifies(*u1);
+  ASSERT_FALSE(notifies.empty());
+  EXPECT_EQ(notifies.back().holder_user_id(), "");
+
+  std::lock_guard<std::mutex> lock(state_->mu);
+  ASSERT_EQ(state_->rooms.count(room), 1u);
+  std::lock_guard<std::mutex> room_lock(state_->rooms[room]->mu);
+  EXPECT_TRUE(state_->rooms[room]->mic_holder_user_id.empty());
+  EXPECT_TRUE(state_->rooms[room]->mic_queue.empty());
+  EXPECT_EQ(state_->rooms[room]->participants.count("u2"), 0u);
+}
+
 TEST_F(VoiceServiceTest, RoomWithRemainingParticipantsIsNotReclaimed) {
   const std::string room = CreateRoom(0);
   auto u1 = Join("u1", room);
@@ -896,6 +932,26 @@ TEST_F(VoiceServiceTest, ScaffoldRelayDropsClaimedNonParticipant) {
   for (const auto& pkt : ReceivedPackets(*u1)) {
     EXPECT_NE(pkt.msg_id(), chirp::gateway::ICE_CANDIDATE_MSG);
   }
+}
+
+TEST_F(VoiceServiceTest, RejoiningSameRoomAnnouncesNoLeft) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+  auto u2 = Join("u2", room);
+
+  // u2 rejoins the room they are already in: not a switch, so no LEFT is
+  // announced and the membership survives.
+  chirp::voice::JoinRoomRequest jreq;
+  jreq.set_user_id("u2");
+  jreq.set_room_id(room);
+  HandlePacket(state_, u2, MakePacket(chirp::gateway::JOIN_ROOM_REQ, 63, jreq.SerializeAsString()).SerializeAsString());
+
+  for (const auto& pkt : ReceivedPackets(*u1)) {
+    EXPECT_NE(pkt.msg_id(), chirp::gateway::PARTICIPANT_LEFT_NOTIFY);
+  }
+  std::lock_guard<std::mutex> lock(state_->mu);
+  std::lock_guard<std::mutex> room_lock(state_->rooms[room]->mu);
+  EXPECT_EQ(state_->rooms[room]->participants.count("u2"), 1u);
 }
 
 TEST_F(VoiceServiceTest, SwitchRoomReleasesMicAndNotifiesPreviousRoom) {

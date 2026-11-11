@@ -926,4 +926,21 @@ KNOWN_UNCOVERABLE_ARMS = {
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
     ("services/social/src/presence_manager.cc", 346): ((1,),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    # -- voice_dispatch.cc: room-switch teardown + reclamation (audit batch) --
+    # 572: the false arm of the prev-room lookup - user_to_room and rooms are
+    # erased together on every leave/disconnect/reclaim, so a mapping that
+    # misses the rooms map cannot be observed from the join-switch path.
+    ("services/voice/src/voice_dispatch.cc", 572): ((1,),
+        "stale user_to_room entry pointing at a reclaimed room id: every "
+        "room-removal path (leave/disconnect/reclaim) clears the departing "
+        "user's user_to_room in the same critical section, so the join "
+        "switch's prev-room lookup cannot miss"),
+    # 645: MaybeReclaimRoom's two defensive lookup arms - the caller holds the
+    # room shared_ptr it just found under the same mutex and room ids are
+    # never remapped to a different VoiceRoom object.
+    ("services/voice/src/voice_dispatch.cc", 645): ((1, 3),
+        "reclaim's room-already-gone and room-replaced arms: the erase runs "
+        "immediately after the caller resolved the same id under state->mu "
+        "(single io thread, no interleave) and room ids map to one VoiceRoom "
+        "object for their whole lifetime"),
 }
