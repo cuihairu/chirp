@@ -126,6 +126,31 @@ TEST(WordFilterTest, ReplaceMasksHitsAndKeepsTheRest) {
   EXPECT_EQ(content, "a ** and an ** plan");
 }
 
+// Hits() is the read-only verdict the voice ASR chain consumes; the content
+// must stay untouched and the count must match what kReplace would mask.
+TEST(WordFilterTest, HitsCountsEveryOccurrenceAndLeavesContentUntouched) {
+  TempLexicon file;
+  file.Write("badword\nevil\n");
+  WordFilterOptions options;
+  options.lexicon_path = file.path();
+  options.reload_check_interval_ms = 0;
+  WordFilter filter(options);
+
+  std::string content = "a BADWORD, an EVIL plan and one more badword";
+  EXPECT_EQ(filter.Hits(content), 3);
+  EXPECT_EQ(content, "a BADWORD, an EVIL plan and one more badword");
+
+  std::string clean = "nothing wrong here";
+  EXPECT_EQ(filter.Hits(clean), 0);
+  EXPECT_EQ(clean, "nothing wrong here");
+}
+
+TEST(WordFilterTest, HitsIsZeroOnADisabledFilter) {
+  WordFilterOptions options;  // no lexicon path
+  WordFilter filter(options);
+  EXPECT_EQ(filter.Hits("badword"), 0);
+}
+
 TEST(WordFilterTest, ReplaceCollapsesAdjacentMaskedRunsIntoOneReplacement) {
   TempLexicon file;
   file.Write("bad\n");

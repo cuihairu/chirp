@@ -190,6 +190,24 @@ bool WordFilter::Filter(const std::string& sender_id, std::string* content) {
   return true;
 }
 
+int WordFilter::Hits(const std::string& content) {
+  if (!enabled()) {
+    return 0;
+  }
+  ReloadIfStale(NowMs());
+
+  const std::string lowered = ToLower(content);
+  int hits = 0;
+  for (const auto& term : terms_) {
+    size_t pos = lowered.find(term);
+    while (pos != std::string::npos) {
+      ++hits;
+      pos = lowered.find(term, pos + term.size());
+    }
+  }
+  return hits;
+}
+
 size_t WordFilter::word_count() const {
   return terms_.size();
 }

@@ -52,6 +52,15 @@ class WordFilter {
   // path) is always a no-op true.
   bool Filter(const std::string& sender_id, std::string* content);
 
+  // Read-only hit count for callers that only need the verdict and will
+  // decide the consequence themselves (voice ASR chain: a transcript hit
+  // mutes/flags/intercepts per the voice-side policy, none of which is
+  // Filter's replace/reject/record). Counts non-overlapping case-insensitive
+  // term occurrences; 0 means clean. Never touches content. Shares the
+  // matching loop (and the hot-reload check) with Filter, so a hit here is
+  // by definition a hit under every policy and on every client.
+  int Hits(const std::string& content);
+
   bool enabled() const { return options_.lexicon_path.empty() ? false : enabled_; }
   size_t word_count() const;
   const WordFilterOptions& options() const { return options_; }
