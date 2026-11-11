@@ -288,6 +288,37 @@ target_include_directories(voice_tests
 
 add_test(NAME voice_tests COMMAND voice_tests)
 
+# Voice ASR moderation chain tests (VOICE-ASR-FILTER): mock ASR transcript
+# -> shared chat word filter -> disposition -> room mute, in-memory like
+# voice_tests. word_filter.cc is compiled from the shared chat tree - the
+# lexicon true source, not a copy.
+add_executable(voice_asr_tests
+  voice_asr_test.cc
+  # Room state and the SET_MUTE broadcast the mute disposition reuses live
+  # here (same single translation unit voice_tests compiles).
+  ${CMAKE_SOURCE_DIR}/services/voice/src/voice_dispatch.cc
+  ${CMAKE_SOURCE_DIR}/services/voice/src/asr/asr_filter.cc
+  ${CMAKE_SOURCE_DIR}/services/voice/src/asr/mock_asr_provider.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/word_filter.cc
+)
+
+chirp_unit_test_common_links(voice_asr_tests)
+target_link_libraries(voice_asr_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(voice_asr_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/voice/src
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME voice_asr_tests COMMAND voice_asr_tests)
+
 # Social service packet-handler tests (main.cc included with renamed main,
 # same pattern as voice_tests; main.cc is NOT listed as a source - it would
 # hijack the test entry point and double-compile the handlers)
