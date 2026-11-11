@@ -457,6 +457,16 @@ void AppendIceServers(const std::shared_ptr<VoiceState>& state,
   }
 }
 
+chirp::voice::MediaTier MediaTierForRoom(int32_t participant_count) {
+  return participant_count <= kFullMixMaxParticipants ? chirp::voice::FULL_MIX
+                                                      : chirp::voice::FORWARD_BYPASS;
+}
+
+int32_t RtcpFeedbackMsForTier(chirp::voice::MediaTier tier) {
+  return tier == chirp::voice::FULL_MIX ? kFullMixRtcpFeedbackMs
+                                        : kForwardBypassRtcpFeedbackMs;
+}
+
 void HandleCreateRoom(const std::shared_ptr<VoiceState>& state,
                       const std::shared_ptr<chirp::network::Session>& session,
                       const chirp::gateway::Packet& pkt) {
@@ -585,6 +595,11 @@ void HandleJoinRoom(const std::shared_ptr<VoiceState>& state,
   for (const auto& pid : existing_participants) {
     resp.add_participant_ids(pid);
   }
+  // Room-size tier (VOICE-RT 旁路分级): the count includes the joiner.
+  const chirp::voice::MediaTier tier =
+      MediaTierForRoom(static_cast<int32_t>(existing_participants.size()));
+  resp.set_media_tier(tier);
+  resp.set_rtcp_feedback_ms(RtcpFeedbackMsForTier(tier));
   resp.set_server_time(NowMs());
   AppendIceServers(state, actor, &resp);
   SendPacket(session, chirp::gateway::JOIN_ROOM_RESP, pkt.sequence(), resp.SerializeAsString());

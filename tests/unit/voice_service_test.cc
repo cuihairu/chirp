@@ -1761,4 +1761,35 @@ TEST_F(VoiceServiceTest, MicQueueHostLeaveResetsRoomToFreeSpeech) {
   EXPECT_EQ(info->mic_queue_user_ids_size(), 0);
 }
 
+// Media tier classification (VOICE-RT 旁路分级): the boundary sits at 12
+// participants; above it the SFU bypass takes over with a slower RTCP pace.
+TEST(VoiceMediaTierTest, ClassificationPicksTierByRoomSize) {
+  EXPECT_EQ(chirp::voice::direct::MediaTierForRoom(1), chirp::voice::FULL_MIX);
+  EXPECT_EQ(chirp::voice::direct::MediaTierForRoom(12), chirp::voice::FULL_MIX);
+  EXPECT_EQ(chirp::voice::direct::MediaTierForRoom(13), chirp::voice::FORWARD_BYPASS);
+  EXPECT_EQ(chirp::voice::direct::MediaTierForRoom(500), chirp::voice::FORWARD_BYPASS);
+  EXPECT_EQ(chirp::voice::direct::RtcpFeedbackMsForTier(chirp::voice::FULL_MIX), 1000);
+  EXPECT_EQ(chirp::voice::direct::RtcpFeedbackMsForTier(chirp::voice::FORWARD_BYPASS), 2000);
+}
+
+TEST_F(VoiceServiceTest, JoinResponseCarriesTierForRoomSize) {
+  const std::string room = CreateRoom(0);
+  chirp::voice::JoinRoomResponse resp;
+
+  // The 12th joiner still lands in the full-mix tier.
+  std::shared_ptr<MockSession> s;
+  for (int i = 1; i <= 12; ++i) {
+    s = Join("u" + std::to_string(i), room);
+  }
+  ASSERT_TRUE(LastBody(*s, &resp));
+  EXPECT_EQ(resp.media_tier(), chirp::voice::FULL_MIX);
+  EXPECT_EQ(resp.rtcp_feedback_ms(), 1000);
+
+  // Crossing the boundary flips the tier for the next joiner.
+  s = Join("u13", room);
+  ASSERT_TRUE(LastBody(*s, &resp));
+  EXPECT_EQ(resp.media_tier(), chirp::voice::FORWARD_BYPASS);
+  EXPECT_EQ(resp.rtcp_feedback_ms(), 2000);
+}
+
 }  // namespace

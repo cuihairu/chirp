@@ -138,6 +138,18 @@ void HandleLogin(const std::shared_ptr<VoiceState>& state,
 void AppendIceServers(const std::shared_ptr<VoiceState>& state,
                       const std::string& user_id,
                       chirp::voice::JoinRoomResponse* resp);
+// Media delivery tier classification (VOICE-RT 大规模旁路分级): rooms at or
+// below kFullMixMaxParticipants run the client-side full mesh mix; anything
+// larger switches to the SFU forwarding bypass with a slower receiver-report
+// cadence (less per-stream feedback pressure at scale). The tier rides on
+// JoinRoomResponse so the client engine configures itself; the server never
+// mixes media itself.
+constexpr int32_t kFullMixMaxParticipants = 12;
+constexpr int32_t kFullMixRtcpFeedbackMs = 1000;
+constexpr int32_t kForwardBypassRtcpFeedbackMs = 2000;
+chirp::voice::MediaTier MediaTierForRoom(int32_t participant_count);
+int32_t RtcpFeedbackMsForTier(chirp::voice::MediaTier tier);
+
 void HandleCreateRoom(const std::shared_ptr<VoiceState>& state,
                       const std::shared_ptr<chirp::network::Session>& session,
                       const chirp::gateway::Packet& pkt);
