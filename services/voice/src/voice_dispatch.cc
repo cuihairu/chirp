@@ -605,6 +605,20 @@ void HandleJoinRoom(const std::shared_ptr<VoiceState>& state,
   SendPacket(session, chirp::gateway::JOIN_ROOM_RESP, pkt.sequence(), resp.SerializeAsString());
 }
 
+void MaybeReclaimRoom(const std::shared_ptr<VoiceState>& state,
+                      const std::shared_ptr<VoiceRoom>& room,
+                      const std::string& room_id) {
+  // Nesting follows the established state->mu -> room->mu order, so a joiner
+  // racing this leave either lands before the erase (the room survives with
+  // them in it) or after (they find no room and join fails).
+  std::lock_guard<std::mutex> lock(state->mu);
+  std::lock_guard<std::mutex> room_lock(room->mu);
+  auto it = state->rooms.find(room_id);
+  if (it != state->rooms.end() && it->second == room && room->participants.empty()) {
+    state->rooms.erase(it);
+  }
+}
+
 void HandleLeaveRoom(const std::shared_ptr<VoiceState>& state,
                      const std::shared_ptr<chirp::network::Session>& session,
                      const chirp::gateway::Packet& pkt) {
@@ -642,6 +656,9 @@ void HandleLeaveRoom(const std::shared_ptr<VoiceState>& state,
   if (DetachFromMicQueue(room.get(), req.user_id())) {
     BroadcastMicQueueState(state, room, req.user_id());
   }
+
+  // An emptied room is reclaimed: state->rooms must not grow forever.
+  MaybeReclaimRoom(state, room, req.room_id());
 
   // Notify other participants
   chirp::voice::ParticipantLeftNotify left_notify;
@@ -1342,6 +1359,9 @@ void HandleDisconnect(const std::shared_ptr<VoiceState>& state,
       if (DetachFromMicQueue(room.get(), user_id)) {
         BroadcastMicQueueState(state, room, user_id);
       }
+
+      // An emptied room is reclaimed: state->rooms must not grow forever.
+      MaybeReclaimRoom(state, room, room_id);
 
       chirp::voice::ParticipantLeftNotify left_notify;
       left_notify.set_room_id(room_id);

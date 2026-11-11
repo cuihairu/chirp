@@ -586,6 +586,50 @@ TEST_F(VoiceServiceTest, DisconnectUnboundSessionIsNoop) {
   EXPECT_TRUE(s->sent.empty());
 }
 
+TEST_F(VoiceServiceTest, LeaveRoomReclaimsEmptiedRoom) {
+  const std::string room = CreateRoom(0);
+  Join("u1", room);
+
+  chirp::voice::LeaveRoomRequest req;
+  req.set_user_id("u1");
+  req.set_room_id(room);
+  SendPacketBody(chirp::gateway::LEAVE_ROOM_REQ, 40, req.SerializeAsString());
+
+  // The last participant left: the room entry is reclaimed, not leaked.
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->rooms.count(room), 0u);
+}
+
+TEST_F(VoiceServiceTest, DisconnectReclaimsEmptiedRoom) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+
+  HandleDisconnect(state_, u1);
+
+  {
+    std::lock_guard<std::mutex> lock(state_->mu);
+    EXPECT_EQ(state_->rooms.count(room), 0u);
+  }
+  // The reclaimed id is dead for joiners, same as an unknown room.
+  Join("u2", room, chirp::common::USER_NOT_FOUND);
+}
+
+TEST_F(VoiceServiceTest, RoomWithRemainingParticipantsIsNotReclaimed) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+  Join("u2", room);
+  (void)u1;
+
+  chirp::voice::LeaveRoomRequest req;
+  req.set_user_id("u1");
+  req.set_room_id(room);
+  SendPacketBody(chirp::gateway::LEAVE_ROOM_REQ, 41, req.SerializeAsString());
+
+  // u2 still holds the room alive after u1 leaves.
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->rooms.count(room), 1u);
+}
+
 // ===========================================================================
 // Authentication: LOGIN_REQ + the AuthorizeActor gate
 // ===========================================================================
@@ -748,8 +792,9 @@ TEST_F(VoiceServiceTest, LoginKicksPreviousSession) {
   EXPECT_TRUE(s1_kicked);
   EXPECT_TRUE(s1->closed);
   std::lock_guard<std::mutex> lock(state_->mu);
-  std::lock_guard<std::mutex> room_lock(state_->rooms[room]->mu);
-  EXPECT_EQ(state_->rooms[room]->participants.count("u1"), 0u);
+  // The kick emptied the room: emptied rooms are reclaimed (audit fix
+  // 2026-11-11), so the entry is gone rather than live-but-empty.
+  EXPECT_EQ(state_->rooms.count(room), 0u);
   EXPECT_EQ(state_->session_to_user[s2.get()], "u1");
 }
 

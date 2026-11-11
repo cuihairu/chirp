@@ -199,6 +199,12 @@ void HandleMicQueueGrant(const std::shared_ptr<VoiceState>& state,
 // moderation ends with the host's presence). Returns true when the queue
 // state changed so the caller broadcasts a MicQueueStateNotify.
 bool DetachFromMicQueue(VoiceRoom* room, const std::string& user_id);
+// Erases the room from state->rooms once its last participant left (audit
+// 2026-11-11: the map only ever grew, empty rooms leaked forever). No-op
+// when the room still has participants or was already replaced/removed.
+void MaybeReclaimRoom(const std::shared_ptr<VoiceState>& state,
+                      const std::shared_ptr<VoiceRoom>& room,
+                      const std::string& room_id);
 void HandleGetRoomInfo(const std::shared_ptr<VoiceState>& state,
                        const std::shared_ptr<chirp::network::Session>& session,
                        const chirp::gateway::Packet& pkt);
