@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -132,6 +133,63 @@ class VoiceServiceTest : public ::testing::Test {
       EXPECT_EQ(resp.code(), expect) << "user " << user_id;
     }
     return s;
+  }
+
+  // Drives one speaking-queue request on the given session and returns the
+  // parsed ack (VOICE-RT 麦序模式).
+  template <typename ReqT>
+  std::optional<chirp::voice::MicQueueResponse> MicOp(const std::shared_ptr<MockSession>& s,
+                                                      chirp::gateway::MsgID req_id,
+                                                      [[maybe_unused]] chirp::gateway::MsgID resp_id,
+                                                      int64_t seq,
+                                                      const ReqT& req) {
+    HandlePacket(state_, s,
+                 MakePacket(req_id, seq, req.SerializeAsString()).SerializeAsString());
+    chirp::voice::MicQueueResponse resp;
+    if (s->sent.empty() || !LastBody(*s, &resp)) {
+      return std::nullopt;
+    }
+    return resp;
+  }
+
+  // Sets the room to managed mode on the host session.
+  void SetManaged(const std::string& room) {
+    chirp::voice::SetMicModeRequest req;
+    req.set_user_id("creator");
+    req.set_room_id(room);
+    req.set_mode(chirp::voice::MIC_MANAGED);
+    const auto r = MicOp(session_, chirp::gateway::SET_MIC_MODE_REQ,
+                         chirp::gateway::SET_MIC_MODE_RESP, 10, req);
+    ASSERT_TRUE(r.has_value());
+    EXPECT_EQ(r->code(), chirp::common::OK);
+  }
+
+  // Queries room info on the host session and returns it.
+  std::optional<chirp::voice::GetRoomInfoResponse> GetRoomInfo(const std::string& room) {
+    chirp::voice::GetRoomInfoRequest req;
+    req.set_room_id(room);
+    HandlePacket(state_, session_,
+                 MakePacket(chirp::gateway::GET_ROOM_INFO_REQ, 30, req.SerializeAsString())
+                     .SerializeAsString());
+    chirp::voice::GetRoomInfoResponse resp;
+    if (session_->sent.empty() || !LastBody(*session_, &resp)) {
+      return std::nullopt;
+    }
+    return resp;
+  }
+
+  // Collects the MIC_QUEUE_STATE_NOTIFY frames a session has received.
+  std::vector<chirp::voice::MicQueueStateNotify> MicQueueNotifies(const MockSession& s) {
+    std::vector<chirp::voice::MicQueueStateNotify> out;
+    for (const auto& p : ReceivedPackets(s)) {
+      if (p.msg_id() == chirp::gateway::MIC_QUEUE_STATE_NOTIFY) {
+        chirp::voice::MicQueueStateNotify n;
+        if (n.ParseFromString(p.body())) {
+          out.push_back(n);
+        }
+      }
+    }
+    return out;
   }
 };
 
@@ -1472,6 +1530,235 @@ TEST_F(VoiceServiceTest, HeartbeatSweepTimerFiresReschedulesAndCancelStops) {
   io.poll();
   io.restart();
   EXPECT_FALSE(u2->closed);
+}
+
+// ---------------------------------------------------------------------------
+// Speaking queue (VOICE-RT 麦序模式): the full 申请 -> 批准 -> 发言 -> 下麦
+// lifecycle plus host moderation, 切麦 and the permission boundaries.
+// ---------------------------------------------------------------------------
+
+TEST_F(VoiceServiceTest, MicQueueFlowApplyApproveRelease) {
+  const std::string room = CreateRoom(0);
+  auto alice = Join("alice", room);
+  auto bob = Join("bob", room);
+  SetManaged(room);
+
+  // Alice applies for the mic (bob stays out of the queue).
+  chirp::voice::MicQueueApplyRequest apply;
+  apply.set_user_id("alice");
+  apply.set_room_id(room);
+  auto r = MicOp(alice, chirp::gateway::MIC_QUEUE_APPLY_REQ,
+                 chirp::gateway::MIC_QUEUE_APPLY_RESP, 11, apply);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::OK);
+  EXPECT_EQ(r->queue_depth(), 1);
+  EXPECT_TRUE(r->holder_user_id().empty());
+
+  // The host approves the queue head -> alice holds the floor.
+  chirp::voice::MicQueueApproveRequest approve;
+  approve.set_user_id("creator");
+  approve.set_room_id(room);
+  r = MicOp(session_, chirp::gateway::MIC_QUEUE_APPROVE_REQ,
+            chirp::gateway::MIC_QUEUE_APPROVE_RESP, 12, approve);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::OK);
+  EXPECT_EQ(r->holder_user_id(), "alice");
+  EXPECT_EQ(r->queue_depth(), 0);
+
+  // The other participant saw the state notify with the new holder.
+  const auto bob_notifies = MicQueueNotifies(*bob);
+  ASSERT_GE(bob_notifies.size(), 2u);  // apply + approve fan-outs
+  EXPECT_EQ(bob_notifies.back().mode(), chirp::voice::MIC_MANAGED);
+  EXPECT_EQ(bob_notifies.back().holder_user_id(), "alice");
+
+  // A non-holder cannot pull the host's designated speaker off the mic.
+  chirp::voice::MicQueueReleaseRequest hostile;
+  hostile.set_user_id("bob");
+  hostile.set_room_id(room);
+  r = MicOp(bob, chirp::gateway::MIC_QUEUE_RELEASE_REQ,
+            chirp::gateway::MIC_QUEUE_RELEASE_RESP, 13, hostile);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::AUTH_FAILED);
+
+  // Alice steps down (下麦).
+  chirp::voice::MicQueueReleaseRequest release;
+  release.set_user_id("alice");
+  release.set_room_id(room);
+  r = MicOp(alice, chirp::gateway::MIC_QUEUE_RELEASE_REQ,
+            chirp::gateway::MIC_QUEUE_RELEASE_RESP, 14, release);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::OK);
+  EXPECT_TRUE(r->holder_user_id().empty());
+}
+
+TEST_F(VoiceServiceTest, MicQueueHostOnlyOperationsRejectedForMembers) {
+  const std::string room = CreateRoom(0);
+  auto alice = Join("alice", room);
+
+  chirp::voice::SetMicModeRequest mode;
+  mode.set_user_id("alice");
+  mode.set_room_id(room);
+  mode.set_mode(chirp::voice::MIC_MANAGED);
+  auto r = MicOp(alice, chirp::gateway::SET_MIC_MODE_REQ,
+                 chirp::gateway::SET_MIC_MODE_RESP, 10, mode);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::AUTH_FAILED);
+
+  chirp::voice::MicQueueApproveRequest approve;
+  approve.set_user_id("alice");
+  approve.set_room_id(room);
+  r = MicOp(alice, chirp::gateway::MIC_QUEUE_APPROVE_REQ,
+            chirp::gateway::MIC_QUEUE_APPROVE_RESP, 11, approve);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::AUTH_FAILED);
+
+  chirp::voice::MicQueueGrantRequest grant;
+  grant.set_user_id("alice");
+  grant.set_room_id(room);
+  grant.set_target_user_id("bob");
+  r = MicOp(alice, chirp::gateway::MIC_QUEUE_GRANT_REQ,
+            chirp::gateway::MIC_QUEUE_GRANT_RESP, 12, grant);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::AUTH_FAILED);
+}
+
+TEST_F(VoiceServiceTest, MicQueueGrantBypassesQueueAndPullsApplicants) {
+  const std::string room = CreateRoom(0);
+  auto alice = Join("alice", room);
+  auto bob = Join("bob", room);
+  SetManaged(room);
+
+  chirp::voice::MicQueueApplyRequest apply;
+  apply.set_user_id("alice");
+  apply.set_room_id(room);
+  auto r = MicOp(alice, chirp::gateway::MIC_QUEUE_APPLY_REQ,
+                 chirp::gateway::MIC_QUEUE_APPLY_RESP, 11, apply);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->queue_depth(), 1);
+
+  // 切麦: the host hands the floor to bob directly; alice stays queued.
+  chirp::voice::MicQueueGrantRequest grant;
+  grant.set_user_id("creator");
+  grant.set_room_id(room);
+  grant.set_target_user_id("bob");
+  r = MicOp(session_, chirp::gateway::MIC_QUEUE_GRANT_REQ,
+            chirp::gateway::MIC_QUEUE_GRANT_RESP, 12, grant);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::OK);
+  EXPECT_EQ(r->holder_user_id(), "bob");
+  EXPECT_EQ(r->queue_depth(), 1);
+
+  // Granting a queued applicant pulls them off the queue.
+  grant.set_target_user_id("alice");
+  r = MicOp(session_, chirp::gateway::MIC_QUEUE_GRANT_REQ,
+            chirp::gateway::MIC_QUEUE_GRANT_RESP, 13, grant);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->holder_user_id(), "alice");
+  EXPECT_EQ(r->queue_depth(), 0);
+}
+
+TEST_F(VoiceServiceTest, MicQueueApplyInFreeRoomIsRejected) {
+  const std::string room = CreateRoom(0);
+  auto alice = Join("alice", room);
+
+  chirp::voice::MicQueueApplyRequest apply;
+  apply.set_user_id("alice");
+  apply.set_room_id(room);
+  auto r = MicOp(alice, chirp::gateway::MIC_QUEUE_APPLY_REQ,
+                 chirp::gateway::MIC_QUEUE_APPLY_RESP, 10, apply);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::INVALID_PARAM);
+}
+
+TEST_F(VoiceServiceTest, MicQueueApproveEmptyQueueAndUnknownTargetRejected) {
+  const std::string room = CreateRoom(0);
+  auto alice = Join("alice", room);
+  SetManaged(room);
+
+  // Nothing waiting: no head to approve.
+  chirp::voice::MicQueueApproveRequest approve;
+  approve.set_user_id("creator");
+  approve.set_room_id(room);
+  auto r = MicOp(session_, chirp::gateway::MIC_QUEUE_APPROVE_REQ,
+                 chirp::gateway::MIC_QUEUE_APPROVE_RESP, 10, approve);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::INVALID_PARAM);
+
+  // A target that never applied is not in the queue.
+  approve.set_target_user_id("alice");
+  r = MicOp(session_, chirp::gateway::MIC_QUEUE_APPROVE_REQ,
+            chirp::gateway::MIC_QUEUE_APPROVE_RESP, 11, approve);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::USER_NOT_FOUND);
+}
+
+TEST_F(VoiceServiceTest, MicQueueLeaveClearsFloorAndKeepsQueue) {
+  const std::string room = CreateRoom(0);
+  auto alice = Join("alice", room);
+  auto charlie = Join("charlie", room);
+  SetManaged(room);
+
+  chirp::voice::MicQueueApplyRequest apply;
+  apply.set_user_id("alice");
+  apply.set_room_id(room);
+  ASSERT_TRUE(MicOp(alice, chirp::gateway::MIC_QUEUE_APPLY_REQ,
+                    chirp::gateway::MIC_QUEUE_APPLY_RESP, 11, apply).has_value());
+  apply.set_user_id("charlie");
+  ASSERT_TRUE(MicOp(charlie, chirp::gateway::MIC_QUEUE_APPLY_REQ,
+                    chirp::gateway::MIC_QUEUE_APPLY_RESP, 12, apply).has_value());
+
+  chirp::voice::MicQueueApproveRequest approve;
+  approve.set_user_id("creator");
+  approve.set_room_id(room);
+  approve.set_target_user_id("alice");
+  ASSERT_TRUE(MicOp(session_, chirp::gateway::MIC_QUEUE_APPROVE_REQ,
+                    chirp::gateway::MIC_QUEUE_APPROVE_RESP, 13, approve).has_value());
+
+  // The holder leaves: the floor clears, charlie is still waiting.
+  chirp::voice::LeaveRoomRequest leave;
+  leave.set_user_id("alice");
+  leave.set_room_id(room);
+  HandlePacket(state_, alice,
+               MakePacket(chirp::gateway::LEAVE_ROOM_REQ, 20, leave.SerializeAsString())
+                   .SerializeAsString());
+
+  const auto info = GetRoomInfo(room);
+  ASSERT_TRUE(info.has_value());
+  EXPECT_EQ(info->mic_mode(), chirp::voice::MIC_MANAGED);
+  EXPECT_TRUE(info->mic_holder_user_id().empty());
+  ASSERT_EQ(info->mic_queue_user_ids_size(), 1);
+  EXPECT_EQ(info->mic_queue_user_ids(0), "charlie");
+}
+
+TEST_F(VoiceServiceTest, MicQueueHostLeaveResetsRoomToFreeSpeech) {
+  const std::string room = CreateRoom(0);
+  auto alice = Join("alice", room);
+  SetManaged(room);
+
+  chirp::voice::MicQueueApplyRequest apply;
+  apply.set_user_id("alice");
+  apply.set_room_id(room);
+  ASSERT_TRUE(MicOp(alice, chirp::gateway::MIC_QUEUE_APPLY_REQ,
+                    chirp::gateway::MIC_QUEUE_APPLY_RESP, 11, apply).has_value());
+  chirp::voice::MicQueueApproveRequest approve;
+  approve.set_user_id("creator");
+  approve.set_room_id(room);
+  ASSERT_TRUE(MicOp(session_, chirp::gateway::MIC_QUEUE_APPROVE_REQ,
+                    chirp::gateway::MIC_QUEUE_APPROVE_RESP, 12, approve).has_value());
+
+  // The host walks: moderation ends, the room returns to free speech.
+  chirp::voice::LeaveRoomRequest leave;
+  leave.set_user_id("creator");
+  leave.set_room_id(room);
+  HandlePacket(state_, session_,
+               MakePacket(chirp::gateway::LEAVE_ROOM_REQ, 20, leave.SerializeAsString())
+                   .SerializeAsString());
+
+  const auto info = GetRoomInfo(room);
+  ASSERT_TRUE(info.has_value());
+  EXPECT_EQ(info->mic_mode(), chirp::voice::MIC_FREE);
+  EXPECT_TRUE(info->mic_holder_user_id().empty());
+  EXPECT_EQ(info->mic_queue_user_ids_size(), 0);
 }
 
 }  // namespace

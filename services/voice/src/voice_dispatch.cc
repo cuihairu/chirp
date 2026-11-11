@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cstdint>
@@ -475,6 +476,7 @@ void HandleCreateRoom(const std::shared_ptr<VoiceState>& state,
   room->room_name = req.room_name();
   room->max_participants = req.max_participants();
   room->created_at = NowMs();
+  room->host_user_id = req.user_id();  // creator moderates the speaking queue
 
   {
     std::lock_guard<std::mutex> lock(state->mu);
@@ -620,6 +622,12 @@ void HandleLeaveRoom(const std::shared_ptr<VoiceState>& state,
     room->participants.erase(req.user_id());
   }
 
+  // Pull the leaver off the speaking queue / clear the floor if they held it
+  // (VOICE-RT 麦序模式); the room state change fans out separately.
+  if (DetachFromMicQueue(room.get(), req.user_id())) {
+    BroadcastMicQueueState(state, room, req.user_id());
+  }
+
   // Notify other participants
   chirp::voice::ParticipantLeftNotify left_notify;
   left_notify.set_room_id(req.room_id());
@@ -750,6 +758,364 @@ void HandleSetDeafen(const std::shared_ptr<VoiceState>& state,
       state, session, pkt, chirp::gateway::SET_DEAFEN_RESP, true);
 }
 
+// ---------------------------------------------------------------------------
+// Speaking queue (VOICE-RT 麦序模式). Rooms run MIC_FREE by default; the host
+// can switch to MIC_MANAGED where only the mic holder speaks and applicants
+// wait in a FIFO. Every mutation fans a MicQueueStateNotify to the room (the
+// acting user reads the outcome from their RESP, which carries the same
+// snapshot minus the queue list).
+// ---------------------------------------------------------------------------
+
+void BroadcastMicQueueState(const std::shared_ptr<VoiceState>& state,
+                            const std::shared_ptr<VoiceRoom>& room,
+                            const std::string& exclude_user) {
+  chirp::voice::MicQueueStateNotify notify;
+  notify.set_room_id(room->room_id);
+  {
+    std::lock_guard<std::mutex> lock(room->mu);
+    notify.set_mode(room->mic_mode);
+    notify.set_holder_user_id(room->mic_holder_user_id);
+    for (const auto& uid : room->mic_queue) {
+      notify.add_queue_user_ids(uid);
+    }
+  }
+  notify.set_timestamp(NowMs());
+  BroadcastToRoom(room, chirp::gateway::MIC_QUEUE_STATE_NOTIFY,
+                  notify.SerializeAsString(), state, exclude_user);
+}
+
+// Fills the shared ack fields (holder + queue depth) from the current state.
+// Caller holds no lock; the room lock is taken here.
+void FillMicQueueSnapshot(const std::shared_ptr<VoiceRoom>& room,
+                          chirp::voice::MicQueueResponse* resp) {
+  std::lock_guard<std::mutex> lock(room->mu);
+  resp->set_holder_user_id(room->mic_holder_user_id);
+  resp->set_queue_depth(static_cast<int32_t>(room->mic_queue.size()));
+}
+
+bool DetachFromMicQueue(VoiceRoom* room, const std::string& user_id) {
+  bool changed = false;
+  {
+    std::lock_guard<std::mutex> lock(room->mu);
+    for (auto it = room->mic_queue.begin(); it != room->mic_queue.end(); ++it) {
+      if (*it == user_id) {
+        room->mic_queue.erase(it);
+        changed = true;
+        break;
+      }
+    }
+    if (room->mic_holder_user_id == user_id) {
+      room->mic_holder_user_id.clear();
+      changed = true;
+    }
+    // The moderation setup belongs to the host: when they walk, the room
+    // falls back to free speech rather than stranding a managed room that
+    // nobody can approve in.
+    if (room->host_user_id == user_id &&
+        (room->mic_mode != chirp::voice::MIC_FREE || !room->mic_queue.empty())) {
+      room->mic_mode = chirp::voice::MIC_FREE;
+      room->mic_queue.clear();
+      room->mic_holder_user_id.clear();
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+// Host check shared by the three host-only ops (mode switch, approve, grant).
+// There is no PERMISSION_DENIED code in common.proto; the established
+// permission failure here is AUTH_FAILED.
+bool RequireHost(const std::shared_ptr<VoiceRoom>& room,
+                 const std::string& actor,
+                 chirp::voice::MicQueueResponse* resp) {
+  std::lock_guard<std::mutex> lock(room->mu);
+  if (room->host_user_id == actor) {
+    return true;
+  }
+  resp->set_code(chirp::common::AUTH_FAILED);
+  resp->set_server_time(NowMs());
+  return false;
+}
+
+void HandleSetMicMode(const std::shared_ptr<VoiceState>& state,
+                      const std::shared_ptr<chirp::network::Session>& session,
+                      const chirp::gateway::Packet& pkt) {
+  chirp::voice::SetMicModeRequest req;
+  chirp::voice::MicQueueResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size())) ||
+      (req.mode() != chirp::voice::MIC_FREE && req.mode() != chirp::voice::MIC_MANAGED)) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::SET_MIC_MODE_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+  if (!AuthorizeActor(state, session, pkt, chirp::gateway::SET_MIC_MODE_RESP,
+                      req.user_id(), &resp).has_value()) {
+    return;
+  }
+
+  const auto room = FindRoom(state, req.room_id());
+  if (!room) {
+    resp.set_code(chirp::common::USER_NOT_FOUND);  // room not found
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::SET_MIC_MODE_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+  if (!RequireHost(room, req.user_id(), &resp)) {
+    SendPacket(session, chirp::gateway::SET_MIC_MODE_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  bool changed = false;
+  {
+    std::lock_guard<std::mutex> lock(room->mu);
+    if (room->mic_mode != req.mode()) {
+      room->mic_mode = req.mode();
+      // Leaving managed mode retires the whole queue; the floor clears too.
+      room->mic_queue.clear();
+      room->mic_holder_user_id.clear();
+      changed = true;
+    }
+  }
+
+  FillMicQueueSnapshot(room, &resp);
+  resp.set_code(chirp::common::OK);
+  resp.set_server_time(NowMs());
+  SendPacket(session, chirp::gateway::SET_MIC_MODE_RESP, pkt.sequence(), resp.SerializeAsString());
+  if (changed) {
+    BroadcastMicQueueState(state, room, req.user_id());
+  }
+}
+
+void HandleMicQueueApply(const std::shared_ptr<VoiceState>& state,
+                         const std::shared_ptr<chirp::network::Session>& session,
+                         const chirp::gateway::Packet& pkt) {
+  chirp::voice::MicQueueApplyRequest req;
+  chirp::voice::MicQueueResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::MIC_QUEUE_APPLY_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+  if (!AuthorizeActor(state, session, pkt, chirp::gateway::MIC_QUEUE_APPLY_RESP,
+                      req.user_id(), &resp).has_value()) {
+    return;
+  }
+
+  const auto room = FindRoom(state, req.room_id());
+  if (!room) {
+    resp.set_code(chirp::common::USER_NOT_FOUND);  // room not found
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::MIC_QUEUE_APPLY_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  bool joined = false;
+  {
+    std::lock_guard<std::mutex> lock(room->mu);
+    if (room->participants.find(req.user_id()) == room->participants.end()) {
+      resp.set_code(chirp::common::USER_NOT_FOUND);  // not a participant
+      resp.set_server_time(NowMs());
+      SendPacket(session, chirp::gateway::MIC_QUEUE_APPLY_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    // A free-for-all room has no queue; applying is a client bug.
+    if (room->mic_mode != chirp::voice::MIC_MANAGED) {
+      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_server_time(NowMs());
+      SendPacket(session, chirp::gateway::MIC_QUEUE_APPLY_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    // Idempotent: holding the floor or already waiting just re-acks.
+    if (room->mic_holder_user_id != req.user_id() &&
+        std::find(room->mic_queue.begin(), room->mic_queue.end(), req.user_id()) ==
+            room->mic_queue.end()) {
+      room->mic_queue.push_back(req.user_id());
+      joined = true;
+    }
+  }
+
+  FillMicQueueSnapshot(room, &resp);
+  resp.set_code(chirp::common::OK);
+  resp.set_server_time(NowMs());
+  SendPacket(session, chirp::gateway::MIC_QUEUE_APPLY_RESP, pkt.sequence(), resp.SerializeAsString());
+  if (joined) {
+    BroadcastMicQueueState(state, room, req.user_id());
+  }
+}
+
+// Approve pops the queue into the floor. Approving while someone still holds
+// the mic displaces them (host judgement call, same as a grant).
+void HandleMicQueueApprove(const std::shared_ptr<VoiceState>& state,
+                           const std::shared_ptr<chirp::network::Session>& session,
+                           const chirp::gateway::Packet& pkt) {
+  chirp::voice::MicQueueApproveRequest req;
+  chirp::voice::MicQueueResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::MIC_QUEUE_APPROVE_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+  if (!AuthorizeActor(state, session, pkt, chirp::gateway::MIC_QUEUE_APPROVE_RESP,
+                      req.user_id(), &resp).has_value()) {
+    return;
+  }
+
+  const auto room = FindRoom(state, req.room_id());
+  if (!room) {
+    resp.set_code(chirp::common::USER_NOT_FOUND);  // room not found
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::MIC_QUEUE_APPROVE_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+  if (!RequireHost(room, req.user_id(), &resp)) {
+    SendPacket(session, chirp::gateway::MIC_QUEUE_APPROVE_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(room->mu);
+    std::string target = req.target_user_id();
+    if (target.empty()) {
+      if (room->mic_queue.empty()) {
+        resp.set_code(chirp::common::INVALID_PARAM);  // nothing to approve
+        resp.set_server_time(NowMs());
+        SendPacket(session, chirp::gateway::MIC_QUEUE_APPROVE_RESP, pkt.sequence(), resp.SerializeAsString());
+        return;
+      }
+      target = room->mic_queue.front();
+      room->mic_queue.erase(room->mic_queue.begin());
+    } else {
+      auto it = std::find(room->mic_queue.begin(), room->mic_queue.end(), target);
+      if (it == room->mic_queue.end()) {
+        resp.set_code(chirp::common::USER_NOT_FOUND);  // not an applicant
+        resp.set_server_time(NowMs());
+        SendPacket(session, chirp::gateway::MIC_QUEUE_APPROVE_RESP, pkt.sequence(), resp.SerializeAsString());
+        return;
+      }
+      room->mic_queue.erase(it);
+    }
+    room->mic_holder_user_id = target;
+  }
+
+  FillMicQueueSnapshot(room, &resp);
+  resp.set_code(chirp::common::OK);
+  resp.set_server_time(NowMs());
+  SendPacket(session, chirp::gateway::MIC_QUEUE_APPROVE_RESP, pkt.sequence(), resp.SerializeAsString());
+  BroadcastMicQueueState(state, room, req.user_id());
+}
+
+// 下麦: the holder steps down, or the host pulls them off. Nobody else.
+void HandleMicQueueRelease(const std::shared_ptr<VoiceState>& state,
+                           const std::shared_ptr<chirp::network::Session>& session,
+                           const chirp::gateway::Packet& pkt) {
+  chirp::voice::MicQueueReleaseRequest req;
+  chirp::voice::MicQueueResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::MIC_QUEUE_RELEASE_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+  if (!AuthorizeActor(state, session, pkt, chirp::gateway::MIC_QUEUE_RELEASE_RESP,
+                      req.user_id(), &resp).has_value()) {
+    return;
+  }
+
+  const auto room = FindRoom(state, req.room_id());
+  if (!room) {
+    resp.set_code(chirp::common::USER_NOT_FOUND);  // room not found
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::MIC_QUEUE_RELEASE_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  bool released = false;
+  {
+    std::lock_guard<std::mutex> lock(room->mu);
+    if (room->participants.find(req.user_id()) == room->participants.end()) {
+      resp.set_code(chirp::common::USER_NOT_FOUND);  // not a participant
+      resp.set_server_time(NowMs());
+      SendPacket(session, chirp::gateway::MIC_QUEUE_RELEASE_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    const bool is_host = room->host_user_id == req.user_id();
+    if (!room->mic_holder_user_id.empty() && room->mic_holder_user_id != req.user_id() && !is_host) {
+      resp.set_code(chirp::common::AUTH_FAILED);  // only the holder or the host
+      resp.set_server_time(NowMs());
+      SendPacket(session, chirp::gateway::MIC_QUEUE_RELEASE_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    if (!room->mic_holder_user_id.empty()) {
+      room->mic_holder_user_id.clear();
+      released = true;
+    }
+  }
+
+  FillMicQueueSnapshot(room, &resp);
+  resp.set_code(chirp::common::OK);  // no holder: idempotent no-op ack
+  resp.set_server_time(NowMs());
+  SendPacket(session, chirp::gateway::MIC_QUEUE_RELEASE_RESP, pkt.sequence(), resp.SerializeAsString());
+  if (released) {
+    BroadcastMicQueueState(state, room, req.user_id());
+  }
+}
+
+// 切麦: the host hands the floor straight to a member, bypassing the queue.
+void HandleMicQueueGrant(const std::shared_ptr<VoiceState>& state,
+                         const std::shared_ptr<chirp::network::Session>& session,
+                         const chirp::gateway::Packet& pkt) {
+  chirp::voice::MicQueueGrantRequest req;
+  chirp::voice::MicQueueResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size())) ||
+      req.target_user_id().empty()) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::MIC_QUEUE_GRANT_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+  if (!AuthorizeActor(state, session, pkt, chirp::gateway::MIC_QUEUE_GRANT_RESP,
+                      req.user_id(), &resp).has_value()) {
+    return;
+  }
+
+  const auto room = FindRoom(state, req.room_id());
+  if (!room) {
+    resp.set_code(chirp::common::USER_NOT_FOUND);  // room not found
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::MIC_QUEUE_GRANT_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+  if (!RequireHost(room, req.user_id(), &resp)) {
+    SendPacket(session, chirp::gateway::MIC_QUEUE_GRANT_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(room->mu);
+    if (room->participants.find(req.target_user_id()) == room->participants.end()) {
+      resp.set_code(chirp::common::USER_NOT_FOUND);  // grant target not in room
+      resp.set_server_time(NowMs());
+      SendPacket(session, chirp::gateway::MIC_QUEUE_GRANT_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    // Granting someone already waiting pulls them off the queue.
+    auto it = std::find(room->mic_queue.begin(), room->mic_queue.end(), req.target_user_id());
+    if (it != room->mic_queue.end()) {
+      room->mic_queue.erase(it);
+    }
+    room->mic_holder_user_id = req.target_user_id();
+  }
+
+  FillMicQueueSnapshot(room, &resp);
+  resp.set_code(chirp::common::OK);
+  resp.set_server_time(NowMs());
+  SendPacket(session, chirp::gateway::MIC_QUEUE_GRANT_RESP, pkt.sequence(), resp.SerializeAsString());
+  BroadcastMicQueueState(state, room, req.user_id());
+}
+
 void HandleGetRoomInfo(const std::shared_ptr<VoiceState>& state,
                        const std::shared_ptr<chirp::network::Session>& session,
                        const chirp::gateway::Packet& pkt) {
@@ -782,6 +1148,12 @@ void HandleGetRoomInfo(const std::shared_ptr<VoiceState>& state,
     resp.set_room_type(room->room_type);
     for (const auto& kv : room->participants) {
       *resp.add_participants() = kv.second;
+    }
+    // Speaking-queue snapshot (VOICE-RT 麦序模式) for late joiners.
+    resp.set_mic_mode(room->mic_mode);
+    resp.set_mic_holder_user_id(room->mic_holder_user_id);
+    for (const auto& uid : room->mic_queue) {
+      resp.add_mic_queue_user_ids(uid);
     }
   }
   SendPacket(session, chirp::gateway::GET_ROOM_INFO_RESP, pkt.sequence(), resp.SerializeAsString());
@@ -952,6 +1324,10 @@ void HandleDisconnect(const std::shared_ptr<VoiceState>& state,
         room->participants.erase(user_id);
       }
 
+      if (DetachFromMicQueue(room.get(), user_id)) {
+        BroadcastMicQueueState(state, room, user_id);
+      }
+
       chirp::voice::ParticipantLeftNotify left_notify;
       left_notify.set_room_id(room_id);
       left_notify.set_user_id(user_id);
@@ -1076,6 +1452,21 @@ void HandlePacket(const std::shared_ptr<VoiceState>& state,
     break;
   case chirp::gateway::SET_DEAFEN_REQ:
     HandleSetDeafen(state, session, pkt);
+    break;
+  case chirp::gateway::SET_MIC_MODE_REQ:
+    HandleSetMicMode(state, session, pkt);
+    break;
+  case chirp::gateway::MIC_QUEUE_APPLY_REQ:
+    HandleMicQueueApply(state, session, pkt);
+    break;
+  case chirp::gateway::MIC_QUEUE_APPROVE_REQ:
+    HandleMicQueueApprove(state, session, pkt);
+    break;
+  case chirp::gateway::MIC_QUEUE_RELEASE_REQ:
+    HandleMicQueueRelease(state, session, pkt);
+    break;
+  case chirp::gateway::MIC_QUEUE_GRANT_REQ:
+    HandleMicQueueGrant(state, session, pkt);
     break;
   case chirp::gateway::HEARTBEAT_PING: {
     chirp::gateway::HeartbeatPing ping;

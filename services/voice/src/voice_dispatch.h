@@ -48,6 +48,15 @@ struct VoiceRoom {
   int64_t created_at;
 
   std::unordered_map<std::string, chirp::voice::ParticipantInfo> participants;
+
+  // Speaking queue (VOICE-RT 麦序模式): host_user_id is the room creator and
+  // the only actor allowed to switch mode/approve/grant. mic_queue is the FIFO
+  // of applicants; mic_holder_user_id is the member currently holding the
+  // floor. All guarded by mu.
+  std::string host_user_id;
+  chirp::voice::MicMode mic_mode = chirp::voice::MIC_FREE;
+  std::string mic_holder_user_id;
+  std::vector<std::string> mic_queue;
   std::mutex mu;
 };
 
@@ -153,6 +162,31 @@ void HandleSetMute(const std::shared_ptr<VoiceState>& state,
 void HandleSetDeafen(const std::shared_ptr<VoiceState>& state,
                      const std::shared_ptr<chirp::network::Session>& session,
                      const chirp::gateway::Packet& pkt);
+// Speaking-queue moderation (VOICE-RT 麦序模式). Host-only ops answer
+// AUTH_FAILED for everyone else; queue state is broadcast on every mutation.
+void BroadcastMicQueueState(const std::shared_ptr<VoiceState>& state,
+                            const std::shared_ptr<VoiceRoom>& room,
+                            const std::string& exclude_user);
+void HandleSetMicMode(const std::shared_ptr<VoiceState>& state,
+                      const std::shared_ptr<chirp::network::Session>& session,
+                      const chirp::gateway::Packet& pkt);
+void HandleMicQueueApply(const std::shared_ptr<VoiceState>& state,
+                         const std::shared_ptr<chirp::network::Session>& session,
+                         const chirp::gateway::Packet& pkt);
+void HandleMicQueueApprove(const std::shared_ptr<VoiceState>& state,
+                           const std::shared_ptr<chirp::network::Session>& session,
+                           const chirp::gateway::Packet& pkt);
+void HandleMicQueueRelease(const std::shared_ptr<VoiceState>& state,
+                           const std::shared_ptr<chirp::network::Session>& session,
+                           const chirp::gateway::Packet& pkt);
+void HandleMicQueueGrant(const std::shared_ptr<VoiceState>& state,
+                         const std::shared_ptr<chirp::network::Session>& session,
+                         const chirp::gateway::Packet& pkt);
+// Drops a departing member from the speaking queue / clears the floor if they
+// held it; also resets a managed room to MIC_FREE when its host leaves (the
+// moderation ends with the host's presence). Returns true when the queue
+// state changed so the caller broadcasts a MicQueueStateNotify.
+bool DetachFromMicQueue(VoiceRoom* room, const std::string& user_id);
 void HandleGetRoomInfo(const std::shared_ptr<VoiceState>& state,
                        const std::shared_ptr<chirp::network::Session>& session,
                        const chirp::gateway::Packet& pkt);
