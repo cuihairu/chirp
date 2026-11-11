@@ -112,6 +112,84 @@ export function participantStateToJSON(object: ParticipantState): string {
   }
 }
 
+/**
+ * Host-controlled speaking queue (麦序模式, VOICE-RT): rooms run MIC_FREE
+ * (the default, everyone may speak) or MIC_MANAGED (only the mic holder
+ * speaks; the host approves applications off a FIFO queue).
+ */
+export enum MicMode {
+  MIC_FREE = 0,
+  MIC_MANAGED = 1,
+  UNRECOGNIZED = -1,
+}
+
+export function micModeFromJSON(object: any): MicMode {
+  switch (object) {
+    case 0:
+    case "MIC_FREE":
+      return MicMode.MIC_FREE;
+    case 1:
+    case "MIC_MANAGED":
+      return MicMode.MIC_MANAGED;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return MicMode.UNRECOGNIZED;
+  }
+}
+
+export function micModeToJSON(object: MicMode): string {
+  switch (object) {
+    case MicMode.MIC_FREE:
+      return "MIC_FREE";
+    case MicMode.MIC_MANAGED:
+      return "MIC_MANAGED";
+    case MicMode.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
+/**
+ * Media delivery tier (大规模旁路分级, VOICE-RT): the server classifies each
+ * room and the clients configure their engine accordingly - small rooms mix
+ * every stream, large rooms forward through the SFU bypass.
+ */
+export enum MediaTier {
+  /** FULL_MIX - peer mesh with full mixing (small rooms) */
+  FULL_MIX = 0,
+  /** FORWARD_BYPASS - SFU forwarding bypass (large rooms) */
+  FORWARD_BYPASS = 1,
+  UNRECOGNIZED = -1,
+}
+
+export function mediaTierFromJSON(object: any): MediaTier {
+  switch (object) {
+    case 0:
+    case "FULL_MIX":
+      return MediaTier.FULL_MIX;
+    case 1:
+    case "FORWARD_BYPASS":
+      return MediaTier.FORWARD_BYPASS;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return MediaTier.UNRECOGNIZED;
+  }
+}
+
+export function mediaTierToJSON(object: MediaTier): string {
+  switch (object) {
+    case MediaTier.FULL_MIX:
+      return "FULL_MIX";
+    case MediaTier.FORWARD_BYPASS:
+      return "FORWARD_BYPASS";
+    case MediaTier.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
 /** Create voice room */
 export interface CreateRoomRequest {
   userId: string;
@@ -162,6 +240,13 @@ export interface JoinRoomResponse {
   participantIds: string[];
   serverTime: number;
   iceServers: IceServer[];
+  /**
+   * Delivery tier the server picked for this room (VOICE-RT 旁路分级);
+   * rtcp_feedback_ms is the tier's receiver-report pacing the engine should
+   * use (smaller tier = more frequent feedback for tight mixing).
+   */
+  mediaTier: MediaTier;
+  rtcpFeedbackMs: number;
 }
 
 /** Leave voice room */
@@ -232,6 +317,10 @@ export interface GetRoomInfoResponse {
   roomType: RoomType;
   participants: ParticipantInfo[];
   maxParticipants: number;
+  /** Speaking queue snapshot for late joiners (VOICE-RT 麦序模式). */
+  micMode: MicMode;
+  micHolderUserId: string;
+  micQueueUserIds: string[];
 }
 
 /** Get user's current room */
@@ -293,6 +382,67 @@ export interface SpeakingNotify {
   roomId: string;
   userId: string;
   speaking: boolean;
+  timestamp: number;
+  /**
+   * 0-100 loudness level from the client's audio stats (0 when speaking is
+   * false); drives the SDK volume callbacks.
+   */
+  volume: number;
+}
+
+/** Set the room's speaking mode (host only). */
+export interface SetMicModeRequest {
+  /** the host */
+  userId: string;
+  roomId: string;
+  mode: MicMode;
+}
+
+/** Apply for the mic (managed mode): joins the FIFO queue. */
+export interface MicQueueApplyRequest {
+  userId: string;
+  roomId: string;
+}
+
+/** Host approves the queue head, or a specific applicant. */
+export interface MicQueueApproveRequest {
+  /** the host */
+  userId: string;
+  roomId: string;
+  /** empty = queue head */
+  targetUserId: string;
+}
+
+/** The holder (or the host) releases the mic (下麦). */
+export interface MicQueueReleaseRequest {
+  userId: string;
+  roomId: string;
+}
+
+/** Host hands the mic straight to a member (切麦), bypassing the queue. */
+export interface MicQueueGrantRequest {
+  /** the host */
+  userId: string;
+  roomId: string;
+  targetUserId: string;
+}
+
+/** Shared ack for the speaking-queue operations. */
+export interface MicQueueResponse {
+  code: ErrorCode;
+  serverTime: number;
+  /** holder after the op */
+  holderUserId: string;
+  /** waiting applicants after the op */
+  queueDepth: number;
+}
+
+/** Broadcast on every mode/holder/queue change. */
+export interface MicQueueStateNotify {
+  roomId: string;
+  mode: MicMode;
+  holderUserId: string;
+  queueUserIds: string[];
   timestamp: number;
 }
 
@@ -886,7 +1036,16 @@ export const JoinRoomRequest: MessageFns<JoinRoomRequest> = {
 };
 
 function createBaseJoinRoomResponse(): JoinRoomResponse {
-  return { code: 0, roomId: "", sdpAnswer: "", participantIds: [], serverTime: 0, iceServers: [] };
+  return {
+    code: 0,
+    roomId: "",
+    sdpAnswer: "",
+    participantIds: [],
+    serverTime: 0,
+    iceServers: [],
+    mediaTier: 0,
+    rtcpFeedbackMs: 0,
+  };
 }
 
 export const JoinRoomResponse: MessageFns<JoinRoomResponse> = {
@@ -908,6 +1067,12 @@ export const JoinRoomResponse: MessageFns<JoinRoomResponse> = {
     }
     for (const v of message.iceServers) {
       IceServer.encode(v!, writer.uint32(50).fork()).join();
+    }
+    if (message.mediaTier !== 0) {
+      writer.uint32(56).int32(message.mediaTier);
+    }
+    if (message.rtcpFeedbackMs !== 0) {
+      writer.uint32(64).int32(message.rtcpFeedbackMs);
     }
     return writer;
   },
@@ -973,6 +1138,22 @@ export const JoinRoomResponse: MessageFns<JoinRoomResponse> = {
             message.iceServers.push(IceServer.decode(reader, reader.uint32()));
             continue;
           }
+          case 7: {
+            if (tag !== 56) {
+              break;
+            }
+
+            message.mediaTier = reader.int32() as any;
+            continue;
+          }
+          case 8: {
+            if (tag !== 64) {
+              break;
+            }
+
+            message.rtcpFeedbackMs = reader.int32();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -1013,6 +1194,16 @@ export const JoinRoomResponse: MessageFns<JoinRoomResponse> = {
         : globalThis.Array.isArray(object?.ice_servers)
         ? object.ice_servers.map((e: any) => IceServer.fromJSON(e))
         : [],
+      mediaTier: isSet(object.mediaTier)
+        ? mediaTierFromJSON(object.mediaTier)
+        : isSet(object.media_tier)
+        ? mediaTierFromJSON(object.media_tier)
+        : 0,
+      rtcpFeedbackMs: isSet(object.rtcpFeedbackMs)
+        ? globalThis.Number(object.rtcpFeedbackMs)
+        : isSet(object.rtcp_feedback_ms)
+        ? globalThis.Number(object.rtcp_feedback_ms)
+        : 0,
     };
   },
 
@@ -1036,6 +1227,12 @@ export const JoinRoomResponse: MessageFns<JoinRoomResponse> = {
     if (message.iceServers?.length) {
       obj.iceServers = message.iceServers.map((e) => IceServer.toJSON(e));
     }
+    if (message.mediaTier !== 0) {
+      obj.mediaTier = mediaTierToJSON(message.mediaTier);
+    }
+    if (message.rtcpFeedbackMs !== 0) {
+      obj.rtcpFeedbackMs = Math.round(message.rtcpFeedbackMs);
+    }
     return obj;
   },
 
@@ -1050,6 +1247,8 @@ export const JoinRoomResponse: MessageFns<JoinRoomResponse> = {
     message.participantIds = object.participantIds?.map((e) => e) || [];
     message.serverTime = object.serverTime ?? 0;
     message.iceServers = object.iceServers?.map((e) => IceServer.fromPartial(e)) || [];
+    message.mediaTier = object.mediaTier ?? 0;
+    message.rtcpFeedbackMs = object.rtcpFeedbackMs ?? 0;
     return message;
   },
 };
@@ -1993,7 +2192,17 @@ export const GetRoomInfoRequest: MessageFns<GetRoomInfoRequest> = {
 };
 
 function createBaseGetRoomInfoResponse(): GetRoomInfoResponse {
-  return { code: 0, roomId: "", roomName: "", roomType: 0, participants: [], maxParticipants: 0 };
+  return {
+    code: 0,
+    roomId: "",
+    roomName: "",
+    roomType: 0,
+    participants: [],
+    maxParticipants: 0,
+    micMode: 0,
+    micHolderUserId: "",
+    micQueueUserIds: [],
+  };
 }
 
 export const GetRoomInfoResponse: MessageFns<GetRoomInfoResponse> = {
@@ -2015,6 +2224,15 @@ export const GetRoomInfoResponse: MessageFns<GetRoomInfoResponse> = {
     }
     if (message.maxParticipants !== 0) {
       writer.uint32(48).int32(message.maxParticipants);
+    }
+    if (message.micMode !== 0) {
+      writer.uint32(56).int32(message.micMode);
+    }
+    if (message.micHolderUserId !== "") {
+      writer.uint32(66).string(message.micHolderUserId);
+    }
+    for (const v of message.micQueueUserIds) {
+      writer.uint32(74).string(v!);
     }
     return writer;
   },
@@ -2080,6 +2298,30 @@ export const GetRoomInfoResponse: MessageFns<GetRoomInfoResponse> = {
             message.maxParticipants = reader.int32();
             continue;
           }
+          case 7: {
+            if (tag !== 56) {
+              break;
+            }
+
+            message.micMode = reader.int32() as any;
+            continue;
+          }
+          case 8: {
+            if (tag !== 66) {
+              break;
+            }
+
+            message.micHolderUserId = reader.string();
+            continue;
+          }
+          case 9: {
+            if (tag !== 74) {
+              break;
+            }
+
+            message.micQueueUserIds.push(reader.string());
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -2118,6 +2360,21 @@ export const GetRoomInfoResponse: MessageFns<GetRoomInfoResponse> = {
         : isSet(object.max_participants)
         ? globalThis.Number(object.max_participants)
         : 0,
+      micMode: isSet(object.micMode)
+        ? micModeFromJSON(object.micMode)
+        : isSet(object.mic_mode)
+        ? micModeFromJSON(object.mic_mode)
+        : 0,
+      micHolderUserId: isSet(object.micHolderUserId)
+        ? globalThis.String(object.micHolderUserId)
+        : isSet(object.mic_holder_user_id)
+        ? globalThis.String(object.mic_holder_user_id)
+        : "",
+      micQueueUserIds: globalThis.Array.isArray(object?.micQueueUserIds)
+        ? object.micQueueUserIds.map((e: any) => globalThis.String(e))
+        : globalThis.Array.isArray(object?.mic_queue_user_ids)
+        ? object.mic_queue_user_ids.map((e: any) => globalThis.String(e))
+        : [],
     };
   },
 
@@ -2141,6 +2398,15 @@ export const GetRoomInfoResponse: MessageFns<GetRoomInfoResponse> = {
     if (message.maxParticipants !== 0) {
       obj.maxParticipants = Math.round(message.maxParticipants);
     }
+    if (message.micMode !== 0) {
+      obj.micMode = micModeToJSON(message.micMode);
+    }
+    if (message.micHolderUserId !== "") {
+      obj.micHolderUserId = message.micHolderUserId;
+    }
+    if (message.micQueueUserIds?.length) {
+      obj.micQueueUserIds = message.micQueueUserIds;
+    }
     return obj;
   },
 
@@ -2155,6 +2421,9 @@ export const GetRoomInfoResponse: MessageFns<GetRoomInfoResponse> = {
     message.roomType = object.roomType ?? 0;
     message.participants = object.participants?.map((e) => ParticipantInfo.fromPartial(e)) || [];
     message.maxParticipants = object.maxParticipants ?? 0;
+    message.micMode = object.micMode ?? 0;
+    message.micHolderUserId = object.micHolderUserId ?? "";
+    message.micQueueUserIds = object.micQueueUserIds?.map((e) => e) || [];
     return message;
   },
 };
@@ -3079,7 +3348,7 @@ export const ParticipantStateChangedNotify: MessageFns<ParticipantStateChangedNo
 };
 
 function createBaseSpeakingNotify(): SpeakingNotify {
-  return { roomId: "", userId: "", speaking: false, timestamp: 0 };
+  return { roomId: "", userId: "", speaking: false, timestamp: 0, volume: 0 };
 }
 
 export const SpeakingNotify: MessageFns<SpeakingNotify> = {
@@ -3095,6 +3364,9 @@ export const SpeakingNotify: MessageFns<SpeakingNotify> = {
     }
     if (message.timestamp !== 0) {
       writer.uint32(32).int64(message.timestamp);
+    }
+    if (message.volume !== 0) {
+      writer.uint32(40).int32(message.volume);
     }
     return writer;
   },
@@ -3144,6 +3416,14 @@ export const SpeakingNotify: MessageFns<SpeakingNotify> = {
             message.timestamp = longToNumber(reader.int64());
             continue;
           }
+          case 5: {
+            if (tag !== 40) {
+              break;
+            }
+
+            message.volume = reader.int32();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -3170,6 +3450,7 @@ export const SpeakingNotify: MessageFns<SpeakingNotify> = {
         : "",
       speaking: isSet(object.speaking) ? globalThis.Boolean(object.speaking) : false,
       timestamp: isSet(object.timestamp) ? globalThis.Number(object.timestamp) : 0,
+      volume: isSet(object.volume) ? globalThis.Number(object.volume) : 0,
     };
   },
 
@@ -3187,6 +3468,9 @@ export const SpeakingNotify: MessageFns<SpeakingNotify> = {
     if (message.timestamp !== 0) {
       obj.timestamp = Math.round(message.timestamp);
     }
+    if (message.volume !== 0) {
+      obj.volume = Math.round(message.volume);
+    }
     return obj;
   },
 
@@ -3198,6 +3482,802 @@ export const SpeakingNotify: MessageFns<SpeakingNotify> = {
     message.roomId = object.roomId ?? "";
     message.userId = object.userId ?? "";
     message.speaking = object.speaking ?? false;
+    message.timestamp = object.timestamp ?? 0;
+    message.volume = object.volume ?? 0;
+    return message;
+  },
+};
+
+function createBaseSetMicModeRequest(): SetMicModeRequest {
+  return { userId: "", roomId: "", mode: 0 };
+}
+
+export const SetMicModeRequest: MessageFns<SetMicModeRequest> = {
+  encode(message: SetMicModeRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== "") {
+      writer.uint32(10).string(message.userId);
+    }
+    if (message.roomId !== "") {
+      writer.uint32(18).string(message.roomId);
+    }
+    if (message.mode !== 0) {
+      writer.uint32(24).int32(message.mode);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SetMicModeRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+    if (previousRecursionDepth >= 100) {
+      throw new globalThis.Error("protobuf decode recursion limit exceeded");
+    }
+    (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+    try {
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBaseSetMicModeRequest();
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 10) {
+              break;
+            }
+
+            message.userId = reader.string();
+            continue;
+          }
+          case 2: {
+            if (tag !== 18) {
+              break;
+            }
+
+            message.roomId = reader.string();
+            continue;
+          }
+          case 3: {
+            if (tag !== 24) {
+              break;
+            }
+
+            message.mode = reader.int32() as any;
+            continue;
+          }
+        }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
+      }
+      return message;
+    } finally {
+      (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+    }
+  },
+
+  fromJSON(object: any): SetMicModeRequest {
+    return {
+      userId: isSet(object.userId)
+        ? globalThis.String(object.userId)
+        : isSet(object.user_id)
+        ? globalThis.String(object.user_id)
+        : "",
+      roomId: isSet(object.roomId)
+        ? globalThis.String(object.roomId)
+        : isSet(object.room_id)
+        ? globalThis.String(object.room_id)
+        : "",
+      mode: isSet(object.mode) ? micModeFromJSON(object.mode) : 0,
+    };
+  },
+
+  toJSON(message: SetMicModeRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== "") {
+      obj.userId = message.userId;
+    }
+    if (message.roomId !== "") {
+      obj.roomId = message.roomId;
+    }
+    if (message.mode !== 0) {
+      obj.mode = micModeToJSON(message.mode);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SetMicModeRequest>, I>>(base?: I): SetMicModeRequest {
+    return SetMicModeRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SetMicModeRequest>, I>>(object: I): SetMicModeRequest {
+    const message = createBaseSetMicModeRequest();
+    message.userId = object.userId ?? "";
+    message.roomId = object.roomId ?? "";
+    message.mode = object.mode ?? 0;
+    return message;
+  },
+};
+
+function createBaseMicQueueApplyRequest(): MicQueueApplyRequest {
+  return { userId: "", roomId: "" };
+}
+
+export const MicQueueApplyRequest: MessageFns<MicQueueApplyRequest> = {
+  encode(message: MicQueueApplyRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== "") {
+      writer.uint32(10).string(message.userId);
+    }
+    if (message.roomId !== "") {
+      writer.uint32(18).string(message.roomId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MicQueueApplyRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+    if (previousRecursionDepth >= 100) {
+      throw new globalThis.Error("protobuf decode recursion limit exceeded");
+    }
+    (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+    try {
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBaseMicQueueApplyRequest();
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 10) {
+              break;
+            }
+
+            message.userId = reader.string();
+            continue;
+          }
+          case 2: {
+            if (tag !== 18) {
+              break;
+            }
+
+            message.roomId = reader.string();
+            continue;
+          }
+        }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
+      }
+      return message;
+    } finally {
+      (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+    }
+  },
+
+  fromJSON(object: any): MicQueueApplyRequest {
+    return {
+      userId: isSet(object.userId)
+        ? globalThis.String(object.userId)
+        : isSet(object.user_id)
+        ? globalThis.String(object.user_id)
+        : "",
+      roomId: isSet(object.roomId)
+        ? globalThis.String(object.roomId)
+        : isSet(object.room_id)
+        ? globalThis.String(object.room_id)
+        : "",
+    };
+  },
+
+  toJSON(message: MicQueueApplyRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== "") {
+      obj.userId = message.userId;
+    }
+    if (message.roomId !== "") {
+      obj.roomId = message.roomId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MicQueueApplyRequest>, I>>(base?: I): MicQueueApplyRequest {
+    return MicQueueApplyRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MicQueueApplyRequest>, I>>(object: I): MicQueueApplyRequest {
+    const message = createBaseMicQueueApplyRequest();
+    message.userId = object.userId ?? "";
+    message.roomId = object.roomId ?? "";
+    return message;
+  },
+};
+
+function createBaseMicQueueApproveRequest(): MicQueueApproveRequest {
+  return { userId: "", roomId: "", targetUserId: "" };
+}
+
+export const MicQueueApproveRequest: MessageFns<MicQueueApproveRequest> = {
+  encode(message: MicQueueApproveRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== "") {
+      writer.uint32(10).string(message.userId);
+    }
+    if (message.roomId !== "") {
+      writer.uint32(18).string(message.roomId);
+    }
+    if (message.targetUserId !== "") {
+      writer.uint32(26).string(message.targetUserId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MicQueueApproveRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+    if (previousRecursionDepth >= 100) {
+      throw new globalThis.Error("protobuf decode recursion limit exceeded");
+    }
+    (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+    try {
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBaseMicQueueApproveRequest();
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 10) {
+              break;
+            }
+
+            message.userId = reader.string();
+            continue;
+          }
+          case 2: {
+            if (tag !== 18) {
+              break;
+            }
+
+            message.roomId = reader.string();
+            continue;
+          }
+          case 3: {
+            if (tag !== 26) {
+              break;
+            }
+
+            message.targetUserId = reader.string();
+            continue;
+          }
+        }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
+      }
+      return message;
+    } finally {
+      (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+    }
+  },
+
+  fromJSON(object: any): MicQueueApproveRequest {
+    return {
+      userId: isSet(object.userId)
+        ? globalThis.String(object.userId)
+        : isSet(object.user_id)
+        ? globalThis.String(object.user_id)
+        : "",
+      roomId: isSet(object.roomId)
+        ? globalThis.String(object.roomId)
+        : isSet(object.room_id)
+        ? globalThis.String(object.room_id)
+        : "",
+      targetUserId: isSet(object.targetUserId)
+        ? globalThis.String(object.targetUserId)
+        : isSet(object.target_user_id)
+        ? globalThis.String(object.target_user_id)
+        : "",
+    };
+  },
+
+  toJSON(message: MicQueueApproveRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== "") {
+      obj.userId = message.userId;
+    }
+    if (message.roomId !== "") {
+      obj.roomId = message.roomId;
+    }
+    if (message.targetUserId !== "") {
+      obj.targetUserId = message.targetUserId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MicQueueApproveRequest>, I>>(base?: I): MicQueueApproveRequest {
+    return MicQueueApproveRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MicQueueApproveRequest>, I>>(object: I): MicQueueApproveRequest {
+    const message = createBaseMicQueueApproveRequest();
+    message.userId = object.userId ?? "";
+    message.roomId = object.roomId ?? "";
+    message.targetUserId = object.targetUserId ?? "";
+    return message;
+  },
+};
+
+function createBaseMicQueueReleaseRequest(): MicQueueReleaseRequest {
+  return { userId: "", roomId: "" };
+}
+
+export const MicQueueReleaseRequest: MessageFns<MicQueueReleaseRequest> = {
+  encode(message: MicQueueReleaseRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== "") {
+      writer.uint32(10).string(message.userId);
+    }
+    if (message.roomId !== "") {
+      writer.uint32(18).string(message.roomId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MicQueueReleaseRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+    if (previousRecursionDepth >= 100) {
+      throw new globalThis.Error("protobuf decode recursion limit exceeded");
+    }
+    (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+    try {
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBaseMicQueueReleaseRequest();
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 10) {
+              break;
+            }
+
+            message.userId = reader.string();
+            continue;
+          }
+          case 2: {
+            if (tag !== 18) {
+              break;
+            }
+
+            message.roomId = reader.string();
+            continue;
+          }
+        }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
+      }
+      return message;
+    } finally {
+      (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+    }
+  },
+
+  fromJSON(object: any): MicQueueReleaseRequest {
+    return {
+      userId: isSet(object.userId)
+        ? globalThis.String(object.userId)
+        : isSet(object.user_id)
+        ? globalThis.String(object.user_id)
+        : "",
+      roomId: isSet(object.roomId)
+        ? globalThis.String(object.roomId)
+        : isSet(object.room_id)
+        ? globalThis.String(object.room_id)
+        : "",
+    };
+  },
+
+  toJSON(message: MicQueueReleaseRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== "") {
+      obj.userId = message.userId;
+    }
+    if (message.roomId !== "") {
+      obj.roomId = message.roomId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MicQueueReleaseRequest>, I>>(base?: I): MicQueueReleaseRequest {
+    return MicQueueReleaseRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MicQueueReleaseRequest>, I>>(object: I): MicQueueReleaseRequest {
+    const message = createBaseMicQueueReleaseRequest();
+    message.userId = object.userId ?? "";
+    message.roomId = object.roomId ?? "";
+    return message;
+  },
+};
+
+function createBaseMicQueueGrantRequest(): MicQueueGrantRequest {
+  return { userId: "", roomId: "", targetUserId: "" };
+}
+
+export const MicQueueGrantRequest: MessageFns<MicQueueGrantRequest> = {
+  encode(message: MicQueueGrantRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== "") {
+      writer.uint32(10).string(message.userId);
+    }
+    if (message.roomId !== "") {
+      writer.uint32(18).string(message.roomId);
+    }
+    if (message.targetUserId !== "") {
+      writer.uint32(26).string(message.targetUserId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MicQueueGrantRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+    if (previousRecursionDepth >= 100) {
+      throw new globalThis.Error("protobuf decode recursion limit exceeded");
+    }
+    (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+    try {
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBaseMicQueueGrantRequest();
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 10) {
+              break;
+            }
+
+            message.userId = reader.string();
+            continue;
+          }
+          case 2: {
+            if (tag !== 18) {
+              break;
+            }
+
+            message.roomId = reader.string();
+            continue;
+          }
+          case 3: {
+            if (tag !== 26) {
+              break;
+            }
+
+            message.targetUserId = reader.string();
+            continue;
+          }
+        }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
+      }
+      return message;
+    } finally {
+      (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+    }
+  },
+
+  fromJSON(object: any): MicQueueGrantRequest {
+    return {
+      userId: isSet(object.userId)
+        ? globalThis.String(object.userId)
+        : isSet(object.user_id)
+        ? globalThis.String(object.user_id)
+        : "",
+      roomId: isSet(object.roomId)
+        ? globalThis.String(object.roomId)
+        : isSet(object.room_id)
+        ? globalThis.String(object.room_id)
+        : "",
+      targetUserId: isSet(object.targetUserId)
+        ? globalThis.String(object.targetUserId)
+        : isSet(object.target_user_id)
+        ? globalThis.String(object.target_user_id)
+        : "",
+    };
+  },
+
+  toJSON(message: MicQueueGrantRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== "") {
+      obj.userId = message.userId;
+    }
+    if (message.roomId !== "") {
+      obj.roomId = message.roomId;
+    }
+    if (message.targetUserId !== "") {
+      obj.targetUserId = message.targetUserId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MicQueueGrantRequest>, I>>(base?: I): MicQueueGrantRequest {
+    return MicQueueGrantRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MicQueueGrantRequest>, I>>(object: I): MicQueueGrantRequest {
+    const message = createBaseMicQueueGrantRequest();
+    message.userId = object.userId ?? "";
+    message.roomId = object.roomId ?? "";
+    message.targetUserId = object.targetUserId ?? "";
+    return message;
+  },
+};
+
+function createBaseMicQueueResponse(): MicQueueResponse {
+  return { code: 0, serverTime: 0, holderUserId: "", queueDepth: 0 };
+}
+
+export const MicQueueResponse: MessageFns<MicQueueResponse> = {
+  encode(message: MicQueueResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    if (message.serverTime !== 0) {
+      writer.uint32(16).int64(message.serverTime);
+    }
+    if (message.holderUserId !== "") {
+      writer.uint32(26).string(message.holderUserId);
+    }
+    if (message.queueDepth !== 0) {
+      writer.uint32(32).int32(message.queueDepth);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MicQueueResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+    if (previousRecursionDepth >= 100) {
+      throw new globalThis.Error("protobuf decode recursion limit exceeded");
+    }
+    (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+    try {
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBaseMicQueueResponse();
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 8) {
+              break;
+            }
+
+            message.code = reader.int32() as any;
+            continue;
+          }
+          case 2: {
+            if (tag !== 16) {
+              break;
+            }
+
+            message.serverTime = longToNumber(reader.int64());
+            continue;
+          }
+          case 3: {
+            if (tag !== 26) {
+              break;
+            }
+
+            message.holderUserId = reader.string();
+            continue;
+          }
+          case 4: {
+            if (tag !== 32) {
+              break;
+            }
+
+            message.queueDepth = reader.int32();
+            continue;
+          }
+        }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
+      }
+      return message;
+    } finally {
+      (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+    }
+  },
+
+  fromJSON(object: any): MicQueueResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      serverTime: isSet(object.serverTime)
+        ? globalThis.Number(object.serverTime)
+        : isSet(object.server_time)
+        ? globalThis.Number(object.server_time)
+        : 0,
+      holderUserId: isSet(object.holderUserId)
+        ? globalThis.String(object.holderUserId)
+        : isSet(object.holder_user_id)
+        ? globalThis.String(object.holder_user_id)
+        : "",
+      queueDepth: isSet(object.queueDepth)
+        ? globalThis.Number(object.queueDepth)
+        : isSet(object.queue_depth)
+        ? globalThis.Number(object.queue_depth)
+        : 0,
+    };
+  },
+
+  toJSON(message: MicQueueResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.serverTime !== 0) {
+      obj.serverTime = Math.round(message.serverTime);
+    }
+    if (message.holderUserId !== "") {
+      obj.holderUserId = message.holderUserId;
+    }
+    if (message.queueDepth !== 0) {
+      obj.queueDepth = Math.round(message.queueDepth);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MicQueueResponse>, I>>(base?: I): MicQueueResponse {
+    return MicQueueResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MicQueueResponse>, I>>(object: I): MicQueueResponse {
+    const message = createBaseMicQueueResponse();
+    message.code = object.code ?? 0;
+    message.serverTime = object.serverTime ?? 0;
+    message.holderUserId = object.holderUserId ?? "";
+    message.queueDepth = object.queueDepth ?? 0;
+    return message;
+  },
+};
+
+function createBaseMicQueueStateNotify(): MicQueueStateNotify {
+  return { roomId: "", mode: 0, holderUserId: "", queueUserIds: [], timestamp: 0 };
+}
+
+export const MicQueueStateNotify: MessageFns<MicQueueStateNotify> = {
+  encode(message: MicQueueStateNotify, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.roomId !== "") {
+      writer.uint32(10).string(message.roomId);
+    }
+    if (message.mode !== 0) {
+      writer.uint32(16).int32(message.mode);
+    }
+    if (message.holderUserId !== "") {
+      writer.uint32(26).string(message.holderUserId);
+    }
+    for (const v of message.queueUserIds) {
+      writer.uint32(34).string(v!);
+    }
+    if (message.timestamp !== 0) {
+      writer.uint32(40).int64(message.timestamp);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MicQueueStateNotify {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+    if (previousRecursionDepth >= 100) {
+      throw new globalThis.Error("protobuf decode recursion limit exceeded");
+    }
+    (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+    try {
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBaseMicQueueStateNotify();
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 10) {
+              break;
+            }
+
+            message.roomId = reader.string();
+            continue;
+          }
+          case 2: {
+            if (tag !== 16) {
+              break;
+            }
+
+            message.mode = reader.int32() as any;
+            continue;
+          }
+          case 3: {
+            if (tag !== 26) {
+              break;
+            }
+
+            message.holderUserId = reader.string();
+            continue;
+          }
+          case 4: {
+            if (tag !== 34) {
+              break;
+            }
+
+            message.queueUserIds.push(reader.string());
+            continue;
+          }
+          case 5: {
+            if (tag !== 40) {
+              break;
+            }
+
+            message.timestamp = longToNumber(reader.int64());
+            continue;
+          }
+        }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
+      }
+      return message;
+    } finally {
+      (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+    }
+  },
+
+  fromJSON(object: any): MicQueueStateNotify {
+    return {
+      roomId: isSet(object.roomId)
+        ? globalThis.String(object.roomId)
+        : isSet(object.room_id)
+        ? globalThis.String(object.room_id)
+        : "",
+      mode: isSet(object.mode) ? micModeFromJSON(object.mode) : 0,
+      holderUserId: isSet(object.holderUserId)
+        ? globalThis.String(object.holderUserId)
+        : isSet(object.holder_user_id)
+        ? globalThis.String(object.holder_user_id)
+        : "",
+      queueUserIds: globalThis.Array.isArray(object?.queueUserIds)
+        ? object.queueUserIds.map((e: any) => globalThis.String(e))
+        : globalThis.Array.isArray(object?.queue_user_ids)
+        ? object.queue_user_ids.map((e: any) => globalThis.String(e))
+        : [],
+      timestamp: isSet(object.timestamp) ? globalThis.Number(object.timestamp) : 0,
+    };
+  },
+
+  toJSON(message: MicQueueStateNotify): unknown {
+    const obj: any = {};
+    if (message.roomId !== "") {
+      obj.roomId = message.roomId;
+    }
+    if (message.mode !== 0) {
+      obj.mode = micModeToJSON(message.mode);
+    }
+    if (message.holderUserId !== "") {
+      obj.holderUserId = message.holderUserId;
+    }
+    if (message.queueUserIds?.length) {
+      obj.queueUserIds = message.queueUserIds;
+    }
+    if (message.timestamp !== 0) {
+      obj.timestamp = Math.round(message.timestamp);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MicQueueStateNotify>, I>>(base?: I): MicQueueStateNotify {
+    return MicQueueStateNotify.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MicQueueStateNotify>, I>>(object: I): MicQueueStateNotify {
+    const message = createBaseMicQueueStateNotify();
+    message.roomId = object.roomId ?? "";
+    message.mode = object.mode ?? 0;
+    message.holderUserId = object.holderUserId ?? "";
+    message.queueUserIds = object.queueUserIds?.map((e) => e) || [];
     message.timestamp = object.timestamp ?? 0;
     return message;
   },

@@ -37,7 +37,8 @@ inline constexpr SpeakingNotify::Impl_::Impl_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         timestamp_{::int64_t{0}},
-        speaking_{false} {}
+        speaking_{false},
+        volume_{0} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR SpeakingNotify::SpeakingNotify(::_pbi::ConstantInitialized)
@@ -115,6 +116,37 @@ struct SetMuteRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SetMuteRequestDefaultTypeInternal _SetMuteRequest_default_instance_;
+
+inline constexpr SetMicModeRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        room_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        mode_{static_cast< ::chirp::voice::MicMode >(0)} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR SetMicModeRequest::SetMicModeRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(SetMicModeRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct SetMicModeRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR SetMicModeRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~SetMicModeRequestDefaultTypeInternal() {}
+  union {
+    SetMicModeRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SetMicModeRequestDefaultTypeInternal _SetMicModeRequest_default_instance_;
 
 inline constexpr SetDeafenResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -342,6 +374,195 @@ struct ParticipantInfoDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ParticipantInfoDefaultTypeInternal _ParticipantInfo_default_instance_;
+
+inline constexpr MicQueueStateNotify::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        queue_user_ids_{},
+        room_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        holder_user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        timestamp_{::int64_t{0}},
+        mode_{static_cast< ::chirp::voice::MicMode >(0)} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR MicQueueStateNotify::MicQueueStateNotify(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(MicQueueStateNotify_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct MicQueueStateNotifyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MicQueueStateNotifyDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MicQueueStateNotifyDefaultTypeInternal() {}
+  union {
+    MicQueueStateNotify _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MicQueueStateNotifyDefaultTypeInternal _MicQueueStateNotify_default_instance_;
+
+inline constexpr MicQueueResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        holder_user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        server_time_{::int64_t{0}},
+        code_{static_cast< ::chirp::common::ErrorCode >(0)},
+        queue_depth_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR MicQueueResponse::MicQueueResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(MicQueueResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct MicQueueResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MicQueueResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MicQueueResponseDefaultTypeInternal() {}
+  union {
+    MicQueueResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MicQueueResponseDefaultTypeInternal _MicQueueResponse_default_instance_;
+
+inline constexpr MicQueueReleaseRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        room_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+PROTOBUF_CONSTEXPR MicQueueReleaseRequest::MicQueueReleaseRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(MicQueueReleaseRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct MicQueueReleaseRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MicQueueReleaseRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MicQueueReleaseRequestDefaultTypeInternal() {}
+  union {
+    MicQueueReleaseRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MicQueueReleaseRequestDefaultTypeInternal _MicQueueReleaseRequest_default_instance_;
+
+inline constexpr MicQueueGrantRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        room_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        target_user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+PROTOBUF_CONSTEXPR MicQueueGrantRequest::MicQueueGrantRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(MicQueueGrantRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct MicQueueGrantRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MicQueueGrantRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MicQueueGrantRequestDefaultTypeInternal() {}
+  union {
+    MicQueueGrantRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MicQueueGrantRequestDefaultTypeInternal _MicQueueGrantRequest_default_instance_;
+
+inline constexpr MicQueueApproveRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        room_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        target_user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+PROTOBUF_CONSTEXPR MicQueueApproveRequest::MicQueueApproveRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(MicQueueApproveRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct MicQueueApproveRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MicQueueApproveRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MicQueueApproveRequestDefaultTypeInternal() {}
+  union {
+    MicQueueApproveRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MicQueueApproveRequestDefaultTypeInternal _MicQueueApproveRequest_default_instance_;
+
+inline constexpr MicQueueApplyRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        room_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+PROTOBUF_CONSTEXPR MicQueueApplyRequest::MicQueueApplyRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(MicQueueApplyRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct MicQueueApplyRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MicQueueApplyRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MicQueueApplyRequestDefaultTypeInternal() {}
+  union {
+    MicQueueApplyRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MicQueueApplyRequestDefaultTypeInternal _MicQueueApplyRequest_default_instance_;
 
 inline constexpr LeaveRoomResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -635,8 +856,10 @@ inline constexpr JoinRoomResponse::Impl_::Impl_(
         sdp_answer_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
+        code_{static_cast< ::chirp::common::ErrorCode >(0)},
+        media_tier_{static_cast< ::chirp::voice::MediaTier >(0)},
         server_time_{::int64_t{0}},
-        code_{static_cast< ::chirp::common::ErrorCode >(0)} {}
+        rtcp_feedback_ms_{0} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR JoinRoomResponse::JoinRoomResponse(::_pbi::ConstantInitialized)
@@ -725,15 +948,20 @@ inline constexpr GetRoomInfoResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         participants_{},
+        mic_queue_user_ids_{},
         room_id_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         room_name_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
+        mic_holder_user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         code_{static_cast< ::chirp::common::ErrorCode >(0)},
         room_type_{static_cast< ::chirp::voice::RoomType >(0)},
-        max_participants_{0} {}
+        max_participants_{0},
+        mic_mode_{static_cast< ::chirp::voice::MicMode >(0)} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR GetRoomInfoResponse::GetRoomInfoResponse(::_pbi::ConstantInitialized)
@@ -790,7 +1018,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 }  // namespace voice
 }  // namespace chirp
 static const ::_pb::EnumDescriptor* PROTOBUF_NONNULL
-    file_level_enum_descriptors_proto_2fvoice_2eproto[2];
+    file_level_enum_descriptors_proto_2fvoice_2eproto[4];
 static constexpr const ::_pb::ServiceDescriptor* PROTOBUF_NONNULL* PROTOBUF_NULLABLE
     file_level_service_descriptors_proto_2fvoice_2eproto = nullptr;
 const ::uint32_t
@@ -845,19 +1073,23 @@ const ::uint32_t
         2,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::chirp::voice::JoinRoomResponse, _impl_._has_bits_),
-        9, // hasbit index offset
+        11, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::chirp::voice::JoinRoomResponse, _impl_.code_),
         PROTOBUF_FIELD_OFFSET(::chirp::voice::JoinRoomResponse, _impl_.room_id_),
         PROTOBUF_FIELD_OFFSET(::chirp::voice::JoinRoomResponse, _impl_.sdp_answer_),
         PROTOBUF_FIELD_OFFSET(::chirp::voice::JoinRoomResponse, _impl_.participant_ids_),
         PROTOBUF_FIELD_OFFSET(::chirp::voice::JoinRoomResponse, _impl_.server_time_),
         PROTOBUF_FIELD_OFFSET(::chirp::voice::JoinRoomResponse, _impl_.ice_servers_),
-        5,
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::JoinRoomResponse, _impl_.media_tier_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::JoinRoomResponse, _impl_.rtcp_feedback_ms_),
+        4,
         2,
         3,
         0,
-        4,
+        6,
         1,
+        5,
+        7,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::chirp::voice::LeaveRoomRequest, _impl_._has_bits_),
         5, // hasbit index offset
@@ -938,19 +1170,25 @@ const ::uint32_t
         0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::chirp::voice::GetRoomInfoResponse, _impl_._has_bits_),
-        9, // hasbit index offset
+        12, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::chirp::voice::GetRoomInfoResponse, _impl_.code_),
         PROTOBUF_FIELD_OFFSET(::chirp::voice::GetRoomInfoResponse, _impl_.room_id_),
         PROTOBUF_FIELD_OFFSET(::chirp::voice::GetRoomInfoResponse, _impl_.room_name_),
         PROTOBUF_FIELD_OFFSET(::chirp::voice::GetRoomInfoResponse, _impl_.room_type_),
         PROTOBUF_FIELD_OFFSET(::chirp::voice::GetRoomInfoResponse, _impl_.participants_),
         PROTOBUF_FIELD_OFFSET(::chirp::voice::GetRoomInfoResponse, _impl_.max_participants_),
-        3,
-        1,
-        2,
-        4,
-        0,
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::GetRoomInfoResponse, _impl_.mic_mode_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::GetRoomInfoResponse, _impl_.mic_holder_user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::GetRoomInfoResponse, _impl_.mic_queue_user_ids_),
         5,
+        2,
+        3,
+        6,
+        0,
+        7,
+        8,
+        4,
+        1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::chirp::voice::GetUserRoomRequest, _impl_._has_bits_),
         4, // hasbit index offset
@@ -1028,15 +1266,82 @@ const ::uint32_t
         2,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::chirp::voice::SpeakingNotify, _impl_._has_bits_),
-        7, // hasbit index offset
+        8, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::chirp::voice::SpeakingNotify, _impl_.room_id_),
         PROTOBUF_FIELD_OFFSET(::chirp::voice::SpeakingNotify, _impl_.user_id_),
         PROTOBUF_FIELD_OFFSET(::chirp::voice::SpeakingNotify, _impl_.speaking_),
         PROTOBUF_FIELD_OFFSET(::chirp::voice::SpeakingNotify, _impl_.timestamp_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::SpeakingNotify, _impl_.volume_),
         0,
         1,
         3,
         2,
+        4,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::SetMicModeRequest, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::SetMicModeRequest, _impl_.user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::SetMicModeRequest, _impl_.room_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::SetMicModeRequest, _impl_.mode_),
+        0,
+        1,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueApplyRequest, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueApplyRequest, _impl_.user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueApplyRequest, _impl_.room_id_),
+        0,
+        1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueApproveRequest, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueApproveRequest, _impl_.user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueApproveRequest, _impl_.room_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueApproveRequest, _impl_.target_user_id_),
+        0,
+        1,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueReleaseRequest, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueReleaseRequest, _impl_.user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueReleaseRequest, _impl_.room_id_),
+        0,
+        1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueGrantRequest, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueGrantRequest, _impl_.user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueGrantRequest, _impl_.room_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueGrantRequest, _impl_.target_user_id_),
+        0,
+        1,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueResponse, _impl_._has_bits_),
+        7, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueResponse, _impl_.server_time_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueResponse, _impl_.holder_user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueResponse, _impl_.queue_depth_),
+        2,
+        1,
+        0,
+        3,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueStateNotify, _impl_._has_bits_),
+        8, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueStateNotify, _impl_.room_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueStateNotify, _impl_.mode_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueStateNotify, _impl_.holder_user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueStateNotify, _impl_.queue_user_ids_),
+        PROTOBUF_FIELD_OFFSET(::chirp::voice::MicQueueStateNotify, _impl_.timestamp_),
+        1,
+        4,
+        2,
+        0,
+        3,
 };
 
 static const ::_pbi::MigrationSchema
@@ -1047,25 +1352,32 @@ static const ::_pbi::MigrationSchema
         {29, sizeof(::chirp::voice::IceServer)},
         {38, sizeof(::chirp::voice::JoinRoomRequest)},
         {47, sizeof(::chirp::voice::JoinRoomResponse)},
-        {62, sizeof(::chirp::voice::LeaveRoomRequest)},
-        {69, sizeof(::chirp::voice::LeaveRoomResponse)},
-        {76, sizeof(::chirp::voice::IceCandidate)},
-        {85, sizeof(::chirp::voice::IceCandidateMessage)},
-        {96, sizeof(::chirp::voice::SdpOfferMessage)},
-        {107, sizeof(::chirp::voice::SdpAnswerMessage)},
-        {118, sizeof(::chirp::voice::ParticipantInfo)},
-        {135, sizeof(::chirp::voice::GetRoomInfoRequest)},
-        {140, sizeof(::chirp::voice::GetRoomInfoResponse)},
-        {155, sizeof(::chirp::voice::GetUserRoomRequest)},
-        {160, sizeof(::chirp::voice::GetUserRoomResponse)},
-        {169, sizeof(::chirp::voice::SetMuteRequest)},
-        {178, sizeof(::chirp::voice::SetMuteResponse)},
-        {185, sizeof(::chirp::voice::SetDeafenRequest)},
-        {194, sizeof(::chirp::voice::SetDeafenResponse)},
-        {201, sizeof(::chirp::voice::ParticipantJoinedNotify)},
-        {210, sizeof(::chirp::voice::ParticipantLeftNotify)},
-        {219, sizeof(::chirp::voice::ParticipantStateChangedNotify)},
-        {230, sizeof(::chirp::voice::SpeakingNotify)},
+        {66, sizeof(::chirp::voice::LeaveRoomRequest)},
+        {73, sizeof(::chirp::voice::LeaveRoomResponse)},
+        {80, sizeof(::chirp::voice::IceCandidate)},
+        {89, sizeof(::chirp::voice::IceCandidateMessage)},
+        {100, sizeof(::chirp::voice::SdpOfferMessage)},
+        {111, sizeof(::chirp::voice::SdpAnswerMessage)},
+        {122, sizeof(::chirp::voice::ParticipantInfo)},
+        {139, sizeof(::chirp::voice::GetRoomInfoRequest)},
+        {144, sizeof(::chirp::voice::GetRoomInfoResponse)},
+        {165, sizeof(::chirp::voice::GetUserRoomRequest)},
+        {170, sizeof(::chirp::voice::GetUserRoomResponse)},
+        {179, sizeof(::chirp::voice::SetMuteRequest)},
+        {188, sizeof(::chirp::voice::SetMuteResponse)},
+        {195, sizeof(::chirp::voice::SetDeafenRequest)},
+        {204, sizeof(::chirp::voice::SetDeafenResponse)},
+        {211, sizeof(::chirp::voice::ParticipantJoinedNotify)},
+        {220, sizeof(::chirp::voice::ParticipantLeftNotify)},
+        {229, sizeof(::chirp::voice::ParticipantStateChangedNotify)},
+        {240, sizeof(::chirp::voice::SpeakingNotify)},
+        {253, sizeof(::chirp::voice::SetMicModeRequest)},
+        {262, sizeof(::chirp::voice::MicQueueApplyRequest)},
+        {269, sizeof(::chirp::voice::MicQueueApproveRequest)},
+        {278, sizeof(::chirp::voice::MicQueueReleaseRequest)},
+        {285, sizeof(::chirp::voice::MicQueueGrantRequest)},
+        {294, sizeof(::chirp::voice::MicQueueResponse)},
+        {305, sizeof(::chirp::voice::MicQueueStateNotify)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::voice::_CreateRoomRequest_MetadataEntry_DoNotUse_default_instance_._instance,
@@ -1093,6 +1405,13 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::voice::_ParticipantLeftNotify_default_instance_._instance,
     &::chirp::voice::_ParticipantStateChangedNotify_default_instance_._instance,
     &::chirp::voice::_SpeakingNotify_default_instance_._instance,
+    &::chirp::voice::_SetMicModeRequest_default_instance_._instance,
+    &::chirp::voice::_MicQueueApplyRequest_default_instance_._instance,
+    &::chirp::voice::_MicQueueApproveRequest_default_instance_._instance,
+    &::chirp::voice::_MicQueueReleaseRequest_default_instance_._instance,
+    &::chirp::voice::_MicQueueGrantRequest_default_instance_._instance,
+    &::chirp::voice::_MicQueueResponse_default_instance_._instance,
+    &::chirp::voice::_MicQueueStateNotify_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fvoice_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -1109,62 +1428,85 @@ const char descriptor_table_protodef_proto_2fvoice_2eproto[] ABSL_ATTRIBUTE_SECT
     "ver\022\014\n\004urls\030\001 \003(\t\022\020\n\010username\030\002 \001(\t\022\022\n\nc"
     "redential\030\003 \001(\t\"F\n\017JoinRoomRequest\022\017\n\007us"
     "er_id\030\001 \001(\t\022\017\n\007room_id\030\002 \001(\t\022\021\n\tsdp_offe"
-    "r\030\003 \001(\t\"\271\001\n\020JoinRoomResponse\022%\n\004code\030\001 \001"
+    "r\030\003 \001(\t\"\377\001\n\020JoinRoomResponse\022%\n\004code\030\001 \001"
     "(\0162\027.chirp.common.ErrorCode\022\017\n\007room_id\030\002"
     " \001(\t\022\022\n\nsdp_answer\030\003 \001(\t\022\027\n\017participant_"
     "ids\030\004 \003(\t\022\023\n\013server_time\030\005 \001(\003\022+\n\013ice_se"
-    "rvers\030\006 \003(\0132\026.chirp.voice.IceServer\"4\n\020L"
-    "eaveRoomRequest\022\017\n\007user_id\030\001 \001(\t\022\017\n\007room"
-    "_id\030\002 \001(\t\"O\n\021LeaveRoomResponse\022%\n\004code\030\001"
-    " \001(\0162\027.chirp.common.ErrorCode\022\023\n\013server_"
-    "time\030\002 \001(\003\"K\n\014IceCandidate\022\021\n\tcandidate\030"
-    "\001 \001(\t\022\017\n\007sdp_mid\030\002 \001(\t\022\027\n\017sdp_mline_inde"
-    "x\030\003 \001(\005\"~\n\023IceCandidateMessage\022\017\n\007room_i"
-    "d\030\001 \001(\t\022\024\n\014from_user_id\030\002 \001(\t\022\022\n\nto_user"
-    "_id\030\003 \001(\t\022,\n\tcandidate\030\004 \001(\0132\031.chirp.voi"
-    "ce.IceCandidate\"_\n\017SdpOfferMessage\022\017\n\007ro"
-    "om_id\030\001 \001(\t\022\024\n\014from_user_id\030\002 \001(\t\022\022\n\nto_"
-    "user_id\030\003 \001(\t\022\021\n\tsdp_offer\030\004 \001(\t\"a\n\020SdpA"
-    "nswerMessage\022\017\n\007room_id\030\001 \001(\t\022\024\n\014from_us"
-    "er_id\030\002 \001(\t\022\022\n\nto_user_id\030\003 \001(\t\022\022\n\nsdp_a"
-    "nswer\030\004 \001(\t\"\253\001\n\017ParticipantInfo\022\017\n\007user_"
-    "id\030\001 \001(\t\022\020\n\010username\030\002 \001(\t\022,\n\005state\030\003 \001("
-    "\0162\035.chirp.voice.ParticipantState\022\021\n\tjoin"
-    "ed_at\030\004 \001(\003\022\023\n\013is_speaking\030\005 \001(\010\022\r\n\005mute"
-    "d\030\006 \001(\010\022\020\n\010deafened\030\007 \001(\010\"%\n\022GetRoomInfo"
-    "Request\022\017\n\007room_id\030\001 \001(\t\"\330\001\n\023GetRoomInfo"
-    "Response\022%\n\004code\030\001 \001(\0162\027.chirp.common.Er"
-    "rorCode\022\017\n\007room_id\030\002 \001(\t\022\021\n\troom_name\030\003 "
-    "\001(\t\022(\n\troom_type\030\004 \001(\0162\025.chirp.voice.Roo"
-    "mType\0222\n\014participants\030\005 \003(\0132\034.chirp.voic"
-    "e.ParticipantInfo\022\030\n\020max_participants\030\006 "
-    "\001(\005\"%\n\022GetUserRoomRequest\022\017\n\007user_id\030\001 \001"
-    "(\t\"\200\001\n\023GetUserRoomResponse\022%\n\004code\030\001 \001(\016"
-    "2\027.chirp.common.ErrorCode\022\017\n\007room_id\030\002 \001"
-    "(\t\0221\n\013participant\030\003 \001(\0132\034.chirp.voice.Pa"
-    "rticipantInfo\"A\n\016SetMuteRequest\022\017\n\007user_"
-    "id\030\001 \001(\t\022\017\n\007room_id\030\002 \001(\t\022\r\n\005muted\030\003 \001(\010"
-    "\"M\n\017SetMuteResponse\022%\n\004code\030\001 \001(\0162\027.chir"
-    "p.common.ErrorCode\022\023\n\013server_time\030\002 \001(\003\""
-    "F\n\020SetDeafenRequest\022\017\n\007user_id\030\001 \001(\t\022\017\n\007"
-    "room_id\030\002 \001(\t\022\020\n\010deafened\030\003 \001(\010\"O\n\021SetDe"
-    "afenResponse\022%\n\004code\030\001 \001(\0162\027.chirp.commo"
-    "n.ErrorCode\022\023\n\013server_time\030\002 \001(\003\"p\n\027Part"
-    "icipantJoinedNotify\022\017\n\007room_id\030\001 \001(\t\0221\n\013"
-    "participant\030\002 \001(\0132\034.chirp.voice.Particip"
-    "antInfo\022\021\n\ttimestamp\030\003 \001(\003\"L\n\025Participan"
-    "tLeftNotify\022\017\n\007room_id\030\001 \001(\t\022\017\n\007user_id\030"
-    "\002 \001(\t\022\021\n\ttimestamp\030\003 \001(\003\"\202\001\n\035Participant"
-    "StateChangedNotify\022\017\n\007room_id\030\001 \001(\t\022\017\n\007u"
-    "ser_id\030\002 \001(\t\022,\n\005state\030\003 \001(\0162\035.chirp.voic"
-    "e.ParticipantState\022\021\n\ttimestamp\030\004 \001(\003\"W\n"
-    "\016SpeakingNotify\022\017\n\007room_id\030\001 \001(\t\022\017\n\007user"
-    "_id\030\002 \001(\t\022\020\n\010speaking\030\003 \001(\010\022\021\n\ttimestamp"
-    "\030\004 \001(\003*4\n\010RoomType\022\020\n\014PEER_TO_PEER\020\000\022\t\n\005"
-    "GROUP\020\001\022\013\n\007CHANNEL\020\002*Y\n\020ParticipantState"
-    "\022\013\n\007JOINING\020\000\022\r\n\tCONNECTED\020\001\022\t\n\005MUTED\020\002\022"
-    "\014\n\010DEAFENED\020\003\022\020\n\014DISCONNECTED\020\004B%Z#githu"
-    "b.com/cui/chirp/proto/go/voiceb\006proto3"
+    "rvers\030\006 \003(\0132\026.chirp.voice.IceServer\022*\n\nm"
+    "edia_tier\030\007 \001(\0162\026.chirp.voice.MediaTier\022"
+    "\030\n\020rtcp_feedback_ms\030\010 \001(\005\"4\n\020LeaveRoomRe"
+    "quest\022\017\n\007user_id\030\001 \001(\t\022\017\n\007room_id\030\002 \001(\t\""
+    "O\n\021LeaveRoomResponse\022%\n\004code\030\001 \001(\0162\027.chi"
+    "rp.common.ErrorCode\022\023\n\013server_time\030\002 \001(\003"
+    "\"K\n\014IceCandidate\022\021\n\tcandidate\030\001 \001(\t\022\017\n\007s"
+    "dp_mid\030\002 \001(\t\022\027\n\017sdp_mline_index\030\003 \001(\005\"~\n"
+    "\023IceCandidateMessage\022\017\n\007room_id\030\001 \001(\t\022\024\n"
+    "\014from_user_id\030\002 \001(\t\022\022\n\nto_user_id\030\003 \001(\t\022"
+    ",\n\tcandidate\030\004 \001(\0132\031.chirp.voice.IceCand"
+    "idate\"_\n\017SdpOfferMessage\022\017\n\007room_id\030\001 \001("
+    "\t\022\024\n\014from_user_id\030\002 \001(\t\022\022\n\nto_user_id\030\003 "
+    "\001(\t\022\021\n\tsdp_offer\030\004 \001(\t\"a\n\020SdpAnswerMessa"
+    "ge\022\017\n\007room_id\030\001 \001(\t\022\024\n\014from_user_id\030\002 \001("
+    "\t\022\022\n\nto_user_id\030\003 \001(\t\022\022\n\nsdp_answer\030\004 \001("
+    "\t\"\253\001\n\017ParticipantInfo\022\017\n\007user_id\030\001 \001(\t\022\020"
+    "\n\010username\030\002 \001(\t\022,\n\005state\030\003 \001(\0162\035.chirp."
+    "voice.ParticipantState\022\021\n\tjoined_at\030\004 \001("
+    "\003\022\023\n\013is_speaking\030\005 \001(\010\022\r\n\005muted\030\006 \001(\010\022\020\n"
+    "\010deafened\030\007 \001(\010\"%\n\022GetRoomInfoRequest\022\017\n"
+    "\007room_id\030\001 \001(\t\"\270\002\n\023GetRoomInfoResponse\022%"
+    "\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\017\n"
+    "\007room_id\030\002 \001(\t\022\021\n\troom_name\030\003 \001(\t\022(\n\troo"
+    "m_type\030\004 \001(\0162\025.chirp.voice.RoomType\0222\n\014p"
+    "articipants\030\005 \003(\0132\034.chirp.voice.Particip"
+    "antInfo\022\030\n\020max_participants\030\006 \001(\005\022&\n\010mic"
+    "_mode\030\007 \001(\0162\024.chirp.voice.MicMode\022\032\n\022mic"
+    "_holder_user_id\030\010 \001(\t\022\032\n\022mic_queue_user_"
+    "ids\030\t \003(\t\"%\n\022GetUserRoomRequest\022\017\n\007user_"
+    "id\030\001 \001(\t\"\200\001\n\023GetUserRoomResponse\022%\n\004code"
+    "\030\001 \001(\0162\027.chirp.common.ErrorCode\022\017\n\007room_"
+    "id\030\002 \001(\t\0221\n\013participant\030\003 \001(\0132\034.chirp.vo"
+    "ice.ParticipantInfo\"A\n\016SetMuteRequest\022\017\n"
+    "\007user_id\030\001 \001(\t\022\017\n\007room_id\030\002 \001(\t\022\r\n\005muted"
+    "\030\003 \001(\010\"M\n\017SetMuteResponse\022%\n\004code\030\001 \001(\0162"
+    "\027.chirp.common.ErrorCode\022\023\n\013server_time\030"
+    "\002 \001(\003\"F\n\020SetDeafenRequest\022\017\n\007user_id\030\001 \001"
+    "(\t\022\017\n\007room_id\030\002 \001(\t\022\020\n\010deafened\030\003 \001(\010\"O\n"
+    "\021SetDeafenResponse\022%\n\004code\030\001 \001(\0162\027.chirp"
+    ".common.ErrorCode\022\023\n\013server_time\030\002 \001(\003\"p"
+    "\n\027ParticipantJoinedNotify\022\017\n\007room_id\030\001 \001"
+    "(\t\0221\n\013participant\030\002 \001(\0132\034.chirp.voice.Pa"
+    "rticipantInfo\022\021\n\ttimestamp\030\003 \001(\003\"L\n\025Part"
+    "icipantLeftNotify\022\017\n\007room_id\030\001 \001(\t\022\017\n\007us"
+    "er_id\030\002 \001(\t\022\021\n\ttimestamp\030\003 \001(\003\"\202\001\n\035Parti"
+    "cipantStateChangedNotify\022\017\n\007room_id\030\001 \001("
+    "\t\022\017\n\007user_id\030\002 \001(\t\022,\n\005state\030\003 \001(\0162\035.chir"
+    "p.voice.ParticipantState\022\021\n\ttimestamp\030\004 "
+    "\001(\003\"g\n\016SpeakingNotify\022\017\n\007room_id\030\001 \001(\t\022\017"
+    "\n\007user_id\030\002 \001(\t\022\020\n\010speaking\030\003 \001(\010\022\021\n\ttim"
+    "estamp\030\004 \001(\003\022\016\n\006volume\030\005 \001(\005\"Y\n\021SetMicMo"
+    "deRequest\022\017\n\007user_id\030\001 \001(\t\022\017\n\007room_id\030\002 "
+    "\001(\t\022\"\n\004mode\030\003 \001(\0162\024.chirp.voice.MicMode\""
+    "8\n\024MicQueueApplyRequest\022\017\n\007user_id\030\001 \001(\t"
+    "\022\017\n\007room_id\030\002 \001(\t\"R\n\026MicQueueApproveRequ"
+    "est\022\017\n\007user_id\030\001 \001(\t\022\017\n\007room_id\030\002 \001(\t\022\026\n"
+    "\016target_user_id\030\003 \001(\t\":\n\026MicQueueRelease"
+    "Request\022\017\n\007user_id\030\001 \001(\t\022\017\n\007room_id\030\002 \001("
+    "\t\"P\n\024MicQueueGrantRequest\022\017\n\007user_id\030\001 \001"
+    "(\t\022\017\n\007room_id\030\002 \001(\t\022\026\n\016target_user_id\030\003 "
+    "\001(\t\"{\n\020MicQueueResponse\022%\n\004code\030\001 \001(\0162\027."
+    "chirp.common.ErrorCode\022\023\n\013server_time\030\002 "
+    "\001(\003\022\026\n\016holder_user_id\030\003 \001(\t\022\023\n\013queue_dep"
+    "th\030\004 \001(\005\"\215\001\n\023MicQueueStateNotify\022\017\n\007room"
+    "_id\030\001 \001(\t\022\"\n\004mode\030\002 \001(\0162\024.chirp.voice.Mi"
+    "cMode\022\026\n\016holder_user_id\030\003 \001(\t\022\026\n\016queue_u"
+    "ser_ids\030\004 \003(\t\022\021\n\ttimestamp\030\005 \001(\003*4\n\010Room"
+    "Type\022\020\n\014PEER_TO_PEER\020\000\022\t\n\005GROUP\020\001\022\013\n\007CHA"
+    "NNEL\020\002*Y\n\020ParticipantState\022\013\n\007JOINING\020\000\022"
+    "\r\n\tCONNECTED\020\001\022\t\n\005MUTED\020\002\022\014\n\010DEAFENED\020\003\022"
+    "\020\n\014DISCONNECTED\020\004*(\n\007MicMode\022\014\n\010MIC_FREE"
+    "\020\000\022\017\n\013MIC_MANAGED\020\001*-\n\tMediaTier\022\014\n\010FULL"
+    "_MIX\020\000\022\022\n\016FORWARD_BYPASS\020\001B%Z#github.com"
+    "/cui/chirp/proto/go/voiceb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fvoice_2eproto_deps[1] = {
@@ -1174,13 +1516,13 @@ static ::absl::once_flag descriptor_table_proto_2fvoice_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fvoice_2eproto = {
     false,
     false,
-    2758,
+    3673,
     descriptor_table_protodef_proto_2fvoice_2eproto,
     "proto/voice.proto",
     &descriptor_table_proto_2fvoice_2eproto_once,
     descriptor_table_proto_2fvoice_2eproto_deps,
     1,
-    25,
+    32,
     schemas,
     file_default_instances,
     TableStruct_proto_2fvoice_2eproto::offsets,
@@ -1201,6 +1543,18 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL ParticipantState_desc
 }
 PROTOBUF_CONSTINIT const uint32_t ParticipantState_internal_data_[] = {
     327680u, 0u, };
+const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MicMode_descriptor() {
+  ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fvoice_2eproto);
+  return file_level_enum_descriptors_proto_2fvoice_2eproto[2];
+}
+PROTOBUF_CONSTINIT const uint32_t MicMode_internal_data_[] = {
+    131072u, 0u, };
+const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MediaTier_descriptor() {
+  ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fvoice_2eproto);
+  return file_level_enum_descriptors_proto_2fvoice_2eproto[3];
+}
+PROTOBUF_CONSTINIT const uint32_t MediaTier_internal_data_[] = {
+    131072u, 0u, };
 // ===================================================================
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
@@ -2902,12 +3256,12 @@ JoinRoomResponse::JoinRoomResponse(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::memcpy(reinterpret_cast<char*>(&_impl_) +
-               offsetof(Impl_, server_time_),
+               offsetof(Impl_, code_),
            reinterpret_cast<const char*>(&from._impl_) +
-               offsetof(Impl_, server_time_),
-           offsetof(Impl_, code_) -
-               offsetof(Impl_, server_time_) +
-               sizeof(Impl_::code_));
+               offsetof(Impl_, code_),
+           offsetof(Impl_, rtcp_feedback_ms_) -
+               offsetof(Impl_, code_) +
+               sizeof(Impl_::rtcp_feedback_ms_));
 
   // @@protoc_insertion_point(copy_constructor:chirp.voice.JoinRoomResponse)
 }
@@ -2923,11 +3277,11 @@ PROTOBUF_NDEBUG_INLINE JoinRoomResponse::Impl_::Impl_(
 inline void JoinRoomResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char*>(&_impl_) +
-               offsetof(Impl_, server_time_),
+               offsetof(Impl_, code_),
            0,
-           offsetof(Impl_, code_) -
-               offsetof(Impl_, server_time_) +
-               sizeof(Impl_::code_));
+           offsetof(Impl_, rtcp_feedback_ms_) -
+               offsetof(Impl_, code_) +
+               sizeof(Impl_::rtcp_feedback_ms_));
 }
 JoinRoomResponse::~JoinRoomResponse() {
   // @@protoc_insertion_point(destructor:chirp.voice.JoinRoomResponse)
@@ -3004,16 +3358,16 @@ JoinRoomResponse::GetClassData() const {
   return JoinRoomResponse_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 6, 1, 69, 2>
+const ::_pbi::TcParseTable<3, 8, 1, 77, 2>
 JoinRoomResponse::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_._has_bits_),
     0, // no _extensions_
-    6, 56,  // max_field_number, fast_idx_mask
+    8, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967232,  // skipmap
+    4294967040,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    6,  // num_field_entries
+    8,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     JoinRoomResponse_class_data_.base(),
@@ -3023,10 +3377,13 @@ JoinRoomResponse::_table_ = {
     ::_pbi::TcParser::GetTable<::chirp::voice::JoinRoomResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // int32 rtcp_feedback_ms = 8;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(JoinRoomResponse, _impl_.rtcp_feedback_ms_), 7>(),
+     {64, 7, 0,
+      PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.rtcp_feedback_ms_)}},
     // .chirp.common.ErrorCode code = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(JoinRoomResponse, _impl_.code_), 5>(),
-     {8, 5, 0,
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(JoinRoomResponse, _impl_.code_), 4>(),
+     {8, 4, 0,
       PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.code_)}},
     // string room_id = 2;
     {::_pbi::TcParser::FastUS1,
@@ -3041,19 +3398,22 @@ JoinRoomResponse::_table_ = {
      {34, 0, 0,
       PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.participant_ids_)}},
     // int64 server_time = 5;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(JoinRoomResponse, _impl_.server_time_), 4>(),
-     {40, 4, 0,
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(JoinRoomResponse, _impl_.server_time_), 6>(),
+     {40, 6, 0,
       PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.server_time_)}},
     // repeated .chirp.voice.IceServer ice_servers = 6;
     {::_pbi::TcParser::FastMtR1,
      {50, 1, 0,
       PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.ice_servers_)}},
-    {::_pbi::TcParser::MiniParse, {}},
+    // .chirp.voice.MediaTier media_tier = 7;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(JoinRoomResponse, _impl_.media_tier_), 5>(),
+     {56, 5, 0,
+      PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.media_tier_)}},
   }}, {{
     65535, 65535
   }}, {{
     // .chirp.common.ErrorCode code = 1;
-    {PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.code_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    {PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.code_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
     // string room_id = 2;
     {PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.room_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // string sdp_answer = 3;
@@ -3061,15 +3421,19 @@ JoinRoomResponse::_table_ = {
     // repeated string participant_ids = 4;
     {PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.participant_ids_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kUtf8String | ::_fl::kRepSString)},
     // int64 server_time = 5;
-    {PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.server_time_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+    {PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.server_time_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
     // repeated .chirp.voice.IceServer ice_servers = 6;
     {PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.ice_servers_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+    // .chirp.voice.MediaTier media_tier = 7;
+    {PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.media_tier_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // int32 rtcp_feedback_ms = 8;
+    {PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.rtcp_feedback_ms_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
   }},
   {{
       {::_pbi::TcParser::GetTable<::chirp::voice::IceServer>()},
   }},
   {{
-    "\34\0\7\12\17\0\0\0"
+    "\34\0\7\12\17\0\0\0\0\0\0\0\0\0\0\0"
     "chirp.voice.JoinRoomResponse"
     "room_id"
     "sdp_answer"
@@ -3098,10 +3462,10 @@ PROTOBUF_NOINLINE void JoinRoomResponse::Clear() {
       _impl_.sdp_answer_.ClearNonDefaultToEmpty();
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x00000030U)) {
-    ::memset(&_impl_.server_time_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.code_) -
-        reinterpret_cast<char*>(&_impl_.server_time_)) + sizeof(_impl_.code_));
+  if (BatchCheckHasBit(cached_has_bits, 0x000000f0U)) {
+    ::memset(&_impl_.code_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.rtcp_feedback_ms_) -
+        reinterpret_cast<char*>(&_impl_.code_)) + sizeof(_impl_.rtcp_feedback_ms_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -3127,7 +3491,7 @@ PROTOBUF_NOINLINE void JoinRoomResponse::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // .chirp.common.ErrorCode code = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
     if (this_._internal_code() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteEnumToArray(
@@ -3166,7 +3530,7 @@ PROTOBUF_NOINLINE void JoinRoomResponse::Clear() {
   }
 
   // int64 server_time = 5;
-  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
     if (this_._internal_server_time() != 0) {
       target =
           ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<5>(
@@ -3184,6 +3548,24 @@ PROTOBUF_NOINLINE void JoinRoomResponse::Clear() {
           ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
               6, repfield, repfield.GetCachedSize(),
               target, stream);
+    }
+  }
+
+  // .chirp.voice.MediaTier media_tier = 7;
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (this_._internal_media_tier() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          7, this_._internal_media_tier(), target);
+    }
+  }
+
+  // int32 rtcp_feedback_ms = 8;
+  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+    if (this_._internal_rtcp_feedback_ms() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<8>(
+              stream, this_._internal_rtcp_feedback_ms(), target);
     }
   }
 
@@ -3212,7 +3594,7 @@ PROTOBUF_NOINLINE void JoinRoomResponse::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     // repeated string participant_ids = 4;
     if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
       total_size +=
@@ -3243,18 +3625,32 @@ PROTOBUF_NOINLINE void JoinRoomResponse::Clear() {
                                         this_._internal_sdp_answer());
       }
     }
-    // int64 server_time = 5;
+    // .chirp.common.ErrorCode code = 1;
     if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_code() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+      }
+    }
+    // .chirp.voice.MediaTier media_tier = 7;
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (this_._internal_media_tier() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_media_tier());
+      }
+    }
+    // int64 server_time = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (this_._internal_server_time() != 0) {
         total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
             this_._internal_server_time());
       }
     }
-    // .chirp.common.ErrorCode code = 1;
-    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
-      if (this_._internal_code() != 0) {
-        total_size += 1 +
-                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+    // int32 rtcp_feedback_ms = 8;
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (this_._internal_rtcp_feedback_ms() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_rtcp_feedback_ms());
       }
     }
   }
@@ -3277,7 +3673,7 @@ void JoinRoomResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
       _this->_internal_mutable_participant_ids()->InternalMergeFromWithArena(
           ::google::protobuf::MessageLite::internal_visibility(), arena,
@@ -3307,13 +3703,23 @@ void JoinRoomResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_code() != 0) {
+        _this->_impl_.code_ = from._impl_.code_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (from._internal_media_tier() != 0) {
+        _this->_impl_.media_tier_ = from._impl_.media_tier_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (from._internal_server_time() != 0) {
         _this->_impl_.server_time_ = from._impl_.server_time_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
-      if (from._internal_code() != 0) {
-        _this->_impl_.code_ = from._impl_.code_;
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (from._internal_rtcp_feedback_ms() != 0) {
+        _this->_impl_.rtcp_feedback_ms_ = from._impl_.rtcp_feedback_ms_;
       }
     }
   }
@@ -3341,11 +3747,11 @@ void JoinRoomResponse::InternalSwap(JoinRoomResponse* PROTOBUF_RESTRICT PROTOBUF
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.room_id_, &other->_impl_.room_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.sdp_answer_, &other->_impl_.sdp_answer_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.code_)
-      + sizeof(JoinRoomResponse::_impl_.code_)
-      - PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.server_time_)>(
-          reinterpret_cast<char*>(&_impl_.server_time_),
-          reinterpret_cast<char*>(&other->_impl_.server_time_));
+      PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.rtcp_feedback_ms_)
+      + sizeof(JoinRoomResponse::_impl_.rtcp_feedback_ms_)
+      - PROTOBUF_FIELD_OFFSET(JoinRoomResponse, _impl_.code_)>(
+          reinterpret_cast<char*>(&_impl_.code_),
+          reinterpret_cast<char*>(&other->_impl_.code_));
 }
 
 ::google::protobuf::Metadata JoinRoomResponse::GetMetadata() const {
@@ -6294,8 +6700,10 @@ PROTOBUF_NDEBUG_INLINE GetRoomInfoResponse::Impl_::Impl_(
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         participants_{visibility, arena, from.participants_},
+        mic_queue_user_ids_{visibility, arena, from.mic_queue_user_ids_},
         room_id_(arena, from.room_id_),
-        room_name_(arena, from.room_name_) {}
+        room_name_(arena, from.room_name_),
+        mic_holder_user_id_(arena, from.mic_holder_user_id_) {}
 
 GetRoomInfoResponse::GetRoomInfoResponse(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
@@ -6314,9 +6722,9 @@ GetRoomInfoResponse::GetRoomInfoResponse(
                offsetof(Impl_, code_),
            reinterpret_cast<const char*>(&from._impl_) +
                offsetof(Impl_, code_),
-           offsetof(Impl_, max_participants_) -
+           offsetof(Impl_, mic_mode_) -
                offsetof(Impl_, code_) +
-               sizeof(Impl_::max_participants_));
+               sizeof(Impl_::mic_mode_));
 
   // @@protoc_insertion_point(copy_constructor:chirp.voice.GetRoomInfoResponse)
 }
@@ -6325,17 +6733,19 @@ PROTOBUF_NDEBUG_INLINE GetRoomInfoResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0},
         participants_{visibility, arena},
+        mic_queue_user_ids_{visibility, arena},
         room_id_(arena),
-        room_name_(arena) {}
+        room_name_(arena),
+        mic_holder_user_id_(arena) {}
 
 inline void GetRoomInfoResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, code_),
            0,
-           offsetof(Impl_, max_participants_) -
+           offsetof(Impl_, mic_mode_) -
                offsetof(Impl_, code_) +
-               sizeof(Impl_::max_participants_));
+               sizeof(Impl_::mic_mode_));
 }
 GetRoomInfoResponse::~GetRoomInfoResponse() {
   // @@protoc_insertion_point(destructor:chirp.voice.GetRoomInfoResponse)
@@ -6350,6 +6760,7 @@ inline void GetRoomInfoResponse::SharedDtor(MessageLite& self) {
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.room_id_.Destroy();
   this_._impl_.room_name_.Destroy();
+  this_._impl_.mic_holder_user_id_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -6362,6 +6773,10 @@ constexpr auto GetRoomInfoResponse::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
       PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.participants_) +
           decltype(GetRoomInfoResponse::_impl_.participants_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+      PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.mic_queue_user_ids_) +
+          decltype(GetRoomInfoResponse::_impl_.mic_queue_user_ids_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
   });
@@ -6408,16 +6823,16 @@ GetRoomInfoResponse::GetClassData() const {
   return GetRoomInfoResponse_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 6, 1, 56, 2>
+const ::_pbi::TcParseTable<4, 9, 1, 100, 2>
 GetRoomInfoResponse::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_._has_bits_),
     0, // no _extensions_
-    6, 56,  // max_field_number, fast_idx_mask
+    9, 120,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967232,  // skipmap
+    4294966784,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    6,  // num_field_entries
+    9,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     GetRoomInfoResponse_class_data_.base(),
@@ -6429,54 +6844,79 @@ GetRoomInfoResponse::_table_ = {
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // .chirp.common.ErrorCode code = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRoomInfoResponse, _impl_.code_), 3>(),
-     {8, 3, 0,
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRoomInfoResponse, _impl_.code_), 5>(),
+     {8, 5, 0,
       PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.code_)}},
     // string room_id = 2;
     {::_pbi::TcParser::FastUS1,
-     {18, 1, 0,
+     {18, 2, 0,
       PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.room_id_)}},
     // string room_name = 3;
     {::_pbi::TcParser::FastUS1,
-     {26, 2, 0,
+     {26, 3, 0,
       PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.room_name_)}},
     // .chirp.voice.RoomType room_type = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRoomInfoResponse, _impl_.room_type_), 4>(),
-     {32, 4, 0,
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRoomInfoResponse, _impl_.room_type_), 6>(),
+     {32, 6, 0,
       PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.room_type_)}},
     // repeated .chirp.voice.ParticipantInfo participants = 5;
     {::_pbi::TcParser::FastMtR1,
      {42, 0, 0,
       PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.participants_)}},
     // int32 max_participants = 6;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRoomInfoResponse, _impl_.max_participants_), 5>(),
-     {48, 5, 0,
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRoomInfoResponse, _impl_.max_participants_), 7>(),
+     {48, 7, 0,
       PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.max_participants_)}},
+    // .chirp.voice.MicMode mic_mode = 7;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRoomInfoResponse, _impl_.mic_mode_), 8>(),
+     {56, 8, 0,
+      PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.mic_mode_)}},
+    // string mic_holder_user_id = 8;
+    {::_pbi::TcParser::FastUS1,
+     {66, 4, 0,
+      PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.mic_holder_user_id_)}},
+    // repeated string mic_queue_user_ids = 9;
+    {::_pbi::TcParser::FastUR1,
+     {74, 1, 0,
+      PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.mic_queue_user_ids_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
     // .chirp.common.ErrorCode code = 1;
-    {PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.code_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    {PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.code_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
     // string room_id = 2;
-    {PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.room_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    {PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.room_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // string room_name = 3;
-    {PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.room_name_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    {PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.room_name_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // .chirp.voice.RoomType room_type = 4;
-    {PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.room_type_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    {PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.room_type_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
     // repeated .chirp.voice.ParticipantInfo participants = 5;
     {PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.participants_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
     // int32 max_participants = 6;
-    {PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.max_participants_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    {PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.max_participants_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // .chirp.voice.MicMode mic_mode = 7;
+    {PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.mic_mode_), _Internal::kHasBitsOffset + 8, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // string mic_holder_user_id = 8;
+    {PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.mic_holder_user_id_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // repeated string mic_queue_user_ids = 9;
+    {PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.mic_queue_user_ids_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcRepeated | ::_fl::kUtf8String | ::_fl::kRepSString)},
   }},
   {{
       {::_pbi::TcParser::GetTable<::chirp::voice::ParticipantInfo>()},
   }},
   {{
-    "\37\0\7\11\0\0\0\0"
+    "\37\0\7\11\0\0\0\0\22\22\0\0\0\0\0\0"
     "chirp.voice.GetRoomInfoResponse"
     "room_id"
     "room_name"
+    "mic_holder_user_id"
+    "mic_queue_user_ids"
   }},
 };
 PROTOBUF_NOINLINE void GetRoomInfoResponse::Clear() {
@@ -6487,22 +6927,29 @@ PROTOBUF_NOINLINE void GetRoomInfoResponse::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
       _impl_.participants_.Clear();
     }
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      _impl_.room_id_.ClearNonDefaultToEmpty();
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000002U)) {
+      _impl_.mic_queue_user_ids_.Clear();
     }
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.room_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       _impl_.room_name_.ClearNonDefaultToEmpty();
     }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      _impl_.mic_holder_user_id_.ClearNonDefaultToEmpty();
+    }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x00000038U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000e0U)) {
     ::memset(&_impl_.code_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.max_participants_) -
         reinterpret_cast<char*>(&_impl_.code_)) + sizeof(_impl_.max_participants_));
   }
+  _impl_.mic_mode_ = 0;
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -6527,7 +6974,7 @@ PROTOBUF_NOINLINE void GetRoomInfoResponse::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // .chirp.common.ErrorCode code = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
     if (this_._internal_code() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteEnumToArray(
@@ -6536,7 +6983,7 @@ PROTOBUF_NOINLINE void GetRoomInfoResponse::Clear() {
   }
 
   // string room_id = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
     if (!this_._internal_room_id().empty()) {
       const ::std::string& _s = this_._internal_room_id();
       ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
@@ -6546,7 +6993,7 @@ PROTOBUF_NOINLINE void GetRoomInfoResponse::Clear() {
   }
 
   // string room_name = 3;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
     if (!this_._internal_room_name().empty()) {
       const ::std::string& _s = this_._internal_room_name();
       ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
@@ -6556,7 +7003,7 @@ PROTOBUF_NOINLINE void GetRoomInfoResponse::Clear() {
   }
 
   // .chirp.voice.RoomType room_type = 4;
-  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
     if (this_._internal_room_type() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteEnumToArray(
@@ -6578,11 +7025,40 @@ PROTOBUF_NOINLINE void GetRoomInfoResponse::Clear() {
   }
 
   // int32 max_participants = 6;
-  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
     if (this_._internal_max_participants() != 0) {
       target =
           ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<6>(
               stream, this_._internal_max_participants(), target);
+    }
+  }
+
+  // .chirp.voice.MicMode mic_mode = 7;
+  if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+    if (this_._internal_mic_mode() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          7, this_._internal_mic_mode(), target);
+    }
+  }
+
+  // string mic_holder_user_id = 8;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (!this_._internal_mic_holder_user_id().empty()) {
+      const ::std::string& _s = this_._internal_mic_holder_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.voice.GetRoomInfoResponse.mic_holder_user_id");
+      target = stream->WriteStringMaybeAliased(8, _s, target);
+    }
+  }
+
+  // repeated string mic_queue_user_ids = 9;
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000002U)) {
+    for (int i = 0, n = this_._internal_mic_queue_user_ids_size(); i < n; ++i) {
+      const auto& s = this_._internal_mic_queue_user_ids().Get(i);
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          s.data(), static_cast<int>(s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.voice.GetRoomInfoResponse.mic_queue_user_ids");
+      target = stream->WriteString(9, s, target);
     }
   }
 
@@ -6611,7 +7087,7 @@ PROTOBUF_NOINLINE void GetRoomInfoResponse::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     // repeated .chirp.voice.ParticipantInfo participants = 5;
     if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
       total_size += 1UL * this_._internal_participants_size();
@@ -6619,39 +7095,64 @@ PROTOBUF_NOINLINE void GetRoomInfoResponse::Clear() {
         total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
       }
     }
+    // repeated string mic_queue_user_ids = 9;
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000002U)) {
+      total_size +=
+          1 * ::google::protobuf::internal::FromIntSize(this_._internal_mic_queue_user_ids().size());
+      for (int i = 0, n = this_._internal_mic_queue_user_ids().size(); i < n; ++i) {
+        total_size += ::google::protobuf::internal::WireFormatLite::StringSize(
+            this_._internal_mic_queue_user_ids().Get(i));
+      }
+    }
     // string room_id = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (!this_._internal_room_id().empty()) {
         total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                         this_._internal_room_id());
       }
     }
     // string room_name = 3;
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (!this_._internal_room_name().empty()) {
         total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                         this_._internal_room_name());
       }
     }
+    // string mic_holder_user_id = 8;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (!this_._internal_mic_holder_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_mic_holder_user_id());
+      }
+    }
     // .chirp.common.ErrorCode code = 1;
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (this_._internal_code() != 0) {
         total_size += 1 +
                       ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
       }
     }
     // .chirp.voice.RoomType room_type = 4;
-    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (this_._internal_room_type() != 0) {
         total_size += 1 +
                       ::_pbi::WireFormatLite::EnumSize(this_._internal_room_type());
       }
     }
     // int32 max_participants = 6;
-    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
       if (this_._internal_max_participants() != 0) {
         total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
             this_._internal_max_participants());
+      }
+    }
+  }
+   {
+    // .chirp.voice.MicMode mic_mode = 7;
+    if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+      if (this_._internal_mic_mode() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_mic_mode());
       }
     }
   }
@@ -6674,13 +7175,18 @@ void GetRoomInfoResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
       _this->_internal_mutable_participants()->InternalMergeFromWithArena(
           ::google::protobuf::MessageLite::internal_visibility(), arena,
           from._internal_participants());
     }
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000002U)) {
+      _this->_internal_mutable_mic_queue_user_ids()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_mic_queue_user_ids());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (!from._internal_room_id().empty()) {
         _this->_internal_set_room_id(from._internal_room_id());
       } else {
@@ -6689,7 +7195,7 @@ void GetRoomInfoResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
         }
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (!from._internal_room_name().empty()) {
         _this->_internal_set_room_name(from._internal_room_name());
       } else {
@@ -6698,20 +7204,34 @@ void GetRoomInfoResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
         }
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (!from._internal_mic_holder_user_id().empty()) {
+        _this->_internal_set_mic_holder_user_id(from._internal_mic_holder_user_id());
+      } else {
+        if (_this->_impl_.mic_holder_user_id_.IsDefault()) {
+          _this->_internal_set_mic_holder_user_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (from._internal_code() != 0) {
         _this->_impl_.code_ = from._impl_.code_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (from._internal_room_type() != 0) {
         _this->_impl_.room_type_ = from._impl_.room_type_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
       if (from._internal_max_participants() != 0) {
         _this->_impl_.max_participants_ = from._impl_.max_participants_;
       }
+    }
+  }
+  if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+    if (from._internal_mic_mode() != 0) {
+      _this->_impl_.mic_mode_ = from._impl_.mic_mode_;
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -6734,11 +7254,13 @@ void GetRoomInfoResponse::InternalSwap(GetRoomInfoResponse* PROTOBUF_RESTRICT PR
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   _impl_.participants_.InternalSwap(&other->_impl_.participants_);
+  _impl_.mic_queue_user_ids_.InternalSwap(&other->_impl_.mic_queue_user_ids_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.room_id_, &other->_impl_.room_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.room_name_, &other->_impl_.room_name_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.mic_holder_user_id_, &other->_impl_.mic_holder_user_id_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.max_participants_)
-      + sizeof(GetRoomInfoResponse::_impl_.max_participants_)
+      PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.mic_mode_)
+      + sizeof(GetRoomInfoResponse::_impl_.mic_mode_)
       - PROTOBUF_FIELD_OFFSET(GetRoomInfoResponse, _impl_.code_)>(
           reinterpret_cast<char*>(&_impl_.code_),
           reinterpret_cast<char*>(&other->_impl_.code_));
@@ -9825,9 +10347,9 @@ SpeakingNotify::SpeakingNotify(
                offsetof(Impl_, timestamp_),
            reinterpret_cast<const char*>(&from._impl_) +
                offsetof(Impl_, timestamp_),
-           offsetof(Impl_, speaking_) -
+           offsetof(Impl_, volume_) -
                offsetof(Impl_, timestamp_) +
-               sizeof(Impl_::speaking_));
+               sizeof(Impl_::volume_));
 
   // @@protoc_insertion_point(copy_constructor:chirp.voice.SpeakingNotify)
 }
@@ -9843,9 +10365,9 @@ inline void SpeakingNotify::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, timestamp_),
            0,
-           offsetof(Impl_, speaking_) -
+           offsetof(Impl_, volume_) -
                offsetof(Impl_, timestamp_) +
-               sizeof(Impl_::speaking_));
+               sizeof(Impl_::volume_));
 }
 SpeakingNotify::~SpeakingNotify() {
   // @@protoc_insertion_point(destructor:chirp.voice.SpeakingNotify)
@@ -9906,16 +10428,16 @@ SpeakingNotify::GetClassData() const {
   return SpeakingNotify_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 4, 0, 49, 2>
+const ::_pbi::TcParseTable<3, 5, 0, 49, 2>
 SpeakingNotify::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(SpeakingNotify, _impl_._has_bits_),
     0, // no _extensions_
-    4, 24,  // max_field_number, fast_idx_mask
+    5, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967280,  // skipmap
+    4294967264,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    4,  // num_field_entries
+    5,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     SpeakingNotify_class_data_.base(),
@@ -9925,10 +10447,7 @@ SpeakingNotify::_table_ = {
     ::_pbi::TcParser::GetTable<::chirp::voice::SpeakingNotify>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // int64 timestamp = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SpeakingNotify, _impl_.timestamp_), 2>(),
-     {32, 2, 0,
-      PROTOBUF_FIELD_OFFSET(SpeakingNotify, _impl_.timestamp_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // string room_id = 1;
     {::_pbi::TcParser::FastUS1,
      {10, 0, 0,
@@ -9941,6 +10460,16 @@ SpeakingNotify::_table_ = {
     {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(SpeakingNotify, _impl_.speaking_), 3>(),
      {24, 3, 0,
       PROTOBUF_FIELD_OFFSET(SpeakingNotify, _impl_.speaking_)}},
+    // int64 timestamp = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SpeakingNotify, _impl_.timestamp_), 2>(),
+     {32, 2, 0,
+      PROTOBUF_FIELD_OFFSET(SpeakingNotify, _impl_.timestamp_)}},
+    // int32 volume = 5;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SpeakingNotify, _impl_.volume_), 4>(),
+     {40, 4, 0,
+      PROTOBUF_FIELD_OFFSET(SpeakingNotify, _impl_.volume_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
@@ -9952,6 +10481,8 @@ SpeakingNotify::_table_ = {
     {PROTOBUF_FIELD_OFFSET(SpeakingNotify, _impl_.speaking_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
     // int64 timestamp = 4;
     {PROTOBUF_FIELD_OFFSET(SpeakingNotify, _impl_.timestamp_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+    // int32 volume = 5;
+    {PROTOBUF_FIELD_OFFSET(SpeakingNotify, _impl_.volume_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
   }},
   // no aux_entries
   {{
@@ -9977,10 +10508,10 @@ PROTOBUF_NOINLINE void SpeakingNotify::Clear() {
       _impl_.user_id_.ClearNonDefaultToEmpty();
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000cU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001cU)) {
     ::memset(&_impl_.timestamp_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.speaking_) -
-        reinterpret_cast<char*>(&_impl_.timestamp_)) + sizeof(_impl_.speaking_));
+        reinterpret_cast<char*>(&_impl_.volume_) -
+        reinterpret_cast<char*>(&_impl_.timestamp_)) + sizeof(_impl_.volume_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -10043,6 +10574,15 @@ PROTOBUF_NOINLINE void SpeakingNotify::Clear() {
     }
   }
 
+  // int32 volume = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_volume() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<5>(
+              stream, this_._internal_volume(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -10068,7 +10608,7 @@ PROTOBUF_NOINLINE void SpeakingNotify::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     // string room_id = 1;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!this_._internal_room_id().empty()) {
@@ -10096,6 +10636,13 @@ PROTOBUF_NOINLINE void SpeakingNotify::Clear() {
         total_size += 2;
       }
     }
+    // int32 volume = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_volume() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_volume());
+      }
+    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
@@ -10115,7 +10662,7 @@ void SpeakingNotify::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!from._internal_room_id().empty()) {
         _this->_internal_set_room_id(from._internal_room_id());
@@ -10144,6 +10691,11 @@ void SpeakingNotify::MergeImpl(::google::protobuf::MessageLite& to_msg,
         _this->_impl_.speaking_ = from._impl_.speaking_;
       }
     }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_volume() != 0) {
+        _this->_impl_.volume_ = from._impl_.volume_;
+      }
+    }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
@@ -10167,14 +10719,2562 @@ void SpeakingNotify::InternalSwap(SpeakingNotify* PROTOBUF_RESTRICT PROTOBUF_NON
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.room_id_, &other->_impl_.room_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.user_id_, &other->_impl_.user_id_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(SpeakingNotify, _impl_.speaking_)
-      + sizeof(SpeakingNotify::_impl_.speaking_)
+      PROTOBUF_FIELD_OFFSET(SpeakingNotify, _impl_.volume_)
+      + sizeof(SpeakingNotify::_impl_.volume_)
       - PROTOBUF_FIELD_OFFSET(SpeakingNotify, _impl_.timestamp_)>(
           reinterpret_cast<char*>(&_impl_.timestamp_),
           reinterpret_cast<char*>(&other->_impl_.timestamp_));
 }
 
 ::google::protobuf::Metadata SpeakingNotify::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class SetMicModeRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<SetMicModeRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(SetMicModeRequest, _impl_._has_bits_);
+};
+
+SetMicModeRequest::SetMicModeRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SetMicModeRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.voice.SetMicModeRequest)
+}
+PROTOBUF_NDEBUG_INLINE SetMicModeRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::voice::SetMicModeRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        user_id_(arena, from.user_id_),
+        room_id_(arena, from.room_id_) {}
+
+SetMicModeRequest::SetMicModeRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const SetMicModeRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SetMicModeRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SetMicModeRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.mode_ = from._impl_.mode_;
+
+  // @@protoc_insertion_point(copy_constructor:chirp.voice.SetMicModeRequest)
+}
+PROTOBUF_NDEBUG_INLINE SetMicModeRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        user_id_(arena),
+        room_id_(arena) {}
+
+inline void SetMicModeRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.mode_ = {};
+}
+SetMicModeRequest::~SetMicModeRequest() {
+  // @@protoc_insertion_point(destructor:chirp.voice.SetMicModeRequest)
+  SharedDtor(*this);
+}
+inline void SetMicModeRequest::SharedDtor(MessageLite& self) {
+  SetMicModeRequest& this_ = static_cast<SetMicModeRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.user_id_.Destroy();
+  this_._impl_.room_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL SetMicModeRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) SetMicModeRequest(arena);
+}
+constexpr auto SetMicModeRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(SetMicModeRequest),
+                                            alignof(SetMicModeRequest));
+}
+constexpr auto SetMicModeRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_SetMicModeRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &SetMicModeRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<SetMicModeRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &SetMicModeRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<SetMicModeRequest>(), &SetMicModeRequest::ByteSizeLong,
+              &SetMicModeRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(SetMicModeRequest, _impl_._cached_size_),
+          false,
+      },
+      &SetMicModeRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fvoice_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull SetMicModeRequest_class_data_ =
+        SetMicModeRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+SetMicModeRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&SetMicModeRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(SetMicModeRequest_class_data_.tc_table);
+  return SetMicModeRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 52, 2>
+SetMicModeRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(SetMicModeRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    SetMicModeRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::voice::SetMicModeRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string user_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(SetMicModeRequest, _impl_.user_id_)}},
+    // string room_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(SetMicModeRequest, _impl_.room_id_)}},
+    // .chirp.voice.MicMode mode = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SetMicModeRequest, _impl_.mode_), 2>(),
+     {24, 2, 0,
+      PROTOBUF_FIELD_OFFSET(SetMicModeRequest, _impl_.mode_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string user_id = 1;
+    {PROTOBUF_FIELD_OFFSET(SetMicModeRequest, _impl_.user_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string room_id = 2;
+    {PROTOBUF_FIELD_OFFSET(SetMicModeRequest, _impl_.room_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // .chirp.voice.MicMode mode = 3;
+    {PROTOBUF_FIELD_OFFSET(SetMicModeRequest, _impl_.mode_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+  }},
+  // no aux_entries
+  {{
+    "\35\7\7\0\0\0\0\0"
+    "chirp.voice.SetMicModeRequest"
+    "user_id"
+    "room_id"
+  }},
+};
+PROTOBUF_NOINLINE void SetMicModeRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.voice.SetMicModeRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.user_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.room_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_.mode_ = 0;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL SetMicModeRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const SetMicModeRequest& this_ = static_cast<const SetMicModeRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL SetMicModeRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const SetMicModeRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.voice.SetMicModeRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string user_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_user_id().empty()) {
+      const ::std::string& _s = this_._internal_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.voice.SetMicModeRequest.user_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string room_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_room_id().empty()) {
+      const ::std::string& _s = this_._internal_room_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.voice.SetMicModeRequest.room_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // .chirp.voice.MicMode mode = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_mode() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          3, this_._internal_mode(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.voice.SetMicModeRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t SetMicModeRequest::ByteSizeLong(const MessageLite& base) {
+  const SetMicModeRequest& this_ = static_cast<const SetMicModeRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t SetMicModeRequest::ByteSizeLong() const {
+  const SetMicModeRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.voice.SetMicModeRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    // string user_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_user_id());
+      }
+    }
+    // string room_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_room_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_room_id());
+      }
+    }
+    // .chirp.voice.MicMode mode = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_mode() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_mode());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void SetMicModeRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<SetMicModeRequest*>(&to_msg);
+  auto& from = static_cast<const SetMicModeRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.voice.SetMicModeRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_user_id().empty()) {
+        _this->_internal_set_user_id(from._internal_user_id());
+      } else {
+        if (_this->_impl_.user_id_.IsDefault()) {
+          _this->_internal_set_user_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_room_id().empty()) {
+        _this->_internal_set_room_id(from._internal_room_id());
+      } else {
+        if (_this->_impl_.room_id_.IsDefault()) {
+          _this->_internal_set_room_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_mode() != 0) {
+        _this->_impl_.mode_ = from._impl_.mode_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void SetMicModeRequest::CopyFrom(const SetMicModeRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.voice.SetMicModeRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void SetMicModeRequest::InternalSwap(SetMicModeRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.user_id_, &other->_impl_.user_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.room_id_, &other->_impl_.room_id_, arena);
+  swap(_impl_.mode_, other->_impl_.mode_);
+}
+
+::google::protobuf::Metadata SetMicModeRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class MicQueueApplyRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<MicQueueApplyRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(MicQueueApplyRequest, _impl_._has_bits_);
+};
+
+MicQueueApplyRequest::MicQueueApplyRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MicQueueApplyRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.voice.MicQueueApplyRequest)
+}
+PROTOBUF_NDEBUG_INLINE MicQueueApplyRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::voice::MicQueueApplyRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        user_id_(arena, from.user_id_),
+        room_id_(arena, from.room_id_) {}
+
+MicQueueApplyRequest::MicQueueApplyRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const MicQueueApplyRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MicQueueApplyRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  MicQueueApplyRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.voice.MicQueueApplyRequest)
+}
+PROTOBUF_NDEBUG_INLINE MicQueueApplyRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        user_id_(arena),
+        room_id_(arena) {}
+
+inline void MicQueueApplyRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+MicQueueApplyRequest::~MicQueueApplyRequest() {
+  // @@protoc_insertion_point(destructor:chirp.voice.MicQueueApplyRequest)
+  SharedDtor(*this);
+}
+inline void MicQueueApplyRequest::SharedDtor(MessageLite& self) {
+  MicQueueApplyRequest& this_ = static_cast<MicQueueApplyRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.user_id_.Destroy();
+  this_._impl_.room_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL MicQueueApplyRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) MicQueueApplyRequest(arena);
+}
+constexpr auto MicQueueApplyRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(MicQueueApplyRequest),
+                                            alignof(MicQueueApplyRequest));
+}
+constexpr auto MicQueueApplyRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_MicQueueApplyRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &MicQueueApplyRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<MicQueueApplyRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &MicQueueApplyRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<MicQueueApplyRequest>(), &MicQueueApplyRequest::ByteSizeLong,
+              &MicQueueApplyRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(MicQueueApplyRequest, _impl_._cached_size_),
+          false,
+      },
+      &MicQueueApplyRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fvoice_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull MicQueueApplyRequest_class_data_ =
+        MicQueueApplyRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+MicQueueApplyRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MicQueueApplyRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MicQueueApplyRequest_class_data_.tc_table);
+  return MicQueueApplyRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 55, 2>
+MicQueueApplyRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(MicQueueApplyRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    MicQueueApplyRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::voice::MicQueueApplyRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string room_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueApplyRequest, _impl_.room_id_)}},
+    // string user_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueApplyRequest, _impl_.user_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string user_id = 1;
+    {PROTOBUF_FIELD_OFFSET(MicQueueApplyRequest, _impl_.user_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string room_id = 2;
+    {PROTOBUF_FIELD_OFFSET(MicQueueApplyRequest, _impl_.room_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\40\7\7\0\0\0\0\0"
+    "chirp.voice.MicQueueApplyRequest"
+    "user_id"
+    "room_id"
+  }},
+};
+PROTOBUF_NOINLINE void MicQueueApplyRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.voice.MicQueueApplyRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.user_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.room_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL MicQueueApplyRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const MicQueueApplyRequest& this_ = static_cast<const MicQueueApplyRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL MicQueueApplyRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const MicQueueApplyRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.voice.MicQueueApplyRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string user_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_user_id().empty()) {
+      const ::std::string& _s = this_._internal_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.voice.MicQueueApplyRequest.user_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string room_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_room_id().empty()) {
+      const ::std::string& _s = this_._internal_room_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.voice.MicQueueApplyRequest.room_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.voice.MicQueueApplyRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t MicQueueApplyRequest::ByteSizeLong(const MessageLite& base) {
+  const MicQueueApplyRequest& this_ = static_cast<const MicQueueApplyRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t MicQueueApplyRequest::ByteSizeLong() const {
+  const MicQueueApplyRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.voice.MicQueueApplyRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // string user_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_user_id());
+      }
+    }
+    // string room_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_room_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_room_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void MicQueueApplyRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<MicQueueApplyRequest*>(&to_msg);
+  auto& from = static_cast<const MicQueueApplyRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.voice.MicQueueApplyRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_user_id().empty()) {
+        _this->_internal_set_user_id(from._internal_user_id());
+      } else {
+        if (_this->_impl_.user_id_.IsDefault()) {
+          _this->_internal_set_user_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_room_id().empty()) {
+        _this->_internal_set_room_id(from._internal_room_id());
+      } else {
+        if (_this->_impl_.room_id_.IsDefault()) {
+          _this->_internal_set_room_id("");
+        }
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void MicQueueApplyRequest::CopyFrom(const MicQueueApplyRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.voice.MicQueueApplyRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void MicQueueApplyRequest::InternalSwap(MicQueueApplyRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.user_id_, &other->_impl_.user_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.room_id_, &other->_impl_.room_id_, arena);
+}
+
+::google::protobuf::Metadata MicQueueApplyRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class MicQueueApproveRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<MicQueueApproveRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(MicQueueApproveRequest, _impl_._has_bits_);
+};
+
+MicQueueApproveRequest::MicQueueApproveRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MicQueueApproveRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.voice.MicQueueApproveRequest)
+}
+PROTOBUF_NDEBUG_INLINE MicQueueApproveRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::voice::MicQueueApproveRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        user_id_(arena, from.user_id_),
+        room_id_(arena, from.room_id_),
+        target_user_id_(arena, from.target_user_id_) {}
+
+MicQueueApproveRequest::MicQueueApproveRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const MicQueueApproveRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MicQueueApproveRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  MicQueueApproveRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.voice.MicQueueApproveRequest)
+}
+PROTOBUF_NDEBUG_INLINE MicQueueApproveRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        user_id_(arena),
+        room_id_(arena),
+        target_user_id_(arena) {}
+
+inline void MicQueueApproveRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+MicQueueApproveRequest::~MicQueueApproveRequest() {
+  // @@protoc_insertion_point(destructor:chirp.voice.MicQueueApproveRequest)
+  SharedDtor(*this);
+}
+inline void MicQueueApproveRequest::SharedDtor(MessageLite& self) {
+  MicQueueApproveRequest& this_ = static_cast<MicQueueApproveRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.user_id_.Destroy();
+  this_._impl_.room_id_.Destroy();
+  this_._impl_.target_user_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL MicQueueApproveRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) MicQueueApproveRequest(arena);
+}
+constexpr auto MicQueueApproveRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(MicQueueApproveRequest),
+                                            alignof(MicQueueApproveRequest));
+}
+constexpr auto MicQueueApproveRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_MicQueueApproveRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &MicQueueApproveRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<MicQueueApproveRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &MicQueueApproveRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<MicQueueApproveRequest>(), &MicQueueApproveRequest::ByteSizeLong,
+              &MicQueueApproveRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(MicQueueApproveRequest, _impl_._cached_size_),
+          false,
+      },
+      &MicQueueApproveRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fvoice_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull MicQueueApproveRequest_class_data_ =
+        MicQueueApproveRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+MicQueueApproveRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MicQueueApproveRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MicQueueApproveRequest_class_data_.tc_table);
+  return MicQueueApproveRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 71, 2>
+MicQueueApproveRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(MicQueueApproveRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    MicQueueApproveRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::voice::MicQueueApproveRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string user_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueApproveRequest, _impl_.user_id_)}},
+    // string room_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueApproveRequest, _impl_.room_id_)}},
+    // string target_user_id = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 2, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueApproveRequest, _impl_.target_user_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string user_id = 1;
+    {PROTOBUF_FIELD_OFFSET(MicQueueApproveRequest, _impl_.user_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string room_id = 2;
+    {PROTOBUF_FIELD_OFFSET(MicQueueApproveRequest, _impl_.room_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string target_user_id = 3;
+    {PROTOBUF_FIELD_OFFSET(MicQueueApproveRequest, _impl_.target_user_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\42\7\7\16\0\0\0\0"
+    "chirp.voice.MicQueueApproveRequest"
+    "user_id"
+    "room_id"
+    "target_user_id"
+  }},
+};
+PROTOBUF_NOINLINE void MicQueueApproveRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.voice.MicQueueApproveRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.user_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.room_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.target_user_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL MicQueueApproveRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const MicQueueApproveRequest& this_ = static_cast<const MicQueueApproveRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL MicQueueApproveRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const MicQueueApproveRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.voice.MicQueueApproveRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string user_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_user_id().empty()) {
+      const ::std::string& _s = this_._internal_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.voice.MicQueueApproveRequest.user_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string room_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_room_id().empty()) {
+      const ::std::string& _s = this_._internal_room_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.voice.MicQueueApproveRequest.room_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // string target_user_id = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_target_user_id().empty()) {
+      const ::std::string& _s = this_._internal_target_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.voice.MicQueueApproveRequest.target_user_id");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.voice.MicQueueApproveRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t MicQueueApproveRequest::ByteSizeLong(const MessageLite& base) {
+  const MicQueueApproveRequest& this_ = static_cast<const MicQueueApproveRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t MicQueueApproveRequest::ByteSizeLong() const {
+  const MicQueueApproveRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.voice.MicQueueApproveRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    // string user_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_user_id());
+      }
+    }
+    // string room_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_room_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_room_id());
+      }
+    }
+    // string target_user_id = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_target_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_target_user_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void MicQueueApproveRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<MicQueueApproveRequest*>(&to_msg);
+  auto& from = static_cast<const MicQueueApproveRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.voice.MicQueueApproveRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_user_id().empty()) {
+        _this->_internal_set_user_id(from._internal_user_id());
+      } else {
+        if (_this->_impl_.user_id_.IsDefault()) {
+          _this->_internal_set_user_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_room_id().empty()) {
+        _this->_internal_set_room_id(from._internal_room_id());
+      } else {
+        if (_this->_impl_.room_id_.IsDefault()) {
+          _this->_internal_set_room_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_target_user_id().empty()) {
+        _this->_internal_set_target_user_id(from._internal_target_user_id());
+      } else {
+        if (_this->_impl_.target_user_id_.IsDefault()) {
+          _this->_internal_set_target_user_id("");
+        }
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void MicQueueApproveRequest::CopyFrom(const MicQueueApproveRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.voice.MicQueueApproveRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void MicQueueApproveRequest::InternalSwap(MicQueueApproveRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.user_id_, &other->_impl_.user_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.room_id_, &other->_impl_.room_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.target_user_id_, &other->_impl_.target_user_id_, arena);
+}
+
+::google::protobuf::Metadata MicQueueApproveRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class MicQueueReleaseRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<MicQueueReleaseRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(MicQueueReleaseRequest, _impl_._has_bits_);
+};
+
+MicQueueReleaseRequest::MicQueueReleaseRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MicQueueReleaseRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.voice.MicQueueReleaseRequest)
+}
+PROTOBUF_NDEBUG_INLINE MicQueueReleaseRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::voice::MicQueueReleaseRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        user_id_(arena, from.user_id_),
+        room_id_(arena, from.room_id_) {}
+
+MicQueueReleaseRequest::MicQueueReleaseRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const MicQueueReleaseRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MicQueueReleaseRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  MicQueueReleaseRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.voice.MicQueueReleaseRequest)
+}
+PROTOBUF_NDEBUG_INLINE MicQueueReleaseRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        user_id_(arena),
+        room_id_(arena) {}
+
+inline void MicQueueReleaseRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+MicQueueReleaseRequest::~MicQueueReleaseRequest() {
+  // @@protoc_insertion_point(destructor:chirp.voice.MicQueueReleaseRequest)
+  SharedDtor(*this);
+}
+inline void MicQueueReleaseRequest::SharedDtor(MessageLite& self) {
+  MicQueueReleaseRequest& this_ = static_cast<MicQueueReleaseRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.user_id_.Destroy();
+  this_._impl_.room_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL MicQueueReleaseRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) MicQueueReleaseRequest(arena);
+}
+constexpr auto MicQueueReleaseRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(MicQueueReleaseRequest),
+                                            alignof(MicQueueReleaseRequest));
+}
+constexpr auto MicQueueReleaseRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_MicQueueReleaseRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &MicQueueReleaseRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<MicQueueReleaseRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &MicQueueReleaseRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<MicQueueReleaseRequest>(), &MicQueueReleaseRequest::ByteSizeLong,
+              &MicQueueReleaseRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(MicQueueReleaseRequest, _impl_._cached_size_),
+          false,
+      },
+      &MicQueueReleaseRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fvoice_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull MicQueueReleaseRequest_class_data_ =
+        MicQueueReleaseRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+MicQueueReleaseRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MicQueueReleaseRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MicQueueReleaseRequest_class_data_.tc_table);
+  return MicQueueReleaseRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 57, 2>
+MicQueueReleaseRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(MicQueueReleaseRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    MicQueueReleaseRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::voice::MicQueueReleaseRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string room_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueReleaseRequest, _impl_.room_id_)}},
+    // string user_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueReleaseRequest, _impl_.user_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string user_id = 1;
+    {PROTOBUF_FIELD_OFFSET(MicQueueReleaseRequest, _impl_.user_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string room_id = 2;
+    {PROTOBUF_FIELD_OFFSET(MicQueueReleaseRequest, _impl_.room_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\42\7\7\0\0\0\0\0"
+    "chirp.voice.MicQueueReleaseRequest"
+    "user_id"
+    "room_id"
+  }},
+};
+PROTOBUF_NOINLINE void MicQueueReleaseRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.voice.MicQueueReleaseRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.user_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.room_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL MicQueueReleaseRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const MicQueueReleaseRequest& this_ = static_cast<const MicQueueReleaseRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL MicQueueReleaseRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const MicQueueReleaseRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.voice.MicQueueReleaseRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string user_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_user_id().empty()) {
+      const ::std::string& _s = this_._internal_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.voice.MicQueueReleaseRequest.user_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string room_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_room_id().empty()) {
+      const ::std::string& _s = this_._internal_room_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.voice.MicQueueReleaseRequest.room_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.voice.MicQueueReleaseRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t MicQueueReleaseRequest::ByteSizeLong(const MessageLite& base) {
+  const MicQueueReleaseRequest& this_ = static_cast<const MicQueueReleaseRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t MicQueueReleaseRequest::ByteSizeLong() const {
+  const MicQueueReleaseRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.voice.MicQueueReleaseRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // string user_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_user_id());
+      }
+    }
+    // string room_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_room_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_room_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void MicQueueReleaseRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<MicQueueReleaseRequest*>(&to_msg);
+  auto& from = static_cast<const MicQueueReleaseRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.voice.MicQueueReleaseRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_user_id().empty()) {
+        _this->_internal_set_user_id(from._internal_user_id());
+      } else {
+        if (_this->_impl_.user_id_.IsDefault()) {
+          _this->_internal_set_user_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_room_id().empty()) {
+        _this->_internal_set_room_id(from._internal_room_id());
+      } else {
+        if (_this->_impl_.room_id_.IsDefault()) {
+          _this->_internal_set_room_id("");
+        }
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void MicQueueReleaseRequest::CopyFrom(const MicQueueReleaseRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.voice.MicQueueReleaseRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void MicQueueReleaseRequest::InternalSwap(MicQueueReleaseRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.user_id_, &other->_impl_.user_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.room_id_, &other->_impl_.room_id_, arena);
+}
+
+::google::protobuf::Metadata MicQueueReleaseRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class MicQueueGrantRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<MicQueueGrantRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(MicQueueGrantRequest, _impl_._has_bits_);
+};
+
+MicQueueGrantRequest::MicQueueGrantRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MicQueueGrantRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.voice.MicQueueGrantRequest)
+}
+PROTOBUF_NDEBUG_INLINE MicQueueGrantRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::voice::MicQueueGrantRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        user_id_(arena, from.user_id_),
+        room_id_(arena, from.room_id_),
+        target_user_id_(arena, from.target_user_id_) {}
+
+MicQueueGrantRequest::MicQueueGrantRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const MicQueueGrantRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MicQueueGrantRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  MicQueueGrantRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.voice.MicQueueGrantRequest)
+}
+PROTOBUF_NDEBUG_INLINE MicQueueGrantRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        user_id_(arena),
+        room_id_(arena),
+        target_user_id_(arena) {}
+
+inline void MicQueueGrantRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+MicQueueGrantRequest::~MicQueueGrantRequest() {
+  // @@protoc_insertion_point(destructor:chirp.voice.MicQueueGrantRequest)
+  SharedDtor(*this);
+}
+inline void MicQueueGrantRequest::SharedDtor(MessageLite& self) {
+  MicQueueGrantRequest& this_ = static_cast<MicQueueGrantRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.user_id_.Destroy();
+  this_._impl_.room_id_.Destroy();
+  this_._impl_.target_user_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL MicQueueGrantRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) MicQueueGrantRequest(arena);
+}
+constexpr auto MicQueueGrantRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(MicQueueGrantRequest),
+                                            alignof(MicQueueGrantRequest));
+}
+constexpr auto MicQueueGrantRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_MicQueueGrantRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &MicQueueGrantRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<MicQueueGrantRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &MicQueueGrantRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<MicQueueGrantRequest>(), &MicQueueGrantRequest::ByteSizeLong,
+              &MicQueueGrantRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(MicQueueGrantRequest, _impl_._cached_size_),
+          false,
+      },
+      &MicQueueGrantRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fvoice_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull MicQueueGrantRequest_class_data_ =
+        MicQueueGrantRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+MicQueueGrantRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MicQueueGrantRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MicQueueGrantRequest_class_data_.tc_table);
+  return MicQueueGrantRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 69, 2>
+MicQueueGrantRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(MicQueueGrantRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    MicQueueGrantRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::voice::MicQueueGrantRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string user_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueGrantRequest, _impl_.user_id_)}},
+    // string room_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueGrantRequest, _impl_.room_id_)}},
+    // string target_user_id = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 2, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueGrantRequest, _impl_.target_user_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string user_id = 1;
+    {PROTOBUF_FIELD_OFFSET(MicQueueGrantRequest, _impl_.user_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string room_id = 2;
+    {PROTOBUF_FIELD_OFFSET(MicQueueGrantRequest, _impl_.room_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string target_user_id = 3;
+    {PROTOBUF_FIELD_OFFSET(MicQueueGrantRequest, _impl_.target_user_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\40\7\7\16\0\0\0\0"
+    "chirp.voice.MicQueueGrantRequest"
+    "user_id"
+    "room_id"
+    "target_user_id"
+  }},
+};
+PROTOBUF_NOINLINE void MicQueueGrantRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.voice.MicQueueGrantRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.user_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.room_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.target_user_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL MicQueueGrantRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const MicQueueGrantRequest& this_ = static_cast<const MicQueueGrantRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL MicQueueGrantRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const MicQueueGrantRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.voice.MicQueueGrantRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string user_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_user_id().empty()) {
+      const ::std::string& _s = this_._internal_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.voice.MicQueueGrantRequest.user_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string room_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_room_id().empty()) {
+      const ::std::string& _s = this_._internal_room_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.voice.MicQueueGrantRequest.room_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // string target_user_id = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_target_user_id().empty()) {
+      const ::std::string& _s = this_._internal_target_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.voice.MicQueueGrantRequest.target_user_id");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.voice.MicQueueGrantRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t MicQueueGrantRequest::ByteSizeLong(const MessageLite& base) {
+  const MicQueueGrantRequest& this_ = static_cast<const MicQueueGrantRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t MicQueueGrantRequest::ByteSizeLong() const {
+  const MicQueueGrantRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.voice.MicQueueGrantRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    // string user_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_user_id());
+      }
+    }
+    // string room_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_room_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_room_id());
+      }
+    }
+    // string target_user_id = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_target_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_target_user_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void MicQueueGrantRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<MicQueueGrantRequest*>(&to_msg);
+  auto& from = static_cast<const MicQueueGrantRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.voice.MicQueueGrantRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_user_id().empty()) {
+        _this->_internal_set_user_id(from._internal_user_id());
+      } else {
+        if (_this->_impl_.user_id_.IsDefault()) {
+          _this->_internal_set_user_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_room_id().empty()) {
+        _this->_internal_set_room_id(from._internal_room_id());
+      } else {
+        if (_this->_impl_.room_id_.IsDefault()) {
+          _this->_internal_set_room_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_target_user_id().empty()) {
+        _this->_internal_set_target_user_id(from._internal_target_user_id());
+      } else {
+        if (_this->_impl_.target_user_id_.IsDefault()) {
+          _this->_internal_set_target_user_id("");
+        }
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void MicQueueGrantRequest::CopyFrom(const MicQueueGrantRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.voice.MicQueueGrantRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void MicQueueGrantRequest::InternalSwap(MicQueueGrantRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.user_id_, &other->_impl_.user_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.room_id_, &other->_impl_.room_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.target_user_id_, &other->_impl_.target_user_id_, arena);
+}
+
+::google::protobuf::Metadata MicQueueGrantRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class MicQueueResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<MicQueueResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(MicQueueResponse, _impl_._has_bits_);
+};
+
+MicQueueResponse::MicQueueResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MicQueueResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.voice.MicQueueResponse)
+}
+PROTOBUF_NDEBUG_INLINE MicQueueResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::voice::MicQueueResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        holder_user_id_(arena, from.holder_user_id_) {}
+
+MicQueueResponse::MicQueueResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const MicQueueResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MicQueueResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  MicQueueResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, server_time_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, server_time_),
+           offsetof(Impl_, queue_depth_) -
+               offsetof(Impl_, server_time_) +
+               sizeof(Impl_::queue_depth_));
+
+  // @@protoc_insertion_point(copy_constructor:chirp.voice.MicQueueResponse)
+}
+PROTOBUF_NDEBUG_INLINE MicQueueResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        holder_user_id_(arena) {}
+
+inline void MicQueueResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, server_time_),
+           0,
+           offsetof(Impl_, queue_depth_) -
+               offsetof(Impl_, server_time_) +
+               sizeof(Impl_::queue_depth_));
+}
+MicQueueResponse::~MicQueueResponse() {
+  // @@protoc_insertion_point(destructor:chirp.voice.MicQueueResponse)
+  SharedDtor(*this);
+}
+inline void MicQueueResponse::SharedDtor(MessageLite& self) {
+  MicQueueResponse& this_ = static_cast<MicQueueResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.holder_user_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL MicQueueResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) MicQueueResponse(arena);
+}
+constexpr auto MicQueueResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(MicQueueResponse),
+                                            alignof(MicQueueResponse));
+}
+constexpr auto MicQueueResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_MicQueueResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &MicQueueResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<MicQueueResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &MicQueueResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<MicQueueResponse>(), &MicQueueResponse::ByteSizeLong,
+              &MicQueueResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(MicQueueResponse, _impl_._cached_size_),
+          false,
+      },
+      &MicQueueResponse::kDescriptorMethods,
+      &descriptor_table_proto_2fvoice_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull MicQueueResponse_class_data_ =
+        MicQueueResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+MicQueueResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MicQueueResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MicQueueResponse_class_data_.tc_table);
+  return MicQueueResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 4, 0, 51, 2>
+MicQueueResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(MicQueueResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    4, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967280,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    4,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    MicQueueResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::voice::MicQueueResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // int32 queue_depth = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MicQueueResponse, _impl_.queue_depth_), 3>(),
+     {32, 3, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueResponse, _impl_.queue_depth_)}},
+    // .chirp.common.ErrorCode code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MicQueueResponse, _impl_.code_), 2>(),
+     {8, 2, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueResponse, _impl_.code_)}},
+    // int64 server_time = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MicQueueResponse, _impl_.server_time_), 1>(),
+     {16, 1, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueResponse, _impl_.server_time_)}},
+    // string holder_user_id = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 0, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueResponse, _impl_.holder_user_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.common.ErrorCode code = 1;
+    {PROTOBUF_FIELD_OFFSET(MicQueueResponse, _impl_.code_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // int64 server_time = 2;
+    {PROTOBUF_FIELD_OFFSET(MicQueueResponse, _impl_.server_time_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+    // string holder_user_id = 3;
+    {PROTOBUF_FIELD_OFFSET(MicQueueResponse, _impl_.holder_user_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // int32 queue_depth = 4;
+    {PROTOBUF_FIELD_OFFSET(MicQueueResponse, _impl_.queue_depth_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+  }},
+  // no aux_entries
+  {{
+    "\34\0\0\16\0\0\0\0"
+    "chirp.voice.MicQueueResponse"
+    "holder_user_id"
+  }},
+};
+PROTOBUF_NOINLINE void MicQueueResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.voice.MicQueueResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.holder_user_id_.ClearNonDefaultToEmpty();
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000eU)) {
+    ::memset(&_impl_.server_time_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.queue_depth_) -
+        reinterpret_cast<char*>(&_impl_.server_time_)) + sizeof(_impl_.queue_depth_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL MicQueueResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const MicQueueResponse& this_ = static_cast<const MicQueueResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL MicQueueResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const MicQueueResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.voice.MicQueueResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.common.ErrorCode code = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_code() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_code(), target);
+    }
+  }
+
+  // int64 server_time = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_server_time() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<2>(
+              stream, this_._internal_server_time(), target);
+    }
+  }
+
+  // string holder_user_id = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_holder_user_id().empty()) {
+      const ::std::string& _s = this_._internal_holder_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.voice.MicQueueResponse.holder_user_id");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  // int32 queue_depth = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_queue_depth() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<4>(
+              stream, this_._internal_queue_depth(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.voice.MicQueueResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t MicQueueResponse::ByteSizeLong(const MessageLite& base) {
+  const MicQueueResponse& this_ = static_cast<const MicQueueResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t MicQueueResponse::ByteSizeLong() const {
+  const MicQueueResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.voice.MicQueueResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    // string holder_user_id = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_holder_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_holder_user_id());
+      }
+    }
+    // int64 server_time = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_server_time() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_server_time());
+      }
+    }
+    // .chirp.common.ErrorCode code = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_code() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+      }
+    }
+    // int32 queue_depth = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_queue_depth() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_queue_depth());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void MicQueueResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<MicQueueResponse*>(&to_msg);
+  auto& from = static_cast<const MicQueueResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.voice.MicQueueResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_holder_user_id().empty()) {
+        _this->_internal_set_holder_user_id(from._internal_holder_user_id());
+      } else {
+        if (_this->_impl_.holder_user_id_.IsDefault()) {
+          _this->_internal_set_holder_user_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_server_time() != 0) {
+        _this->_impl_.server_time_ = from._impl_.server_time_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_code() != 0) {
+        _this->_impl_.code_ = from._impl_.code_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_queue_depth() != 0) {
+        _this->_impl_.queue_depth_ = from._impl_.queue_depth_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void MicQueueResponse::CopyFrom(const MicQueueResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.voice.MicQueueResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void MicQueueResponse::InternalSwap(MicQueueResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.holder_user_id_, &other->_impl_.holder_user_id_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(MicQueueResponse, _impl_.queue_depth_)
+      + sizeof(MicQueueResponse::_impl_.queue_depth_)
+      - PROTOBUF_FIELD_OFFSET(MicQueueResponse, _impl_.server_time_)>(
+          reinterpret_cast<char*>(&_impl_.server_time_),
+          reinterpret_cast<char*>(&other->_impl_.server_time_));
+}
+
+::google::protobuf::Metadata MicQueueResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class MicQueueStateNotify::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<MicQueueStateNotify>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(MicQueueStateNotify, _impl_._has_bits_);
+};
+
+MicQueueStateNotify::MicQueueStateNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MicQueueStateNotify_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.voice.MicQueueStateNotify)
+}
+PROTOBUF_NDEBUG_INLINE MicQueueStateNotify::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::voice::MicQueueStateNotify& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        queue_user_ids_{visibility, arena, from.queue_user_ids_},
+        room_id_(arena, from.room_id_),
+        holder_user_id_(arena, from.holder_user_id_) {}
+
+MicQueueStateNotify::MicQueueStateNotify(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const MicQueueStateNotify& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MicQueueStateNotify_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  MicQueueStateNotify* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, timestamp_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, timestamp_),
+           offsetof(Impl_, mode_) -
+               offsetof(Impl_, timestamp_) +
+               sizeof(Impl_::mode_));
+
+  // @@protoc_insertion_point(copy_constructor:chirp.voice.MicQueueStateNotify)
+}
+PROTOBUF_NDEBUG_INLINE MicQueueStateNotify::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        queue_user_ids_{visibility, arena},
+        room_id_(arena),
+        holder_user_id_(arena) {}
+
+inline void MicQueueStateNotify::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, timestamp_),
+           0,
+           offsetof(Impl_, mode_) -
+               offsetof(Impl_, timestamp_) +
+               sizeof(Impl_::mode_));
+}
+MicQueueStateNotify::~MicQueueStateNotify() {
+  // @@protoc_insertion_point(destructor:chirp.voice.MicQueueStateNotify)
+  SharedDtor(*this);
+}
+inline void MicQueueStateNotify::SharedDtor(MessageLite& self) {
+  MicQueueStateNotify& this_ = static_cast<MicQueueStateNotify&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.room_id_.Destroy();
+  this_._impl_.holder_user_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL MicQueueStateNotify::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) MicQueueStateNotify(arena);
+}
+constexpr auto MicQueueStateNotify::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(MicQueueStateNotify, _impl_.queue_user_ids_) +
+          decltype(MicQueueStateNotify::_impl_.queue_user_ids_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::CopyInit(
+        sizeof(MicQueueStateNotify), alignof(MicQueueStateNotify), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&MicQueueStateNotify::PlacementNew_,
+                                 sizeof(MicQueueStateNotify),
+                                 alignof(MicQueueStateNotify));
+  }
+}
+constexpr auto MicQueueStateNotify::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_MicQueueStateNotify_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &MicQueueStateNotify::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<MicQueueStateNotify>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &MicQueueStateNotify::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<MicQueueStateNotify>(), &MicQueueStateNotify::ByteSizeLong,
+              &MicQueueStateNotify::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(MicQueueStateNotify, _impl_._cached_size_),
+          false,
+      },
+      &MicQueueStateNotify::kDescriptorMethods,
+      &descriptor_table_proto_2fvoice_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull MicQueueStateNotify_class_data_ =
+        MicQueueStateNotify::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+MicQueueStateNotify::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MicQueueStateNotify_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MicQueueStateNotify_class_data_.tc_table);
+  return MicQueueStateNotify_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<3, 5, 0, 75, 2>
+MicQueueStateNotify::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(MicQueueStateNotify, _impl_._has_bits_),
+    0, // no _extensions_
+    5, 56,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967264,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    5,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    MicQueueStateNotify_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::voice::MicQueueStateNotify>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string room_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 1, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueStateNotify, _impl_.room_id_)}},
+    // .chirp.voice.MicMode mode = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MicQueueStateNotify, _impl_.mode_), 4>(),
+     {16, 4, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueStateNotify, _impl_.mode_)}},
+    // string holder_user_id = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 2, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueStateNotify, _impl_.holder_user_id_)}},
+    // repeated string queue_user_ids = 4;
+    {::_pbi::TcParser::FastUR1,
+     {34, 0, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueStateNotify, _impl_.queue_user_ids_)}},
+    // int64 timestamp = 5;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MicQueueStateNotify, _impl_.timestamp_), 3>(),
+     {40, 3, 0,
+      PROTOBUF_FIELD_OFFSET(MicQueueStateNotify, _impl_.timestamp_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string room_id = 1;
+    {PROTOBUF_FIELD_OFFSET(MicQueueStateNotify, _impl_.room_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // .chirp.voice.MicMode mode = 2;
+    {PROTOBUF_FIELD_OFFSET(MicQueueStateNotify, _impl_.mode_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // string holder_user_id = 3;
+    {PROTOBUF_FIELD_OFFSET(MicQueueStateNotify, _impl_.holder_user_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // repeated string queue_user_ids = 4;
+    {PROTOBUF_FIELD_OFFSET(MicQueueStateNotify, _impl_.queue_user_ids_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kUtf8String | ::_fl::kRepSString)},
+    // int64 timestamp = 5;
+    {PROTOBUF_FIELD_OFFSET(MicQueueStateNotify, _impl_.timestamp_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+    "\37\7\0\16\16\0\0\0"
+    "chirp.voice.MicQueueStateNotify"
+    "room_id"
+    "holder_user_id"
+    "queue_user_ids"
+  }},
+};
+PROTOBUF_NOINLINE void MicQueueStateNotify::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.voice.MicQueueStateNotify)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      _impl_.queue_user_ids_.Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.room_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.holder_user_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000018U)) {
+    ::memset(&_impl_.timestamp_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.mode_) -
+        reinterpret_cast<char*>(&_impl_.timestamp_)) + sizeof(_impl_.mode_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL MicQueueStateNotify::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const MicQueueStateNotify& this_ = static_cast<const MicQueueStateNotify&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL MicQueueStateNotify::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const MicQueueStateNotify& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.voice.MicQueueStateNotify)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string room_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_room_id().empty()) {
+      const ::std::string& _s = this_._internal_room_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.voice.MicQueueStateNotify.room_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // .chirp.voice.MicMode mode = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_mode() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          2, this_._internal_mode(), target);
+    }
+  }
+
+  // string holder_user_id = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_holder_user_id().empty()) {
+      const ::std::string& _s = this_._internal_holder_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.voice.MicQueueStateNotify.holder_user_id");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  // repeated string queue_user_ids = 4;
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    for (int i = 0, n = this_._internal_queue_user_ids_size(); i < n; ++i) {
+      const auto& s = this_._internal_queue_user_ids().Get(i);
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          s.data(), static_cast<int>(s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.voice.MicQueueStateNotify.queue_user_ids");
+      target = stream->WriteString(4, s, target);
+    }
+  }
+
+  // int64 timestamp = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_timestamp() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<5>(
+              stream, this_._internal_timestamp(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.voice.MicQueueStateNotify)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t MicQueueStateNotify::ByteSizeLong(const MessageLite& base) {
+  const MicQueueStateNotify& this_ = static_cast<const MicQueueStateNotify&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t MicQueueStateNotify::ByteSizeLong() const {
+  const MicQueueStateNotify& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.voice.MicQueueStateNotify)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    // repeated string queue_user_ids = 4;
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      total_size +=
+          1 * ::google::protobuf::internal::FromIntSize(this_._internal_queue_user_ids().size());
+      for (int i = 0, n = this_._internal_queue_user_ids().size(); i < n; ++i) {
+        total_size += ::google::protobuf::internal::WireFormatLite::StringSize(
+            this_._internal_queue_user_ids().Get(i));
+      }
+    }
+    // string room_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_room_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_room_id());
+      }
+    }
+    // string holder_user_id = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_holder_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_holder_user_id());
+      }
+    }
+    // int64 timestamp = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_timestamp() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_timestamp());
+      }
+    }
+    // .chirp.voice.MicMode mode = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_mode() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_mode());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void MicQueueStateNotify::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<MicQueueStateNotify*>(&to_msg);
+  auto& from = static_cast<const MicQueueStateNotify&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.voice.MicQueueStateNotify)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      _this->_internal_mutable_queue_user_ids()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_queue_user_ids());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_room_id().empty()) {
+        _this->_internal_set_room_id(from._internal_room_id());
+      } else {
+        if (_this->_impl_.room_id_.IsDefault()) {
+          _this->_internal_set_room_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_holder_user_id().empty()) {
+        _this->_internal_set_holder_user_id(from._internal_holder_user_id());
+      } else {
+        if (_this->_impl_.holder_user_id_.IsDefault()) {
+          _this->_internal_set_holder_user_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_timestamp() != 0) {
+        _this->_impl_.timestamp_ = from._impl_.timestamp_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_mode() != 0) {
+        _this->_impl_.mode_ = from._impl_.mode_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void MicQueueStateNotify::CopyFrom(const MicQueueStateNotify& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.voice.MicQueueStateNotify)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void MicQueueStateNotify::InternalSwap(MicQueueStateNotify* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.queue_user_ids_.InternalSwap(&other->_impl_.queue_user_ids_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.room_id_, &other->_impl_.room_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.holder_user_id_, &other->_impl_.holder_user_id_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(MicQueueStateNotify, _impl_.mode_)
+      + sizeof(MicQueueStateNotify::_impl_.mode_)
+      - PROTOBUF_FIELD_OFFSET(MicQueueStateNotify, _impl_.timestamp_)>(
+          reinterpret_cast<char*>(&_impl_.timestamp_),
+          reinterpret_cast<char*>(&other->_impl_.timestamp_));
+}
+
+::google::protobuf::Metadata MicQueueStateNotify::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

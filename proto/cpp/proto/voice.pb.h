@@ -60,6 +60,10 @@ extern const ::google::protobuf::internal::DescriptorTable descriptor_table_prot
 }  // extern "C"
 namespace chirp {
 namespace voice {
+enum MediaTier : int;
+extern const uint32_t MediaTier_internal_data_[];
+enum MicMode : int;
+extern const uint32_t MicMode_internal_data_[];
 enum ParticipantState : int;
 extern const uint32_t ParticipantState_internal_data_[];
 enum RoomType : int;
@@ -120,6 +124,30 @@ class LeaveRoomResponse;
 struct LeaveRoomResponseDefaultTypeInternal;
 extern LeaveRoomResponseDefaultTypeInternal _LeaveRoomResponse_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull LeaveRoomResponse_class_data_;
+class MicQueueApplyRequest;
+struct MicQueueApplyRequestDefaultTypeInternal;
+extern MicQueueApplyRequestDefaultTypeInternal _MicQueueApplyRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull MicQueueApplyRequest_class_data_;
+class MicQueueApproveRequest;
+struct MicQueueApproveRequestDefaultTypeInternal;
+extern MicQueueApproveRequestDefaultTypeInternal _MicQueueApproveRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull MicQueueApproveRequest_class_data_;
+class MicQueueGrantRequest;
+struct MicQueueGrantRequestDefaultTypeInternal;
+extern MicQueueGrantRequestDefaultTypeInternal _MicQueueGrantRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull MicQueueGrantRequest_class_data_;
+class MicQueueReleaseRequest;
+struct MicQueueReleaseRequestDefaultTypeInternal;
+extern MicQueueReleaseRequestDefaultTypeInternal _MicQueueReleaseRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull MicQueueReleaseRequest_class_data_;
+class MicQueueResponse;
+struct MicQueueResponseDefaultTypeInternal;
+extern MicQueueResponseDefaultTypeInternal _MicQueueResponse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull MicQueueResponse_class_data_;
+class MicQueueStateNotify;
+struct MicQueueStateNotifyDefaultTypeInternal;
+extern MicQueueStateNotifyDefaultTypeInternal _MicQueueStateNotify_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull MicQueueStateNotify_class_data_;
 class ParticipantInfo;
 struct ParticipantInfoDefaultTypeInternal;
 extern ParticipantInfoDefaultTypeInternal _ParticipantInfo_default_instance_;
@@ -152,6 +180,10 @@ class SetDeafenResponse;
 struct SetDeafenResponseDefaultTypeInternal;
 extern SetDeafenResponseDefaultTypeInternal _SetDeafenResponse_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull SetDeafenResponse_class_data_;
+class SetMicModeRequest;
+struct SetMicModeRequestDefaultTypeInternal;
+extern SetMicModeRequestDefaultTypeInternal _SetMicModeRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull SetMicModeRequest_class_data_;
 class SetMuteRequest;
 struct SetMuteRequestDefaultTypeInternal;
 extern SetMuteRequestDefaultTypeInternal _SetMuteRequest_default_instance_;
@@ -168,6 +200,12 @@ extern const ::google::protobuf::internal::ClassDataFull SpeakingNotify_class_da
 }  // namespace chirp
 namespace google {
 namespace protobuf {
+template <>
+internal::EnumTraitsT<::chirp::voice::MediaTier_internal_data_>
+    internal::EnumTraitsImpl::value<::chirp::voice::MediaTier>;
+template <>
+internal::EnumTraitsT<::chirp::voice::MicMode_internal_data_>
+    internal::EnumTraitsImpl::value<::chirp::voice::MicMode>;
 template <>
 internal::EnumTraitsT<::chirp::voice::ParticipantState_internal_data_>
     internal::EnumTraitsImpl::value<::chirp::voice::ParticipantState>;
@@ -253,6 +291,78 @@ inline const ::std::string& ParticipantState_Name(ParticipantState value) {
 inline bool ParticipantState_Parse(
     ::absl::string_view name, ParticipantState* PROTOBUF_NONNULL value) {
   return ::google::protobuf::internal::ParseNamedEnum<ParticipantState>(ParticipantState_descriptor(), name,
+                                           value);
+}
+enum MicMode : int {
+  MIC_FREE = 0,
+  MIC_MANAGED = 1,
+  MicMode_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::min(),
+  MicMode_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::max(),
+};
+
+extern const uint32_t MicMode_internal_data_[];
+inline constexpr MicMode MicMode_MIN =
+    static_cast<MicMode>(0);
+inline constexpr MicMode MicMode_MAX =
+    static_cast<MicMode>(1);
+inline bool MicMode_IsValid(int value) {
+  return 0 <= value && value <= 1;
+}
+inline constexpr int MicMode_ARRAYSIZE = 1 + 1;
+const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MicMode_descriptor();
+template <typename T>
+const ::std::string& MicMode_Name(T value) {
+  static_assert(::std::is_same<T, MicMode>::value ||
+                    ::std::is_integral<T>::value,
+                "Incorrect type passed to MicMode_Name().");
+  return MicMode_Name(static_cast<MicMode>(value));
+}
+template <>
+inline const ::std::string& MicMode_Name(MicMode value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<MicMode_descriptor, 0, 1>(
+      static_cast<int>(value));
+}
+inline bool MicMode_Parse(
+    ::absl::string_view name, MicMode* PROTOBUF_NONNULL value) {
+  return ::google::protobuf::internal::ParseNamedEnum<MicMode>(MicMode_descriptor(), name,
+                                           value);
+}
+enum MediaTier : int {
+  FULL_MIX = 0,
+  FORWARD_BYPASS = 1,
+  MediaTier_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::min(),
+  MediaTier_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::max(),
+};
+
+extern const uint32_t MediaTier_internal_data_[];
+inline constexpr MediaTier MediaTier_MIN =
+    static_cast<MediaTier>(0);
+inline constexpr MediaTier MediaTier_MAX =
+    static_cast<MediaTier>(1);
+inline bool MediaTier_IsValid(int value) {
+  return 0 <= value && value <= 1;
+}
+inline constexpr int MediaTier_ARRAYSIZE = 1 + 1;
+const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MediaTier_descriptor();
+template <typename T>
+const ::std::string& MediaTier_Name(T value) {
+  static_assert(::std::is_same<T, MediaTier>::value ||
+                    ::std::is_integral<T>::value,
+                "Incorrect type passed to MediaTier_Name().");
+  return MediaTier_Name(static_cast<MediaTier>(value));
+}
+template <>
+inline const ::std::string& MediaTier_Name(MediaTier value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<MediaTier_descriptor, 0, 1>(
+      static_cast<int>(value));
+}
+inline bool MediaTier_Parse(
+    ::absl::string_view name, MediaTier* PROTOBUF_NONNULL value) {
+  return ::google::protobuf::internal::ParseNamedEnum<MediaTier>(MediaTier_descriptor(), name,
                                            value);
 }
 
@@ -407,6 +517,7 @@ class SpeakingNotify final : public ::google::protobuf::Message
     kUserIdFieldNumber = 2,
     kTimestampFieldNumber = 4,
     kSpeakingFieldNumber = 3,
+    kVolumeFieldNumber = 5,
   };
   // string room_id = 1;
   void clear_room_id() ;
@@ -458,11 +569,21 @@ class SpeakingNotify final : public ::google::protobuf::Message
   void _internal_set_speaking(bool value);
 
   public:
+  // int32 volume = 5;
+  void clear_volume() ;
+  ::int32_t volume() const;
+  void set_volume(::int32_t value);
+
+  private:
+  ::int32_t _internal_volume() const;
+  void _internal_set_volume(::int32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:chirp.voice.SpeakingNotify)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 4,
+  static const ::google::protobuf::internal::TcParseTable<3, 5,
                                    0, 49,
                                    2>
       _table_;
@@ -488,6 +609,7 @@ class SpeakingNotify final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr user_id_;
     ::int64_t timestamp_;
     bool speaking_;
+    ::int32_t volume_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -921,6 +1043,230 @@ class SetMuteRequest final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull SetMuteRequest_class_data_;
+// -------------------------------------------------------------------
+
+class SetMicModeRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.voice.SetMicModeRequest) */ {
+ public:
+  inline SetMicModeRequest() : SetMicModeRequest(nullptr) {}
+  ~SetMicModeRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(SetMicModeRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(SetMicModeRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR SetMicModeRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline SetMicModeRequest(const SetMicModeRequest& from) : SetMicModeRequest(nullptr, from) {}
+  inline SetMicModeRequest(SetMicModeRequest&& from) noexcept
+      : SetMicModeRequest(nullptr, ::std::move(from)) {}
+  inline SetMicModeRequest& operator=(const SetMicModeRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SetMicModeRequest& operator=(SetMicModeRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const SetMicModeRequest& default_instance() {
+    return *reinterpret_cast<const SetMicModeRequest*>(
+        &_SetMicModeRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 25;
+  friend void swap(SetMicModeRequest& a, SetMicModeRequest& b) { a.Swap(&b); }
+  inline void Swap(SetMicModeRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(SetMicModeRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  SetMicModeRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<SetMicModeRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const SetMicModeRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const SetMicModeRequest& from) { SetMicModeRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(SetMicModeRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.voice.SetMicModeRequest"; }
+
+  explicit SetMicModeRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  SetMicModeRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SetMicModeRequest& from);
+  SetMicModeRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SetMicModeRequest&& from) noexcept
+      : SetMicModeRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kUserIdFieldNumber = 1,
+    kRoomIdFieldNumber = 2,
+    kModeFieldNumber = 3,
+  };
+  // string user_id = 1;
+  void clear_user_id() ;
+  const ::std::string& user_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_user_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_user_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_user_id();
+  void set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_user_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_user_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_user_id();
+
+  public:
+  // string room_id = 2;
+  void clear_room_id() ;
+  const ::std::string& room_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_room_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_room_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_room_id();
+  void set_allocated_room_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_room_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_room_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_room_id();
+
+  public:
+  // .chirp.voice.MicMode mode = 3;
+  void clear_mode() ;
+  ::chirp::voice::MicMode mode() const;
+  void set_mode(::chirp::voice::MicMode value);
+
+  private:
+  ::chirp::voice::MicMode _internal_mode() const;
+  void _internal_set_mode(::chirp::voice::MicMode value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.voice.SetMicModeRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
+                                   0, 52,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const SetMicModeRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr user_id_;
+    ::google::protobuf::internal::ArenaStringPtr room_id_;
+    int mode_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fvoice_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull SetMicModeRequest_class_data_;
 // -------------------------------------------------------------------
 
 class SetDeafenResponse final : public ::google::protobuf::Message
@@ -2571,6 +2917,1379 @@ class ParticipantInfo final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull ParticipantInfo_class_data_;
+// -------------------------------------------------------------------
+
+class MicQueueStateNotify final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.voice.MicQueueStateNotify) */ {
+ public:
+  inline MicQueueStateNotify() : MicQueueStateNotify(nullptr) {}
+  ~MicQueueStateNotify() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(MicQueueStateNotify* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MicQueueStateNotify));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR MicQueueStateNotify(::google::protobuf::internal::ConstantInitialized);
+
+  inline MicQueueStateNotify(const MicQueueStateNotify& from) : MicQueueStateNotify(nullptr, from) {}
+  inline MicQueueStateNotify(MicQueueStateNotify&& from) noexcept
+      : MicQueueStateNotify(nullptr, ::std::move(from)) {}
+  inline MicQueueStateNotify& operator=(const MicQueueStateNotify& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MicQueueStateNotify& operator=(MicQueueStateNotify&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const MicQueueStateNotify& default_instance() {
+    return *reinterpret_cast<const MicQueueStateNotify*>(
+        &_MicQueueStateNotify_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 31;
+  friend void swap(MicQueueStateNotify& a, MicQueueStateNotify& b) { a.Swap(&b); }
+  inline void Swap(MicQueueStateNotify* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MicQueueStateNotify* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  MicQueueStateNotify* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MicQueueStateNotify>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MicQueueStateNotify& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MicQueueStateNotify& from) { MicQueueStateNotify::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(MicQueueStateNotify* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.voice.MicQueueStateNotify"; }
+
+  explicit MicQueueStateNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MicQueueStateNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MicQueueStateNotify& from);
+  MicQueueStateNotify(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MicQueueStateNotify&& from) noexcept
+      : MicQueueStateNotify(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kQueueUserIdsFieldNumber = 4,
+    kRoomIdFieldNumber = 1,
+    kHolderUserIdFieldNumber = 3,
+    kTimestampFieldNumber = 5,
+    kModeFieldNumber = 2,
+  };
+  // repeated string queue_user_ids = 4;
+  int queue_user_ids_size() const;
+  private:
+  int _internal_queue_user_ids_size() const;
+
+  public:
+  void clear_queue_user_ids() ;
+  const ::std::string& queue_user_ids(int index) const;
+  ::std::string* PROTOBUF_NONNULL mutable_queue_user_ids(int index);
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_queue_user_ids(int index, Arg_&& value, Args_... args);
+  ::std::string* PROTOBUF_NONNULL add_queue_user_ids();
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void add_queue_user_ids(Arg_&& value, Args_... args);
+  const ::google::protobuf::RepeatedPtrField<::std::string>& queue_user_ids() const;
+  ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL mutable_queue_user_ids();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::std::string>& _internal_queue_user_ids() const;
+  ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL _internal_mutable_queue_user_ids();
+
+  public:
+  // string room_id = 1;
+  void clear_room_id() ;
+  const ::std::string& room_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_room_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_room_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_room_id();
+  void set_allocated_room_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_room_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_room_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_room_id();
+
+  public:
+  // string holder_user_id = 3;
+  void clear_holder_user_id() ;
+  const ::std::string& holder_user_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_holder_user_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_holder_user_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_holder_user_id();
+  void set_allocated_holder_user_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_holder_user_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_holder_user_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_holder_user_id();
+
+  public:
+  // int64 timestamp = 5;
+  void clear_timestamp() ;
+  ::int64_t timestamp() const;
+  void set_timestamp(::int64_t value);
+
+  private:
+  ::int64_t _internal_timestamp() const;
+  void _internal_set_timestamp(::int64_t value);
+
+  public:
+  // .chirp.voice.MicMode mode = 2;
+  void clear_mode() ;
+  ::chirp::voice::MicMode mode() const;
+  void set_mode(::chirp::voice::MicMode value);
+
+  private:
+  ::chirp::voice::MicMode _internal_mode() const;
+  void _internal_set_mode(::chirp::voice::MicMode value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.voice.MicQueueStateNotify)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<3, 5,
+                                   0, 75,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const MicQueueStateNotify& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField<::std::string> queue_user_ids_;
+    ::google::protobuf::internal::ArenaStringPtr room_id_;
+    ::google::protobuf::internal::ArenaStringPtr holder_user_id_;
+    ::int64_t timestamp_;
+    int mode_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fvoice_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull MicQueueStateNotify_class_data_;
+// -------------------------------------------------------------------
+
+class MicQueueResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.voice.MicQueueResponse) */ {
+ public:
+  inline MicQueueResponse() : MicQueueResponse(nullptr) {}
+  ~MicQueueResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(MicQueueResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MicQueueResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR MicQueueResponse(::google::protobuf::internal::ConstantInitialized);
+
+  inline MicQueueResponse(const MicQueueResponse& from) : MicQueueResponse(nullptr, from) {}
+  inline MicQueueResponse(MicQueueResponse&& from) noexcept
+      : MicQueueResponse(nullptr, ::std::move(from)) {}
+  inline MicQueueResponse& operator=(const MicQueueResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MicQueueResponse& operator=(MicQueueResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const MicQueueResponse& default_instance() {
+    return *reinterpret_cast<const MicQueueResponse*>(
+        &_MicQueueResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 30;
+  friend void swap(MicQueueResponse& a, MicQueueResponse& b) { a.Swap(&b); }
+  inline void Swap(MicQueueResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MicQueueResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  MicQueueResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MicQueueResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MicQueueResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MicQueueResponse& from) { MicQueueResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(MicQueueResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.voice.MicQueueResponse"; }
+
+  explicit MicQueueResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MicQueueResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MicQueueResponse& from);
+  MicQueueResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MicQueueResponse&& from) noexcept
+      : MicQueueResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kHolderUserIdFieldNumber = 3,
+    kServerTimeFieldNumber = 2,
+    kCodeFieldNumber = 1,
+    kQueueDepthFieldNumber = 4,
+  };
+  // string holder_user_id = 3;
+  void clear_holder_user_id() ;
+  const ::std::string& holder_user_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_holder_user_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_holder_user_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_holder_user_id();
+  void set_allocated_holder_user_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_holder_user_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_holder_user_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_holder_user_id();
+
+  public:
+  // int64 server_time = 2;
+  void clear_server_time() ;
+  ::int64_t server_time() const;
+  void set_server_time(::int64_t value);
+
+  private:
+  ::int64_t _internal_server_time() const;
+  void _internal_set_server_time(::int64_t value);
+
+  public:
+  // .chirp.common.ErrorCode code = 1;
+  void clear_code() ;
+  ::chirp::common::ErrorCode code() const;
+  void set_code(::chirp::common::ErrorCode value);
+
+  private:
+  ::chirp::common::ErrorCode _internal_code() const;
+  void _internal_set_code(::chirp::common::ErrorCode value);
+
+  public:
+  // int32 queue_depth = 4;
+  void clear_queue_depth() ;
+  ::int32_t queue_depth() const;
+  void set_queue_depth(::int32_t value);
+
+  private:
+  ::int32_t _internal_queue_depth() const;
+  void _internal_set_queue_depth(::int32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.voice.MicQueueResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
+                                   0, 51,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const MicQueueResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr holder_user_id_;
+    ::int64_t server_time_;
+    int code_;
+    ::int32_t queue_depth_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fvoice_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull MicQueueResponse_class_data_;
+// -------------------------------------------------------------------
+
+class MicQueueReleaseRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.voice.MicQueueReleaseRequest) */ {
+ public:
+  inline MicQueueReleaseRequest() : MicQueueReleaseRequest(nullptr) {}
+  ~MicQueueReleaseRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(MicQueueReleaseRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MicQueueReleaseRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR MicQueueReleaseRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline MicQueueReleaseRequest(const MicQueueReleaseRequest& from) : MicQueueReleaseRequest(nullptr, from) {}
+  inline MicQueueReleaseRequest(MicQueueReleaseRequest&& from) noexcept
+      : MicQueueReleaseRequest(nullptr, ::std::move(from)) {}
+  inline MicQueueReleaseRequest& operator=(const MicQueueReleaseRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MicQueueReleaseRequest& operator=(MicQueueReleaseRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const MicQueueReleaseRequest& default_instance() {
+    return *reinterpret_cast<const MicQueueReleaseRequest*>(
+        &_MicQueueReleaseRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 28;
+  friend void swap(MicQueueReleaseRequest& a, MicQueueReleaseRequest& b) { a.Swap(&b); }
+  inline void Swap(MicQueueReleaseRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MicQueueReleaseRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  MicQueueReleaseRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MicQueueReleaseRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MicQueueReleaseRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MicQueueReleaseRequest& from) { MicQueueReleaseRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(MicQueueReleaseRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.voice.MicQueueReleaseRequest"; }
+
+  explicit MicQueueReleaseRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MicQueueReleaseRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MicQueueReleaseRequest& from);
+  MicQueueReleaseRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MicQueueReleaseRequest&& from) noexcept
+      : MicQueueReleaseRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kUserIdFieldNumber = 1,
+    kRoomIdFieldNumber = 2,
+  };
+  // string user_id = 1;
+  void clear_user_id() ;
+  const ::std::string& user_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_user_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_user_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_user_id();
+  void set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_user_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_user_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_user_id();
+
+  public:
+  // string room_id = 2;
+  void clear_room_id() ;
+  const ::std::string& room_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_room_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_room_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_room_id();
+  void set_allocated_room_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_room_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_room_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_room_id();
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.voice.MicQueueReleaseRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
+                                   0, 57,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const MicQueueReleaseRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr user_id_;
+    ::google::protobuf::internal::ArenaStringPtr room_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fvoice_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull MicQueueReleaseRequest_class_data_;
+// -------------------------------------------------------------------
+
+class MicQueueGrantRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.voice.MicQueueGrantRequest) */ {
+ public:
+  inline MicQueueGrantRequest() : MicQueueGrantRequest(nullptr) {}
+  ~MicQueueGrantRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(MicQueueGrantRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MicQueueGrantRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR MicQueueGrantRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline MicQueueGrantRequest(const MicQueueGrantRequest& from) : MicQueueGrantRequest(nullptr, from) {}
+  inline MicQueueGrantRequest(MicQueueGrantRequest&& from) noexcept
+      : MicQueueGrantRequest(nullptr, ::std::move(from)) {}
+  inline MicQueueGrantRequest& operator=(const MicQueueGrantRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MicQueueGrantRequest& operator=(MicQueueGrantRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const MicQueueGrantRequest& default_instance() {
+    return *reinterpret_cast<const MicQueueGrantRequest*>(
+        &_MicQueueGrantRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 29;
+  friend void swap(MicQueueGrantRequest& a, MicQueueGrantRequest& b) { a.Swap(&b); }
+  inline void Swap(MicQueueGrantRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MicQueueGrantRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  MicQueueGrantRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MicQueueGrantRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MicQueueGrantRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MicQueueGrantRequest& from) { MicQueueGrantRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(MicQueueGrantRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.voice.MicQueueGrantRequest"; }
+
+  explicit MicQueueGrantRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MicQueueGrantRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MicQueueGrantRequest& from);
+  MicQueueGrantRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MicQueueGrantRequest&& from) noexcept
+      : MicQueueGrantRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kUserIdFieldNumber = 1,
+    kRoomIdFieldNumber = 2,
+    kTargetUserIdFieldNumber = 3,
+  };
+  // string user_id = 1;
+  void clear_user_id() ;
+  const ::std::string& user_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_user_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_user_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_user_id();
+  void set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_user_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_user_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_user_id();
+
+  public:
+  // string room_id = 2;
+  void clear_room_id() ;
+  const ::std::string& room_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_room_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_room_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_room_id();
+  void set_allocated_room_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_room_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_room_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_room_id();
+
+  public:
+  // string target_user_id = 3;
+  void clear_target_user_id() ;
+  const ::std::string& target_user_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_target_user_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_target_user_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_target_user_id();
+  void set_allocated_target_user_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_target_user_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_target_user_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_target_user_id();
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.voice.MicQueueGrantRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
+                                   0, 69,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const MicQueueGrantRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr user_id_;
+    ::google::protobuf::internal::ArenaStringPtr room_id_;
+    ::google::protobuf::internal::ArenaStringPtr target_user_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fvoice_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull MicQueueGrantRequest_class_data_;
+// -------------------------------------------------------------------
+
+class MicQueueApproveRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.voice.MicQueueApproveRequest) */ {
+ public:
+  inline MicQueueApproveRequest() : MicQueueApproveRequest(nullptr) {}
+  ~MicQueueApproveRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(MicQueueApproveRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MicQueueApproveRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR MicQueueApproveRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline MicQueueApproveRequest(const MicQueueApproveRequest& from) : MicQueueApproveRequest(nullptr, from) {}
+  inline MicQueueApproveRequest(MicQueueApproveRequest&& from) noexcept
+      : MicQueueApproveRequest(nullptr, ::std::move(from)) {}
+  inline MicQueueApproveRequest& operator=(const MicQueueApproveRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MicQueueApproveRequest& operator=(MicQueueApproveRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const MicQueueApproveRequest& default_instance() {
+    return *reinterpret_cast<const MicQueueApproveRequest*>(
+        &_MicQueueApproveRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 27;
+  friend void swap(MicQueueApproveRequest& a, MicQueueApproveRequest& b) { a.Swap(&b); }
+  inline void Swap(MicQueueApproveRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MicQueueApproveRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  MicQueueApproveRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MicQueueApproveRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MicQueueApproveRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MicQueueApproveRequest& from) { MicQueueApproveRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(MicQueueApproveRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.voice.MicQueueApproveRequest"; }
+
+  explicit MicQueueApproveRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MicQueueApproveRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MicQueueApproveRequest& from);
+  MicQueueApproveRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MicQueueApproveRequest&& from) noexcept
+      : MicQueueApproveRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kUserIdFieldNumber = 1,
+    kRoomIdFieldNumber = 2,
+    kTargetUserIdFieldNumber = 3,
+  };
+  // string user_id = 1;
+  void clear_user_id() ;
+  const ::std::string& user_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_user_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_user_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_user_id();
+  void set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_user_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_user_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_user_id();
+
+  public:
+  // string room_id = 2;
+  void clear_room_id() ;
+  const ::std::string& room_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_room_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_room_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_room_id();
+  void set_allocated_room_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_room_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_room_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_room_id();
+
+  public:
+  // string target_user_id = 3;
+  void clear_target_user_id() ;
+  const ::std::string& target_user_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_target_user_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_target_user_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_target_user_id();
+  void set_allocated_target_user_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_target_user_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_target_user_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_target_user_id();
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.voice.MicQueueApproveRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
+                                   0, 71,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const MicQueueApproveRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr user_id_;
+    ::google::protobuf::internal::ArenaStringPtr room_id_;
+    ::google::protobuf::internal::ArenaStringPtr target_user_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fvoice_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull MicQueueApproveRequest_class_data_;
+// -------------------------------------------------------------------
+
+class MicQueueApplyRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.voice.MicQueueApplyRequest) */ {
+ public:
+  inline MicQueueApplyRequest() : MicQueueApplyRequest(nullptr) {}
+  ~MicQueueApplyRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(MicQueueApplyRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MicQueueApplyRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR MicQueueApplyRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline MicQueueApplyRequest(const MicQueueApplyRequest& from) : MicQueueApplyRequest(nullptr, from) {}
+  inline MicQueueApplyRequest(MicQueueApplyRequest&& from) noexcept
+      : MicQueueApplyRequest(nullptr, ::std::move(from)) {}
+  inline MicQueueApplyRequest& operator=(const MicQueueApplyRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MicQueueApplyRequest& operator=(MicQueueApplyRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const MicQueueApplyRequest& default_instance() {
+    return *reinterpret_cast<const MicQueueApplyRequest*>(
+        &_MicQueueApplyRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 26;
+  friend void swap(MicQueueApplyRequest& a, MicQueueApplyRequest& b) { a.Swap(&b); }
+  inline void Swap(MicQueueApplyRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MicQueueApplyRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  MicQueueApplyRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MicQueueApplyRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MicQueueApplyRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MicQueueApplyRequest& from) { MicQueueApplyRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(MicQueueApplyRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.voice.MicQueueApplyRequest"; }
+
+  explicit MicQueueApplyRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MicQueueApplyRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MicQueueApplyRequest& from);
+  MicQueueApplyRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MicQueueApplyRequest&& from) noexcept
+      : MicQueueApplyRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kUserIdFieldNumber = 1,
+    kRoomIdFieldNumber = 2,
+  };
+  // string user_id = 1;
+  void clear_user_id() ;
+  const ::std::string& user_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_user_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_user_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_user_id();
+  void set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_user_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_user_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_user_id();
+
+  public:
+  // string room_id = 2;
+  void clear_room_id() ;
+  const ::std::string& room_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_room_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_room_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_room_id();
+  void set_allocated_room_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_room_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_room_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_room_id();
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.voice.MicQueueApplyRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
+                                   0, 55,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const MicQueueApplyRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr user_id_;
+    ::google::protobuf::internal::ArenaStringPtr room_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fvoice_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull MicQueueApplyRequest_class_data_;
 // -------------------------------------------------------------------
 
 class LeaveRoomResponse final : public ::google::protobuf::Message
@@ -4694,8 +6413,10 @@ class JoinRoomResponse final : public ::google::protobuf::Message
     kIceServersFieldNumber = 6,
     kRoomIdFieldNumber = 2,
     kSdpAnswerFieldNumber = 3,
-    kServerTimeFieldNumber = 5,
     kCodeFieldNumber = 1,
+    kMediaTierFieldNumber = 7,
+    kServerTimeFieldNumber = 5,
+    kRtcpFeedbackMsFieldNumber = 8,
   };
   // repeated string participant_ids = 4;
   int participant_ids_size() const;
@@ -4766,16 +6487,6 @@ class JoinRoomResponse final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_sdp_answer();
 
   public:
-  // int64 server_time = 5;
-  void clear_server_time() ;
-  ::int64_t server_time() const;
-  void set_server_time(::int64_t value);
-
-  private:
-  ::int64_t _internal_server_time() const;
-  void _internal_set_server_time(::int64_t value);
-
-  public:
   // .chirp.common.ErrorCode code = 1;
   void clear_code() ;
   ::chirp::common::ErrorCode code() const;
@@ -4786,12 +6497,42 @@ class JoinRoomResponse final : public ::google::protobuf::Message
   void _internal_set_code(::chirp::common::ErrorCode value);
 
   public:
+  // .chirp.voice.MediaTier media_tier = 7;
+  void clear_media_tier() ;
+  ::chirp::voice::MediaTier media_tier() const;
+  void set_media_tier(::chirp::voice::MediaTier value);
+
+  private:
+  ::chirp::voice::MediaTier _internal_media_tier() const;
+  void _internal_set_media_tier(::chirp::voice::MediaTier value);
+
+  public:
+  // int64 server_time = 5;
+  void clear_server_time() ;
+  ::int64_t server_time() const;
+  void set_server_time(::int64_t value);
+
+  private:
+  ::int64_t _internal_server_time() const;
+  void _internal_set_server_time(::int64_t value);
+
+  public:
+  // int32 rtcp_feedback_ms = 8;
+  void clear_rtcp_feedback_ms() ;
+  ::int32_t rtcp_feedback_ms() const;
+  void set_rtcp_feedback_ms(::int32_t value);
+
+  private:
+  ::int32_t _internal_rtcp_feedback_ms() const;
+  void _internal_set_rtcp_feedback_ms(::int32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:chirp.voice.JoinRoomResponse)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 6,
-                                   1, 69,
+  static const ::google::protobuf::internal::TcParseTable<3, 8,
+                                   1, 77,
                                    2>
       _table_;
 
@@ -4816,8 +6557,10 @@ class JoinRoomResponse final : public ::google::protobuf::Message
     ::google::protobuf::RepeatedPtrField< ::chirp::voice::IceServer > ice_servers_;
     ::google::protobuf::internal::ArenaStringPtr room_id_;
     ::google::protobuf::internal::ArenaStringPtr sdp_answer_;
-    ::int64_t server_time_;
     int code_;
+    int media_tier_;
+    ::int64_t server_time_;
+    ::int32_t rtcp_feedback_ms_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -5440,11 +7183,14 @@ class GetRoomInfoResponse final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kParticipantsFieldNumber = 5,
+    kMicQueueUserIdsFieldNumber = 9,
     kRoomIdFieldNumber = 2,
     kRoomNameFieldNumber = 3,
+    kMicHolderUserIdFieldNumber = 8,
     kCodeFieldNumber = 1,
     kRoomTypeFieldNumber = 4,
     kMaxParticipantsFieldNumber = 6,
+    kMicModeFieldNumber = 7,
   };
   // repeated .chirp.voice.ParticipantInfo participants = 5;
   int participants_size() const;
@@ -5463,6 +7209,28 @@ class GetRoomInfoResponse final : public ::google::protobuf::Message
   const ::chirp::voice::ParticipantInfo& participants(int index) const;
   ::chirp::voice::ParticipantInfo* PROTOBUF_NONNULL add_participants();
   const ::google::protobuf::RepeatedPtrField<::chirp::voice::ParticipantInfo>& participants() const;
+  // repeated string mic_queue_user_ids = 9;
+  int mic_queue_user_ids_size() const;
+  private:
+  int _internal_mic_queue_user_ids_size() const;
+
+  public:
+  void clear_mic_queue_user_ids() ;
+  const ::std::string& mic_queue_user_ids(int index) const;
+  ::std::string* PROTOBUF_NONNULL mutable_mic_queue_user_ids(int index);
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_mic_queue_user_ids(int index, Arg_&& value, Args_... args);
+  ::std::string* PROTOBUF_NONNULL add_mic_queue_user_ids();
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void add_mic_queue_user_ids(Arg_&& value, Args_... args);
+  const ::google::protobuf::RepeatedPtrField<::std::string>& mic_queue_user_ids() const;
+  ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL mutable_mic_queue_user_ids();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::std::string>& _internal_mic_queue_user_ids() const;
+  ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL _internal_mutable_mic_queue_user_ids();
+
+  public:
   // string room_id = 2;
   void clear_room_id() ;
   const ::std::string& room_id() const;
@@ -5491,6 +7259,21 @@ class GetRoomInfoResponse final : public ::google::protobuf::Message
   const ::std::string& _internal_room_name() const;
   PROTOBUF_ALWAYS_INLINE void _internal_set_room_name(const ::std::string& value);
   ::std::string* PROTOBUF_NONNULL _internal_mutable_room_name();
+
+  public:
+  // string mic_holder_user_id = 8;
+  void clear_mic_holder_user_id() ;
+  const ::std::string& mic_holder_user_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_mic_holder_user_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_mic_holder_user_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_mic_holder_user_id();
+  void set_allocated_mic_holder_user_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_mic_holder_user_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_mic_holder_user_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_mic_holder_user_id();
 
   public:
   // .chirp.common.ErrorCode code = 1;
@@ -5523,12 +7306,22 @@ class GetRoomInfoResponse final : public ::google::protobuf::Message
   void _internal_set_max_participants(::int32_t value);
 
   public:
+  // .chirp.voice.MicMode mic_mode = 7;
+  void clear_mic_mode() ;
+  ::chirp::voice::MicMode mic_mode() const;
+  void set_mic_mode(::chirp::voice::MicMode value);
+
+  private:
+  ::chirp::voice::MicMode _internal_mic_mode() const;
+  void _internal_set_mic_mode(::chirp::voice::MicMode value);
+
+  public:
   // @@protoc_insertion_point(class_scope:chirp.voice.GetRoomInfoResponse)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 6,
-                                   1, 56,
+  static const ::google::protobuf::internal::TcParseTable<4, 9,
+                                   1, 100,
                                    2>
       _table_;
 
@@ -5550,11 +7343,14 @@ class GetRoomInfoResponse final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::RepeatedPtrField< ::chirp::voice::ParticipantInfo > participants_;
+    ::google::protobuf::RepeatedPtrField<::std::string> mic_queue_user_ids_;
     ::google::protobuf::internal::ArenaStringPtr room_id_;
     ::google::protobuf::internal::ArenaStringPtr room_name_;
+    ::google::protobuf::internal::ArenaStringPtr mic_holder_user_id_;
     int code_;
     int room_type_;
     ::int32_t max_participants_;
+    int mic_mode_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -6582,7 +8378,7 @@ inline void JoinRoomResponse::clear_code() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.code_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000020U);
+                  0x00000010U);
 }
 inline ::chirp::common::ErrorCode JoinRoomResponse::code() const {
   // @@protoc_insertion_point(field_get:chirp.voice.JoinRoomResponse.code)
@@ -6590,7 +8386,7 @@ inline ::chirp::common::ErrorCode JoinRoomResponse::code() const {
 }
 inline void JoinRoomResponse::set_code(::chirp::common::ErrorCode value) {
   _internal_set_code(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:chirp.voice.JoinRoomResponse.code)
 }
 inline ::chirp::common::ErrorCode JoinRoomResponse::_internal_code() const {
@@ -6809,7 +8605,7 @@ inline void JoinRoomResponse::clear_server_time() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.server_time_ = ::int64_t{0};
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000010U);
+                  0x00000040U);
 }
 inline ::int64_t JoinRoomResponse::server_time() const {
   // @@protoc_insertion_point(field_get:chirp.voice.JoinRoomResponse.server_time)
@@ -6817,7 +8613,7 @@ inline ::int64_t JoinRoomResponse::server_time() const {
 }
 inline void JoinRoomResponse::set_server_time(::int64_t value) {
   _internal_set_server_time(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:chirp.voice.JoinRoomResponse.server_time)
 }
 inline ::int64_t JoinRoomResponse::_internal_server_time() const {
@@ -6883,6 +8679,56 @@ inline ::google::protobuf::RepeatedPtrField<::chirp::voice::IceServer>* PROTOBUF
 JoinRoomResponse::_internal_mutable_ice_servers() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.ice_servers_;
+}
+
+// .chirp.voice.MediaTier media_tier = 7;
+inline void JoinRoomResponse::clear_media_tier() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.media_tier_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000020U);
+}
+inline ::chirp::voice::MediaTier JoinRoomResponse::media_tier() const {
+  // @@protoc_insertion_point(field_get:chirp.voice.JoinRoomResponse.media_tier)
+  return _internal_media_tier();
+}
+inline void JoinRoomResponse::set_media_tier(::chirp::voice::MediaTier value) {
+  _internal_set_media_tier(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:chirp.voice.JoinRoomResponse.media_tier)
+}
+inline ::chirp::voice::MediaTier JoinRoomResponse::_internal_media_tier() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::voice::MediaTier>(_impl_.media_tier_);
+}
+inline void JoinRoomResponse::_internal_set_media_tier(::chirp::voice::MediaTier value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.media_tier_ = value;
+}
+
+// int32 rtcp_feedback_ms = 8;
+inline void JoinRoomResponse::clear_rtcp_feedback_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.rtcp_feedback_ms_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000080U);
+}
+inline ::int32_t JoinRoomResponse::rtcp_feedback_ms() const {
+  // @@protoc_insertion_point(field_get:chirp.voice.JoinRoomResponse.rtcp_feedback_ms)
+  return _internal_rtcp_feedback_ms();
+}
+inline void JoinRoomResponse::set_rtcp_feedback_ms(::int32_t value) {
+  _internal_set_rtcp_feedback_ms(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  // @@protoc_insertion_point(field_set:chirp.voice.JoinRoomResponse.rtcp_feedback_ms)
+}
+inline ::int32_t JoinRoomResponse::_internal_rtcp_feedback_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.rtcp_feedback_ms_;
+}
+inline void JoinRoomResponse::_internal_set_rtcp_feedback_ms(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.rtcp_feedback_ms_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -8395,7 +10241,7 @@ inline void GetRoomInfoResponse::clear_code() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.code_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000008U);
+                  0x00000020U);
 }
 inline ::chirp::common::ErrorCode GetRoomInfoResponse::code() const {
   // @@protoc_insertion_point(field_get:chirp.voice.GetRoomInfoResponse.code)
@@ -8403,7 +10249,7 @@ inline ::chirp::common::ErrorCode GetRoomInfoResponse::code() const {
 }
 inline void GetRoomInfoResponse::set_code(::chirp::common::ErrorCode value) {
   _internal_set_code(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:chirp.voice.GetRoomInfoResponse.code)
 }
 inline ::chirp::common::ErrorCode GetRoomInfoResponse::_internal_code() const {
@@ -8420,7 +10266,7 @@ inline void GetRoomInfoResponse::clear_room_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.room_id_.ClearToEmpty();
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000002U);
+                  0x00000004U);
 }
 inline const ::std::string& GetRoomInfoResponse::room_id() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
@@ -8430,13 +10276,13 @@ inline const ::std::string& GetRoomInfoResponse::room_id() const
 template <typename Arg_, typename... Args_>
 PROTOBUF_ALWAYS_INLINE void GetRoomInfoResponse::set_room_id(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   _impl_.room_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
   // @@protoc_insertion_point(field_set:chirp.voice.GetRoomInfoResponse.room_id)
 }
 inline ::std::string* PROTOBUF_NONNULL GetRoomInfoResponse::mutable_room_id()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   ::std::string* _s = _internal_mutable_room_id();
   // @@protoc_insertion_point(field_mutable:chirp.voice.GetRoomInfoResponse.room_id)
   return _s;
@@ -8456,10 +10302,10 @@ inline ::std::string* PROTOBUF_NONNULL GetRoomInfoResponse::_internal_mutable_ro
 inline ::std::string* PROTOBUF_NULLABLE GetRoomInfoResponse::release_room_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:chirp.voice.GetRoomInfoResponse.room_id)
-  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
     return nullptr;
   }
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   auto* released = _impl_.room_id_.Release();
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
     _impl_.room_id_.Set("", GetArena());
@@ -8469,9 +10315,9 @@ inline ::std::string* PROTOBUF_NULLABLE GetRoomInfoResponse::release_room_id() {
 inline void GetRoomInfoResponse::set_allocated_room_id(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   }
   _impl_.room_id_.SetAllocated(value, GetArena());
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.room_id_.IsDefault()) {
@@ -8485,7 +10331,7 @@ inline void GetRoomInfoResponse::clear_room_name() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.room_name_.ClearToEmpty();
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000004U);
+                  0x00000008U);
 }
 inline const ::std::string& GetRoomInfoResponse::room_name() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
@@ -8495,13 +10341,13 @@ inline const ::std::string& GetRoomInfoResponse::room_name() const
 template <typename Arg_, typename... Args_>
 PROTOBUF_ALWAYS_INLINE void GetRoomInfoResponse::set_room_name(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   _impl_.room_name_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
   // @@protoc_insertion_point(field_set:chirp.voice.GetRoomInfoResponse.room_name)
 }
 inline ::std::string* PROTOBUF_NONNULL GetRoomInfoResponse::mutable_room_name()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   ::std::string* _s = _internal_mutable_room_name();
   // @@protoc_insertion_point(field_mutable:chirp.voice.GetRoomInfoResponse.room_name)
   return _s;
@@ -8521,10 +10367,10 @@ inline ::std::string* PROTOBUF_NONNULL GetRoomInfoResponse::_internal_mutable_ro
 inline ::std::string* PROTOBUF_NULLABLE GetRoomInfoResponse::release_room_name() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:chirp.voice.GetRoomInfoResponse.room_name)
-  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000008U)) {
     return nullptr;
   }
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
   auto* released = _impl_.room_name_.Release();
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
     _impl_.room_name_.Set("", GetArena());
@@ -8534,9 +10380,9 @@ inline ::std::string* PROTOBUF_NULLABLE GetRoomInfoResponse::release_room_name()
 inline void GetRoomInfoResponse::set_allocated_room_name(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
   }
   _impl_.room_name_.SetAllocated(value, GetArena());
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.room_name_.IsDefault()) {
@@ -8550,7 +10396,7 @@ inline void GetRoomInfoResponse::clear_room_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.room_type_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000010U);
+                  0x00000040U);
 }
 inline ::chirp::voice::RoomType GetRoomInfoResponse::room_type() const {
   // @@protoc_insertion_point(field_get:chirp.voice.GetRoomInfoResponse.room_type)
@@ -8558,7 +10404,7 @@ inline ::chirp::voice::RoomType GetRoomInfoResponse::room_type() const {
 }
 inline void GetRoomInfoResponse::set_room_type(::chirp::voice::RoomType value) {
   _internal_set_room_type(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:chirp.voice.GetRoomInfoResponse.room_type)
 }
 inline ::chirp::voice::RoomType GetRoomInfoResponse::_internal_room_type() const {
@@ -8631,7 +10477,7 @@ inline void GetRoomInfoResponse::clear_max_participants() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.max_participants_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000020U);
+                  0x00000080U);
 }
 inline ::int32_t GetRoomInfoResponse::max_participants() const {
   // @@protoc_insertion_point(field_get:chirp.voice.GetRoomInfoResponse.max_participants)
@@ -8639,7 +10485,7 @@ inline ::int32_t GetRoomInfoResponse::max_participants() const {
 }
 inline void GetRoomInfoResponse::set_max_participants(::int32_t value) {
   _internal_set_max_participants(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:chirp.voice.GetRoomInfoResponse.max_participants)
 }
 inline ::int32_t GetRoomInfoResponse::_internal_max_participants() const {
@@ -8649,6 +10495,168 @@ inline ::int32_t GetRoomInfoResponse::_internal_max_participants() const {
 inline void GetRoomInfoResponse::_internal_set_max_participants(::int32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.max_participants_ = value;
+}
+
+// .chirp.voice.MicMode mic_mode = 7;
+inline void GetRoomInfoResponse::clear_mic_mode() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mic_mode_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000100U);
+}
+inline ::chirp::voice::MicMode GetRoomInfoResponse::mic_mode() const {
+  // @@protoc_insertion_point(field_get:chirp.voice.GetRoomInfoResponse.mic_mode)
+  return _internal_mic_mode();
+}
+inline void GetRoomInfoResponse::set_mic_mode(::chirp::voice::MicMode value) {
+  _internal_set_mic_mode(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:chirp.voice.GetRoomInfoResponse.mic_mode)
+}
+inline ::chirp::voice::MicMode GetRoomInfoResponse::_internal_mic_mode() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::voice::MicMode>(_impl_.mic_mode_);
+}
+inline void GetRoomInfoResponse::_internal_set_mic_mode(::chirp::voice::MicMode value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mic_mode_ = value;
+}
+
+// string mic_holder_user_id = 8;
+inline void GetRoomInfoResponse::clear_mic_holder_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mic_holder_user_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000010U);
+}
+inline const ::std::string& GetRoomInfoResponse::mic_holder_user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.GetRoomInfoResponse.mic_holder_user_id)
+  return _internal_mic_holder_user_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GetRoomInfoResponse::set_mic_holder_user_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  _impl_.mic_holder_user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.voice.GetRoomInfoResponse.mic_holder_user_id)
+}
+inline ::std::string* PROTOBUF_NONNULL GetRoomInfoResponse::mutable_mic_holder_user_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ::std::string* _s = _internal_mutable_mic_holder_user_id();
+  // @@protoc_insertion_point(field_mutable:chirp.voice.GetRoomInfoResponse.mic_holder_user_id)
+  return _s;
+}
+inline const ::std::string& GetRoomInfoResponse::_internal_mic_holder_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.mic_holder_user_id_.Get();
+}
+inline void GetRoomInfoResponse::_internal_set_mic_holder_user_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mic_holder_user_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GetRoomInfoResponse::_internal_mutable_mic_holder_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.mic_holder_user_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GetRoomInfoResponse::release_mic_holder_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.voice.GetRoomInfoResponse.mic_holder_user_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000010U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  auto* released = _impl_.mic_holder_user_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.mic_holder_user_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GetRoomInfoResponse::set_allocated_mic_holder_user_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  }
+  _impl_.mic_holder_user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.mic_holder_user_id_.IsDefault()) {
+    _impl_.mic_holder_user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.voice.GetRoomInfoResponse.mic_holder_user_id)
+}
+
+// repeated string mic_queue_user_ids = 9;
+inline int GetRoomInfoResponse::_internal_mic_queue_user_ids_size() const {
+  return _internal_mic_queue_user_ids().size();
+}
+inline int GetRoomInfoResponse::mic_queue_user_ids_size() const {
+  return _internal_mic_queue_user_ids_size();
+}
+inline void GetRoomInfoResponse::clear_mic_queue_user_ids() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mic_queue_user_ids_.Clear();
+  ClearHasBitForRepeated(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline ::std::string* PROTOBUF_NONNULL GetRoomInfoResponse::add_mic_queue_user_ids()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::std::string* _s =
+      _internal_mutable_mic_queue_user_ids()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_add_mutable:chirp.voice.GetRoomInfoResponse.mic_queue_user_ids)
+  return _s;
+}
+inline const ::std::string& GetRoomInfoResponse::mic_queue_user_ids(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.GetRoomInfoResponse.mic_queue_user_ids)
+  return _internal_mic_queue_user_ids().Get(index);
+}
+inline ::std::string* PROTOBUF_NONNULL GetRoomInfoResponse::mutable_mic_queue_user_ids(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:chirp.voice.GetRoomInfoResponse.mic_queue_user_ids)
+  return _internal_mutable_mic_queue_user_ids()->Mutable(index);
+}
+template <typename Arg_, typename... Args_>
+inline void GetRoomInfoResponse::set_mic_queue_user_ids(int index, Arg_&& value, Args_... args) {
+  ::google::protobuf::internal::AssignToString(*_internal_mutable_mic_queue_user_ids()->Mutable(index), ::std::forward<Arg_>(value),
+                        args... );
+  // @@protoc_insertion_point(field_set:chirp.voice.GetRoomInfoResponse.mic_queue_user_ids)
+}
+template <typename Arg_, typename... Args_>
+inline void GetRoomInfoResponse::add_mic_queue_user_ids(Arg_&& value, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::google::protobuf::internal::AddToRepeatedPtrField(
+      ::google::protobuf::MessageLite::internal_visibility(), GetArena(),
+      *_internal_mutable_mic_queue_user_ids(), ::std::forward<Arg_>(value),
+      args... );
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_add:chirp.voice.GetRoomInfoResponse.mic_queue_user_ids)
+}
+inline const ::google::protobuf::RepeatedPtrField<::std::string>& GetRoomInfoResponse::mic_queue_user_ids()
+    const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:chirp.voice.GetRoomInfoResponse.mic_queue_user_ids)
+  return _internal_mic_queue_user_ids();
+}
+inline ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL
+GetRoomInfoResponse::mutable_mic_queue_user_ids() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_mutable_list:chirp.voice.GetRoomInfoResponse.mic_queue_user_ids)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_mic_queue_user_ids();
+}
+inline const ::google::protobuf::RepeatedPtrField<::std::string>&
+GetRoomInfoResponse::_internal_mic_queue_user_ids() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.mic_queue_user_ids_;
+}
+inline ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL
+GetRoomInfoResponse::_internal_mutable_mic_queue_user_ids() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.mic_queue_user_ids_;
 }
 
 // -------------------------------------------------------------------
@@ -10059,6 +12067,1256 @@ inline void SpeakingNotify::_internal_set_timestamp(::int64_t value) {
   _impl_.timestamp_ = value;
 }
 
+// int32 volume = 5;
+inline void SpeakingNotify::clear_volume() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.volume_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000010U);
+}
+inline ::int32_t SpeakingNotify::volume() const {
+  // @@protoc_insertion_point(field_get:chirp.voice.SpeakingNotify.volume)
+  return _internal_volume();
+}
+inline void SpeakingNotify::set_volume(::int32_t value) {
+  _internal_set_volume(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:chirp.voice.SpeakingNotify.volume)
+}
+inline ::int32_t SpeakingNotify::_internal_volume() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.volume_;
+}
+inline void SpeakingNotify::_internal_set_volume(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.volume_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// SetMicModeRequest
+
+// string user_id = 1;
+inline void SetMicModeRequest::clear_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& SetMicModeRequest::user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.SetMicModeRequest.user_id)
+  return _internal_user_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SetMicModeRequest::set_user_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.voice.SetMicModeRequest.user_id)
+}
+inline ::std::string* PROTOBUF_NONNULL SetMicModeRequest::mutable_user_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_user_id();
+  // @@protoc_insertion_point(field_mutable:chirp.voice.SetMicModeRequest.user_id)
+  return _s;
+}
+inline const ::std::string& SetMicModeRequest::_internal_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.user_id_.Get();
+}
+inline void SetMicModeRequest::_internal_set_user_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SetMicModeRequest::_internal_mutable_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.user_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SetMicModeRequest::release_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.voice.SetMicModeRequest.user_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.user_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SetMicModeRequest::set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.user_id_.IsDefault()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.voice.SetMicModeRequest.user_id)
+}
+
+// string room_id = 2;
+inline void SetMicModeRequest::clear_room_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.room_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& SetMicModeRequest::room_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.SetMicModeRequest.room_id)
+  return _internal_room_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SetMicModeRequest::set_room_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.room_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.voice.SetMicModeRequest.room_id)
+}
+inline ::std::string* PROTOBUF_NONNULL SetMicModeRequest::mutable_room_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_room_id();
+  // @@protoc_insertion_point(field_mutable:chirp.voice.SetMicModeRequest.room_id)
+  return _s;
+}
+inline const ::std::string& SetMicModeRequest::_internal_room_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.room_id_.Get();
+}
+inline void SetMicModeRequest::_internal_set_room_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.room_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SetMicModeRequest::_internal_mutable_room_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.room_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SetMicModeRequest::release_room_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.voice.SetMicModeRequest.room_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.room_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.room_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SetMicModeRequest::set_allocated_room_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.room_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.room_id_.IsDefault()) {
+    _impl_.room_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.voice.SetMicModeRequest.room_id)
+}
+
+// .chirp.voice.MicMode mode = 3;
+inline void SetMicModeRequest::clear_mode() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mode_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline ::chirp::voice::MicMode SetMicModeRequest::mode() const {
+  // @@protoc_insertion_point(field_get:chirp.voice.SetMicModeRequest.mode)
+  return _internal_mode();
+}
+inline void SetMicModeRequest::set_mode(::chirp::voice::MicMode value) {
+  _internal_set_mode(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:chirp.voice.SetMicModeRequest.mode)
+}
+inline ::chirp::voice::MicMode SetMicModeRequest::_internal_mode() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::voice::MicMode>(_impl_.mode_);
+}
+inline void SetMicModeRequest::_internal_set_mode(::chirp::voice::MicMode value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mode_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// MicQueueApplyRequest
+
+// string user_id = 1;
+inline void MicQueueApplyRequest::clear_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& MicQueueApplyRequest::user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueApplyRequest.user_id)
+  return _internal_user_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MicQueueApplyRequest::set_user_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueApplyRequest.user_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueApplyRequest::mutable_user_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_user_id();
+  // @@protoc_insertion_point(field_mutable:chirp.voice.MicQueueApplyRequest.user_id)
+  return _s;
+}
+inline const ::std::string& MicQueueApplyRequest::_internal_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.user_id_.Get();
+}
+inline void MicQueueApplyRequest::_internal_set_user_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueApplyRequest::_internal_mutable_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.user_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MicQueueApplyRequest::release_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.voice.MicQueueApplyRequest.user_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.user_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MicQueueApplyRequest::set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.user_id_.IsDefault()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.voice.MicQueueApplyRequest.user_id)
+}
+
+// string room_id = 2;
+inline void MicQueueApplyRequest::clear_room_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.room_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& MicQueueApplyRequest::room_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueApplyRequest.room_id)
+  return _internal_room_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MicQueueApplyRequest::set_room_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.room_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueApplyRequest.room_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueApplyRequest::mutable_room_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_room_id();
+  // @@protoc_insertion_point(field_mutable:chirp.voice.MicQueueApplyRequest.room_id)
+  return _s;
+}
+inline const ::std::string& MicQueueApplyRequest::_internal_room_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.room_id_.Get();
+}
+inline void MicQueueApplyRequest::_internal_set_room_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.room_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueApplyRequest::_internal_mutable_room_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.room_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MicQueueApplyRequest::release_room_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.voice.MicQueueApplyRequest.room_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.room_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.room_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MicQueueApplyRequest::set_allocated_room_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.room_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.room_id_.IsDefault()) {
+    _impl_.room_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.voice.MicQueueApplyRequest.room_id)
+}
+
+// -------------------------------------------------------------------
+
+// MicQueueApproveRequest
+
+// string user_id = 1;
+inline void MicQueueApproveRequest::clear_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& MicQueueApproveRequest::user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueApproveRequest.user_id)
+  return _internal_user_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MicQueueApproveRequest::set_user_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueApproveRequest.user_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueApproveRequest::mutable_user_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_user_id();
+  // @@protoc_insertion_point(field_mutable:chirp.voice.MicQueueApproveRequest.user_id)
+  return _s;
+}
+inline const ::std::string& MicQueueApproveRequest::_internal_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.user_id_.Get();
+}
+inline void MicQueueApproveRequest::_internal_set_user_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueApproveRequest::_internal_mutable_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.user_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MicQueueApproveRequest::release_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.voice.MicQueueApproveRequest.user_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.user_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MicQueueApproveRequest::set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.user_id_.IsDefault()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.voice.MicQueueApproveRequest.user_id)
+}
+
+// string room_id = 2;
+inline void MicQueueApproveRequest::clear_room_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.room_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& MicQueueApproveRequest::room_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueApproveRequest.room_id)
+  return _internal_room_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MicQueueApproveRequest::set_room_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.room_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueApproveRequest.room_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueApproveRequest::mutable_room_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_room_id();
+  // @@protoc_insertion_point(field_mutable:chirp.voice.MicQueueApproveRequest.room_id)
+  return _s;
+}
+inline const ::std::string& MicQueueApproveRequest::_internal_room_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.room_id_.Get();
+}
+inline void MicQueueApproveRequest::_internal_set_room_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.room_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueApproveRequest::_internal_mutable_room_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.room_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MicQueueApproveRequest::release_room_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.voice.MicQueueApproveRequest.room_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.room_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.room_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MicQueueApproveRequest::set_allocated_room_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.room_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.room_id_.IsDefault()) {
+    _impl_.room_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.voice.MicQueueApproveRequest.room_id)
+}
+
+// string target_user_id = 3;
+inline void MicQueueApproveRequest::clear_target_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_user_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline const ::std::string& MicQueueApproveRequest::target_user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueApproveRequest.target_user_id)
+  return _internal_target_user_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MicQueueApproveRequest::set_target_user_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.target_user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueApproveRequest.target_user_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueApproveRequest::mutable_target_user_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_target_user_id();
+  // @@protoc_insertion_point(field_mutable:chirp.voice.MicQueueApproveRequest.target_user_id)
+  return _s;
+}
+inline const ::std::string& MicQueueApproveRequest::_internal_target_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.target_user_id_.Get();
+}
+inline void MicQueueApproveRequest::_internal_set_target_user_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_user_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueApproveRequest::_internal_mutable_target_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.target_user_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MicQueueApproveRequest::release_target_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.voice.MicQueueApproveRequest.target_user_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.target_user_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.target_user_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MicQueueApproveRequest::set_allocated_target_user_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.target_user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.target_user_id_.IsDefault()) {
+    _impl_.target_user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.voice.MicQueueApproveRequest.target_user_id)
+}
+
+// -------------------------------------------------------------------
+
+// MicQueueReleaseRequest
+
+// string user_id = 1;
+inline void MicQueueReleaseRequest::clear_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& MicQueueReleaseRequest::user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueReleaseRequest.user_id)
+  return _internal_user_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MicQueueReleaseRequest::set_user_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueReleaseRequest.user_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueReleaseRequest::mutable_user_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_user_id();
+  // @@protoc_insertion_point(field_mutable:chirp.voice.MicQueueReleaseRequest.user_id)
+  return _s;
+}
+inline const ::std::string& MicQueueReleaseRequest::_internal_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.user_id_.Get();
+}
+inline void MicQueueReleaseRequest::_internal_set_user_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueReleaseRequest::_internal_mutable_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.user_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MicQueueReleaseRequest::release_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.voice.MicQueueReleaseRequest.user_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.user_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MicQueueReleaseRequest::set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.user_id_.IsDefault()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.voice.MicQueueReleaseRequest.user_id)
+}
+
+// string room_id = 2;
+inline void MicQueueReleaseRequest::clear_room_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.room_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& MicQueueReleaseRequest::room_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueReleaseRequest.room_id)
+  return _internal_room_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MicQueueReleaseRequest::set_room_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.room_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueReleaseRequest.room_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueReleaseRequest::mutable_room_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_room_id();
+  // @@protoc_insertion_point(field_mutable:chirp.voice.MicQueueReleaseRequest.room_id)
+  return _s;
+}
+inline const ::std::string& MicQueueReleaseRequest::_internal_room_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.room_id_.Get();
+}
+inline void MicQueueReleaseRequest::_internal_set_room_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.room_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueReleaseRequest::_internal_mutable_room_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.room_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MicQueueReleaseRequest::release_room_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.voice.MicQueueReleaseRequest.room_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.room_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.room_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MicQueueReleaseRequest::set_allocated_room_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.room_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.room_id_.IsDefault()) {
+    _impl_.room_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.voice.MicQueueReleaseRequest.room_id)
+}
+
+// -------------------------------------------------------------------
+
+// MicQueueGrantRequest
+
+// string user_id = 1;
+inline void MicQueueGrantRequest::clear_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& MicQueueGrantRequest::user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueGrantRequest.user_id)
+  return _internal_user_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MicQueueGrantRequest::set_user_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueGrantRequest.user_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueGrantRequest::mutable_user_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_user_id();
+  // @@protoc_insertion_point(field_mutable:chirp.voice.MicQueueGrantRequest.user_id)
+  return _s;
+}
+inline const ::std::string& MicQueueGrantRequest::_internal_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.user_id_.Get();
+}
+inline void MicQueueGrantRequest::_internal_set_user_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueGrantRequest::_internal_mutable_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.user_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MicQueueGrantRequest::release_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.voice.MicQueueGrantRequest.user_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.user_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MicQueueGrantRequest::set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.user_id_.IsDefault()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.voice.MicQueueGrantRequest.user_id)
+}
+
+// string room_id = 2;
+inline void MicQueueGrantRequest::clear_room_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.room_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& MicQueueGrantRequest::room_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueGrantRequest.room_id)
+  return _internal_room_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MicQueueGrantRequest::set_room_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.room_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueGrantRequest.room_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueGrantRequest::mutable_room_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_room_id();
+  // @@protoc_insertion_point(field_mutable:chirp.voice.MicQueueGrantRequest.room_id)
+  return _s;
+}
+inline const ::std::string& MicQueueGrantRequest::_internal_room_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.room_id_.Get();
+}
+inline void MicQueueGrantRequest::_internal_set_room_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.room_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueGrantRequest::_internal_mutable_room_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.room_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MicQueueGrantRequest::release_room_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.voice.MicQueueGrantRequest.room_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.room_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.room_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MicQueueGrantRequest::set_allocated_room_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.room_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.room_id_.IsDefault()) {
+    _impl_.room_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.voice.MicQueueGrantRequest.room_id)
+}
+
+// string target_user_id = 3;
+inline void MicQueueGrantRequest::clear_target_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_user_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline const ::std::string& MicQueueGrantRequest::target_user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueGrantRequest.target_user_id)
+  return _internal_target_user_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MicQueueGrantRequest::set_target_user_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.target_user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueGrantRequest.target_user_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueGrantRequest::mutable_target_user_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_target_user_id();
+  // @@protoc_insertion_point(field_mutable:chirp.voice.MicQueueGrantRequest.target_user_id)
+  return _s;
+}
+inline const ::std::string& MicQueueGrantRequest::_internal_target_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.target_user_id_.Get();
+}
+inline void MicQueueGrantRequest::_internal_set_target_user_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_user_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueGrantRequest::_internal_mutable_target_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.target_user_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MicQueueGrantRequest::release_target_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.voice.MicQueueGrantRequest.target_user_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.target_user_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.target_user_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MicQueueGrantRequest::set_allocated_target_user_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.target_user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.target_user_id_.IsDefault()) {
+    _impl_.target_user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.voice.MicQueueGrantRequest.target_user_id)
+}
+
+// -------------------------------------------------------------------
+
+// MicQueueResponse
+
+// .chirp.common.ErrorCode code = 1;
+inline void MicQueueResponse::clear_code() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline ::chirp::common::ErrorCode MicQueueResponse::code() const {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueResponse.code)
+  return _internal_code();
+}
+inline void MicQueueResponse::set_code(::chirp::common::ErrorCode value) {
+  _internal_set_code(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueResponse.code)
+}
+inline ::chirp::common::ErrorCode MicQueueResponse::_internal_code() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::common::ErrorCode>(_impl_.code_);
+}
+inline void MicQueueResponse::_internal_set_code(::chirp::common::ErrorCode value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = value;
+}
+
+// int64 server_time = 2;
+inline void MicQueueResponse::clear_server_time() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.server_time_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline ::int64_t MicQueueResponse::server_time() const {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueResponse.server_time)
+  return _internal_server_time();
+}
+inline void MicQueueResponse::set_server_time(::int64_t value) {
+  _internal_set_server_time(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueResponse.server_time)
+}
+inline ::int64_t MicQueueResponse::_internal_server_time() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.server_time_;
+}
+inline void MicQueueResponse::_internal_set_server_time(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.server_time_ = value;
+}
+
+// string holder_user_id = 3;
+inline void MicQueueResponse::clear_holder_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.holder_user_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& MicQueueResponse::holder_user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueResponse.holder_user_id)
+  return _internal_holder_user_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MicQueueResponse::set_holder_user_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.holder_user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueResponse.holder_user_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueResponse::mutable_holder_user_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_holder_user_id();
+  // @@protoc_insertion_point(field_mutable:chirp.voice.MicQueueResponse.holder_user_id)
+  return _s;
+}
+inline const ::std::string& MicQueueResponse::_internal_holder_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.holder_user_id_.Get();
+}
+inline void MicQueueResponse::_internal_set_holder_user_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.holder_user_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueResponse::_internal_mutable_holder_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.holder_user_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MicQueueResponse::release_holder_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.voice.MicQueueResponse.holder_user_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.holder_user_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.holder_user_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MicQueueResponse::set_allocated_holder_user_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.holder_user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.holder_user_id_.IsDefault()) {
+    _impl_.holder_user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.voice.MicQueueResponse.holder_user_id)
+}
+
+// int32 queue_depth = 4;
+inline void MicQueueResponse::clear_queue_depth() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.queue_depth_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000008U);
+}
+inline ::int32_t MicQueueResponse::queue_depth() const {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueResponse.queue_depth)
+  return _internal_queue_depth();
+}
+inline void MicQueueResponse::set_queue_depth(::int32_t value) {
+  _internal_set_queue_depth(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueResponse.queue_depth)
+}
+inline ::int32_t MicQueueResponse::_internal_queue_depth() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.queue_depth_;
+}
+inline void MicQueueResponse::_internal_set_queue_depth(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.queue_depth_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// MicQueueStateNotify
+
+// string room_id = 1;
+inline void MicQueueStateNotify::clear_room_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.room_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& MicQueueStateNotify::room_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueStateNotify.room_id)
+  return _internal_room_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MicQueueStateNotify::set_room_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.room_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueStateNotify.room_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueStateNotify::mutable_room_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_room_id();
+  // @@protoc_insertion_point(field_mutable:chirp.voice.MicQueueStateNotify.room_id)
+  return _s;
+}
+inline const ::std::string& MicQueueStateNotify::_internal_room_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.room_id_.Get();
+}
+inline void MicQueueStateNotify::_internal_set_room_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.room_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueStateNotify::_internal_mutable_room_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.room_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MicQueueStateNotify::release_room_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.voice.MicQueueStateNotify.room_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.room_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.room_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MicQueueStateNotify::set_allocated_room_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.room_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.room_id_.IsDefault()) {
+    _impl_.room_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.voice.MicQueueStateNotify.room_id)
+}
+
+// .chirp.voice.MicMode mode = 2;
+inline void MicQueueStateNotify::clear_mode() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mode_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000010U);
+}
+inline ::chirp::voice::MicMode MicQueueStateNotify::mode() const {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueStateNotify.mode)
+  return _internal_mode();
+}
+inline void MicQueueStateNotify::set_mode(::chirp::voice::MicMode value) {
+  _internal_set_mode(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueStateNotify.mode)
+}
+inline ::chirp::voice::MicMode MicQueueStateNotify::_internal_mode() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::voice::MicMode>(_impl_.mode_);
+}
+inline void MicQueueStateNotify::_internal_set_mode(::chirp::voice::MicMode value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mode_ = value;
+}
+
+// string holder_user_id = 3;
+inline void MicQueueStateNotify::clear_holder_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.holder_user_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline const ::std::string& MicQueueStateNotify::holder_user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueStateNotify.holder_user_id)
+  return _internal_holder_user_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MicQueueStateNotify::set_holder_user_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.holder_user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueStateNotify.holder_user_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueStateNotify::mutable_holder_user_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_holder_user_id();
+  // @@protoc_insertion_point(field_mutable:chirp.voice.MicQueueStateNotify.holder_user_id)
+  return _s;
+}
+inline const ::std::string& MicQueueStateNotify::_internal_holder_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.holder_user_id_.Get();
+}
+inline void MicQueueStateNotify::_internal_set_holder_user_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.holder_user_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueStateNotify::_internal_mutable_holder_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.holder_user_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MicQueueStateNotify::release_holder_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.voice.MicQueueStateNotify.holder_user_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.holder_user_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.holder_user_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MicQueueStateNotify::set_allocated_holder_user_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.holder_user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.holder_user_id_.IsDefault()) {
+    _impl_.holder_user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.voice.MicQueueStateNotify.holder_user_id)
+}
+
+// repeated string queue_user_ids = 4;
+inline int MicQueueStateNotify::_internal_queue_user_ids_size() const {
+  return _internal_queue_user_ids().size();
+}
+inline int MicQueueStateNotify::queue_user_ids_size() const {
+  return _internal_queue_user_ids_size();
+}
+inline void MicQueueStateNotify::clear_queue_user_ids() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.queue_user_ids_.Clear();
+  ClearHasBitForRepeated(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueStateNotify::add_queue_user_ids()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::std::string* _s =
+      _internal_mutable_queue_user_ids()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add_mutable:chirp.voice.MicQueueStateNotify.queue_user_ids)
+  return _s;
+}
+inline const ::std::string& MicQueueStateNotify::queue_user_ids(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueStateNotify.queue_user_ids)
+  return _internal_queue_user_ids().Get(index);
+}
+inline ::std::string* PROTOBUF_NONNULL MicQueueStateNotify::mutable_queue_user_ids(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:chirp.voice.MicQueueStateNotify.queue_user_ids)
+  return _internal_mutable_queue_user_ids()->Mutable(index);
+}
+template <typename Arg_, typename... Args_>
+inline void MicQueueStateNotify::set_queue_user_ids(int index, Arg_&& value, Args_... args) {
+  ::google::protobuf::internal::AssignToString(*_internal_mutable_queue_user_ids()->Mutable(index), ::std::forward<Arg_>(value),
+                        args... );
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueStateNotify.queue_user_ids)
+}
+template <typename Arg_, typename... Args_>
+inline void MicQueueStateNotify::add_queue_user_ids(Arg_&& value, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::google::protobuf::internal::AddToRepeatedPtrField(
+      ::google::protobuf::MessageLite::internal_visibility(), GetArena(),
+      *_internal_mutable_queue_user_ids(), ::std::forward<Arg_>(value),
+      args... );
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:chirp.voice.MicQueueStateNotify.queue_user_ids)
+}
+inline const ::google::protobuf::RepeatedPtrField<::std::string>& MicQueueStateNotify::queue_user_ids()
+    const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:chirp.voice.MicQueueStateNotify.queue_user_ids)
+  return _internal_queue_user_ids();
+}
+inline ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL
+MicQueueStateNotify::mutable_queue_user_ids() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:chirp.voice.MicQueueStateNotify.queue_user_ids)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_queue_user_ids();
+}
+inline const ::google::protobuf::RepeatedPtrField<::std::string>&
+MicQueueStateNotify::_internal_queue_user_ids() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.queue_user_ids_;
+}
+inline ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL
+MicQueueStateNotify::_internal_mutable_queue_user_ids() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.queue_user_ids_;
+}
+
+// int64 timestamp = 5;
+inline void MicQueueStateNotify::clear_timestamp() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.timestamp_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000008U);
+}
+inline ::int64_t MicQueueStateNotify::timestamp() const {
+  // @@protoc_insertion_point(field_get:chirp.voice.MicQueueStateNotify.timestamp)
+  return _internal_timestamp();
+}
+inline void MicQueueStateNotify::set_timestamp(::int64_t value) {
+  _internal_set_timestamp(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:chirp.voice.MicQueueStateNotify.timestamp)
+}
+inline ::int64_t MicQueueStateNotify::_internal_timestamp() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.timestamp_;
+}
+inline void MicQueueStateNotify::_internal_set_timestamp(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.timestamp_ = value;
+}
+
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif  // __GNUC__
@@ -10082,6 +13340,18 @@ struct is_proto_enum<::chirp::voice::ParticipantState> : std::true_type {};
 template <>
 inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::chirp::voice::ParticipantState>() {
   return ::chirp::voice::ParticipantState_descriptor();
+}
+template <>
+struct is_proto_enum<::chirp::voice::MicMode> : std::true_type {};
+template <>
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::chirp::voice::MicMode>() {
+  return ::chirp::voice::MicMode_descriptor();
+}
+template <>
+struct is_proto_enum<::chirp::voice::MediaTier> : std::true_type {};
+template <>
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::chirp::voice::MediaTier>() {
+  return ::chirp::voice::MediaTier_descriptor();
 }
 
 }  // namespace protobuf

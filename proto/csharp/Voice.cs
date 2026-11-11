@@ -35,65 +35,85 @@ namespace Chirp.Voice {
             "X2lkGAIgASgJEhMKC3NlcnZlcl90aW1lGAMgASgDIj8KCUljZVNlcnZlchIM",
             "CgR1cmxzGAEgAygJEhAKCHVzZXJuYW1lGAIgASgJEhIKCmNyZWRlbnRpYWwY",
             "AyABKAkiRgoPSm9pblJvb21SZXF1ZXN0Eg8KB3VzZXJfaWQYASABKAkSDwoH",
-            "cm9vbV9pZBgCIAEoCRIRCglzZHBfb2ZmZXIYAyABKAkiuQEKEEpvaW5Sb29t",
+            "cm9vbV9pZBgCIAEoCRIRCglzZHBfb2ZmZXIYAyABKAki/wEKEEpvaW5Sb29t",
             "UmVzcG9uc2USJQoEY29kZRgBIAEoDjIXLmNoaXJwLmNvbW1vbi5FcnJvckNv",
             "ZGUSDwoHcm9vbV9pZBgCIAEoCRISCgpzZHBfYW5zd2VyGAMgASgJEhcKD3Bh",
             "cnRpY2lwYW50X2lkcxgEIAMoCRITCgtzZXJ2ZXJfdGltZRgFIAEoAxIrCgtp",
-            "Y2Vfc2VydmVycxgGIAMoCzIWLmNoaXJwLnZvaWNlLkljZVNlcnZlciI0ChBM",
-            "ZWF2ZVJvb21SZXF1ZXN0Eg8KB3VzZXJfaWQYASABKAkSDwoHcm9vbV9pZBgC",
-            "IAEoCSJPChFMZWF2ZVJvb21SZXNwb25zZRIlCgRjb2RlGAEgASgOMhcuY2hp",
-            "cnAuY29tbW9uLkVycm9yQ29kZRITCgtzZXJ2ZXJfdGltZRgCIAEoAyJLCgxJ",
-            "Y2VDYW5kaWRhdGUSEQoJY2FuZGlkYXRlGAEgASgJEg8KB3NkcF9taWQYAiAB",
-            "KAkSFwoPc2RwX21saW5lX2luZGV4GAMgASgFIn4KE0ljZUNhbmRpZGF0ZU1l",
-            "c3NhZ2USDwoHcm9vbV9pZBgBIAEoCRIUCgxmcm9tX3VzZXJfaWQYAiABKAkS",
-            "EgoKdG9fdXNlcl9pZBgDIAEoCRIsCgljYW5kaWRhdGUYBCABKAsyGS5jaGly",
-            "cC52b2ljZS5JY2VDYW5kaWRhdGUiXwoPU2RwT2ZmZXJNZXNzYWdlEg8KB3Jv",
-            "b21faWQYASABKAkSFAoMZnJvbV91c2VyX2lkGAIgASgJEhIKCnRvX3VzZXJf",
-            "aWQYAyABKAkSEQoJc2RwX29mZmVyGAQgASgJImEKEFNkcEFuc3dlck1lc3Nh",
-            "Z2USDwoHcm9vbV9pZBgBIAEoCRIUCgxmcm9tX3VzZXJfaWQYAiABKAkSEgoK",
-            "dG9fdXNlcl9pZBgDIAEoCRISCgpzZHBfYW5zd2VyGAQgASgJIqsBCg9QYXJ0",
-            "aWNpcGFudEluZm8SDwoHdXNlcl9pZBgBIAEoCRIQCgh1c2VybmFtZRgCIAEo",
-            "CRIsCgVzdGF0ZRgDIAEoDjIdLmNoaXJwLnZvaWNlLlBhcnRpY2lwYW50U3Rh",
-            "dGUSEQoJam9pbmVkX2F0GAQgASgDEhMKC2lzX3NwZWFraW5nGAUgASgIEg0K",
-            "BW11dGVkGAYgASgIEhAKCGRlYWZlbmVkGAcgASgIIiUKEkdldFJvb21JbmZv",
-            "UmVxdWVzdBIPCgdyb29tX2lkGAEgASgJItgBChNHZXRSb29tSW5mb1Jlc3Bv",
-            "bnNlEiUKBGNvZGUYASABKA4yFy5jaGlycC5jb21tb24uRXJyb3JDb2RlEg8K",
-            "B3Jvb21faWQYAiABKAkSEQoJcm9vbV9uYW1lGAMgASgJEigKCXJvb21fdHlw",
-            "ZRgEIAEoDjIVLmNoaXJwLnZvaWNlLlJvb21UeXBlEjIKDHBhcnRpY2lwYW50",
-            "cxgFIAMoCzIcLmNoaXJwLnZvaWNlLlBhcnRpY2lwYW50SW5mbxIYChBtYXhf",
-            "cGFydGljaXBhbnRzGAYgASgFIiUKEkdldFVzZXJSb29tUmVxdWVzdBIPCgd1",
-            "c2VyX2lkGAEgASgJIoABChNHZXRVc2VyUm9vbVJlc3BvbnNlEiUKBGNvZGUY",
-            "ASABKA4yFy5jaGlycC5jb21tb24uRXJyb3JDb2RlEg8KB3Jvb21faWQYAiAB",
-            "KAkSMQoLcGFydGljaXBhbnQYAyABKAsyHC5jaGlycC52b2ljZS5QYXJ0aWNp",
-            "cGFudEluZm8iQQoOU2V0TXV0ZVJlcXVlc3QSDwoHdXNlcl9pZBgBIAEoCRIP",
-            "Cgdyb29tX2lkGAIgASgJEg0KBW11dGVkGAMgASgIIk0KD1NldE11dGVSZXNw",
-            "b25zZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAuY29tbW9uLkVycm9yQ29kZRIT",
-            "CgtzZXJ2ZXJfdGltZRgCIAEoAyJGChBTZXREZWFmZW5SZXF1ZXN0Eg8KB3Vz",
-            "ZXJfaWQYASABKAkSDwoHcm9vbV9pZBgCIAEoCRIQCghkZWFmZW5lZBgDIAEo",
-            "CCJPChFTZXREZWFmZW5SZXNwb25zZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAu",
-            "Y29tbW9uLkVycm9yQ29kZRITCgtzZXJ2ZXJfdGltZRgCIAEoAyJwChdQYXJ0",
-            "aWNpcGFudEpvaW5lZE5vdGlmeRIPCgdyb29tX2lkGAEgASgJEjEKC3BhcnRp",
-            "Y2lwYW50GAIgASgLMhwuY2hpcnAudm9pY2UuUGFydGljaXBhbnRJbmZvEhEK",
-            "CXRpbWVzdGFtcBgDIAEoAyJMChVQYXJ0aWNpcGFudExlZnROb3RpZnkSDwoH",
-            "cm9vbV9pZBgBIAEoCRIPCgd1c2VyX2lkGAIgASgJEhEKCXRpbWVzdGFtcBgD",
-            "IAEoAyKCAQodUGFydGljaXBhbnRTdGF0ZUNoYW5nZWROb3RpZnkSDwoHcm9v",
-            "bV9pZBgBIAEoCRIPCgd1c2VyX2lkGAIgASgJEiwKBXN0YXRlGAMgASgOMh0u",
-            "Y2hpcnAudm9pY2UuUGFydGljaXBhbnRTdGF0ZRIRCgl0aW1lc3RhbXAYBCAB",
-            "KAMiVwoOU3BlYWtpbmdOb3RpZnkSDwoHcm9vbV9pZBgBIAEoCRIPCgd1c2Vy",
-            "X2lkGAIgASgJEhAKCHNwZWFraW5nGAMgASgIEhEKCXRpbWVzdGFtcBgEIAEo",
-            "Ayo0CghSb29tVHlwZRIQCgxQRUVSX1RPX1BFRVIQABIJCgVHUk9VUBABEgsK",
-            "B0NIQU5ORUwQAipZChBQYXJ0aWNpcGFudFN0YXRlEgsKB0pPSU5JTkcQABIN",
-            "CglDT05ORUNURUQQARIJCgVNVVRFRBACEgwKCERFQUZFTkVEEAMSEAoMRElT",
-            "Q09OTkVDVEVEEARCJVojZ2l0aHViLmNvbS9jdWkvY2hpcnAvcHJvdG8vZ28v",
-            "dm9pY2ViBnByb3RvMw=="));
+            "Y2Vfc2VydmVycxgGIAMoCzIWLmNoaXJwLnZvaWNlLkljZVNlcnZlchIqCgpt",
+            "ZWRpYV90aWVyGAcgASgOMhYuY2hpcnAudm9pY2UuTWVkaWFUaWVyEhgKEHJ0",
+            "Y3BfZmVlZGJhY2tfbXMYCCABKAUiNAoQTGVhdmVSb29tUmVxdWVzdBIPCgd1",
+            "c2VyX2lkGAEgASgJEg8KB3Jvb21faWQYAiABKAkiTwoRTGVhdmVSb29tUmVz",
+            "cG9uc2USJQoEY29kZRgBIAEoDjIXLmNoaXJwLmNvbW1vbi5FcnJvckNvZGUS",
+            "EwoLc2VydmVyX3RpbWUYAiABKAMiSwoMSWNlQ2FuZGlkYXRlEhEKCWNhbmRp",
+            "ZGF0ZRgBIAEoCRIPCgdzZHBfbWlkGAIgASgJEhcKD3NkcF9tbGluZV9pbmRl",
+            "eBgDIAEoBSJ+ChNJY2VDYW5kaWRhdGVNZXNzYWdlEg8KB3Jvb21faWQYASAB",
+            "KAkSFAoMZnJvbV91c2VyX2lkGAIgASgJEhIKCnRvX3VzZXJfaWQYAyABKAkS",
+            "LAoJY2FuZGlkYXRlGAQgASgLMhkuY2hpcnAudm9pY2UuSWNlQ2FuZGlkYXRl",
+            "Il8KD1NkcE9mZmVyTWVzc2FnZRIPCgdyb29tX2lkGAEgASgJEhQKDGZyb21f",
+            "dXNlcl9pZBgCIAEoCRISCgp0b191c2VyX2lkGAMgASgJEhEKCXNkcF9vZmZl",
+            "chgEIAEoCSJhChBTZHBBbnN3ZXJNZXNzYWdlEg8KB3Jvb21faWQYASABKAkS",
+            "FAoMZnJvbV91c2VyX2lkGAIgASgJEhIKCnRvX3VzZXJfaWQYAyABKAkSEgoK",
+            "c2RwX2Fuc3dlchgEIAEoCSKrAQoPUGFydGljaXBhbnRJbmZvEg8KB3VzZXJf",
+            "aWQYASABKAkSEAoIdXNlcm5hbWUYAiABKAkSLAoFc3RhdGUYAyABKA4yHS5j",
+            "aGlycC52b2ljZS5QYXJ0aWNpcGFudFN0YXRlEhEKCWpvaW5lZF9hdBgEIAEo",
+            "AxITCgtpc19zcGVha2luZxgFIAEoCBINCgVtdXRlZBgGIAEoCBIQCghkZWFm",
+            "ZW5lZBgHIAEoCCIlChJHZXRSb29tSW5mb1JlcXVlc3QSDwoHcm9vbV9pZBgB",
+            "IAEoCSK4AgoTR2V0Um9vbUluZm9SZXNwb25zZRIlCgRjb2RlGAEgASgOMhcu",
+            "Y2hpcnAuY29tbW9uLkVycm9yQ29kZRIPCgdyb29tX2lkGAIgASgJEhEKCXJv",
+            "b21fbmFtZRgDIAEoCRIoCglyb29tX3R5cGUYBCABKA4yFS5jaGlycC52b2lj",
+            "ZS5Sb29tVHlwZRIyCgxwYXJ0aWNpcGFudHMYBSADKAsyHC5jaGlycC52b2lj",
+            "ZS5QYXJ0aWNpcGFudEluZm8SGAoQbWF4X3BhcnRpY2lwYW50cxgGIAEoBRIm",
+            "CghtaWNfbW9kZRgHIAEoDjIULmNoaXJwLnZvaWNlLk1pY01vZGUSGgoSbWlj",
+            "X2hvbGRlcl91c2VyX2lkGAggASgJEhoKEm1pY19xdWV1ZV91c2VyX2lkcxgJ",
+            "IAMoCSIlChJHZXRVc2VyUm9vbVJlcXVlc3QSDwoHdXNlcl9pZBgBIAEoCSKA",
+            "AQoTR2V0VXNlclJvb21SZXNwb25zZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAu",
+            "Y29tbW9uLkVycm9yQ29kZRIPCgdyb29tX2lkGAIgASgJEjEKC3BhcnRpY2lw",
+            "YW50GAMgASgLMhwuY2hpcnAudm9pY2UuUGFydGljaXBhbnRJbmZvIkEKDlNl",
+            "dE11dGVSZXF1ZXN0Eg8KB3VzZXJfaWQYASABKAkSDwoHcm9vbV9pZBgCIAEo",
+            "CRINCgVtdXRlZBgDIAEoCCJNCg9TZXRNdXRlUmVzcG9uc2USJQoEY29kZRgB",
+            "IAEoDjIXLmNoaXJwLmNvbW1vbi5FcnJvckNvZGUSEwoLc2VydmVyX3RpbWUY",
+            "AiABKAMiRgoQU2V0RGVhZmVuUmVxdWVzdBIPCgd1c2VyX2lkGAEgASgJEg8K",
+            "B3Jvb21faWQYAiABKAkSEAoIZGVhZmVuZWQYAyABKAgiTwoRU2V0RGVhZmVu",
+            "UmVzcG9uc2USJQoEY29kZRgBIAEoDjIXLmNoaXJwLmNvbW1vbi5FcnJvckNv",
+            "ZGUSEwoLc2VydmVyX3RpbWUYAiABKAMicAoXUGFydGljaXBhbnRKb2luZWRO",
+            "b3RpZnkSDwoHcm9vbV9pZBgBIAEoCRIxCgtwYXJ0aWNpcGFudBgCIAEoCzIc",
+            "LmNoaXJwLnZvaWNlLlBhcnRpY2lwYW50SW5mbxIRCgl0aW1lc3RhbXAYAyAB",
+            "KAMiTAoVUGFydGljaXBhbnRMZWZ0Tm90aWZ5Eg8KB3Jvb21faWQYASABKAkS",
+            "DwoHdXNlcl9pZBgCIAEoCRIRCgl0aW1lc3RhbXAYAyABKAMiggEKHVBhcnRp",
+            "Y2lwYW50U3RhdGVDaGFuZ2VkTm90aWZ5Eg8KB3Jvb21faWQYASABKAkSDwoH",
+            "dXNlcl9pZBgCIAEoCRIsCgVzdGF0ZRgDIAEoDjIdLmNoaXJwLnZvaWNlLlBh",
+            "cnRpY2lwYW50U3RhdGUSEQoJdGltZXN0YW1wGAQgASgDImcKDlNwZWFraW5n",
+            "Tm90aWZ5Eg8KB3Jvb21faWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCRIQCghz",
+            "cGVha2luZxgDIAEoCBIRCgl0aW1lc3RhbXAYBCABKAMSDgoGdm9sdW1lGAUg",
+            "ASgFIlkKEVNldE1pY01vZGVSZXF1ZXN0Eg8KB3VzZXJfaWQYASABKAkSDwoH",
+            "cm9vbV9pZBgCIAEoCRIiCgRtb2RlGAMgASgOMhQuY2hpcnAudm9pY2UuTWlj",
+            "TW9kZSI4ChRNaWNRdWV1ZUFwcGx5UmVxdWVzdBIPCgd1c2VyX2lkGAEgASgJ",
+            "Eg8KB3Jvb21faWQYAiABKAkiUgoWTWljUXVldWVBcHByb3ZlUmVxdWVzdBIP",
+            "Cgd1c2VyX2lkGAEgASgJEg8KB3Jvb21faWQYAiABKAkSFgoOdGFyZ2V0X3Vz",
+            "ZXJfaWQYAyABKAkiOgoWTWljUXVldWVSZWxlYXNlUmVxdWVzdBIPCgd1c2Vy",
+            "X2lkGAEgASgJEg8KB3Jvb21faWQYAiABKAkiUAoUTWljUXVldWVHcmFudFJl",
+            "cXVlc3QSDwoHdXNlcl9pZBgBIAEoCRIPCgdyb29tX2lkGAIgASgJEhYKDnRh",
+            "cmdldF91c2VyX2lkGAMgASgJInsKEE1pY1F1ZXVlUmVzcG9uc2USJQoEY29k",
+            "ZRgBIAEoDjIXLmNoaXJwLmNvbW1vbi5FcnJvckNvZGUSEwoLc2VydmVyX3Rp",
+            "bWUYAiABKAMSFgoOaG9sZGVyX3VzZXJfaWQYAyABKAkSEwoLcXVldWVfZGVw",
+            "dGgYBCABKAUijQEKE01pY1F1ZXVlU3RhdGVOb3RpZnkSDwoHcm9vbV9pZBgB",
+            "IAEoCRIiCgRtb2RlGAIgASgOMhQuY2hpcnAudm9pY2UuTWljTW9kZRIWCg5o",
+            "b2xkZXJfdXNlcl9pZBgDIAEoCRIWCg5xdWV1ZV91c2VyX2lkcxgEIAMoCRIR",
+            "Cgl0aW1lc3RhbXAYBSABKAMqNAoIUm9vbVR5cGUSEAoMUEVFUl9UT19QRUVS",
+            "EAASCQoFR1JPVVAQARILCgdDSEFOTkVMEAIqWQoQUGFydGljaXBhbnRTdGF0",
+            "ZRILCgdKT0lOSU5HEAASDQoJQ09OTkVDVEVEEAESCQoFTVVURUQQAhIMCghE",
+            "RUFGRU5FRBADEhAKDERJU0NPTk5FQ1RFRBAEKigKB01pY01vZGUSDAoITUlD",
+            "X0ZSRUUQABIPCgtNSUNfTUFOQUdFRBABKi0KCU1lZGlhVGllchIMCghGVUxM",
+            "X01JWBAAEhIKDkZPUldBUkRfQllQQVNTEAFCJVojZ2l0aHViLmNvbS9jdWkv",
+            "Y2hpcnAvcHJvdG8vZ28vdm9pY2ViBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Chirp.Common.CommonReflection.Descriptor, },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.Voice.RoomType), typeof(global::Chirp.Voice.ParticipantState), }, null, new pbr::GeneratedClrTypeInfo[] {
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.Voice.RoomType), typeof(global::Chirp.Voice.ParticipantState), typeof(global::Chirp.Voice.MicMode), typeof(global::Chirp.Voice.MediaTier), }, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.CreateRoomRequest), global::Chirp.Voice.CreateRoomRequest.Parser, new[]{ "UserId", "RoomType", "RoomName", "MaxParticipants", "Metadata" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, }),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.CreateRoomResponse), global::Chirp.Voice.CreateRoomResponse.Parser, new[]{ "Code", "RoomId", "ServerTime" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.IceServer), global::Chirp.Voice.IceServer.Parser, new[]{ "Urls", "Username", "Credential" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.JoinRoomRequest), global::Chirp.Voice.JoinRoomRequest.Parser, new[]{ "UserId", "RoomId", "SdpOffer" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.JoinRoomResponse), global::Chirp.Voice.JoinRoomResponse.Parser, new[]{ "Code", "RoomId", "SdpAnswer", "ParticipantIds", "ServerTime", "IceServers" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.JoinRoomResponse), global::Chirp.Voice.JoinRoomResponse.Parser, new[]{ "Code", "RoomId", "SdpAnswer", "ParticipantIds", "ServerTime", "IceServers", "MediaTier", "RtcpFeedbackMs" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.LeaveRoomRequest), global::Chirp.Voice.LeaveRoomRequest.Parser, new[]{ "UserId", "RoomId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.LeaveRoomResponse), global::Chirp.Voice.LeaveRoomResponse.Parser, new[]{ "Code", "ServerTime" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.IceCandidate), global::Chirp.Voice.IceCandidate.Parser, new[]{ "Candidate", "SdpMid", "SdpMlineIndex" }, null, null, null, null),
@@ -102,7 +122,7 @@ namespace Chirp.Voice {
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.SdpAnswerMessage), global::Chirp.Voice.SdpAnswerMessage.Parser, new[]{ "RoomId", "FromUserId", "ToUserId", "SdpAnswer" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.ParticipantInfo), global::Chirp.Voice.ParticipantInfo.Parser, new[]{ "UserId", "Username", "State", "JoinedAt", "IsSpeaking", "Muted", "Deafened" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.GetRoomInfoRequest), global::Chirp.Voice.GetRoomInfoRequest.Parser, new[]{ "RoomId" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.GetRoomInfoResponse), global::Chirp.Voice.GetRoomInfoResponse.Parser, new[]{ "Code", "RoomId", "RoomName", "RoomType", "Participants", "MaxParticipants" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.GetRoomInfoResponse), global::Chirp.Voice.GetRoomInfoResponse.Parser, new[]{ "Code", "RoomId", "RoomName", "RoomType", "Participants", "MaxParticipants", "MicMode", "MicHolderUserId", "MicQueueUserIds" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.GetUserRoomRequest), global::Chirp.Voice.GetUserRoomRequest.Parser, new[]{ "UserId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.GetUserRoomResponse), global::Chirp.Voice.GetUserRoomResponse.Parser, new[]{ "Code", "RoomId", "Participant" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.SetMuteRequest), global::Chirp.Voice.SetMuteRequest.Parser, new[]{ "UserId", "RoomId", "Muted" }, null, null, null, null),
@@ -112,7 +132,14 @@ namespace Chirp.Voice {
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.ParticipantJoinedNotify), global::Chirp.Voice.ParticipantJoinedNotify.Parser, new[]{ "RoomId", "Participant", "Timestamp" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.ParticipantLeftNotify), global::Chirp.Voice.ParticipantLeftNotify.Parser, new[]{ "RoomId", "UserId", "Timestamp" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.ParticipantStateChangedNotify), global::Chirp.Voice.ParticipantStateChangedNotify.Parser, new[]{ "RoomId", "UserId", "State", "Timestamp" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.SpeakingNotify), global::Chirp.Voice.SpeakingNotify.Parser, new[]{ "RoomId", "UserId", "Speaking", "Timestamp" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.SpeakingNotify), global::Chirp.Voice.SpeakingNotify.Parser, new[]{ "RoomId", "UserId", "Speaking", "Timestamp", "Volume" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.SetMicModeRequest), global::Chirp.Voice.SetMicModeRequest.Parser, new[]{ "UserId", "RoomId", "Mode" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.MicQueueApplyRequest), global::Chirp.Voice.MicQueueApplyRequest.Parser, new[]{ "UserId", "RoomId" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.MicQueueApproveRequest), global::Chirp.Voice.MicQueueApproveRequest.Parser, new[]{ "UserId", "RoomId", "TargetUserId" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.MicQueueReleaseRequest), global::Chirp.Voice.MicQueueReleaseRequest.Parser, new[]{ "UserId", "RoomId" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.MicQueueGrantRequest), global::Chirp.Voice.MicQueueGrantRequest.Parser, new[]{ "UserId", "RoomId", "TargetUserId" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.MicQueueResponse), global::Chirp.Voice.MicQueueResponse.Parser, new[]{ "Code", "ServerTime", "HolderUserId", "QueueDepth" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Voice.MicQueueStateNotify), global::Chirp.Voice.MicQueueStateNotify.Parser, new[]{ "RoomId", "Mode", "HolderUserId", "QueueUserIds", "Timestamp" }, null, null, null, null)
           }));
     }
     #endregion
@@ -161,6 +188,32 @@ namespace Chirp.Voice {
     /// Left the room
     /// </summary>
     [pbr::OriginalName("DISCONNECTED")] Disconnected = 4,
+  }
+
+  /// <summary>
+  /// Host-controlled speaking queue (麦序模式, VOICE-RT): rooms run MIC_FREE
+  /// (the default, everyone may speak) or MIC_MANAGED (only the mic holder
+  /// speaks; the host approves applications off a FIFO queue).
+  /// </summary>
+  public enum MicMode {
+    [pbr::OriginalName("MIC_FREE")] MicFree = 0,
+    [pbr::OriginalName("MIC_MANAGED")] MicManaged = 1,
+  }
+
+  /// <summary>
+  /// Media delivery tier (大规模旁路分级, VOICE-RT): the server classifies each
+  /// room and the clients configure their engine accordingly - small rooms mix
+  /// every stream, large rooms forward through the SFU bypass.
+  /// </summary>
+  public enum MediaTier {
+    /// <summary>
+    /// peer mesh with full mixing (small rooms)
+    /// </summary>
+    [pbr::OriginalName("FULL_MIX")] FullMix = 0,
+    /// <summary>
+    /// SFU forwarding bypass (large rooms)
+    /// </summary>
+    [pbr::OriginalName("FORWARD_BYPASS")] ForwardBypass = 1,
   }
 
   #endregion
@@ -1372,6 +1425,8 @@ namespace Chirp.Voice {
       participantIds_ = other.participantIds_.Clone();
       serverTime_ = other.serverTime_;
       iceServers_ = other.iceServers_.Clone();
+      mediaTier_ = other.mediaTier_;
+      rtcpFeedbackMs_ = other.rtcpFeedbackMs_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1454,6 +1509,35 @@ namespace Chirp.Voice {
       get { return iceServers_; }
     }
 
+    /// <summary>Field number for the "media_tier" field.</summary>
+    public const int MediaTierFieldNumber = 7;
+    private global::Chirp.Voice.MediaTier mediaTier_ = global::Chirp.Voice.MediaTier.FullMix;
+    /// <summary>
+    /// Delivery tier the server picked for this room (VOICE-RT 旁路分级);
+    /// rtcp_feedback_ms is the tier's receiver-report pacing the engine should
+    /// use (smaller tier = more frequent feedback for tight mixing).
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Chirp.Voice.MediaTier MediaTier {
+      get { return mediaTier_; }
+      set {
+        mediaTier_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "rtcp_feedback_ms" field.</summary>
+    public const int RtcpFeedbackMsFieldNumber = 8;
+    private int rtcpFeedbackMs_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int RtcpFeedbackMs {
+      get { return rtcpFeedbackMs_; }
+      set {
+        rtcpFeedbackMs_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -1475,6 +1559,8 @@ namespace Chirp.Voice {
       if(!participantIds_.Equals(other.participantIds_)) return false;
       if (ServerTime != other.ServerTime) return false;
       if(!iceServers_.Equals(other.iceServers_)) return false;
+      if (MediaTier != other.MediaTier) return false;
+      if (RtcpFeedbackMs != other.RtcpFeedbackMs) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1488,6 +1574,8 @@ namespace Chirp.Voice {
       hash ^= participantIds_.GetHashCode();
       if (ServerTime != 0L) hash ^= ServerTime.GetHashCode();
       hash ^= iceServers_.GetHashCode();
+      if (MediaTier != global::Chirp.Voice.MediaTier.FullMix) hash ^= MediaTier.GetHashCode();
+      if (RtcpFeedbackMs != 0) hash ^= RtcpFeedbackMs.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1524,6 +1612,14 @@ namespace Chirp.Voice {
         output.WriteInt64(ServerTime);
       }
       iceServers_.WriteTo(output, _repeated_iceServers_codec);
+      if (MediaTier != global::Chirp.Voice.MediaTier.FullMix) {
+        output.WriteRawTag(56);
+        output.WriteEnum((int) MediaTier);
+      }
+      if (RtcpFeedbackMs != 0) {
+        output.WriteRawTag(64);
+        output.WriteInt32(RtcpFeedbackMs);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1552,6 +1648,14 @@ namespace Chirp.Voice {
         output.WriteInt64(ServerTime);
       }
       iceServers_.WriteTo(ref output, _repeated_iceServers_codec);
+      if (MediaTier != global::Chirp.Voice.MediaTier.FullMix) {
+        output.WriteRawTag(56);
+        output.WriteEnum((int) MediaTier);
+      }
+      if (RtcpFeedbackMs != 0) {
+        output.WriteRawTag(64);
+        output.WriteInt32(RtcpFeedbackMs);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -1576,6 +1680,12 @@ namespace Chirp.Voice {
         size += 1 + pb::CodedOutputStream.ComputeInt64Size(ServerTime);
       }
       size += iceServers_.CalculateSize(_repeated_iceServers_codec);
+      if (MediaTier != global::Chirp.Voice.MediaTier.FullMix) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) MediaTier);
+      }
+      if (RtcpFeedbackMs != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(RtcpFeedbackMs);
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -1602,6 +1712,12 @@ namespace Chirp.Voice {
         ServerTime = other.ServerTime;
       }
       iceServers_.Add(other.iceServers_);
+      if (other.MediaTier != global::Chirp.Voice.MediaTier.FullMix) {
+        MediaTier = other.MediaTier;
+      }
+      if (other.RtcpFeedbackMs != 0) {
+        RtcpFeedbackMs = other.RtcpFeedbackMs;
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -1645,6 +1761,14 @@ namespace Chirp.Voice {
             iceServers_.AddEntriesFrom(input, _repeated_iceServers_codec);
             break;
           }
+          case 56: {
+            MediaTier = (global::Chirp.Voice.MediaTier) input.ReadEnum();
+            break;
+          }
+          case 64: {
+            RtcpFeedbackMs = input.ReadInt32();
+            break;
+          }
         }
       }
     #endif
@@ -1686,6 +1810,14 @@ namespace Chirp.Voice {
           }
           case 50: {
             iceServers_.AddEntriesFrom(ref input, _repeated_iceServers_codec);
+            break;
+          }
+          case 56: {
+            MediaTier = (global::Chirp.Voice.MediaTier) input.ReadEnum();
+            break;
+          }
+          case 64: {
+            RtcpFeedbackMs = input.ReadInt32();
             break;
           }
         }
@@ -4052,6 +4184,9 @@ namespace Chirp.Voice {
       roomType_ = other.roomType_;
       participants_ = other.participants_.Clone();
       maxParticipants_ = other.maxParticipants_;
+      micMode_ = other.micMode_;
+      micHolderUserId_ = other.micHolderUserId_;
+      micQueueUserIds_ = other.micQueueUserIds_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -4132,6 +4267,44 @@ namespace Chirp.Voice {
       }
     }
 
+    /// <summary>Field number for the "mic_mode" field.</summary>
+    public const int MicModeFieldNumber = 7;
+    private global::Chirp.Voice.MicMode micMode_ = global::Chirp.Voice.MicMode.MicFree;
+    /// <summary>
+    /// Speaking queue snapshot for late joiners (VOICE-RT 麦序模式).
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Chirp.Voice.MicMode MicMode {
+      get { return micMode_; }
+      set {
+        micMode_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "mic_holder_user_id" field.</summary>
+    public const int MicHolderUserIdFieldNumber = 8;
+    private string micHolderUserId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string MicHolderUserId {
+      get { return micHolderUserId_; }
+      set {
+        micHolderUserId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "mic_queue_user_ids" field.</summary>
+    public const int MicQueueUserIdsFieldNumber = 9;
+    private static readonly pb::FieldCodec<string> _repeated_micQueueUserIds_codec
+        = pb::FieldCodec.ForString(74);
+    private readonly pbc::RepeatedField<string> micQueueUserIds_ = new pbc::RepeatedField<string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<string> MicQueueUserIds {
+      get { return micQueueUserIds_; }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -4153,6 +4326,9 @@ namespace Chirp.Voice {
       if (RoomType != other.RoomType) return false;
       if(!participants_.Equals(other.participants_)) return false;
       if (MaxParticipants != other.MaxParticipants) return false;
+      if (MicMode != other.MicMode) return false;
+      if (MicHolderUserId != other.MicHolderUserId) return false;
+      if(!micQueueUserIds_.Equals(other.micQueueUserIds_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -4166,6 +4342,9 @@ namespace Chirp.Voice {
       if (RoomType != global::Chirp.Voice.RoomType.PeerToPeer) hash ^= RoomType.GetHashCode();
       hash ^= participants_.GetHashCode();
       if (MaxParticipants != 0) hash ^= MaxParticipants.GetHashCode();
+      if (MicMode != global::Chirp.Voice.MicMode.MicFree) hash ^= MicMode.GetHashCode();
+      if (MicHolderUserId.Length != 0) hash ^= MicHolderUserId.GetHashCode();
+      hash ^= micQueueUserIds_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -4205,6 +4384,15 @@ namespace Chirp.Voice {
         output.WriteRawTag(48);
         output.WriteInt32(MaxParticipants);
       }
+      if (MicMode != global::Chirp.Voice.MicMode.MicFree) {
+        output.WriteRawTag(56);
+        output.WriteEnum((int) MicMode);
+      }
+      if (MicHolderUserId.Length != 0) {
+        output.WriteRawTag(66);
+        output.WriteString(MicHolderUserId);
+      }
+      micQueueUserIds_.WriteTo(output, _repeated_micQueueUserIds_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -4236,6 +4424,15 @@ namespace Chirp.Voice {
         output.WriteRawTag(48);
         output.WriteInt32(MaxParticipants);
       }
+      if (MicMode != global::Chirp.Voice.MicMode.MicFree) {
+        output.WriteRawTag(56);
+        output.WriteEnum((int) MicMode);
+      }
+      if (MicHolderUserId.Length != 0) {
+        output.WriteRawTag(66);
+        output.WriteString(MicHolderUserId);
+      }
+      micQueueUserIds_.WriteTo(ref output, _repeated_micQueueUserIds_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -4262,6 +4459,13 @@ namespace Chirp.Voice {
       if (MaxParticipants != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(MaxParticipants);
       }
+      if (MicMode != global::Chirp.Voice.MicMode.MicFree) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) MicMode);
+      }
+      if (MicHolderUserId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(MicHolderUserId);
+      }
+      size += micQueueUserIds_.CalculateSize(_repeated_micQueueUserIds_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -4290,6 +4494,13 @@ namespace Chirp.Voice {
       if (other.MaxParticipants != 0) {
         MaxParticipants = other.MaxParticipants;
       }
+      if (other.MicMode != global::Chirp.Voice.MicMode.MicFree) {
+        MicMode = other.MicMode;
+      }
+      if (other.MicHolderUserId.Length != 0) {
+        MicHolderUserId = other.MicHolderUserId;
+      }
+      micQueueUserIds_.Add(other.micQueueUserIds_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -4333,6 +4544,18 @@ namespace Chirp.Voice {
             MaxParticipants = input.ReadInt32();
             break;
           }
+          case 56: {
+            MicMode = (global::Chirp.Voice.MicMode) input.ReadEnum();
+            break;
+          }
+          case 66: {
+            MicHolderUserId = input.ReadString();
+            break;
+          }
+          case 74: {
+            micQueueUserIds_.AddEntriesFrom(input, _repeated_micQueueUserIds_codec);
+            break;
+          }
         }
       }
     #endif
@@ -4374,6 +4597,18 @@ namespace Chirp.Voice {
           }
           case 48: {
             MaxParticipants = input.ReadInt32();
+            break;
+          }
+          case 56: {
+            MicMode = (global::Chirp.Voice.MicMode) input.ReadEnum();
+            break;
+          }
+          case 66: {
+            MicHolderUserId = input.ReadString();
+            break;
+          }
+          case 74: {
+            micQueueUserIds_.AddEntriesFrom(ref input, _repeated_micQueueUserIds_codec);
             break;
           }
         }
@@ -6789,6 +7024,7 @@ namespace Chirp.Voice {
       userId_ = other.userId_;
       speaking_ = other.speaking_;
       timestamp_ = other.timestamp_;
+      volume_ = other.volume_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -6846,6 +7082,22 @@ namespace Chirp.Voice {
       }
     }
 
+    /// <summary>Field number for the "volume" field.</summary>
+    public const int VolumeFieldNumber = 5;
+    private int volume_;
+    /// <summary>
+    /// 0-100 loudness level from the client's audio stats (0 when speaking is
+    /// false); drives the SDK volume callbacks.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Volume {
+      get { return volume_; }
+      set {
+        volume_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -6865,6 +7117,7 @@ namespace Chirp.Voice {
       if (UserId != other.UserId) return false;
       if (Speaking != other.Speaking) return false;
       if (Timestamp != other.Timestamp) return false;
+      if (Volume != other.Volume) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -6876,6 +7129,7 @@ namespace Chirp.Voice {
       if (UserId.Length != 0) hash ^= UserId.GetHashCode();
       if (Speaking != false) hash ^= Speaking.GetHashCode();
       if (Timestamp != 0L) hash ^= Timestamp.GetHashCode();
+      if (Volume != 0) hash ^= Volume.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -6910,6 +7164,10 @@ namespace Chirp.Voice {
         output.WriteRawTag(32);
         output.WriteInt64(Timestamp);
       }
+      if (Volume != 0) {
+        output.WriteRawTag(40);
+        output.WriteInt32(Volume);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -6936,6 +7194,10 @@ namespace Chirp.Voice {
         output.WriteRawTag(32);
         output.WriteInt64(Timestamp);
       }
+      if (Volume != 0) {
+        output.WriteRawTag(40);
+        output.WriteInt32(Volume);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -6957,6 +7219,9 @@ namespace Chirp.Voice {
       }
       if (Timestamp != 0L) {
         size += 1 + pb::CodedOutputStream.ComputeInt64Size(Timestamp);
+      }
+      if (Volume != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Volume);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -6981,6 +7246,9 @@ namespace Chirp.Voice {
       }
       if (other.Timestamp != 0L) {
         Timestamp = other.Timestamp;
+      }
+      if (other.Volume != 0) {
+        Volume = other.Volume;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -7017,6 +7285,10 @@ namespace Chirp.Voice {
             Timestamp = input.ReadInt64();
             break;
           }
+          case 40: {
+            Volume = input.ReadInt32();
+            break;
+          }
         }
       }
     #endif
@@ -7049,6 +7321,1979 @@ namespace Chirp.Voice {
             break;
           }
           case 32: {
+            Timestamp = input.ReadInt64();
+            break;
+          }
+          case 40: {
+            Volume = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  /// <summary>
+  /// Set the room's speaking mode (host only).
+  /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class SetMicModeRequest : pb::IMessage<SetMicModeRequest>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<SetMicModeRequest> _parser = new pb::MessageParser<SetMicModeRequest>(() => new SetMicModeRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<SetMicModeRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Voice.VoiceReflection.Descriptor.MessageTypes[24]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SetMicModeRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SetMicModeRequest(SetMicModeRequest other) : this() {
+      userId_ = other.userId_;
+      roomId_ = other.roomId_;
+      mode_ = other.mode_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SetMicModeRequest Clone() {
+      return new SetMicModeRequest(this);
+    }
+
+    /// <summary>Field number for the "user_id" field.</summary>
+    public const int UserIdFieldNumber = 1;
+    private string userId_ = "";
+    /// <summary>
+    /// the host
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string UserId {
+      get { return userId_; }
+      set {
+        userId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "room_id" field.</summary>
+    public const int RoomIdFieldNumber = 2;
+    private string roomId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string RoomId {
+      get { return roomId_; }
+      set {
+        roomId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "mode" field.</summary>
+    public const int ModeFieldNumber = 3;
+    private global::Chirp.Voice.MicMode mode_ = global::Chirp.Voice.MicMode.MicFree;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Chirp.Voice.MicMode Mode {
+      get { return mode_; }
+      set {
+        mode_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as SetMicModeRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(SetMicModeRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (UserId != other.UserId) return false;
+      if (RoomId != other.RoomId) return false;
+      if (Mode != other.Mode) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (UserId.Length != 0) hash ^= UserId.GetHashCode();
+      if (RoomId.Length != 0) hash ^= RoomId.GetHashCode();
+      if (Mode != global::Chirp.Voice.MicMode.MicFree) hash ^= Mode.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (UserId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(UserId);
+      }
+      if (RoomId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(RoomId);
+      }
+      if (Mode != global::Chirp.Voice.MicMode.MicFree) {
+        output.WriteRawTag(24);
+        output.WriteEnum((int) Mode);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (UserId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(UserId);
+      }
+      if (RoomId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(RoomId);
+      }
+      if (Mode != global::Chirp.Voice.MicMode.MicFree) {
+        output.WriteRawTag(24);
+        output.WriteEnum((int) Mode);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (UserId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(UserId);
+      }
+      if (RoomId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(RoomId);
+      }
+      if (Mode != global::Chirp.Voice.MicMode.MicFree) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Mode);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(SetMicModeRequest other) {
+      if (other == null) {
+        return;
+      }
+      if (other.UserId.Length != 0) {
+        UserId = other.UserId;
+      }
+      if (other.RoomId.Length != 0) {
+        RoomId = other.RoomId;
+      }
+      if (other.Mode != global::Chirp.Voice.MicMode.MicFree) {
+        Mode = other.Mode;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            UserId = input.ReadString();
+            break;
+          }
+          case 18: {
+            RoomId = input.ReadString();
+            break;
+          }
+          case 24: {
+            Mode = (global::Chirp.Voice.MicMode) input.ReadEnum();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            UserId = input.ReadString();
+            break;
+          }
+          case 18: {
+            RoomId = input.ReadString();
+            break;
+          }
+          case 24: {
+            Mode = (global::Chirp.Voice.MicMode) input.ReadEnum();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  /// <summary>
+  /// Apply for the mic (managed mode): joins the FIFO queue.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class MicQueueApplyRequest : pb::IMessage<MicQueueApplyRequest>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<MicQueueApplyRequest> _parser = new pb::MessageParser<MicQueueApplyRequest>(() => new MicQueueApplyRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<MicQueueApplyRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Voice.VoiceReflection.Descriptor.MessageTypes[25]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MicQueueApplyRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MicQueueApplyRequest(MicQueueApplyRequest other) : this() {
+      userId_ = other.userId_;
+      roomId_ = other.roomId_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MicQueueApplyRequest Clone() {
+      return new MicQueueApplyRequest(this);
+    }
+
+    /// <summary>Field number for the "user_id" field.</summary>
+    public const int UserIdFieldNumber = 1;
+    private string userId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string UserId {
+      get { return userId_; }
+      set {
+        userId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "room_id" field.</summary>
+    public const int RoomIdFieldNumber = 2;
+    private string roomId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string RoomId {
+      get { return roomId_; }
+      set {
+        roomId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as MicQueueApplyRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(MicQueueApplyRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (UserId != other.UserId) return false;
+      if (RoomId != other.RoomId) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (UserId.Length != 0) hash ^= UserId.GetHashCode();
+      if (RoomId.Length != 0) hash ^= RoomId.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (UserId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(UserId);
+      }
+      if (RoomId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(RoomId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (UserId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(UserId);
+      }
+      if (RoomId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(RoomId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (UserId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(UserId);
+      }
+      if (RoomId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(RoomId);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(MicQueueApplyRequest other) {
+      if (other == null) {
+        return;
+      }
+      if (other.UserId.Length != 0) {
+        UserId = other.UserId;
+      }
+      if (other.RoomId.Length != 0) {
+        RoomId = other.RoomId;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            UserId = input.ReadString();
+            break;
+          }
+          case 18: {
+            RoomId = input.ReadString();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            UserId = input.ReadString();
+            break;
+          }
+          case 18: {
+            RoomId = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  /// <summary>
+  /// Host approves the queue head, or a specific applicant.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class MicQueueApproveRequest : pb::IMessage<MicQueueApproveRequest>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<MicQueueApproveRequest> _parser = new pb::MessageParser<MicQueueApproveRequest>(() => new MicQueueApproveRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<MicQueueApproveRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Voice.VoiceReflection.Descriptor.MessageTypes[26]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MicQueueApproveRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MicQueueApproveRequest(MicQueueApproveRequest other) : this() {
+      userId_ = other.userId_;
+      roomId_ = other.roomId_;
+      targetUserId_ = other.targetUserId_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MicQueueApproveRequest Clone() {
+      return new MicQueueApproveRequest(this);
+    }
+
+    /// <summary>Field number for the "user_id" field.</summary>
+    public const int UserIdFieldNumber = 1;
+    private string userId_ = "";
+    /// <summary>
+    /// the host
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string UserId {
+      get { return userId_; }
+      set {
+        userId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "room_id" field.</summary>
+    public const int RoomIdFieldNumber = 2;
+    private string roomId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string RoomId {
+      get { return roomId_; }
+      set {
+        roomId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "target_user_id" field.</summary>
+    public const int TargetUserIdFieldNumber = 3;
+    private string targetUserId_ = "";
+    /// <summary>
+    /// empty = queue head
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string TargetUserId {
+      get { return targetUserId_; }
+      set {
+        targetUserId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as MicQueueApproveRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(MicQueueApproveRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (UserId != other.UserId) return false;
+      if (RoomId != other.RoomId) return false;
+      if (TargetUserId != other.TargetUserId) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (UserId.Length != 0) hash ^= UserId.GetHashCode();
+      if (RoomId.Length != 0) hash ^= RoomId.GetHashCode();
+      if (TargetUserId.Length != 0) hash ^= TargetUserId.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (UserId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(UserId);
+      }
+      if (RoomId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(RoomId);
+      }
+      if (TargetUserId.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(TargetUserId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (UserId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(UserId);
+      }
+      if (RoomId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(RoomId);
+      }
+      if (TargetUserId.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(TargetUserId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (UserId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(UserId);
+      }
+      if (RoomId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(RoomId);
+      }
+      if (TargetUserId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(TargetUserId);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(MicQueueApproveRequest other) {
+      if (other == null) {
+        return;
+      }
+      if (other.UserId.Length != 0) {
+        UserId = other.UserId;
+      }
+      if (other.RoomId.Length != 0) {
+        RoomId = other.RoomId;
+      }
+      if (other.TargetUserId.Length != 0) {
+        TargetUserId = other.TargetUserId;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            UserId = input.ReadString();
+            break;
+          }
+          case 18: {
+            RoomId = input.ReadString();
+            break;
+          }
+          case 26: {
+            TargetUserId = input.ReadString();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            UserId = input.ReadString();
+            break;
+          }
+          case 18: {
+            RoomId = input.ReadString();
+            break;
+          }
+          case 26: {
+            TargetUserId = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  /// <summary>
+  /// The holder (or the host) releases the mic (下麦).
+  /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class MicQueueReleaseRequest : pb::IMessage<MicQueueReleaseRequest>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<MicQueueReleaseRequest> _parser = new pb::MessageParser<MicQueueReleaseRequest>(() => new MicQueueReleaseRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<MicQueueReleaseRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Voice.VoiceReflection.Descriptor.MessageTypes[27]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MicQueueReleaseRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MicQueueReleaseRequest(MicQueueReleaseRequest other) : this() {
+      userId_ = other.userId_;
+      roomId_ = other.roomId_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MicQueueReleaseRequest Clone() {
+      return new MicQueueReleaseRequest(this);
+    }
+
+    /// <summary>Field number for the "user_id" field.</summary>
+    public const int UserIdFieldNumber = 1;
+    private string userId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string UserId {
+      get { return userId_; }
+      set {
+        userId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "room_id" field.</summary>
+    public const int RoomIdFieldNumber = 2;
+    private string roomId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string RoomId {
+      get { return roomId_; }
+      set {
+        roomId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as MicQueueReleaseRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(MicQueueReleaseRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (UserId != other.UserId) return false;
+      if (RoomId != other.RoomId) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (UserId.Length != 0) hash ^= UserId.GetHashCode();
+      if (RoomId.Length != 0) hash ^= RoomId.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (UserId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(UserId);
+      }
+      if (RoomId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(RoomId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (UserId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(UserId);
+      }
+      if (RoomId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(RoomId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (UserId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(UserId);
+      }
+      if (RoomId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(RoomId);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(MicQueueReleaseRequest other) {
+      if (other == null) {
+        return;
+      }
+      if (other.UserId.Length != 0) {
+        UserId = other.UserId;
+      }
+      if (other.RoomId.Length != 0) {
+        RoomId = other.RoomId;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            UserId = input.ReadString();
+            break;
+          }
+          case 18: {
+            RoomId = input.ReadString();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            UserId = input.ReadString();
+            break;
+          }
+          case 18: {
+            RoomId = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  /// <summary>
+  /// Host hands the mic straight to a member (切麦), bypassing the queue.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class MicQueueGrantRequest : pb::IMessage<MicQueueGrantRequest>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<MicQueueGrantRequest> _parser = new pb::MessageParser<MicQueueGrantRequest>(() => new MicQueueGrantRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<MicQueueGrantRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Voice.VoiceReflection.Descriptor.MessageTypes[28]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MicQueueGrantRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MicQueueGrantRequest(MicQueueGrantRequest other) : this() {
+      userId_ = other.userId_;
+      roomId_ = other.roomId_;
+      targetUserId_ = other.targetUserId_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MicQueueGrantRequest Clone() {
+      return new MicQueueGrantRequest(this);
+    }
+
+    /// <summary>Field number for the "user_id" field.</summary>
+    public const int UserIdFieldNumber = 1;
+    private string userId_ = "";
+    /// <summary>
+    /// the host
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string UserId {
+      get { return userId_; }
+      set {
+        userId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "room_id" field.</summary>
+    public const int RoomIdFieldNumber = 2;
+    private string roomId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string RoomId {
+      get { return roomId_; }
+      set {
+        roomId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "target_user_id" field.</summary>
+    public const int TargetUserIdFieldNumber = 3;
+    private string targetUserId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string TargetUserId {
+      get { return targetUserId_; }
+      set {
+        targetUserId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as MicQueueGrantRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(MicQueueGrantRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (UserId != other.UserId) return false;
+      if (RoomId != other.RoomId) return false;
+      if (TargetUserId != other.TargetUserId) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (UserId.Length != 0) hash ^= UserId.GetHashCode();
+      if (RoomId.Length != 0) hash ^= RoomId.GetHashCode();
+      if (TargetUserId.Length != 0) hash ^= TargetUserId.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (UserId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(UserId);
+      }
+      if (RoomId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(RoomId);
+      }
+      if (TargetUserId.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(TargetUserId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (UserId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(UserId);
+      }
+      if (RoomId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(RoomId);
+      }
+      if (TargetUserId.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(TargetUserId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (UserId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(UserId);
+      }
+      if (RoomId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(RoomId);
+      }
+      if (TargetUserId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(TargetUserId);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(MicQueueGrantRequest other) {
+      if (other == null) {
+        return;
+      }
+      if (other.UserId.Length != 0) {
+        UserId = other.UserId;
+      }
+      if (other.RoomId.Length != 0) {
+        RoomId = other.RoomId;
+      }
+      if (other.TargetUserId.Length != 0) {
+        TargetUserId = other.TargetUserId;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            UserId = input.ReadString();
+            break;
+          }
+          case 18: {
+            RoomId = input.ReadString();
+            break;
+          }
+          case 26: {
+            TargetUserId = input.ReadString();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            UserId = input.ReadString();
+            break;
+          }
+          case 18: {
+            RoomId = input.ReadString();
+            break;
+          }
+          case 26: {
+            TargetUserId = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  /// <summary>
+  /// Shared ack for the speaking-queue operations.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class MicQueueResponse : pb::IMessage<MicQueueResponse>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<MicQueueResponse> _parser = new pb::MessageParser<MicQueueResponse>(() => new MicQueueResponse());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<MicQueueResponse> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Voice.VoiceReflection.Descriptor.MessageTypes[29]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MicQueueResponse() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MicQueueResponse(MicQueueResponse other) : this() {
+      code_ = other.code_;
+      serverTime_ = other.serverTime_;
+      holderUserId_ = other.holderUserId_;
+      queueDepth_ = other.queueDepth_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MicQueueResponse Clone() {
+      return new MicQueueResponse(this);
+    }
+
+    /// <summary>Field number for the "code" field.</summary>
+    public const int CodeFieldNumber = 1;
+    private global::Chirp.Common.ErrorCode code_ = global::Chirp.Common.ErrorCode.Ok;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Chirp.Common.ErrorCode Code {
+      get { return code_; }
+      set {
+        code_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "server_time" field.</summary>
+    public const int ServerTimeFieldNumber = 2;
+    private long serverTime_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public long ServerTime {
+      get { return serverTime_; }
+      set {
+        serverTime_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "holder_user_id" field.</summary>
+    public const int HolderUserIdFieldNumber = 3;
+    private string holderUserId_ = "";
+    /// <summary>
+    /// holder after the op
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string HolderUserId {
+      get { return holderUserId_; }
+      set {
+        holderUserId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "queue_depth" field.</summary>
+    public const int QueueDepthFieldNumber = 4;
+    private int queueDepth_;
+    /// <summary>
+    /// waiting applicants after the op
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int QueueDepth {
+      get { return queueDepth_; }
+      set {
+        queueDepth_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as MicQueueResponse);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(MicQueueResponse other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Code != other.Code) return false;
+      if (ServerTime != other.ServerTime) return false;
+      if (HolderUserId != other.HolderUserId) return false;
+      if (QueueDepth != other.QueueDepth) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Code != global::Chirp.Common.ErrorCode.Ok) hash ^= Code.GetHashCode();
+      if (ServerTime != 0L) hash ^= ServerTime.GetHashCode();
+      if (HolderUserId.Length != 0) hash ^= HolderUserId.GetHashCode();
+      if (QueueDepth != 0) hash ^= QueueDepth.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Code);
+      }
+      if (ServerTime != 0L) {
+        output.WriteRawTag(16);
+        output.WriteInt64(ServerTime);
+      }
+      if (HolderUserId.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(HolderUserId);
+      }
+      if (QueueDepth != 0) {
+        output.WriteRawTag(32);
+        output.WriteInt32(QueueDepth);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Code);
+      }
+      if (ServerTime != 0L) {
+        output.WriteRawTag(16);
+        output.WriteInt64(ServerTime);
+      }
+      if (HolderUserId.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(HolderUserId);
+      }
+      if (QueueDepth != 0) {
+        output.WriteRawTag(32);
+        output.WriteInt32(QueueDepth);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Code);
+      }
+      if (ServerTime != 0L) {
+        size += 1 + pb::CodedOutputStream.ComputeInt64Size(ServerTime);
+      }
+      if (HolderUserId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(HolderUserId);
+      }
+      if (QueueDepth != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(QueueDepth);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(MicQueueResponse other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Code != global::Chirp.Common.ErrorCode.Ok) {
+        Code = other.Code;
+      }
+      if (other.ServerTime != 0L) {
+        ServerTime = other.ServerTime;
+      }
+      if (other.HolderUserId.Length != 0) {
+        HolderUserId = other.HolderUserId;
+      }
+      if (other.QueueDepth != 0) {
+        QueueDepth = other.QueueDepth;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            Code = (global::Chirp.Common.ErrorCode) input.ReadEnum();
+            break;
+          }
+          case 16: {
+            ServerTime = input.ReadInt64();
+            break;
+          }
+          case 26: {
+            HolderUserId = input.ReadString();
+            break;
+          }
+          case 32: {
+            QueueDepth = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            Code = (global::Chirp.Common.ErrorCode) input.ReadEnum();
+            break;
+          }
+          case 16: {
+            ServerTime = input.ReadInt64();
+            break;
+          }
+          case 26: {
+            HolderUserId = input.ReadString();
+            break;
+          }
+          case 32: {
+            QueueDepth = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  /// <summary>
+  /// Broadcast on every mode/holder/queue change.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class MicQueueStateNotify : pb::IMessage<MicQueueStateNotify>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<MicQueueStateNotify> _parser = new pb::MessageParser<MicQueueStateNotify>(() => new MicQueueStateNotify());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<MicQueueStateNotify> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Voice.VoiceReflection.Descriptor.MessageTypes[30]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MicQueueStateNotify() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MicQueueStateNotify(MicQueueStateNotify other) : this() {
+      roomId_ = other.roomId_;
+      mode_ = other.mode_;
+      holderUserId_ = other.holderUserId_;
+      queueUserIds_ = other.queueUserIds_.Clone();
+      timestamp_ = other.timestamp_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MicQueueStateNotify Clone() {
+      return new MicQueueStateNotify(this);
+    }
+
+    /// <summary>Field number for the "room_id" field.</summary>
+    public const int RoomIdFieldNumber = 1;
+    private string roomId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string RoomId {
+      get { return roomId_; }
+      set {
+        roomId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "mode" field.</summary>
+    public const int ModeFieldNumber = 2;
+    private global::Chirp.Voice.MicMode mode_ = global::Chirp.Voice.MicMode.MicFree;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Chirp.Voice.MicMode Mode {
+      get { return mode_; }
+      set {
+        mode_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "holder_user_id" field.</summary>
+    public const int HolderUserIdFieldNumber = 3;
+    private string holderUserId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string HolderUserId {
+      get { return holderUserId_; }
+      set {
+        holderUserId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "queue_user_ids" field.</summary>
+    public const int QueueUserIdsFieldNumber = 4;
+    private static readonly pb::FieldCodec<string> _repeated_queueUserIds_codec
+        = pb::FieldCodec.ForString(34);
+    private readonly pbc::RepeatedField<string> queueUserIds_ = new pbc::RepeatedField<string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<string> QueueUserIds {
+      get { return queueUserIds_; }
+    }
+
+    /// <summary>Field number for the "timestamp" field.</summary>
+    public const int TimestampFieldNumber = 5;
+    private long timestamp_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public long Timestamp {
+      get { return timestamp_; }
+      set {
+        timestamp_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as MicQueueStateNotify);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(MicQueueStateNotify other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (RoomId != other.RoomId) return false;
+      if (Mode != other.Mode) return false;
+      if (HolderUserId != other.HolderUserId) return false;
+      if(!queueUserIds_.Equals(other.queueUserIds_)) return false;
+      if (Timestamp != other.Timestamp) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (RoomId.Length != 0) hash ^= RoomId.GetHashCode();
+      if (Mode != global::Chirp.Voice.MicMode.MicFree) hash ^= Mode.GetHashCode();
+      if (HolderUserId.Length != 0) hash ^= HolderUserId.GetHashCode();
+      hash ^= queueUserIds_.GetHashCode();
+      if (Timestamp != 0L) hash ^= Timestamp.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (RoomId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(RoomId);
+      }
+      if (Mode != global::Chirp.Voice.MicMode.MicFree) {
+        output.WriteRawTag(16);
+        output.WriteEnum((int) Mode);
+      }
+      if (HolderUserId.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(HolderUserId);
+      }
+      queueUserIds_.WriteTo(output, _repeated_queueUserIds_codec);
+      if (Timestamp != 0L) {
+        output.WriteRawTag(40);
+        output.WriteInt64(Timestamp);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (RoomId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(RoomId);
+      }
+      if (Mode != global::Chirp.Voice.MicMode.MicFree) {
+        output.WriteRawTag(16);
+        output.WriteEnum((int) Mode);
+      }
+      if (HolderUserId.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(HolderUserId);
+      }
+      queueUserIds_.WriteTo(ref output, _repeated_queueUserIds_codec);
+      if (Timestamp != 0L) {
+        output.WriteRawTag(40);
+        output.WriteInt64(Timestamp);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (RoomId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(RoomId);
+      }
+      if (Mode != global::Chirp.Voice.MicMode.MicFree) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Mode);
+      }
+      if (HolderUserId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(HolderUserId);
+      }
+      size += queueUserIds_.CalculateSize(_repeated_queueUserIds_codec);
+      if (Timestamp != 0L) {
+        size += 1 + pb::CodedOutputStream.ComputeInt64Size(Timestamp);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(MicQueueStateNotify other) {
+      if (other == null) {
+        return;
+      }
+      if (other.RoomId.Length != 0) {
+        RoomId = other.RoomId;
+      }
+      if (other.Mode != global::Chirp.Voice.MicMode.MicFree) {
+        Mode = other.Mode;
+      }
+      if (other.HolderUserId.Length != 0) {
+        HolderUserId = other.HolderUserId;
+      }
+      queueUserIds_.Add(other.queueUserIds_);
+      if (other.Timestamp != 0L) {
+        Timestamp = other.Timestamp;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            RoomId = input.ReadString();
+            break;
+          }
+          case 16: {
+            Mode = (global::Chirp.Voice.MicMode) input.ReadEnum();
+            break;
+          }
+          case 26: {
+            HolderUserId = input.ReadString();
+            break;
+          }
+          case 34: {
+            queueUserIds_.AddEntriesFrom(input, _repeated_queueUserIds_codec);
+            break;
+          }
+          case 40: {
+            Timestamp = input.ReadInt64();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            RoomId = input.ReadString();
+            break;
+          }
+          case 16: {
+            Mode = (global::Chirp.Voice.MicMode) input.ReadEnum();
+            break;
+          }
+          case 26: {
+            HolderUserId = input.ReadString();
+            break;
+          }
+          case 34: {
+            queueUserIds_.AddEntriesFrom(ref input, _repeated_queueUserIds_codec);
+            break;
+          }
+          case 40: {
             Timestamp = input.ReadInt64();
             break;
           }

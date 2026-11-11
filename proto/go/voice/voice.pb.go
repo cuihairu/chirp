@@ -128,6 +128,104 @@ func (ParticipantState) EnumDescriptor() ([]byte, []int) {
 	return file_proto_voice_proto_rawDescGZIP(), []int{1}
 }
 
+// Host-controlled speaking queue (麦序模式, VOICE-RT): rooms run MIC_FREE
+// (the default, everyone may speak) or MIC_MANAGED (only the mic holder
+// speaks; the host approves applications off a FIFO queue).
+type MicMode int32
+
+const (
+	MicMode_MIC_FREE    MicMode = 0
+	MicMode_MIC_MANAGED MicMode = 1
+)
+
+// Enum value maps for MicMode.
+var (
+	MicMode_name = map[int32]string{
+		0: "MIC_FREE",
+		1: "MIC_MANAGED",
+	}
+	MicMode_value = map[string]int32{
+		"MIC_FREE":    0,
+		"MIC_MANAGED": 1,
+	}
+)
+
+func (x MicMode) Enum() *MicMode {
+	p := new(MicMode)
+	*p = x
+	return p
+}
+
+func (x MicMode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (MicMode) Descriptor() protoreflect.EnumDescriptor {
+	return file_proto_voice_proto_enumTypes[2].Descriptor()
+}
+
+func (MicMode) Type() protoreflect.EnumType {
+	return &file_proto_voice_proto_enumTypes[2]
+}
+
+func (x MicMode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use MicMode.Descriptor instead.
+func (MicMode) EnumDescriptor() ([]byte, []int) {
+	return file_proto_voice_proto_rawDescGZIP(), []int{2}
+}
+
+// Media delivery tier (大规模旁路分级, VOICE-RT): the server classifies each
+// room and the clients configure their engine accordingly - small rooms mix
+// every stream, large rooms forward through the SFU bypass.
+type MediaTier int32
+
+const (
+	MediaTier_FULL_MIX       MediaTier = 0 // peer mesh with full mixing (small rooms)
+	MediaTier_FORWARD_BYPASS MediaTier = 1 // SFU forwarding bypass (large rooms)
+)
+
+// Enum value maps for MediaTier.
+var (
+	MediaTier_name = map[int32]string{
+		0: "FULL_MIX",
+		1: "FORWARD_BYPASS",
+	}
+	MediaTier_value = map[string]int32{
+		"FULL_MIX":       0,
+		"FORWARD_BYPASS": 1,
+	}
+)
+
+func (x MediaTier) Enum() *MediaTier {
+	p := new(MediaTier)
+	*p = x
+	return p
+}
+
+func (x MediaTier) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (MediaTier) Descriptor() protoreflect.EnumDescriptor {
+	return file_proto_voice_proto_enumTypes[3].Descriptor()
+}
+
+func (MediaTier) Type() protoreflect.EnumType {
+	return &file_proto_voice_proto_enumTypes[3]
+}
+
+func (x MediaTier) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use MediaTier.Descriptor instead.
+func (MediaTier) EnumDescriptor() ([]byte, []int) {
+	return file_proto_voice_proto_rawDescGZIP(), []int{3}
+}
+
 // Create voice room
 type CreateRoomRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
@@ -396,6 +494,11 @@ type JoinRoomResponse struct {
 	ParticipantIds []string               `protobuf:"bytes,4,rep,name=participant_ids,json=participantIds,proto3" json:"participant_ids,omitempty"`
 	ServerTime     int64                  `protobuf:"varint,5,opt,name=server_time,json=serverTime,proto3" json:"server_time,omitempty"`
 	IceServers     []*IceServer           `protobuf:"bytes,6,rep,name=ice_servers,json=iceServers,proto3" json:"ice_servers,omitempty"`
+	// Delivery tier the server picked for this room (VOICE-RT 旁路分级);
+	// rtcp_feedback_ms is the tier's receiver-report pacing the engine should
+	// use (smaller tier = more frequent feedback for tight mixing).
+	MediaTier      MediaTier `protobuf:"varint,7,opt,name=media_tier,json=mediaTier,proto3,enum=chirp.voice.MediaTier" json:"media_tier,omitempty"`
+	RtcpFeedbackMs int32     `protobuf:"varint,8,opt,name=rtcp_feedback_ms,json=rtcpFeedbackMs,proto3" json:"rtcp_feedback_ms,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -470,6 +573,20 @@ func (x *JoinRoomResponse) GetIceServers() []*IceServer {
 		return x.IceServers
 	}
 	return nil
+}
+
+func (x *JoinRoomResponse) GetMediaTier() MediaTier {
+	if x != nil {
+		return x.MediaTier
+	}
+	return MediaTier_FULL_MIX
+}
+
+func (x *JoinRoomResponse) GetRtcpFeedbackMs() int32 {
+	if x != nil {
+		return x.RtcpFeedbackMs
+	}
+	return 0
 }
 
 // Leave voice room
@@ -991,6 +1108,10 @@ type GetRoomInfoResponse struct {
 	RoomType        RoomType               `protobuf:"varint,4,opt,name=room_type,json=roomType,proto3,enum=chirp.voice.RoomType" json:"room_type,omitempty"`
 	Participants    []*ParticipantInfo     `protobuf:"bytes,5,rep,name=participants,proto3" json:"participants,omitempty"`
 	MaxParticipants int32                  `protobuf:"varint,6,opt,name=max_participants,json=maxParticipants,proto3" json:"max_participants,omitempty"`
+	// Speaking queue snapshot for late joiners (VOICE-RT 麦序模式).
+	MicMode         MicMode  `protobuf:"varint,7,opt,name=mic_mode,json=micMode,proto3,enum=chirp.voice.MicMode" json:"mic_mode,omitempty"`
+	MicHolderUserId string   `protobuf:"bytes,8,opt,name=mic_holder_user_id,json=micHolderUserId,proto3" json:"mic_holder_user_id,omitempty"`
+	MicQueueUserIds []string `protobuf:"bytes,9,rep,name=mic_queue_user_ids,json=micQueueUserIds,proto3" json:"mic_queue_user_ids,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1065,6 +1186,27 @@ func (x *GetRoomInfoResponse) GetMaxParticipants() int32 {
 		return x.MaxParticipants
 	}
 	return 0
+}
+
+func (x *GetRoomInfoResponse) GetMicMode() MicMode {
+	if x != nil {
+		return x.MicMode
+	}
+	return MicMode_MIC_FREE
+}
+
+func (x *GetRoomInfoResponse) GetMicHolderUserId() string {
+	if x != nil {
+		return x.MicHolderUserId
+	}
+	return ""
+}
+
+func (x *GetRoomInfoResponse) GetMicQueueUserIds() []string {
+	if x != nil {
+		return x.MicQueueUserIds
+	}
+	return nil
 }
 
 // Get user's current room
@@ -1588,11 +1730,14 @@ func (x *ParticipantStateChangedNotify) GetTimestamp() int64 {
 }
 
 type SpeakingNotify struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RoomId        string                 `protobuf:"bytes,1,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
-	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Speaking      bool                   `protobuf:"varint,3,opt,name=speaking,proto3" json:"speaking,omitempty"`
-	Timestamp     int64                  `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	RoomId    string                 `protobuf:"bytes,1,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
+	UserId    string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Speaking  bool                   `protobuf:"varint,3,opt,name=speaking,proto3" json:"speaking,omitempty"`
+	Timestamp int64                  `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	// 0-100 loudness level from the client's audio stats (0 when speaking is
+	// false); drives the SDK volume callbacks.
+	Volume        int32 `protobuf:"varint,5,opt,name=volume,proto3" json:"volume,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1655,6 +1800,448 @@ func (x *SpeakingNotify) GetTimestamp() int64 {
 	return 0
 }
 
+func (x *SpeakingNotify) GetVolume() int32 {
+	if x != nil {
+		return x.Volume
+	}
+	return 0
+}
+
+// Set the room's speaking mode (host only).
+type SetMicModeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // the host
+	RoomId        string                 `protobuf:"bytes,2,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
+	Mode          MicMode                `protobuf:"varint,3,opt,name=mode,proto3,enum=chirp.voice.MicMode" json:"mode,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetMicModeRequest) Reset() {
+	*x = SetMicModeRequest{}
+	mi := &file_proto_voice_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetMicModeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetMicModeRequest) ProtoMessage() {}
+
+func (x *SetMicModeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_voice_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetMicModeRequest.ProtoReflect.Descriptor instead.
+func (*SetMicModeRequest) Descriptor() ([]byte, []int) {
+	return file_proto_voice_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *SetMicModeRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *SetMicModeRequest) GetRoomId() string {
+	if x != nil {
+		return x.RoomId
+	}
+	return ""
+}
+
+func (x *SetMicModeRequest) GetMode() MicMode {
+	if x != nil {
+		return x.Mode
+	}
+	return MicMode_MIC_FREE
+}
+
+// Apply for the mic (managed mode): joins the FIFO queue.
+type MicQueueApplyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	RoomId        string                 `protobuf:"bytes,2,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MicQueueApplyRequest) Reset() {
+	*x = MicQueueApplyRequest{}
+	mi := &file_proto_voice_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MicQueueApplyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MicQueueApplyRequest) ProtoMessage() {}
+
+func (x *MicQueueApplyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_voice_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MicQueueApplyRequest.ProtoReflect.Descriptor instead.
+func (*MicQueueApplyRequest) Descriptor() ([]byte, []int) {
+	return file_proto_voice_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *MicQueueApplyRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *MicQueueApplyRequest) GetRoomId() string {
+	if x != nil {
+		return x.RoomId
+	}
+	return ""
+}
+
+// Host approves the queue head, or a specific applicant.
+type MicQueueApproveRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // the host
+	RoomId        string                 `protobuf:"bytes,2,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
+	TargetUserId  string                 `protobuf:"bytes,3,opt,name=target_user_id,json=targetUserId,proto3" json:"target_user_id,omitempty"` // empty = queue head
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MicQueueApproveRequest) Reset() {
+	*x = MicQueueApproveRequest{}
+	mi := &file_proto_voice_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MicQueueApproveRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MicQueueApproveRequest) ProtoMessage() {}
+
+func (x *MicQueueApproveRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_voice_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MicQueueApproveRequest.ProtoReflect.Descriptor instead.
+func (*MicQueueApproveRequest) Descriptor() ([]byte, []int) {
+	return file_proto_voice_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *MicQueueApproveRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *MicQueueApproveRequest) GetRoomId() string {
+	if x != nil {
+		return x.RoomId
+	}
+	return ""
+}
+
+func (x *MicQueueApproveRequest) GetTargetUserId() string {
+	if x != nil {
+		return x.TargetUserId
+	}
+	return ""
+}
+
+// The holder (or the host) releases the mic (下麦).
+type MicQueueReleaseRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	RoomId        string                 `protobuf:"bytes,2,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MicQueueReleaseRequest) Reset() {
+	*x = MicQueueReleaseRequest{}
+	mi := &file_proto_voice_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MicQueueReleaseRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MicQueueReleaseRequest) ProtoMessage() {}
+
+func (x *MicQueueReleaseRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_voice_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MicQueueReleaseRequest.ProtoReflect.Descriptor instead.
+func (*MicQueueReleaseRequest) Descriptor() ([]byte, []int) {
+	return file_proto_voice_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *MicQueueReleaseRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *MicQueueReleaseRequest) GetRoomId() string {
+	if x != nil {
+		return x.RoomId
+	}
+	return ""
+}
+
+// Host hands the mic straight to a member (切麦), bypassing the queue.
+type MicQueueGrantRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // the host
+	RoomId        string                 `protobuf:"bytes,2,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
+	TargetUserId  string                 `protobuf:"bytes,3,opt,name=target_user_id,json=targetUserId,proto3" json:"target_user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MicQueueGrantRequest) Reset() {
+	*x = MicQueueGrantRequest{}
+	mi := &file_proto_voice_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MicQueueGrantRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MicQueueGrantRequest) ProtoMessage() {}
+
+func (x *MicQueueGrantRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_voice_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MicQueueGrantRequest.ProtoReflect.Descriptor instead.
+func (*MicQueueGrantRequest) Descriptor() ([]byte, []int) {
+	return file_proto_voice_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *MicQueueGrantRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *MicQueueGrantRequest) GetRoomId() string {
+	if x != nil {
+		return x.RoomId
+	}
+	return ""
+}
+
+func (x *MicQueueGrantRequest) GetTargetUserId() string {
+	if x != nil {
+		return x.TargetUserId
+	}
+	return ""
+}
+
+// Shared ack for the speaking-queue operations.
+type MicQueueResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
+	ServerTime    int64                  `protobuf:"varint,2,opt,name=server_time,json=serverTime,proto3" json:"server_time,omitempty"`
+	HolderUserId  string                 `protobuf:"bytes,3,opt,name=holder_user_id,json=holderUserId,proto3" json:"holder_user_id,omitempty"` // holder after the op
+	QueueDepth    int32                  `protobuf:"varint,4,opt,name=queue_depth,json=queueDepth,proto3" json:"queue_depth,omitempty"`        // waiting applicants after the op
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MicQueueResponse) Reset() {
+	*x = MicQueueResponse{}
+	mi := &file_proto_voice_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MicQueueResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MicQueueResponse) ProtoMessage() {}
+
+func (x *MicQueueResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_voice_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MicQueueResponse.ProtoReflect.Descriptor instead.
+func (*MicQueueResponse) Descriptor() ([]byte, []int) {
+	return file_proto_voice_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *MicQueueResponse) GetCode() common.ErrorCode {
+	if x != nil {
+		return x.Code
+	}
+	return common.ErrorCode(0)
+}
+
+func (x *MicQueueResponse) GetServerTime() int64 {
+	if x != nil {
+		return x.ServerTime
+	}
+	return 0
+}
+
+func (x *MicQueueResponse) GetHolderUserId() string {
+	if x != nil {
+		return x.HolderUserId
+	}
+	return ""
+}
+
+func (x *MicQueueResponse) GetQueueDepth() int32 {
+	if x != nil {
+		return x.QueueDepth
+	}
+	return 0
+}
+
+// Broadcast on every mode/holder/queue change.
+type MicQueueStateNotify struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RoomId        string                 `protobuf:"bytes,1,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
+	Mode          MicMode                `protobuf:"varint,2,opt,name=mode,proto3,enum=chirp.voice.MicMode" json:"mode,omitempty"`
+	HolderUserId  string                 `protobuf:"bytes,3,opt,name=holder_user_id,json=holderUserId,proto3" json:"holder_user_id,omitempty"`
+	QueueUserIds  []string               `protobuf:"bytes,4,rep,name=queue_user_ids,json=queueUserIds,proto3" json:"queue_user_ids,omitempty"`
+	Timestamp     int64                  `protobuf:"varint,5,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MicQueueStateNotify) Reset() {
+	*x = MicQueueStateNotify{}
+	mi := &file_proto_voice_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MicQueueStateNotify) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MicQueueStateNotify) ProtoMessage() {}
+
+func (x *MicQueueStateNotify) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_voice_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MicQueueStateNotify.ProtoReflect.Descriptor instead.
+func (*MicQueueStateNotify) Descriptor() ([]byte, []int) {
+	return file_proto_voice_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *MicQueueStateNotify) GetRoomId() string {
+	if x != nil {
+		return x.RoomId
+	}
+	return ""
+}
+
+func (x *MicQueueStateNotify) GetMode() MicMode {
+	if x != nil {
+		return x.Mode
+	}
+	return MicMode_MIC_FREE
+}
+
+func (x *MicQueueStateNotify) GetHolderUserId() string {
+	if x != nil {
+		return x.HolderUserId
+	}
+	return ""
+}
+
+func (x *MicQueueStateNotify) GetQueueUserIds() []string {
+	if x != nil {
+		return x.QueueUserIds
+	}
+	return nil
+}
+
+func (x *MicQueueStateNotify) GetTimestamp() int64 {
+	if x != nil {
+		return x.Timestamp
+	}
+	return 0
+}
+
 var File_proto_voice_proto protoreflect.FileDescriptor
 
 const file_proto_voice_proto_rawDesc = "" +
@@ -1683,7 +2270,7 @@ const file_proto_voice_proto_rawDesc = "" +
 	"\x0fJoinRoomRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
 	"\aroom_id\x18\x02 \x01(\tR\x06roomId\x12\x1b\n" +
-	"\tsdp_offer\x18\x03 \x01(\tR\bsdpOffer\"\xfa\x01\n" +
+	"\tsdp_offer\x18\x03 \x01(\tR\bsdpOffer\"\xdb\x02\n" +
 	"\x10JoinRoomResponse\x12+\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12\x17\n" +
 	"\aroom_id\x18\x02 \x01(\tR\x06roomId\x12\x1d\n" +
@@ -1693,7 +2280,10 @@ const file_proto_voice_proto_rawDesc = "" +
 	"\vserver_time\x18\x05 \x01(\x03R\n" +
 	"serverTime\x127\n" +
 	"\vice_servers\x18\x06 \x03(\v2\x16.chirp.voice.IceServerR\n" +
-	"iceServers\"D\n" +
+	"iceServers\x125\n" +
+	"\n" +
+	"media_tier\x18\a \x01(\x0e2\x16.chirp.voice.MediaTierR\tmediaTier\x12(\n" +
+	"\x10rtcp_feedback_ms\x18\b \x01(\x05R\x0ertcpFeedbackMs\"D\n" +
 	"\x10LeaveRoomRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
 	"\aroom_id\x18\x02 \x01(\tR\x06roomId\"a\n" +
@@ -1737,14 +2327,17 @@ const file_proto_voice_proto_rawDesc = "" +
 	"\x05muted\x18\x06 \x01(\bR\x05muted\x12\x1a\n" +
 	"\bdeafened\x18\a \x01(\bR\bdeafened\"-\n" +
 	"\x12GetRoomInfoRequest\x12\x17\n" +
-	"\aroom_id\x18\x01 \x01(\tR\x06roomId\"\x99\x02\n" +
+	"\aroom_id\x18\x01 \x01(\tR\x06roomId\"\xa4\x03\n" +
 	"\x13GetRoomInfoResponse\x12+\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12\x17\n" +
 	"\aroom_id\x18\x02 \x01(\tR\x06roomId\x12\x1b\n" +
 	"\troom_name\x18\x03 \x01(\tR\broomName\x122\n" +
 	"\troom_type\x18\x04 \x01(\x0e2\x15.chirp.voice.RoomTypeR\broomType\x12@\n" +
 	"\fparticipants\x18\x05 \x03(\v2\x1c.chirp.voice.ParticipantInfoR\fparticipants\x12)\n" +
-	"\x10max_participants\x18\x06 \x01(\x05R\x0fmaxParticipants\"-\n" +
+	"\x10max_participants\x18\x06 \x01(\x05R\x0fmaxParticipants\x12/\n" +
+	"\bmic_mode\x18\a \x01(\x0e2\x14.chirp.voice.MicModeR\amicMode\x12+\n" +
+	"\x12mic_holder_user_id\x18\b \x01(\tR\x0fmicHolderUserId\x12+\n" +
+	"\x12mic_queue_user_ids\x18\t \x03(\tR\x0fmicQueueUserIds\"-\n" +
 	"\x12GetUserRoomRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"\x9b\x01\n" +
 	"\x13GetUserRoomResponse\x12+\n" +
@@ -1779,12 +2372,44 @@ const file_proto_voice_proto_rawDesc = "" +
 	"\aroom_id\x18\x01 \x01(\tR\x06roomId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x123\n" +
 	"\x05state\x18\x03 \x01(\x0e2\x1d.chirp.voice.ParticipantStateR\x05state\x12\x1c\n" +
-	"\ttimestamp\x18\x04 \x01(\x03R\ttimestamp\"|\n" +
+	"\ttimestamp\x18\x04 \x01(\x03R\ttimestamp\"\x94\x01\n" +
 	"\x0eSpeakingNotify\x12\x17\n" +
 	"\aroom_id\x18\x01 \x01(\tR\x06roomId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1a\n" +
 	"\bspeaking\x18\x03 \x01(\bR\bspeaking\x12\x1c\n" +
-	"\ttimestamp\x18\x04 \x01(\x03R\ttimestamp*4\n" +
+	"\ttimestamp\x18\x04 \x01(\x03R\ttimestamp\x12\x16\n" +
+	"\x06volume\x18\x05 \x01(\x05R\x06volume\"o\n" +
+	"\x11SetMicModeRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
+	"\aroom_id\x18\x02 \x01(\tR\x06roomId\x12(\n" +
+	"\x04mode\x18\x03 \x01(\x0e2\x14.chirp.voice.MicModeR\x04mode\"H\n" +
+	"\x14MicQueueApplyRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
+	"\aroom_id\x18\x02 \x01(\tR\x06roomId\"p\n" +
+	"\x16MicQueueApproveRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
+	"\aroom_id\x18\x02 \x01(\tR\x06roomId\x12$\n" +
+	"\x0etarget_user_id\x18\x03 \x01(\tR\ftargetUserId\"J\n" +
+	"\x16MicQueueReleaseRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
+	"\aroom_id\x18\x02 \x01(\tR\x06roomId\"n\n" +
+	"\x14MicQueueGrantRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
+	"\aroom_id\x18\x02 \x01(\tR\x06roomId\x12$\n" +
+	"\x0etarget_user_id\x18\x03 \x01(\tR\ftargetUserId\"\xa7\x01\n" +
+	"\x10MicQueueResponse\x12+\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12\x1f\n" +
+	"\vserver_time\x18\x02 \x01(\x03R\n" +
+	"serverTime\x12$\n" +
+	"\x0eholder_user_id\x18\x03 \x01(\tR\fholderUserId\x12\x1f\n" +
+	"\vqueue_depth\x18\x04 \x01(\x05R\n" +
+	"queueDepth\"\xc2\x01\n" +
+	"\x13MicQueueStateNotify\x12\x17\n" +
+	"\aroom_id\x18\x01 \x01(\tR\x06roomId\x12(\n" +
+	"\x04mode\x18\x02 \x01(\x0e2\x14.chirp.voice.MicModeR\x04mode\x12$\n" +
+	"\x0eholder_user_id\x18\x03 \x01(\tR\fholderUserId\x12$\n" +
+	"\x0equeue_user_ids\x18\x04 \x03(\tR\fqueueUserIds\x12\x1c\n" +
+	"\ttimestamp\x18\x05 \x01(\x03R\ttimestamp*4\n" +
 	"\bRoomType\x12\x10\n" +
 	"\fPEER_TO_PEER\x10\x00\x12\t\n" +
 	"\x05GROUP\x10\x01\x12\v\n" +
@@ -1794,7 +2419,13 @@ const file_proto_voice_proto_rawDesc = "" +
 	"\tCONNECTED\x10\x01\x12\t\n" +
 	"\x05MUTED\x10\x02\x12\f\n" +
 	"\bDEAFENED\x10\x03\x12\x10\n" +
-	"\fDISCONNECTED\x10\x04B%Z#github.com/cui/chirp/proto/go/voiceb\x06proto3"
+	"\fDISCONNECTED\x10\x04*(\n" +
+	"\aMicMode\x12\f\n" +
+	"\bMIC_FREE\x10\x00\x12\x0f\n" +
+	"\vMIC_MANAGED\x10\x01*-\n" +
+	"\tMediaTier\x12\f\n" +
+	"\bFULL_MIX\x10\x00\x12\x12\n" +
+	"\x0eFORWARD_BYPASS\x10\x01B%Z#github.com/cui/chirp/proto/go/voiceb\x06proto3"
 
 var (
 	file_proto_voice_proto_rawDescOnce sync.Once
@@ -1808,61 +2439,75 @@ func file_proto_voice_proto_rawDescGZIP() []byte {
 	return file_proto_voice_proto_rawDescData
 }
 
-var file_proto_voice_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_proto_voice_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
+var file_proto_voice_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_proto_voice_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
 var file_proto_voice_proto_goTypes = []any{
 	(RoomType)(0),                         // 0: chirp.voice.RoomType
 	(ParticipantState)(0),                 // 1: chirp.voice.ParticipantState
-	(*CreateRoomRequest)(nil),             // 2: chirp.voice.CreateRoomRequest
-	(*CreateRoomResponse)(nil),            // 3: chirp.voice.CreateRoomResponse
-	(*IceServer)(nil),                     // 4: chirp.voice.IceServer
-	(*JoinRoomRequest)(nil),               // 5: chirp.voice.JoinRoomRequest
-	(*JoinRoomResponse)(nil),              // 6: chirp.voice.JoinRoomResponse
-	(*LeaveRoomRequest)(nil),              // 7: chirp.voice.LeaveRoomRequest
-	(*LeaveRoomResponse)(nil),             // 8: chirp.voice.LeaveRoomResponse
-	(*IceCandidate)(nil),                  // 9: chirp.voice.IceCandidate
-	(*IceCandidateMessage)(nil),           // 10: chirp.voice.IceCandidateMessage
-	(*SdpOfferMessage)(nil),               // 11: chirp.voice.SdpOfferMessage
-	(*SdpAnswerMessage)(nil),              // 12: chirp.voice.SdpAnswerMessage
-	(*ParticipantInfo)(nil),               // 13: chirp.voice.ParticipantInfo
-	(*GetRoomInfoRequest)(nil),            // 14: chirp.voice.GetRoomInfoRequest
-	(*GetRoomInfoResponse)(nil),           // 15: chirp.voice.GetRoomInfoResponse
-	(*GetUserRoomRequest)(nil),            // 16: chirp.voice.GetUserRoomRequest
-	(*GetUserRoomResponse)(nil),           // 17: chirp.voice.GetUserRoomResponse
-	(*SetMuteRequest)(nil),                // 18: chirp.voice.SetMuteRequest
-	(*SetMuteResponse)(nil),               // 19: chirp.voice.SetMuteResponse
-	(*SetDeafenRequest)(nil),              // 20: chirp.voice.SetDeafenRequest
-	(*SetDeafenResponse)(nil),             // 21: chirp.voice.SetDeafenResponse
-	(*ParticipantJoinedNotify)(nil),       // 22: chirp.voice.ParticipantJoinedNotify
-	(*ParticipantLeftNotify)(nil),         // 23: chirp.voice.ParticipantLeftNotify
-	(*ParticipantStateChangedNotify)(nil), // 24: chirp.voice.ParticipantStateChangedNotify
-	(*SpeakingNotify)(nil),                // 25: chirp.voice.SpeakingNotify
-	nil,                                   // 26: chirp.voice.CreateRoomRequest.MetadataEntry
-	(common.ErrorCode)(0),                 // 27: chirp.common.ErrorCode
+	(MicMode)(0),                          // 2: chirp.voice.MicMode
+	(MediaTier)(0),                        // 3: chirp.voice.MediaTier
+	(*CreateRoomRequest)(nil),             // 4: chirp.voice.CreateRoomRequest
+	(*CreateRoomResponse)(nil),            // 5: chirp.voice.CreateRoomResponse
+	(*IceServer)(nil),                     // 6: chirp.voice.IceServer
+	(*JoinRoomRequest)(nil),               // 7: chirp.voice.JoinRoomRequest
+	(*JoinRoomResponse)(nil),              // 8: chirp.voice.JoinRoomResponse
+	(*LeaveRoomRequest)(nil),              // 9: chirp.voice.LeaveRoomRequest
+	(*LeaveRoomResponse)(nil),             // 10: chirp.voice.LeaveRoomResponse
+	(*IceCandidate)(nil),                  // 11: chirp.voice.IceCandidate
+	(*IceCandidateMessage)(nil),           // 12: chirp.voice.IceCandidateMessage
+	(*SdpOfferMessage)(nil),               // 13: chirp.voice.SdpOfferMessage
+	(*SdpAnswerMessage)(nil),              // 14: chirp.voice.SdpAnswerMessage
+	(*ParticipantInfo)(nil),               // 15: chirp.voice.ParticipantInfo
+	(*GetRoomInfoRequest)(nil),            // 16: chirp.voice.GetRoomInfoRequest
+	(*GetRoomInfoResponse)(nil),           // 17: chirp.voice.GetRoomInfoResponse
+	(*GetUserRoomRequest)(nil),            // 18: chirp.voice.GetUserRoomRequest
+	(*GetUserRoomResponse)(nil),           // 19: chirp.voice.GetUserRoomResponse
+	(*SetMuteRequest)(nil),                // 20: chirp.voice.SetMuteRequest
+	(*SetMuteResponse)(nil),               // 21: chirp.voice.SetMuteResponse
+	(*SetDeafenRequest)(nil),              // 22: chirp.voice.SetDeafenRequest
+	(*SetDeafenResponse)(nil),             // 23: chirp.voice.SetDeafenResponse
+	(*ParticipantJoinedNotify)(nil),       // 24: chirp.voice.ParticipantJoinedNotify
+	(*ParticipantLeftNotify)(nil),         // 25: chirp.voice.ParticipantLeftNotify
+	(*ParticipantStateChangedNotify)(nil), // 26: chirp.voice.ParticipantStateChangedNotify
+	(*SpeakingNotify)(nil),                // 27: chirp.voice.SpeakingNotify
+	(*SetMicModeRequest)(nil),             // 28: chirp.voice.SetMicModeRequest
+	(*MicQueueApplyRequest)(nil),          // 29: chirp.voice.MicQueueApplyRequest
+	(*MicQueueApproveRequest)(nil),        // 30: chirp.voice.MicQueueApproveRequest
+	(*MicQueueReleaseRequest)(nil),        // 31: chirp.voice.MicQueueReleaseRequest
+	(*MicQueueGrantRequest)(nil),          // 32: chirp.voice.MicQueueGrantRequest
+	(*MicQueueResponse)(nil),              // 33: chirp.voice.MicQueueResponse
+	(*MicQueueStateNotify)(nil),           // 34: chirp.voice.MicQueueStateNotify
+	nil,                                   // 35: chirp.voice.CreateRoomRequest.MetadataEntry
+	(common.ErrorCode)(0),                 // 36: chirp.common.ErrorCode
 }
 var file_proto_voice_proto_depIdxs = []int32{
 	0,  // 0: chirp.voice.CreateRoomRequest.room_type:type_name -> chirp.voice.RoomType
-	26, // 1: chirp.voice.CreateRoomRequest.metadata:type_name -> chirp.voice.CreateRoomRequest.MetadataEntry
-	27, // 2: chirp.voice.CreateRoomResponse.code:type_name -> chirp.common.ErrorCode
-	27, // 3: chirp.voice.JoinRoomResponse.code:type_name -> chirp.common.ErrorCode
-	4,  // 4: chirp.voice.JoinRoomResponse.ice_servers:type_name -> chirp.voice.IceServer
-	27, // 5: chirp.voice.LeaveRoomResponse.code:type_name -> chirp.common.ErrorCode
-	9,  // 6: chirp.voice.IceCandidateMessage.candidate:type_name -> chirp.voice.IceCandidate
-	1,  // 7: chirp.voice.ParticipantInfo.state:type_name -> chirp.voice.ParticipantState
-	27, // 8: chirp.voice.GetRoomInfoResponse.code:type_name -> chirp.common.ErrorCode
-	0,  // 9: chirp.voice.GetRoomInfoResponse.room_type:type_name -> chirp.voice.RoomType
-	13, // 10: chirp.voice.GetRoomInfoResponse.participants:type_name -> chirp.voice.ParticipantInfo
-	27, // 11: chirp.voice.GetUserRoomResponse.code:type_name -> chirp.common.ErrorCode
-	13, // 12: chirp.voice.GetUserRoomResponse.participant:type_name -> chirp.voice.ParticipantInfo
-	27, // 13: chirp.voice.SetMuteResponse.code:type_name -> chirp.common.ErrorCode
-	27, // 14: chirp.voice.SetDeafenResponse.code:type_name -> chirp.common.ErrorCode
-	13, // 15: chirp.voice.ParticipantJoinedNotify.participant:type_name -> chirp.voice.ParticipantInfo
-	1,  // 16: chirp.voice.ParticipantStateChangedNotify.state:type_name -> chirp.voice.ParticipantState
-	17, // [17:17] is the sub-list for method output_type
-	17, // [17:17] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	35, // 1: chirp.voice.CreateRoomRequest.metadata:type_name -> chirp.voice.CreateRoomRequest.MetadataEntry
+	36, // 2: chirp.voice.CreateRoomResponse.code:type_name -> chirp.common.ErrorCode
+	36, // 3: chirp.voice.JoinRoomResponse.code:type_name -> chirp.common.ErrorCode
+	6,  // 4: chirp.voice.JoinRoomResponse.ice_servers:type_name -> chirp.voice.IceServer
+	3,  // 5: chirp.voice.JoinRoomResponse.media_tier:type_name -> chirp.voice.MediaTier
+	36, // 6: chirp.voice.LeaveRoomResponse.code:type_name -> chirp.common.ErrorCode
+	11, // 7: chirp.voice.IceCandidateMessage.candidate:type_name -> chirp.voice.IceCandidate
+	1,  // 8: chirp.voice.ParticipantInfo.state:type_name -> chirp.voice.ParticipantState
+	36, // 9: chirp.voice.GetRoomInfoResponse.code:type_name -> chirp.common.ErrorCode
+	0,  // 10: chirp.voice.GetRoomInfoResponse.room_type:type_name -> chirp.voice.RoomType
+	15, // 11: chirp.voice.GetRoomInfoResponse.participants:type_name -> chirp.voice.ParticipantInfo
+	2,  // 12: chirp.voice.GetRoomInfoResponse.mic_mode:type_name -> chirp.voice.MicMode
+	36, // 13: chirp.voice.GetUserRoomResponse.code:type_name -> chirp.common.ErrorCode
+	15, // 14: chirp.voice.GetUserRoomResponse.participant:type_name -> chirp.voice.ParticipantInfo
+	36, // 15: chirp.voice.SetMuteResponse.code:type_name -> chirp.common.ErrorCode
+	36, // 16: chirp.voice.SetDeafenResponse.code:type_name -> chirp.common.ErrorCode
+	15, // 17: chirp.voice.ParticipantJoinedNotify.participant:type_name -> chirp.voice.ParticipantInfo
+	1,  // 18: chirp.voice.ParticipantStateChangedNotify.state:type_name -> chirp.voice.ParticipantState
+	2,  // 19: chirp.voice.SetMicModeRequest.mode:type_name -> chirp.voice.MicMode
+	36, // 20: chirp.voice.MicQueueResponse.code:type_name -> chirp.common.ErrorCode
+	2,  // 21: chirp.voice.MicQueueStateNotify.mode:type_name -> chirp.voice.MicMode
+	22, // [22:22] is the sub-list for method output_type
+	22, // [22:22] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_proto_voice_proto_init() }
@@ -1875,8 +2520,8 @@ func file_proto_voice_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_voice_proto_rawDesc), len(file_proto_voice_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   25,
+			NumEnums:      4,
+			NumMessages:   32,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

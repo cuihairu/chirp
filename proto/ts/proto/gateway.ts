@@ -245,6 +245,18 @@ export enum MsgID {
   PARTICIPANT_LEFT_NOTIFY = 4019,
   PARTICIPANT_STATE_CHANGED_NOTIFY = 4020,
   SPEAKING_NOTIFY = 4021,
+  /** SET_MIC_MODE_REQ - Speaking queue / host moderation (VOICE-RT 麦序模式) */
+  SET_MIC_MODE_REQ = 4022,
+  SET_MIC_MODE_RESP = 4023,
+  MIC_QUEUE_APPLY_REQ = 4024,
+  MIC_QUEUE_APPLY_RESP = 4025,
+  MIC_QUEUE_APPROVE_REQ = 4026,
+  MIC_QUEUE_APPROVE_RESP = 4027,
+  MIC_QUEUE_RELEASE_REQ = 4028,
+  MIC_QUEUE_RELEASE_RESP = 4029,
+  MIC_QUEUE_GRANT_REQ = 4030,
+  MIC_QUEUE_GRANT_RESP = 4031,
+  MIC_QUEUE_STATE_NOTIFY = 4032,
   /**
    * SERVER_AUTH_REQ - Server plane: game backend <-> chirp (authenticated services, not users).
    * See proto/game_server_gateway.proto for the payloads.
@@ -854,6 +866,39 @@ export function msgIDFromJSON(object: any): MsgID {
     case 4021:
     case "SPEAKING_NOTIFY":
       return MsgID.SPEAKING_NOTIFY;
+    case 4022:
+    case "SET_MIC_MODE_REQ":
+      return MsgID.SET_MIC_MODE_REQ;
+    case 4023:
+    case "SET_MIC_MODE_RESP":
+      return MsgID.SET_MIC_MODE_RESP;
+    case 4024:
+    case "MIC_QUEUE_APPLY_REQ":
+      return MsgID.MIC_QUEUE_APPLY_REQ;
+    case 4025:
+    case "MIC_QUEUE_APPLY_RESP":
+      return MsgID.MIC_QUEUE_APPLY_RESP;
+    case 4026:
+    case "MIC_QUEUE_APPROVE_REQ":
+      return MsgID.MIC_QUEUE_APPROVE_REQ;
+    case 4027:
+    case "MIC_QUEUE_APPROVE_RESP":
+      return MsgID.MIC_QUEUE_APPROVE_RESP;
+    case 4028:
+    case "MIC_QUEUE_RELEASE_REQ":
+      return MsgID.MIC_QUEUE_RELEASE_REQ;
+    case 4029:
+    case "MIC_QUEUE_RELEASE_RESP":
+      return MsgID.MIC_QUEUE_RELEASE_RESP;
+    case 4030:
+    case "MIC_QUEUE_GRANT_REQ":
+      return MsgID.MIC_QUEUE_GRANT_REQ;
+    case 4031:
+    case "MIC_QUEUE_GRANT_RESP":
+      return MsgID.MIC_QUEUE_GRANT_RESP;
+    case 4032:
+    case "MIC_QUEUE_STATE_NOTIFY":
+      return MsgID.MIC_QUEUE_STATE_NOTIFY;
     case 5001:
     case "SERVER_AUTH_REQ":
       return MsgID.SERVER_AUTH_REQ;
@@ -1404,6 +1449,28 @@ export function msgIDToJSON(object: MsgID): string {
       return "PARTICIPANT_STATE_CHANGED_NOTIFY";
     case MsgID.SPEAKING_NOTIFY:
       return "SPEAKING_NOTIFY";
+    case MsgID.SET_MIC_MODE_REQ:
+      return "SET_MIC_MODE_REQ";
+    case MsgID.SET_MIC_MODE_RESP:
+      return "SET_MIC_MODE_RESP";
+    case MsgID.MIC_QUEUE_APPLY_REQ:
+      return "MIC_QUEUE_APPLY_REQ";
+    case MsgID.MIC_QUEUE_APPLY_RESP:
+      return "MIC_QUEUE_APPLY_RESP";
+    case MsgID.MIC_QUEUE_APPROVE_REQ:
+      return "MIC_QUEUE_APPROVE_REQ";
+    case MsgID.MIC_QUEUE_APPROVE_RESP:
+      return "MIC_QUEUE_APPROVE_RESP";
+    case MsgID.MIC_QUEUE_RELEASE_REQ:
+      return "MIC_QUEUE_RELEASE_REQ";
+    case MsgID.MIC_QUEUE_RELEASE_RESP:
+      return "MIC_QUEUE_RELEASE_RESP";
+    case MsgID.MIC_QUEUE_GRANT_REQ:
+      return "MIC_QUEUE_GRANT_REQ";
+    case MsgID.MIC_QUEUE_GRANT_RESP:
+      return "MIC_QUEUE_GRANT_RESP";
+    case MsgID.MIC_QUEUE_STATE_NOTIFY:
+      return "MIC_QUEUE_STATE_NOTIFY";
     case MsgID.SERVER_AUTH_REQ:
       return "SERVER_AUTH_REQ";
     case MsgID.SERVER_AUTH_RESP:

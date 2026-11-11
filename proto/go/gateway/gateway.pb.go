@@ -237,6 +237,18 @@ const (
 	MsgID_PARTICIPANT_LEFT_NOTIFY          MsgID = 4019
 	MsgID_PARTICIPANT_STATE_CHANGED_NOTIFY MsgID = 4020
 	MsgID_SPEAKING_NOTIFY                  MsgID = 4021
+	// Speaking queue / host moderation (VOICE-RT 麦序模式)
+	MsgID_SET_MIC_MODE_REQ       MsgID = 4022
+	MsgID_SET_MIC_MODE_RESP      MsgID = 4023
+	MsgID_MIC_QUEUE_APPLY_REQ    MsgID = 4024
+	MsgID_MIC_QUEUE_APPLY_RESP   MsgID = 4025
+	MsgID_MIC_QUEUE_APPROVE_REQ  MsgID = 4026
+	MsgID_MIC_QUEUE_APPROVE_RESP MsgID = 4027
+	MsgID_MIC_QUEUE_RELEASE_REQ  MsgID = 4028
+	MsgID_MIC_QUEUE_RELEASE_RESP MsgID = 4029
+	MsgID_MIC_QUEUE_GRANT_REQ    MsgID = 4030
+	MsgID_MIC_QUEUE_GRANT_RESP   MsgID = 4031
+	MsgID_MIC_QUEUE_STATE_NOTIFY MsgID = 4032
 	// Server plane: game backend <-> chirp (authenticated services, not users).
 	// See proto/game_server_gateway.proto for the payloads.
 	MsgID_SERVER_AUTH_REQ             MsgID = 5001
@@ -501,6 +513,17 @@ var (
 		4019: "PARTICIPANT_LEFT_NOTIFY",
 		4020: "PARTICIPANT_STATE_CHANGED_NOTIFY",
 		4021: "SPEAKING_NOTIFY",
+		4022: "SET_MIC_MODE_REQ",
+		4023: "SET_MIC_MODE_RESP",
+		4024: "MIC_QUEUE_APPLY_REQ",
+		4025: "MIC_QUEUE_APPLY_RESP",
+		4026: "MIC_QUEUE_APPROVE_REQ",
+		4027: "MIC_QUEUE_APPROVE_RESP",
+		4028: "MIC_QUEUE_RELEASE_REQ",
+		4029: "MIC_QUEUE_RELEASE_RESP",
+		4030: "MIC_QUEUE_GRANT_REQ",
+		4031: "MIC_QUEUE_GRANT_RESP",
+		4032: "MIC_QUEUE_STATE_NOTIFY",
 		5001: "SERVER_AUTH_REQ",
 		5002: "SERVER_AUTH_RESP",
 		5003: "SERVER_HEARTBEAT_PING",
@@ -736,6 +759,17 @@ var (
 		"PARTICIPANT_LEFT_NOTIFY":           4019,
 		"PARTICIPANT_STATE_CHANGED_NOTIFY":  4020,
 		"SPEAKING_NOTIFY":                   4021,
+		"SET_MIC_MODE_REQ":                  4022,
+		"SET_MIC_MODE_RESP":                 4023,
+		"MIC_QUEUE_APPLY_REQ":               4024,
+		"MIC_QUEUE_APPLY_RESP":              4025,
+		"MIC_QUEUE_APPROVE_REQ":             4026,
+		"MIC_QUEUE_APPROVE_RESP":            4027,
+		"MIC_QUEUE_RELEASE_REQ":             4028,
+		"MIC_QUEUE_RELEASE_RESP":            4029,
+		"MIC_QUEUE_GRANT_REQ":               4030,
+		"MIC_QUEUE_GRANT_RESP":              4031,
+		"MIC_QUEUE_STATE_NOTIFY":            4032,
 		"SERVER_AUTH_REQ":                   5001,
 		"SERVER_AUTH_RESP":                  5002,
 		"SERVER_HEARTBEAT_PING":             5003,
@@ -1404,7 +1438,7 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"channel_id\x18\x01 \x01(\tR\tchannelId\x12\x1b\n" +
 	"\tsender_id\x18\x02 \x01(\tR\bsenderId\x12\x18\n" +
 	"\acontent\x18\x03 \x01(\fR\acontent\x12\"\n" +
-	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\xf8/\n" +
+	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\xa02\n" +
 	"\x05MsgID\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x13\n" +
 	"\x0eHEARTBEAT_PING\x10\xe9\a\x12\x13\n" +
@@ -1565,7 +1599,18 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\x19PARTICIPANT_JOINED_NOTIFY\x10\xb2\x1f\x12\x1c\n" +
 	"\x17PARTICIPANT_LEFT_NOTIFY\x10\xb3\x1f\x12%\n" +
 	" PARTICIPANT_STATE_CHANGED_NOTIFY\x10\xb4\x1f\x12\x14\n" +
-	"\x0fSPEAKING_NOTIFY\x10\xb5\x1f\x12\x14\n" +
+	"\x0fSPEAKING_NOTIFY\x10\xb5\x1f\x12\x15\n" +
+	"\x10SET_MIC_MODE_REQ\x10\xb6\x1f\x12\x16\n" +
+	"\x11SET_MIC_MODE_RESP\x10\xb7\x1f\x12\x18\n" +
+	"\x13MIC_QUEUE_APPLY_REQ\x10\xb8\x1f\x12\x19\n" +
+	"\x14MIC_QUEUE_APPLY_RESP\x10\xb9\x1f\x12\x1a\n" +
+	"\x15MIC_QUEUE_APPROVE_REQ\x10\xba\x1f\x12\x1b\n" +
+	"\x16MIC_QUEUE_APPROVE_RESP\x10\xbb\x1f\x12\x1a\n" +
+	"\x15MIC_QUEUE_RELEASE_REQ\x10\xbc\x1f\x12\x1b\n" +
+	"\x16MIC_QUEUE_RELEASE_RESP\x10\xbd\x1f\x12\x18\n" +
+	"\x13MIC_QUEUE_GRANT_REQ\x10\xbe\x1f\x12\x19\n" +
+	"\x14MIC_QUEUE_GRANT_RESP\x10\xbf\x1f\x12\x1b\n" +
+	"\x16MIC_QUEUE_STATE_NOTIFY\x10\xc0\x1f\x12\x14\n" +
 	"\x0fSERVER_AUTH_REQ\x10\x89'\x12\x15\n" +
 	"\x10SERVER_AUTH_RESP\x10\x8a'\x12\x1a\n" +
 	"\x15SERVER_HEARTBEAT_PING\x10\x8b'\x12\x1a\n" +

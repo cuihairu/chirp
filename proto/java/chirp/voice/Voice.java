@@ -368,6 +368,268 @@ public final class Voice extends com.google.protobuf.GeneratedFile {
     // @@protoc_insertion_point(enum_scope:chirp.voice.ParticipantState)
   }
 
+  /**
+   * <pre>
+   * Host-controlled speaking queue (麦序模式, VOICE-RT): rooms run MIC_FREE
+   * (the default, everyone may speak) or MIC_MANAGED (only the mic holder
+   * speaks; the host approves applications off a FIFO queue).
+   * </pre>
+   *
+   * Protobuf enum {@code chirp.voice.MicMode}
+   */
+  public enum MicMode
+      implements com.google.protobuf.ProtocolMessageEnum {
+    /**
+     * <code>MIC_FREE = 0;</code>
+     */
+    MIC_FREE(0),
+    /**
+     * <code>MIC_MANAGED = 1;</code>
+     */
+    MIC_MANAGED(1),
+    UNRECOGNIZED(-1),
+    ;
+
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "MicMode");
+    }
+    /**
+     * <code>MIC_FREE = 0;</code>
+     */
+    public static final int MIC_FREE_VALUE = 0;
+    /**
+     * <code>MIC_MANAGED = 1;</code>
+     */
+    public static final int MIC_MANAGED_VALUE = 1;
+
+
+    public final int getNumber() {
+      if (this == UNRECOGNIZED) {
+        throw new java.lang.IllegalArgumentException(
+            "Can't get the number of an unknown enum value.");
+      }
+      return value;
+    }
+
+    /**
+     * @param value The numeric wire value of the corresponding enum entry.
+     * @return The enum associated with the given numeric wire value.
+     * @deprecated Use {@link #forNumber(int)} instead.
+     */
+    @java.lang.Deprecated
+    public static MicMode valueOf(int value) {
+      return forNumber(value);
+    }
+
+    /**
+     * @param value The numeric wire value of the corresponding enum entry.
+     * @return The enum associated with the given numeric wire value.
+     */
+    public static MicMode forNumber(int value) {
+      switch (value) {
+        case 0: return MIC_FREE;
+        case 1: return MIC_MANAGED;
+        default: return null;
+      }
+    }
+
+    public static com.google.protobuf.Internal.EnumLiteMap<MicMode>
+        internalGetValueMap() {
+      return internalValueMap;
+    }
+    private static final com.google.protobuf.Internal.EnumLiteMap<
+        MicMode> internalValueMap =
+          new com.google.protobuf.Internal.EnumLiteMap<MicMode>() {
+            public MicMode findValueByNumber(int number) {
+              return MicMode.forNumber(number);
+            }
+          };
+
+    public final com.google.protobuf.Descriptors.EnumValueDescriptor
+        getValueDescriptor() {
+      if (this == UNRECOGNIZED) {
+        throw new java.lang.IllegalStateException(
+            "Can't get the descriptor of an unrecognized enum value.");
+      }
+      return getDescriptor().getValues().get(ordinal());
+    }
+    public final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptorForType() {
+      return getDescriptor();
+    }
+    public static com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptor() {
+      return chirp.voice.Voice.getDescriptor().getEnumTypes().get(2);
+    }
+
+    private static final MicMode[] VALUES = values();
+
+    public static MicMode valueOf(
+        com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+      if (desc.getType() != getDescriptor()) {
+        throw new java.lang.IllegalArgumentException(
+          "EnumValueDescriptor is not for this type.");
+      }
+      if (desc.getIndex() == -1) {
+        return UNRECOGNIZED;
+      }
+      return VALUES[desc.getIndex()];
+    }
+
+    private final int value;
+
+    private MicMode(int value) {
+      this.value = value;
+    }
+
+    // @@protoc_insertion_point(enum_scope:chirp.voice.MicMode)
+  }
+
+  /**
+   * <pre>
+   * Media delivery tier (大规模旁路分级, VOICE-RT): the server classifies each
+   * room and the clients configure their engine accordingly - small rooms mix
+   * every stream, large rooms forward through the SFU bypass.
+   * </pre>
+   *
+   * Protobuf enum {@code chirp.voice.MediaTier}
+   */
+  public enum MediaTier
+      implements com.google.protobuf.ProtocolMessageEnum {
+    /**
+     * <pre>
+     * peer mesh with full mixing (small rooms)
+     * </pre>
+     *
+     * <code>FULL_MIX = 0;</code>
+     */
+    FULL_MIX(0),
+    /**
+     * <pre>
+     * SFU forwarding bypass (large rooms)
+     * </pre>
+     *
+     * <code>FORWARD_BYPASS = 1;</code>
+     */
+    FORWARD_BYPASS(1),
+    UNRECOGNIZED(-1),
+    ;
+
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "MediaTier");
+    }
+    /**
+     * <pre>
+     * peer mesh with full mixing (small rooms)
+     * </pre>
+     *
+     * <code>FULL_MIX = 0;</code>
+     */
+    public static final int FULL_MIX_VALUE = 0;
+    /**
+     * <pre>
+     * SFU forwarding bypass (large rooms)
+     * </pre>
+     *
+     * <code>FORWARD_BYPASS = 1;</code>
+     */
+    public static final int FORWARD_BYPASS_VALUE = 1;
+
+
+    public final int getNumber() {
+      if (this == UNRECOGNIZED) {
+        throw new java.lang.IllegalArgumentException(
+            "Can't get the number of an unknown enum value.");
+      }
+      return value;
+    }
+
+    /**
+     * @param value The numeric wire value of the corresponding enum entry.
+     * @return The enum associated with the given numeric wire value.
+     * @deprecated Use {@link #forNumber(int)} instead.
+     */
+    @java.lang.Deprecated
+    public static MediaTier valueOf(int value) {
+      return forNumber(value);
+    }
+
+    /**
+     * @param value The numeric wire value of the corresponding enum entry.
+     * @return The enum associated with the given numeric wire value.
+     */
+    public static MediaTier forNumber(int value) {
+      switch (value) {
+        case 0: return FULL_MIX;
+        case 1: return FORWARD_BYPASS;
+        default: return null;
+      }
+    }
+
+    public static com.google.protobuf.Internal.EnumLiteMap<MediaTier>
+        internalGetValueMap() {
+      return internalValueMap;
+    }
+    private static final com.google.protobuf.Internal.EnumLiteMap<
+        MediaTier> internalValueMap =
+          new com.google.protobuf.Internal.EnumLiteMap<MediaTier>() {
+            public MediaTier findValueByNumber(int number) {
+              return MediaTier.forNumber(number);
+            }
+          };
+
+    public final com.google.protobuf.Descriptors.EnumValueDescriptor
+        getValueDescriptor() {
+      if (this == UNRECOGNIZED) {
+        throw new java.lang.IllegalStateException(
+            "Can't get the descriptor of an unrecognized enum value.");
+      }
+      return getDescriptor().getValues().get(ordinal());
+    }
+    public final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptorForType() {
+      return getDescriptor();
+    }
+    public static com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptor() {
+      return chirp.voice.Voice.getDescriptor().getEnumTypes().get(3);
+    }
+
+    private static final MediaTier[] VALUES = values();
+
+    public static MediaTier valueOf(
+        com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+      if (desc.getType() != getDescriptor()) {
+        throw new java.lang.IllegalArgumentException(
+          "EnumValueDescriptor is not for this type.");
+      }
+      if (desc.getIndex() == -1) {
+        return UNRECOGNIZED;
+      }
+      return VALUES[desc.getIndex()];
+    }
+
+    private final int value;
+
+    private MediaTier(int value) {
+      this.value = value;
+    }
+
+    // @@protoc_insertion_point(enum_scope:chirp.voice.MediaTier)
+  }
+
   public interface CreateRoomRequestOrBuilder extends
       // @@protoc_insertion_point(interface_extends:chirp.voice.CreateRoomRequest)
       com.google.protobuf.MessageOrBuilder {
@@ -4201,6 +4463,35 @@ java.lang.String defaultValue) {
      */
     chirp.voice.Voice.IceServerOrBuilder getIceServersOrBuilder(
         int index);
+
+    /**
+     * <pre>
+     * Delivery tier the server picked for this room (VOICE-RT 旁路分级);
+     * rtcp_feedback_ms is the tier's receiver-report pacing the engine should
+     * use (smaller tier = more frequent feedback for tight mixing).
+     * </pre>
+     *
+     * <code>.chirp.voice.MediaTier media_tier = 7;</code>
+     * @return The enum numeric value on the wire for mediaTier.
+     */
+    int getMediaTierValue();
+    /**
+     * <pre>
+     * Delivery tier the server picked for this room (VOICE-RT 旁路分级);
+     * rtcp_feedback_ms is the tier's receiver-report pacing the engine should
+     * use (smaller tier = more frequent feedback for tight mixing).
+     * </pre>
+     *
+     * <code>.chirp.voice.MediaTier media_tier = 7;</code>
+     * @return The mediaTier.
+     */
+    chirp.voice.Voice.MediaTier getMediaTier();
+
+    /**
+     * <code>int32 rtcp_feedback_ms = 8;</code>
+     * @return The rtcpFeedbackMs.
+     */
+    int getRtcpFeedbackMs();
   }
   /**
    * Protobuf type {@code chirp.voice.JoinRoomResponse}
@@ -4230,6 +4521,7 @@ java.lang.String defaultValue) {
       participantIds_ =
           com.google.protobuf.LazyStringArrayList.emptyList();
       iceServers_ = java.util.Collections.emptyList();
+      mediaTier_ = 0;
     }
 
     public static final com.google.protobuf.Descriptors.Descriptor
@@ -4438,6 +4730,47 @@ java.lang.String defaultValue) {
       return iceServers_.get(index);
     }
 
+    public static final int MEDIA_TIER_FIELD_NUMBER = 7;
+    private int mediaTier_ = 0;
+    /**
+     * <pre>
+     * Delivery tier the server picked for this room (VOICE-RT 旁路分级);
+     * rtcp_feedback_ms is the tier's receiver-report pacing the engine should
+     * use (smaller tier = more frequent feedback for tight mixing).
+     * </pre>
+     *
+     * <code>.chirp.voice.MediaTier media_tier = 7;</code>
+     * @return The enum numeric value on the wire for mediaTier.
+     */
+    @java.lang.Override public int getMediaTierValue() {
+      return mediaTier_;
+    }
+    /**
+     * <pre>
+     * Delivery tier the server picked for this room (VOICE-RT 旁路分级);
+     * rtcp_feedback_ms is the tier's receiver-report pacing the engine should
+     * use (smaller tier = more frequent feedback for tight mixing).
+     * </pre>
+     *
+     * <code>.chirp.voice.MediaTier media_tier = 7;</code>
+     * @return The mediaTier.
+     */
+    @java.lang.Override public chirp.voice.Voice.MediaTier getMediaTier() {
+      chirp.voice.Voice.MediaTier result = chirp.voice.Voice.MediaTier.forNumber(mediaTier_);
+      return result == null ? chirp.voice.Voice.MediaTier.UNRECOGNIZED : result;
+    }
+
+    public static final int RTCP_FEEDBACK_MS_FIELD_NUMBER = 8;
+    private int rtcpFeedbackMs_ = 0;
+    /**
+     * <code>int32 rtcp_feedback_ms = 8;</code>
+     * @return The rtcpFeedbackMs.
+     */
+    @java.lang.Override
+    public int getRtcpFeedbackMs() {
+      return rtcpFeedbackMs_;
+    }
+
     private byte memoizedIsInitialized = -1;
     @java.lang.Override
     public final boolean isInitialized() {
@@ -4469,6 +4802,12 @@ java.lang.String defaultValue) {
       }
       for (int i = 0; i < iceServers_.size(); i++) {
         output.writeMessage(6, iceServers_.get(i));
+      }
+      if (mediaTier_ != chirp.voice.Voice.MediaTier.FULL_MIX.getNumber()) {
+        output.writeEnum(7, mediaTier_);
+      }
+      if (rtcpFeedbackMs_ != 0) {
+        output.writeInt32(8, rtcpFeedbackMs_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -4505,6 +4844,14 @@ java.lang.String defaultValue) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(6, iceServers_.get(i));
       }
+      if (mediaTier_ != chirp.voice.Voice.MediaTier.FULL_MIX.getNumber()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(7, mediaTier_);
+      }
+      if (rtcpFeedbackMs_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(8, rtcpFeedbackMs_);
+      }
       size += getUnknownFields().getSerializedSize();
       memoizedSize = size;
       return size;
@@ -4531,6 +4878,9 @@ java.lang.String defaultValue) {
           != other.getServerTime()) return false;
       if (!getIceServersList()
           .equals(other.getIceServersList())) return false;
+      if (mediaTier_ != other.mediaTier_) return false;
+      if (getRtcpFeedbackMs()
+          != other.getRtcpFeedbackMs()) return false;
       if (!getUnknownFields().equals(other.getUnknownFields())) return false;
       return true;
     }
@@ -4559,6 +4909,10 @@ java.lang.String defaultValue) {
         hash = (37 * hash) + ICE_SERVERS_FIELD_NUMBER;
         hash = (53 * hash) + getIceServersList().hashCode();
       }
+      hash = (37 * hash) + MEDIA_TIER_FIELD_NUMBER;
+      hash = (53 * hash) + mediaTier_;
+      hash = (37 * hash) + RTCP_FEEDBACK_MS_FIELD_NUMBER;
+      hash = (53 * hash) + getRtcpFeedbackMs();
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -4703,6 +5057,8 @@ java.lang.String defaultValue) {
           iceServersBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00000020);
+        mediaTier_ = 0;
+        rtcpFeedbackMs_ = 0;
         return this;
       }
 
@@ -4764,6 +5120,12 @@ java.lang.String defaultValue) {
         }
         if (((from_bitField0_ & 0x00000010) != 0)) {
           result.serverTime_ = serverTime_;
+        }
+        if (((from_bitField0_ & 0x00000040) != 0)) {
+          result.mediaTier_ = mediaTier_;
+        }
+        if (((from_bitField0_ & 0x00000080) != 0)) {
+          result.rtcpFeedbackMs_ = rtcpFeedbackMs_;
         }
       }
 
@@ -4831,6 +5193,12 @@ java.lang.String defaultValue) {
             }
           }
         }
+        if (other.mediaTier_ != 0) {
+          setMediaTierValue(other.getMediaTierValue());
+        }
+        if (other.getRtcpFeedbackMs() != 0) {
+          setRtcpFeedbackMs(other.getRtcpFeedbackMs());
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         onChanged();
         return this;
@@ -4896,6 +5264,16 @@ java.lang.String defaultValue) {
                 }
                 break;
               } // case 50
+              case 56: {
+                mediaTier_ = input.readEnum();
+                bitField0_ |= 0x00000040;
+                break;
+              } // case 56
+              case 64: {
+                rtcpFeedbackMs_ = input.readInt32();
+                bitField0_ |= 0x00000080;
+                break;
+              } // case 64
               default: {
                 if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                   done = true; // was an endgroup tag
@@ -5509,6 +5887,119 @@ java.lang.String defaultValue) {
           iceServers_ = null;
         }
         return iceServersBuilder_;
+      }
+
+      private int mediaTier_ = 0;
+      /**
+       * <pre>
+       * Delivery tier the server picked for this room (VOICE-RT 旁路分级);
+       * rtcp_feedback_ms is the tier's receiver-report pacing the engine should
+       * use (smaller tier = more frequent feedback for tight mixing).
+       * </pre>
+       *
+       * <code>.chirp.voice.MediaTier media_tier = 7;</code>
+       * @return The enum numeric value on the wire for mediaTier.
+       */
+      @java.lang.Override public int getMediaTierValue() {
+        return mediaTier_;
+      }
+      /**
+       * <pre>
+       * Delivery tier the server picked for this room (VOICE-RT 旁路分级);
+       * rtcp_feedback_ms is the tier's receiver-report pacing the engine should
+       * use (smaller tier = more frequent feedback for tight mixing).
+       * </pre>
+       *
+       * <code>.chirp.voice.MediaTier media_tier = 7;</code>
+       * @param value The enum numeric value on the wire for mediaTier to set.
+       * @return This builder for chaining.
+       */
+      public Builder setMediaTierValue(int value) {
+        mediaTier_ = value;
+        bitField0_ |= 0x00000040;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Delivery tier the server picked for this room (VOICE-RT 旁路分级);
+       * rtcp_feedback_ms is the tier's receiver-report pacing the engine should
+       * use (smaller tier = more frequent feedback for tight mixing).
+       * </pre>
+       *
+       * <code>.chirp.voice.MediaTier media_tier = 7;</code>
+       * @return The mediaTier.
+       */
+      @java.lang.Override
+      public chirp.voice.Voice.MediaTier getMediaTier() {
+        chirp.voice.Voice.MediaTier result = chirp.voice.Voice.MediaTier.forNumber(mediaTier_);
+        return result == null ? chirp.voice.Voice.MediaTier.UNRECOGNIZED : result;
+      }
+      /**
+       * <pre>
+       * Delivery tier the server picked for this room (VOICE-RT 旁路分级);
+       * rtcp_feedback_ms is the tier's receiver-report pacing the engine should
+       * use (smaller tier = more frequent feedback for tight mixing).
+       * </pre>
+       *
+       * <code>.chirp.voice.MediaTier media_tier = 7;</code>
+       * @param value The mediaTier to set.
+       * @return This builder for chaining.
+       */
+      public Builder setMediaTier(chirp.voice.Voice.MediaTier value) {
+        if (value == null) { throw new NullPointerException(); }
+        bitField0_ |= 0x00000040;
+        mediaTier_ = value.getNumber();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Delivery tier the server picked for this room (VOICE-RT 旁路分级);
+       * rtcp_feedback_ms is the tier's receiver-report pacing the engine should
+       * use (smaller tier = more frequent feedback for tight mixing).
+       * </pre>
+       *
+       * <code>.chirp.voice.MediaTier media_tier = 7;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearMediaTier() {
+        bitField0_ = (bitField0_ & ~0x00000040);
+        mediaTier_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int rtcpFeedbackMs_ ;
+      /**
+       * <code>int32 rtcp_feedback_ms = 8;</code>
+       * @return The rtcpFeedbackMs.
+       */
+      @java.lang.Override
+      public int getRtcpFeedbackMs() {
+        return rtcpFeedbackMs_;
+      }
+      /**
+       * <code>int32 rtcp_feedback_ms = 8;</code>
+       * @param value The rtcpFeedbackMs to set.
+       * @return This builder for chaining.
+       */
+      public Builder setRtcpFeedbackMs(int value) {
+
+        rtcpFeedbackMs_ = value;
+        bitField0_ |= 0x00000080;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>int32 rtcp_feedback_ms = 8;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearRtcpFeedbackMs() {
+        bitField0_ = (bitField0_ & ~0x00000080);
+        rtcpFeedbackMs_ = 0;
+        onChanged();
+        return this;
       }
 
       // @@protoc_insertion_point(builder_scope:chirp.voice.JoinRoomResponse)
@@ -12150,6 +12641,62 @@ java.lang.String defaultValue) {
      * @return The maxParticipants.
      */
     int getMaxParticipants();
+
+    /**
+     * <pre>
+     * Speaking queue snapshot for late joiners (VOICE-RT 麦序模式).
+     * </pre>
+     *
+     * <code>.chirp.voice.MicMode mic_mode = 7;</code>
+     * @return The enum numeric value on the wire for micMode.
+     */
+    int getMicModeValue();
+    /**
+     * <pre>
+     * Speaking queue snapshot for late joiners (VOICE-RT 麦序模式).
+     * </pre>
+     *
+     * <code>.chirp.voice.MicMode mic_mode = 7;</code>
+     * @return The micMode.
+     */
+    chirp.voice.Voice.MicMode getMicMode();
+
+    /**
+     * <code>string mic_holder_user_id = 8;</code>
+     * @return The micHolderUserId.
+     */
+    java.lang.String getMicHolderUserId();
+    /**
+     * <code>string mic_holder_user_id = 8;</code>
+     * @return The bytes for micHolderUserId.
+     */
+    com.google.protobuf.ByteString
+        getMicHolderUserIdBytes();
+
+    /**
+     * <code>repeated string mic_queue_user_ids = 9;</code>
+     * @return A list containing the micQueueUserIds.
+     */
+    java.util.List<java.lang.String>
+        getMicQueueUserIdsList();
+    /**
+     * <code>repeated string mic_queue_user_ids = 9;</code>
+     * @return The count of micQueueUserIds.
+     */
+    int getMicQueueUserIdsCount();
+    /**
+     * <code>repeated string mic_queue_user_ids = 9;</code>
+     * @param index The index of the element to return.
+     * @return The micQueueUserIds at the given index.
+     */
+    java.lang.String getMicQueueUserIds(int index);
+    /**
+     * <code>repeated string mic_queue_user_ids = 9;</code>
+     * @param index The index of the value to return.
+     * @return The bytes of the micQueueUserIds at the given index.
+     */
+    com.google.protobuf.ByteString
+        getMicQueueUserIdsBytes(int index);
   }
   /**
    * Protobuf type {@code chirp.voice.GetRoomInfoResponse}
@@ -12178,6 +12725,10 @@ java.lang.String defaultValue) {
       roomName_ = "";
       roomType_ = 0;
       participants_ = java.util.Collections.emptyList();
+      micMode_ = 0;
+      micHolderUserId_ = "";
+      micQueueUserIds_ =
+          com.google.protobuf.LazyStringArrayList.emptyList();
     }
 
     public static final com.google.protobuf.Descriptors.Descriptor
@@ -12359,6 +12910,108 @@ java.lang.String defaultValue) {
       return maxParticipants_;
     }
 
+    public static final int MIC_MODE_FIELD_NUMBER = 7;
+    private int micMode_ = 0;
+    /**
+     * <pre>
+     * Speaking queue snapshot for late joiners (VOICE-RT 麦序模式).
+     * </pre>
+     *
+     * <code>.chirp.voice.MicMode mic_mode = 7;</code>
+     * @return The enum numeric value on the wire for micMode.
+     */
+    @java.lang.Override public int getMicModeValue() {
+      return micMode_;
+    }
+    /**
+     * <pre>
+     * Speaking queue snapshot for late joiners (VOICE-RT 麦序模式).
+     * </pre>
+     *
+     * <code>.chirp.voice.MicMode mic_mode = 7;</code>
+     * @return The micMode.
+     */
+    @java.lang.Override public chirp.voice.Voice.MicMode getMicMode() {
+      chirp.voice.Voice.MicMode result = chirp.voice.Voice.MicMode.forNumber(micMode_);
+      return result == null ? chirp.voice.Voice.MicMode.UNRECOGNIZED : result;
+    }
+
+    public static final int MIC_HOLDER_USER_ID_FIELD_NUMBER = 8;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object micHolderUserId_ = "";
+    /**
+     * <code>string mic_holder_user_id = 8;</code>
+     * @return The micHolderUserId.
+     */
+    @java.lang.Override
+    public java.lang.String getMicHolderUserId() {
+      java.lang.Object ref = micHolderUserId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        micHolderUserId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string mic_holder_user_id = 8;</code>
+     * @return The bytes for micHolderUserId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getMicHolderUserIdBytes() {
+      java.lang.Object ref = micHolderUserId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        micHolderUserId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int MIC_QUEUE_USER_IDS_FIELD_NUMBER = 9;
+    @SuppressWarnings("serial")
+    private com.google.protobuf.LazyStringArrayList micQueueUserIds_ =
+        com.google.protobuf.LazyStringArrayList.emptyList();
+    /**
+     * <code>repeated string mic_queue_user_ids = 9;</code>
+     * @return A list containing the micQueueUserIds.
+     */
+    public com.google.protobuf.ProtocolStringList
+        getMicQueueUserIdsList() {
+      return micQueueUserIds_;
+    }
+    /**
+     * <code>repeated string mic_queue_user_ids = 9;</code>
+     * @return The count of micQueueUserIds.
+     */
+    public int getMicQueueUserIdsCount() {
+      return micQueueUserIds_.size();
+    }
+    /**
+     * <code>repeated string mic_queue_user_ids = 9;</code>
+     * @param index The index of the element to return.
+     * @return The micQueueUserIds at the given index.
+     */
+    public java.lang.String getMicQueueUserIds(int index) {
+      return micQueueUserIds_.get(index);
+    }
+    /**
+     * <code>repeated string mic_queue_user_ids = 9;</code>
+     * @param index The index of the value to return.
+     * @return The bytes of the micQueueUserIds at the given index.
+     */
+    public com.google.protobuf.ByteString
+        getMicQueueUserIdsBytes(int index) {
+      return micQueueUserIds_.getByteString(index);
+    }
+
     private byte memoizedIsInitialized = -1;
     @java.lang.Override
     public final boolean isInitialized() {
@@ -12391,6 +13044,15 @@ java.lang.String defaultValue) {
       if (maxParticipants_ != 0) {
         output.writeInt32(6, maxParticipants_);
       }
+      if (micMode_ != chirp.voice.Voice.MicMode.MIC_FREE.getNumber()) {
+        output.writeEnum(7, micMode_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(micHolderUserId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 8, micHolderUserId_);
+      }
+      for (int i = 0; i < micQueueUserIds_.size(); i++) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 9, micQueueUserIds_.getRaw(i));
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -12422,6 +13084,21 @@ java.lang.String defaultValue) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(6, maxParticipants_);
       }
+      if (micMode_ != chirp.voice.Voice.MicMode.MIC_FREE.getNumber()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(7, micMode_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(micHolderUserId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(8, micHolderUserId_);
+      }
+      {
+        int dataSize = 0;
+        for (int i = 0; i < micQueueUserIds_.size(); i++) {
+          dataSize += computeStringSizeNoTag(micQueueUserIds_.getRaw(i));
+        }
+        size += dataSize;
+        size += 1 * getMicQueueUserIdsList().size();
+      }
       size += getUnknownFields().getSerializedSize();
       memoizedSize = size;
       return size;
@@ -12447,6 +13124,11 @@ java.lang.String defaultValue) {
           .equals(other.getParticipantsList())) return false;
       if (getMaxParticipants()
           != other.getMaxParticipants()) return false;
+      if (micMode_ != other.micMode_) return false;
+      if (!getMicHolderUserId()
+          .equals(other.getMicHolderUserId())) return false;
+      if (!getMicQueueUserIdsList()
+          .equals(other.getMicQueueUserIdsList())) return false;
       if (!getUnknownFields().equals(other.getUnknownFields())) return false;
       return true;
     }
@@ -12472,6 +13154,14 @@ java.lang.String defaultValue) {
       }
       hash = (37 * hash) + MAX_PARTICIPANTS_FIELD_NUMBER;
       hash = (53 * hash) + getMaxParticipants();
+      hash = (37 * hash) + MIC_MODE_FIELD_NUMBER;
+      hash = (53 * hash) + micMode_;
+      hash = (37 * hash) + MIC_HOLDER_USER_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getMicHolderUserId().hashCode();
+      if (getMicQueueUserIdsCount() > 0) {
+        hash = (37 * hash) + MIC_QUEUE_USER_IDS_FIELD_NUMBER;
+        hash = (53 * hash) + getMicQueueUserIdsList().hashCode();
+      }
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -12615,6 +13305,10 @@ java.lang.String defaultValue) {
         }
         bitField0_ = (bitField0_ & ~0x00000010);
         maxParticipants_ = 0;
+        micMode_ = 0;
+        micHolderUserId_ = "";
+        micQueueUserIds_ =
+            com.google.protobuf.LazyStringArrayList.emptyList();
         return this;
       }
 
@@ -12676,6 +13370,16 @@ java.lang.String defaultValue) {
         if (((from_bitField0_ & 0x00000020) != 0)) {
           result.maxParticipants_ = maxParticipants_;
         }
+        if (((from_bitField0_ & 0x00000040) != 0)) {
+          result.micMode_ = micMode_;
+        }
+        if (((from_bitField0_ & 0x00000080) != 0)) {
+          result.micHolderUserId_ = micHolderUserId_;
+        }
+        if (((from_bitField0_ & 0x00000100) != 0)) {
+          micQueueUserIds_.makeImmutable();
+          result.micQueueUserIds_ = micQueueUserIds_;
+        }
       }
 
       @java.lang.Override
@@ -12734,6 +13438,24 @@ java.lang.String defaultValue) {
         }
         if (other.getMaxParticipants() != 0) {
           setMaxParticipants(other.getMaxParticipants());
+        }
+        if (other.micMode_ != 0) {
+          setMicModeValue(other.getMicModeValue());
+        }
+        if (!other.getMicHolderUserId().isEmpty()) {
+          micHolderUserId_ = other.micHolderUserId_;
+          bitField0_ |= 0x00000080;
+          onChanged();
+        }
+        if (!other.micQueueUserIds_.isEmpty()) {
+          if (micQueueUserIds_.isEmpty()) {
+            micQueueUserIds_ = other.micQueueUserIds_;
+            bitField0_ |= 0x00000100;
+          } else {
+            ensureMicQueueUserIdsIsMutable();
+            micQueueUserIds_.addAll(other.micQueueUserIds_);
+          }
+          onChanged();
         }
         this.mergeUnknownFields(other.getUnknownFields());
         onChanged();
@@ -12799,6 +13521,22 @@ java.lang.String defaultValue) {
                 bitField0_ |= 0x00000020;
                 break;
               } // case 48
+              case 56: {
+                micMode_ = input.readEnum();
+                bitField0_ |= 0x00000040;
+                break;
+              } // case 56
+              case 66: {
+                micHolderUserId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000080;
+                break;
+              } // case 66
+              case 74: {
+                java.lang.String s = input.readStringRequireUtf8();
+                ensureMicQueueUserIdsIsMutable();
+                micQueueUserIds_.add(s);
+                break;
+              } // case 74
               default: {
                 if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                   done = true; // was an endgroup tag
@@ -13330,6 +14068,260 @@ java.lang.String defaultValue) {
       public Builder clearMaxParticipants() {
         bitField0_ = (bitField0_ & ~0x00000020);
         maxParticipants_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int micMode_ = 0;
+      /**
+       * <pre>
+       * Speaking queue snapshot for late joiners (VOICE-RT 麦序模式).
+       * </pre>
+       *
+       * <code>.chirp.voice.MicMode mic_mode = 7;</code>
+       * @return The enum numeric value on the wire for micMode.
+       */
+      @java.lang.Override public int getMicModeValue() {
+        return micMode_;
+      }
+      /**
+       * <pre>
+       * Speaking queue snapshot for late joiners (VOICE-RT 麦序模式).
+       * </pre>
+       *
+       * <code>.chirp.voice.MicMode mic_mode = 7;</code>
+       * @param value The enum numeric value on the wire for micMode to set.
+       * @return This builder for chaining.
+       */
+      public Builder setMicModeValue(int value) {
+        micMode_ = value;
+        bitField0_ |= 0x00000040;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Speaking queue snapshot for late joiners (VOICE-RT 麦序模式).
+       * </pre>
+       *
+       * <code>.chirp.voice.MicMode mic_mode = 7;</code>
+       * @return The micMode.
+       */
+      @java.lang.Override
+      public chirp.voice.Voice.MicMode getMicMode() {
+        chirp.voice.Voice.MicMode result = chirp.voice.Voice.MicMode.forNumber(micMode_);
+        return result == null ? chirp.voice.Voice.MicMode.UNRECOGNIZED : result;
+      }
+      /**
+       * <pre>
+       * Speaking queue snapshot for late joiners (VOICE-RT 麦序模式).
+       * </pre>
+       *
+       * <code>.chirp.voice.MicMode mic_mode = 7;</code>
+       * @param value The micMode to set.
+       * @return This builder for chaining.
+       */
+      public Builder setMicMode(chirp.voice.Voice.MicMode value) {
+        if (value == null) { throw new NullPointerException(); }
+        bitField0_ |= 0x00000040;
+        micMode_ = value.getNumber();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Speaking queue snapshot for late joiners (VOICE-RT 麦序模式).
+       * </pre>
+       *
+       * <code>.chirp.voice.MicMode mic_mode = 7;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearMicMode() {
+        bitField0_ = (bitField0_ & ~0x00000040);
+        micMode_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object micHolderUserId_ = "";
+      /**
+       * <code>string mic_holder_user_id = 8;</code>
+       * @return The micHolderUserId.
+       */
+      public java.lang.String getMicHolderUserId() {
+        java.lang.Object ref = micHolderUserId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          micHolderUserId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string mic_holder_user_id = 8;</code>
+       * @return The bytes for micHolderUserId.
+       */
+      public com.google.protobuf.ByteString
+          getMicHolderUserIdBytes() {
+        java.lang.Object ref = micHolderUserId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          micHolderUserId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string mic_holder_user_id = 8;</code>
+       * @param value The micHolderUserId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setMicHolderUserId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        micHolderUserId_ = value;
+        bitField0_ |= 0x00000080;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string mic_holder_user_id = 8;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearMicHolderUserId() {
+        micHolderUserId_ = getDefaultInstance().getMicHolderUserId();
+        bitField0_ = (bitField0_ & ~0x00000080);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string mic_holder_user_id = 8;</code>
+       * @param value The bytes for micHolderUserId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setMicHolderUserIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        micHolderUserId_ = value;
+        bitField0_ |= 0x00000080;
+        onChanged();
+        return this;
+      }
+
+      private com.google.protobuf.LazyStringArrayList micQueueUserIds_ =
+          com.google.protobuf.LazyStringArrayList.emptyList();
+      private void ensureMicQueueUserIdsIsMutable() {
+        if (!micQueueUserIds_.isModifiable()) {
+          micQueueUserIds_ = new com.google.protobuf.LazyStringArrayList(micQueueUserIds_);
+        }
+        bitField0_ |= 0x00000100;
+      }
+      /**
+       * <code>repeated string mic_queue_user_ids = 9;</code>
+       * @return A list containing the micQueueUserIds.
+       */
+      public com.google.protobuf.ProtocolStringList
+          getMicQueueUserIdsList() {
+        micQueueUserIds_.makeImmutable();
+        return micQueueUserIds_;
+      }
+      /**
+       * <code>repeated string mic_queue_user_ids = 9;</code>
+       * @return The count of micQueueUserIds.
+       */
+      public int getMicQueueUserIdsCount() {
+        return micQueueUserIds_.size();
+      }
+      /**
+       * <code>repeated string mic_queue_user_ids = 9;</code>
+       * @param index The index of the element to return.
+       * @return The micQueueUserIds at the given index.
+       */
+      public java.lang.String getMicQueueUserIds(int index) {
+        return micQueueUserIds_.get(index);
+      }
+      /**
+       * <code>repeated string mic_queue_user_ids = 9;</code>
+       * @param index The index of the value to return.
+       * @return The bytes of the micQueueUserIds at the given index.
+       */
+      public com.google.protobuf.ByteString
+          getMicQueueUserIdsBytes(int index) {
+        return micQueueUserIds_.getByteString(index);
+      }
+      /**
+       * <code>repeated string mic_queue_user_ids = 9;</code>
+       * @param index The index to set the value at.
+       * @param value The micQueueUserIds to set.
+       * @return This builder for chaining.
+       */
+      public Builder setMicQueueUserIds(
+          int index, java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        ensureMicQueueUserIdsIsMutable();
+        micQueueUserIds_.set(index, value);
+        bitField0_ |= 0x00000100;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string mic_queue_user_ids = 9;</code>
+       * @param value The micQueueUserIds to add.
+       * @return This builder for chaining.
+       */
+      public Builder addMicQueueUserIds(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        ensureMicQueueUserIdsIsMutable();
+        micQueueUserIds_.add(value);
+        bitField0_ |= 0x00000100;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string mic_queue_user_ids = 9;</code>
+       * @param values The micQueueUserIds to add.
+       * @return This builder for chaining.
+       */
+      public Builder addAllMicQueueUserIds(
+          java.lang.Iterable<java.lang.String> values) {
+        ensureMicQueueUserIdsIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, micQueueUserIds_);
+        bitField0_ |= 0x00000100;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string mic_queue_user_ids = 9;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearMicQueueUserIds() {
+        micQueueUserIds_ =
+          com.google.protobuf.LazyStringArrayList.emptyList();
+        bitField0_ = (bitField0_ & ~0x00000100);;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string mic_queue_user_ids = 9;</code>
+       * @param value The bytes of the micQueueUserIds to add.
+       * @return This builder for chaining.
+       */
+      public Builder addMicQueueUserIdsBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        ensureMicQueueUserIdsIsMutable();
+        micQueueUserIds_.add(value);
+        bitField0_ |= 0x00000100;
         onChanged();
         return this;
       }
@@ -19681,6 +20673,17 @@ java.lang.String defaultValue) {
      * @return The timestamp.
      */
     long getTimestamp();
+
+    /**
+     * <pre>
+     * 0-100 loudness level from the client's audio stats (0 when speaking is
+     * false); drives the SDK volume callbacks.
+     * </pre>
+     *
+     * <code>int32 volume = 5;</code>
+     * @return The volume.
+     */
+    int getVolume();
   }
   /**
    * Protobuf type {@code chirp.voice.SpeakingNotify}
@@ -19821,6 +20824,22 @@ java.lang.String defaultValue) {
       return timestamp_;
     }
 
+    public static final int VOLUME_FIELD_NUMBER = 5;
+    private int volume_ = 0;
+    /**
+     * <pre>
+     * 0-100 loudness level from the client's audio stats (0 when speaking is
+     * false); drives the SDK volume callbacks.
+     * </pre>
+     *
+     * <code>int32 volume = 5;</code>
+     * @return The volume.
+     */
+    @java.lang.Override
+    public int getVolume() {
+      return volume_;
+    }
+
     private byte memoizedIsInitialized = -1;
     @java.lang.Override
     public final boolean isInitialized() {
@@ -19847,6 +20866,9 @@ java.lang.String defaultValue) {
       if (timestamp_ != 0L) {
         output.writeInt64(4, timestamp_);
       }
+      if (volume_ != 0) {
+        output.writeInt32(5, volume_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -19869,6 +20891,10 @@ java.lang.String defaultValue) {
       if (timestamp_ != 0L) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt64Size(4, timestamp_);
+      }
+      if (volume_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(5, volume_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSize = size;
@@ -19893,6 +20919,8 @@ java.lang.String defaultValue) {
           != other.getSpeaking()) return false;
       if (getTimestamp()
           != other.getTimestamp()) return false;
+      if (getVolume()
+          != other.getVolume()) return false;
       if (!getUnknownFields().equals(other.getUnknownFields())) return false;
       return true;
     }
@@ -19914,6 +20942,8 @@ java.lang.String defaultValue) {
       hash = (37 * hash) + TIMESTAMP_FIELD_NUMBER;
       hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
           getTimestamp());
+      hash = (37 * hash) + VOLUME_FIELD_NUMBER;
+      hash = (53 * hash) + getVolume();
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -20049,6 +21079,7 @@ java.lang.String defaultValue) {
         userId_ = "";
         speaking_ = false;
         timestamp_ = 0L;
+        volume_ = 0;
         return this;
       }
 
@@ -20094,6 +21125,9 @@ java.lang.String defaultValue) {
         if (((from_bitField0_ & 0x00000008) != 0)) {
           result.timestamp_ = timestamp_;
         }
+        if (((from_bitField0_ & 0x00000010) != 0)) {
+          result.volume_ = volume_;
+        }
       }
 
       @java.lang.Override
@@ -20123,6 +21157,9 @@ java.lang.String defaultValue) {
         }
         if (other.getTimestamp() != 0L) {
           setTimestamp(other.getTimestamp());
+        }
+        if (other.getVolume() != 0) {
+          setVolume(other.getVolume());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         onChanged();
@@ -20170,6 +21207,11 @@ java.lang.String defaultValue) {
                 bitField0_ |= 0x00000008;
                 break;
               } // case 32
+              case 40: {
+                volume_ = input.readInt32();
+                bitField0_ |= 0x00000010;
+                break;
+              } // case 40
               default: {
                 if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                   done = true; // was an endgroup tag
@@ -20395,6 +21437,53 @@ java.lang.String defaultValue) {
         return this;
       }
 
+      private int volume_ ;
+      /**
+       * <pre>
+       * 0-100 loudness level from the client's audio stats (0 when speaking is
+       * false); drives the SDK volume callbacks.
+       * </pre>
+       *
+       * <code>int32 volume = 5;</code>
+       * @return The volume.
+       */
+      @java.lang.Override
+      public int getVolume() {
+        return volume_;
+      }
+      /**
+       * <pre>
+       * 0-100 loudness level from the client's audio stats (0 when speaking is
+       * false); drives the SDK volume callbacks.
+       * </pre>
+       *
+       * <code>int32 volume = 5;</code>
+       * @param value The volume to set.
+       * @return This builder for chaining.
+       */
+      public Builder setVolume(int value) {
+
+        volume_ = value;
+        bitField0_ |= 0x00000010;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 0-100 loudness level from the client's audio stats (0 when speaking is
+       * false); drives the SDK volume callbacks.
+       * </pre>
+       *
+       * <code>int32 volume = 5;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearVolume() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        volume_ = 0;
+        onChanged();
+        return this;
+      }
+
       // @@protoc_insertion_point(builder_scope:chirp.voice.SpeakingNotify)
     }
 
@@ -20441,6 +21530,5757 @@ java.lang.String defaultValue) {
 
     @java.lang.Override
     public chirp.voice.Voice.SpeakingNotify getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  public interface SetMicModeRequestOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.voice.SetMicModeRequest)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <pre>
+     * the host
+     * </pre>
+     *
+     * <code>string user_id = 1;</code>
+     * @return The userId.
+     */
+    java.lang.String getUserId();
+    /**
+     * <pre>
+     * the host
+     * </pre>
+     *
+     * <code>string user_id = 1;</code>
+     * @return The bytes for userId.
+     */
+    com.google.protobuf.ByteString
+        getUserIdBytes();
+
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The roomId.
+     */
+    java.lang.String getRoomId();
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The bytes for roomId.
+     */
+    com.google.protobuf.ByteString
+        getRoomIdBytes();
+
+    /**
+     * <code>.chirp.voice.MicMode mode = 3;</code>
+     * @return The enum numeric value on the wire for mode.
+     */
+    int getModeValue();
+    /**
+     * <code>.chirp.voice.MicMode mode = 3;</code>
+     * @return The mode.
+     */
+    chirp.voice.Voice.MicMode getMode();
+  }
+  /**
+   * <pre>
+   * Set the room's speaking mode (host only).
+   * </pre>
+   *
+   * Protobuf type {@code chirp.voice.SetMicModeRequest}
+   */
+  public static final class SetMicModeRequest extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.voice.SetMicModeRequest)
+      SetMicModeRequestOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "SetMicModeRequest");
+    }
+    // Use SetMicModeRequest.newBuilder() to construct.
+    private SetMicModeRequest(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private SetMicModeRequest() {
+      userId_ = "";
+      roomId_ = "";
+      mode_ = 0;
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.voice.Voice.internal_static_chirp_voice_SetMicModeRequest_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.voice.Voice.internal_static_chirp_voice_SetMicModeRequest_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.voice.Voice.SetMicModeRequest.class, chirp.voice.Voice.SetMicModeRequest.Builder.class);
+    }
+
+    public static final int USER_ID_FIELD_NUMBER = 1;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object userId_ = "";
+    /**
+     * <pre>
+     * the host
+     * </pre>
+     *
+     * <code>string user_id = 1;</code>
+     * @return The userId.
+     */
+    @java.lang.Override
+    public java.lang.String getUserId() {
+      java.lang.Object ref = userId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        userId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * the host
+     * </pre>
+     *
+     * <code>string user_id = 1;</code>
+     * @return The bytes for userId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getUserIdBytes() {
+      java.lang.Object ref = userId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        userId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int ROOM_ID_FIELD_NUMBER = 2;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object roomId_ = "";
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The roomId.
+     */
+    @java.lang.Override
+    public java.lang.String getRoomId() {
+      java.lang.Object ref = roomId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        roomId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The bytes for roomId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getRoomIdBytes() {
+      java.lang.Object ref = roomId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        roomId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int MODE_FIELD_NUMBER = 3;
+    private int mode_ = 0;
+    /**
+     * <code>.chirp.voice.MicMode mode = 3;</code>
+     * @return The enum numeric value on the wire for mode.
+     */
+    @java.lang.Override public int getModeValue() {
+      return mode_;
+    }
+    /**
+     * <code>.chirp.voice.MicMode mode = 3;</code>
+     * @return The mode.
+     */
+    @java.lang.Override public chirp.voice.Voice.MicMode getMode() {
+      chirp.voice.Voice.MicMode result = chirp.voice.Voice.MicMode.forNumber(mode_);
+      return result == null ? chirp.voice.Voice.MicMode.UNRECOGNIZED : result;
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(userId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 1, userId_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(roomId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 2, roomId_);
+      }
+      if (mode_ != chirp.voice.Voice.MicMode.MIC_FREE.getNumber()) {
+        output.writeEnum(3, mode_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(userId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(1, userId_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(roomId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(2, roomId_);
+      }
+      if (mode_ != chirp.voice.Voice.MicMode.MIC_FREE.getNumber()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(3, mode_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.voice.Voice.SetMicModeRequest)) {
+        return super.equals(obj);
+      }
+      chirp.voice.Voice.SetMicModeRequest other = (chirp.voice.Voice.SetMicModeRequest) obj;
+
+      if (!getUserId()
+          .equals(other.getUserId())) return false;
+      if (!getRoomId()
+          .equals(other.getRoomId())) return false;
+      if (mode_ != other.mode_) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + USER_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getUserId().hashCode();
+      hash = (37 * hash) + ROOM_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getRoomId().hashCode();
+      hash = (37 * hash) + MODE_FIELD_NUMBER;
+      hash = (53 * hash) + mode_;
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.voice.Voice.SetMicModeRequest parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.SetMicModeRequest parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.SetMicModeRequest parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.SetMicModeRequest parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.SetMicModeRequest parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.SetMicModeRequest parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.SetMicModeRequest parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.voice.Voice.SetMicModeRequest parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.voice.Voice.SetMicModeRequest parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.voice.Voice.SetMicModeRequest parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.voice.Voice.SetMicModeRequest parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.voice.Voice.SetMicModeRequest parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.voice.Voice.SetMicModeRequest prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * <pre>
+     * Set the room's speaking mode (host only).
+     * </pre>
+     *
+     * Protobuf type {@code chirp.voice.SetMicModeRequest}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.voice.SetMicModeRequest)
+        chirp.voice.Voice.SetMicModeRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.voice.Voice.internal_static_chirp_voice_SetMicModeRequest_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.voice.Voice.internal_static_chirp_voice_SetMicModeRequest_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.voice.Voice.SetMicModeRequest.class, chirp.voice.Voice.SetMicModeRequest.Builder.class);
+      }
+
+      // Construct using chirp.voice.Voice.SetMicModeRequest.newBuilder()
+      private Builder() {
+
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        userId_ = "";
+        roomId_ = "";
+        mode_ = 0;
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.voice.Voice.internal_static_chirp_voice_SetMicModeRequest_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.SetMicModeRequest getDefaultInstanceForType() {
+        return chirp.voice.Voice.SetMicModeRequest.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.SetMicModeRequest build() {
+        chirp.voice.Voice.SetMicModeRequest result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.SetMicModeRequest buildPartial() {
+        chirp.voice.Voice.SetMicModeRequest result = new chirp.voice.Voice.SetMicModeRequest(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.voice.Voice.SetMicModeRequest result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.userId_ = userId_;
+        }
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.roomId_ = roomId_;
+        }
+        if (((from_bitField0_ & 0x00000004) != 0)) {
+          result.mode_ = mode_;
+        }
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.voice.Voice.SetMicModeRequest) {
+          return mergeFrom((chirp.voice.Voice.SetMicModeRequest)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.voice.Voice.SetMicModeRequest other) {
+        if (other == chirp.voice.Voice.SetMicModeRequest.getDefaultInstance()) return this;
+        if (!other.getUserId().isEmpty()) {
+          userId_ = other.userId_;
+          bitField0_ |= 0x00000001;
+          onChanged();
+        }
+        if (!other.getRoomId().isEmpty()) {
+          roomId_ = other.roomId_;
+          bitField0_ |= 0x00000002;
+          onChanged();
+        }
+        if (other.mode_ != 0) {
+          setModeValue(other.getModeValue());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 10: {
+                userId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 10
+              case 18: {
+                roomId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000002;
+                break;
+              } // case 18
+              case 24: {
+                mode_ = input.readEnum();
+                bitField0_ |= 0x00000004;
+                break;
+              } // case 24
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private java.lang.Object userId_ = "";
+      /**
+       * <pre>
+       * the host
+       * </pre>
+       *
+       * <code>string user_id = 1;</code>
+       * @return The userId.
+       */
+      public java.lang.String getUserId() {
+        java.lang.Object ref = userId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          userId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * the host
+       * </pre>
+       *
+       * <code>string user_id = 1;</code>
+       * @return The bytes for userId.
+       */
+      public com.google.protobuf.ByteString
+          getUserIdBytes() {
+        java.lang.Object ref = userId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          userId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * the host
+       * </pre>
+       *
+       * <code>string user_id = 1;</code>
+       * @param value The userId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setUserId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        userId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * the host
+       * </pre>
+       *
+       * <code>string user_id = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearUserId() {
+        userId_ = getDefaultInstance().getUserId();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * the host
+       * </pre>
+       *
+       * <code>string user_id = 1;</code>
+       * @param value The bytes for userId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setUserIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        userId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object roomId_ = "";
+      /**
+       * <code>string room_id = 2;</code>
+       * @return The roomId.
+       */
+      public java.lang.String getRoomId() {
+        java.lang.Object ref = roomId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          roomId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @return The bytes for roomId.
+       */
+      public com.google.protobuf.ByteString
+          getRoomIdBytes() {
+        java.lang.Object ref = roomId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          roomId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @param value The roomId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setRoomId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        roomId_ = value;
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearRoomId() {
+        roomId_ = getDefaultInstance().getRoomId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @param value The bytes for roomId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setRoomIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        roomId_ = value;
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+
+      private int mode_ = 0;
+      /**
+       * <code>.chirp.voice.MicMode mode = 3;</code>
+       * @return The enum numeric value on the wire for mode.
+       */
+      @java.lang.Override public int getModeValue() {
+        return mode_;
+      }
+      /**
+       * <code>.chirp.voice.MicMode mode = 3;</code>
+       * @param value The enum numeric value on the wire for mode to set.
+       * @return This builder for chaining.
+       */
+      public Builder setModeValue(int value) {
+        mode_ = value;
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.voice.MicMode mode = 3;</code>
+       * @return The mode.
+       */
+      @java.lang.Override
+      public chirp.voice.Voice.MicMode getMode() {
+        chirp.voice.Voice.MicMode result = chirp.voice.Voice.MicMode.forNumber(mode_);
+        return result == null ? chirp.voice.Voice.MicMode.UNRECOGNIZED : result;
+      }
+      /**
+       * <code>.chirp.voice.MicMode mode = 3;</code>
+       * @param value The mode to set.
+       * @return This builder for chaining.
+       */
+      public Builder setMode(chirp.voice.Voice.MicMode value) {
+        if (value == null) { throw new NullPointerException(); }
+        bitField0_ |= 0x00000004;
+        mode_ = value.getNumber();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.voice.MicMode mode = 3;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearMode() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        mode_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.voice.SetMicModeRequest)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.voice.SetMicModeRequest)
+    private static final chirp.voice.Voice.SetMicModeRequest DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.voice.Voice.SetMicModeRequest();
+    }
+
+    public static chirp.voice.Voice.SetMicModeRequest getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<SetMicModeRequest>
+        PARSER = new com.google.protobuf.AbstractParser<SetMicModeRequest>() {
+      @java.lang.Override
+      public SetMicModeRequest parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<SetMicModeRequest> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<SetMicModeRequest> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.voice.Voice.SetMicModeRequest getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  public interface MicQueueApplyRequestOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.voice.MicQueueApplyRequest)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>string user_id = 1;</code>
+     * @return The userId.
+     */
+    java.lang.String getUserId();
+    /**
+     * <code>string user_id = 1;</code>
+     * @return The bytes for userId.
+     */
+    com.google.protobuf.ByteString
+        getUserIdBytes();
+
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The roomId.
+     */
+    java.lang.String getRoomId();
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The bytes for roomId.
+     */
+    com.google.protobuf.ByteString
+        getRoomIdBytes();
+  }
+  /**
+   * <pre>
+   * Apply for the mic (managed mode): joins the FIFO queue.
+   * </pre>
+   *
+   * Protobuf type {@code chirp.voice.MicQueueApplyRequest}
+   */
+  public static final class MicQueueApplyRequest extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.voice.MicQueueApplyRequest)
+      MicQueueApplyRequestOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "MicQueueApplyRequest");
+    }
+    // Use MicQueueApplyRequest.newBuilder() to construct.
+    private MicQueueApplyRequest(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private MicQueueApplyRequest() {
+      userId_ = "";
+      roomId_ = "";
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.voice.Voice.internal_static_chirp_voice_MicQueueApplyRequest_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.voice.Voice.internal_static_chirp_voice_MicQueueApplyRequest_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.voice.Voice.MicQueueApplyRequest.class, chirp.voice.Voice.MicQueueApplyRequest.Builder.class);
+    }
+
+    public static final int USER_ID_FIELD_NUMBER = 1;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object userId_ = "";
+    /**
+     * <code>string user_id = 1;</code>
+     * @return The userId.
+     */
+    @java.lang.Override
+    public java.lang.String getUserId() {
+      java.lang.Object ref = userId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        userId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string user_id = 1;</code>
+     * @return The bytes for userId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getUserIdBytes() {
+      java.lang.Object ref = userId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        userId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int ROOM_ID_FIELD_NUMBER = 2;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object roomId_ = "";
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The roomId.
+     */
+    @java.lang.Override
+    public java.lang.String getRoomId() {
+      java.lang.Object ref = roomId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        roomId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The bytes for roomId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getRoomIdBytes() {
+      java.lang.Object ref = roomId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        roomId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(userId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 1, userId_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(roomId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 2, roomId_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(userId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(1, userId_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(roomId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(2, roomId_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.voice.Voice.MicQueueApplyRequest)) {
+        return super.equals(obj);
+      }
+      chirp.voice.Voice.MicQueueApplyRequest other = (chirp.voice.Voice.MicQueueApplyRequest) obj;
+
+      if (!getUserId()
+          .equals(other.getUserId())) return false;
+      if (!getRoomId()
+          .equals(other.getRoomId())) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + USER_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getUserId().hashCode();
+      hash = (37 * hash) + ROOM_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getRoomId().hashCode();
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.voice.Voice.MicQueueApplyRequest parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.MicQueueApplyRequest parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueApplyRequest parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.MicQueueApplyRequest parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueApplyRequest parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.MicQueueApplyRequest parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueApplyRequest parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.voice.Voice.MicQueueApplyRequest parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.voice.Voice.MicQueueApplyRequest parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.voice.Voice.MicQueueApplyRequest parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueApplyRequest parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.voice.Voice.MicQueueApplyRequest parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.voice.Voice.MicQueueApplyRequest prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * <pre>
+     * Apply for the mic (managed mode): joins the FIFO queue.
+     * </pre>
+     *
+     * Protobuf type {@code chirp.voice.MicQueueApplyRequest}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.voice.MicQueueApplyRequest)
+        chirp.voice.Voice.MicQueueApplyRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.voice.Voice.internal_static_chirp_voice_MicQueueApplyRequest_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.voice.Voice.internal_static_chirp_voice_MicQueueApplyRequest_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.voice.Voice.MicQueueApplyRequest.class, chirp.voice.Voice.MicQueueApplyRequest.Builder.class);
+      }
+
+      // Construct using chirp.voice.Voice.MicQueueApplyRequest.newBuilder()
+      private Builder() {
+
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        userId_ = "";
+        roomId_ = "";
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.voice.Voice.internal_static_chirp_voice_MicQueueApplyRequest_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.MicQueueApplyRequest getDefaultInstanceForType() {
+        return chirp.voice.Voice.MicQueueApplyRequest.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.MicQueueApplyRequest build() {
+        chirp.voice.Voice.MicQueueApplyRequest result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.MicQueueApplyRequest buildPartial() {
+        chirp.voice.Voice.MicQueueApplyRequest result = new chirp.voice.Voice.MicQueueApplyRequest(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.voice.Voice.MicQueueApplyRequest result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.userId_ = userId_;
+        }
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.roomId_ = roomId_;
+        }
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.voice.Voice.MicQueueApplyRequest) {
+          return mergeFrom((chirp.voice.Voice.MicQueueApplyRequest)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.voice.Voice.MicQueueApplyRequest other) {
+        if (other == chirp.voice.Voice.MicQueueApplyRequest.getDefaultInstance()) return this;
+        if (!other.getUserId().isEmpty()) {
+          userId_ = other.userId_;
+          bitField0_ |= 0x00000001;
+          onChanged();
+        }
+        if (!other.getRoomId().isEmpty()) {
+          roomId_ = other.roomId_;
+          bitField0_ |= 0x00000002;
+          onChanged();
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 10: {
+                userId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 10
+              case 18: {
+                roomId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000002;
+                break;
+              } // case 18
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private java.lang.Object userId_ = "";
+      /**
+       * <code>string user_id = 1;</code>
+       * @return The userId.
+       */
+      public java.lang.String getUserId() {
+        java.lang.Object ref = userId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          userId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string user_id = 1;</code>
+       * @return The bytes for userId.
+       */
+      public com.google.protobuf.ByteString
+          getUserIdBytes() {
+        java.lang.Object ref = userId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          userId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string user_id = 1;</code>
+       * @param value The userId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setUserId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        userId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string user_id = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearUserId() {
+        userId_ = getDefaultInstance().getUserId();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string user_id = 1;</code>
+       * @param value The bytes for userId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setUserIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        userId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object roomId_ = "";
+      /**
+       * <code>string room_id = 2;</code>
+       * @return The roomId.
+       */
+      public java.lang.String getRoomId() {
+        java.lang.Object ref = roomId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          roomId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @return The bytes for roomId.
+       */
+      public com.google.protobuf.ByteString
+          getRoomIdBytes() {
+        java.lang.Object ref = roomId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          roomId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @param value The roomId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setRoomId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        roomId_ = value;
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearRoomId() {
+        roomId_ = getDefaultInstance().getRoomId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @param value The bytes for roomId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setRoomIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        roomId_ = value;
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.voice.MicQueueApplyRequest)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.voice.MicQueueApplyRequest)
+    private static final chirp.voice.Voice.MicQueueApplyRequest DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.voice.Voice.MicQueueApplyRequest();
+    }
+
+    public static chirp.voice.Voice.MicQueueApplyRequest getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<MicQueueApplyRequest>
+        PARSER = new com.google.protobuf.AbstractParser<MicQueueApplyRequest>() {
+      @java.lang.Override
+      public MicQueueApplyRequest parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<MicQueueApplyRequest> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<MicQueueApplyRequest> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.voice.Voice.MicQueueApplyRequest getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  public interface MicQueueApproveRequestOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.voice.MicQueueApproveRequest)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <pre>
+     * the host
+     * </pre>
+     *
+     * <code>string user_id = 1;</code>
+     * @return The userId.
+     */
+    java.lang.String getUserId();
+    /**
+     * <pre>
+     * the host
+     * </pre>
+     *
+     * <code>string user_id = 1;</code>
+     * @return The bytes for userId.
+     */
+    com.google.protobuf.ByteString
+        getUserIdBytes();
+
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The roomId.
+     */
+    java.lang.String getRoomId();
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The bytes for roomId.
+     */
+    com.google.protobuf.ByteString
+        getRoomIdBytes();
+
+    /**
+     * <pre>
+     * empty = queue head
+     * </pre>
+     *
+     * <code>string target_user_id = 3;</code>
+     * @return The targetUserId.
+     */
+    java.lang.String getTargetUserId();
+    /**
+     * <pre>
+     * empty = queue head
+     * </pre>
+     *
+     * <code>string target_user_id = 3;</code>
+     * @return The bytes for targetUserId.
+     */
+    com.google.protobuf.ByteString
+        getTargetUserIdBytes();
+  }
+  /**
+   * <pre>
+   * Host approves the queue head, or a specific applicant.
+   * </pre>
+   *
+   * Protobuf type {@code chirp.voice.MicQueueApproveRequest}
+   */
+  public static final class MicQueueApproveRequest extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.voice.MicQueueApproveRequest)
+      MicQueueApproveRequestOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "MicQueueApproveRequest");
+    }
+    // Use MicQueueApproveRequest.newBuilder() to construct.
+    private MicQueueApproveRequest(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private MicQueueApproveRequest() {
+      userId_ = "";
+      roomId_ = "";
+      targetUserId_ = "";
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.voice.Voice.internal_static_chirp_voice_MicQueueApproveRequest_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.voice.Voice.internal_static_chirp_voice_MicQueueApproveRequest_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.voice.Voice.MicQueueApproveRequest.class, chirp.voice.Voice.MicQueueApproveRequest.Builder.class);
+    }
+
+    public static final int USER_ID_FIELD_NUMBER = 1;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object userId_ = "";
+    /**
+     * <pre>
+     * the host
+     * </pre>
+     *
+     * <code>string user_id = 1;</code>
+     * @return The userId.
+     */
+    @java.lang.Override
+    public java.lang.String getUserId() {
+      java.lang.Object ref = userId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        userId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * the host
+     * </pre>
+     *
+     * <code>string user_id = 1;</code>
+     * @return The bytes for userId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getUserIdBytes() {
+      java.lang.Object ref = userId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        userId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int ROOM_ID_FIELD_NUMBER = 2;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object roomId_ = "";
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The roomId.
+     */
+    @java.lang.Override
+    public java.lang.String getRoomId() {
+      java.lang.Object ref = roomId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        roomId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The bytes for roomId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getRoomIdBytes() {
+      java.lang.Object ref = roomId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        roomId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int TARGET_USER_ID_FIELD_NUMBER = 3;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object targetUserId_ = "";
+    /**
+     * <pre>
+     * empty = queue head
+     * </pre>
+     *
+     * <code>string target_user_id = 3;</code>
+     * @return The targetUserId.
+     */
+    @java.lang.Override
+    public java.lang.String getTargetUserId() {
+      java.lang.Object ref = targetUserId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        targetUserId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * empty = queue head
+     * </pre>
+     *
+     * <code>string target_user_id = 3;</code>
+     * @return The bytes for targetUserId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getTargetUserIdBytes() {
+      java.lang.Object ref = targetUserId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        targetUserId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(userId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 1, userId_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(roomId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 2, roomId_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(targetUserId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 3, targetUserId_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(userId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(1, userId_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(roomId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(2, roomId_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(targetUserId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(3, targetUserId_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.voice.Voice.MicQueueApproveRequest)) {
+        return super.equals(obj);
+      }
+      chirp.voice.Voice.MicQueueApproveRequest other = (chirp.voice.Voice.MicQueueApproveRequest) obj;
+
+      if (!getUserId()
+          .equals(other.getUserId())) return false;
+      if (!getRoomId()
+          .equals(other.getRoomId())) return false;
+      if (!getTargetUserId()
+          .equals(other.getTargetUserId())) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + USER_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getUserId().hashCode();
+      hash = (37 * hash) + ROOM_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getRoomId().hashCode();
+      hash = (37 * hash) + TARGET_USER_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getTargetUserId().hashCode();
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.voice.Voice.MicQueueApproveRequest parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.MicQueueApproveRequest parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueApproveRequest parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.MicQueueApproveRequest parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueApproveRequest parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.MicQueueApproveRequest parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueApproveRequest parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.voice.Voice.MicQueueApproveRequest parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.voice.Voice.MicQueueApproveRequest parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.voice.Voice.MicQueueApproveRequest parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueApproveRequest parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.voice.Voice.MicQueueApproveRequest parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.voice.Voice.MicQueueApproveRequest prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * <pre>
+     * Host approves the queue head, or a specific applicant.
+     * </pre>
+     *
+     * Protobuf type {@code chirp.voice.MicQueueApproveRequest}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.voice.MicQueueApproveRequest)
+        chirp.voice.Voice.MicQueueApproveRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.voice.Voice.internal_static_chirp_voice_MicQueueApproveRequest_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.voice.Voice.internal_static_chirp_voice_MicQueueApproveRequest_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.voice.Voice.MicQueueApproveRequest.class, chirp.voice.Voice.MicQueueApproveRequest.Builder.class);
+      }
+
+      // Construct using chirp.voice.Voice.MicQueueApproveRequest.newBuilder()
+      private Builder() {
+
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        userId_ = "";
+        roomId_ = "";
+        targetUserId_ = "";
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.voice.Voice.internal_static_chirp_voice_MicQueueApproveRequest_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.MicQueueApproveRequest getDefaultInstanceForType() {
+        return chirp.voice.Voice.MicQueueApproveRequest.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.MicQueueApproveRequest build() {
+        chirp.voice.Voice.MicQueueApproveRequest result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.MicQueueApproveRequest buildPartial() {
+        chirp.voice.Voice.MicQueueApproveRequest result = new chirp.voice.Voice.MicQueueApproveRequest(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.voice.Voice.MicQueueApproveRequest result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.userId_ = userId_;
+        }
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.roomId_ = roomId_;
+        }
+        if (((from_bitField0_ & 0x00000004) != 0)) {
+          result.targetUserId_ = targetUserId_;
+        }
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.voice.Voice.MicQueueApproveRequest) {
+          return mergeFrom((chirp.voice.Voice.MicQueueApproveRequest)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.voice.Voice.MicQueueApproveRequest other) {
+        if (other == chirp.voice.Voice.MicQueueApproveRequest.getDefaultInstance()) return this;
+        if (!other.getUserId().isEmpty()) {
+          userId_ = other.userId_;
+          bitField0_ |= 0x00000001;
+          onChanged();
+        }
+        if (!other.getRoomId().isEmpty()) {
+          roomId_ = other.roomId_;
+          bitField0_ |= 0x00000002;
+          onChanged();
+        }
+        if (!other.getTargetUserId().isEmpty()) {
+          targetUserId_ = other.targetUserId_;
+          bitField0_ |= 0x00000004;
+          onChanged();
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 10: {
+                userId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 10
+              case 18: {
+                roomId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000002;
+                break;
+              } // case 18
+              case 26: {
+                targetUserId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000004;
+                break;
+              } // case 26
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private java.lang.Object userId_ = "";
+      /**
+       * <pre>
+       * the host
+       * </pre>
+       *
+       * <code>string user_id = 1;</code>
+       * @return The userId.
+       */
+      public java.lang.String getUserId() {
+        java.lang.Object ref = userId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          userId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * the host
+       * </pre>
+       *
+       * <code>string user_id = 1;</code>
+       * @return The bytes for userId.
+       */
+      public com.google.protobuf.ByteString
+          getUserIdBytes() {
+        java.lang.Object ref = userId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          userId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * the host
+       * </pre>
+       *
+       * <code>string user_id = 1;</code>
+       * @param value The userId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setUserId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        userId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * the host
+       * </pre>
+       *
+       * <code>string user_id = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearUserId() {
+        userId_ = getDefaultInstance().getUserId();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * the host
+       * </pre>
+       *
+       * <code>string user_id = 1;</code>
+       * @param value The bytes for userId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setUserIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        userId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object roomId_ = "";
+      /**
+       * <code>string room_id = 2;</code>
+       * @return The roomId.
+       */
+      public java.lang.String getRoomId() {
+        java.lang.Object ref = roomId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          roomId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @return The bytes for roomId.
+       */
+      public com.google.protobuf.ByteString
+          getRoomIdBytes() {
+        java.lang.Object ref = roomId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          roomId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @param value The roomId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setRoomId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        roomId_ = value;
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearRoomId() {
+        roomId_ = getDefaultInstance().getRoomId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @param value The bytes for roomId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setRoomIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        roomId_ = value;
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object targetUserId_ = "";
+      /**
+       * <pre>
+       * empty = queue head
+       * </pre>
+       *
+       * <code>string target_user_id = 3;</code>
+       * @return The targetUserId.
+       */
+      public java.lang.String getTargetUserId() {
+        java.lang.Object ref = targetUserId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          targetUserId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * empty = queue head
+       * </pre>
+       *
+       * <code>string target_user_id = 3;</code>
+       * @return The bytes for targetUserId.
+       */
+      public com.google.protobuf.ByteString
+          getTargetUserIdBytes() {
+        java.lang.Object ref = targetUserId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          targetUserId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * empty = queue head
+       * </pre>
+       *
+       * <code>string target_user_id = 3;</code>
+       * @param value The targetUserId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setTargetUserId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        targetUserId_ = value;
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * empty = queue head
+       * </pre>
+       *
+       * <code>string target_user_id = 3;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearTargetUserId() {
+        targetUserId_ = getDefaultInstance().getTargetUserId();
+        bitField0_ = (bitField0_ & ~0x00000004);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * empty = queue head
+       * </pre>
+       *
+       * <code>string target_user_id = 3;</code>
+       * @param value The bytes for targetUserId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setTargetUserIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        targetUserId_ = value;
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.voice.MicQueueApproveRequest)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.voice.MicQueueApproveRequest)
+    private static final chirp.voice.Voice.MicQueueApproveRequest DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.voice.Voice.MicQueueApproveRequest();
+    }
+
+    public static chirp.voice.Voice.MicQueueApproveRequest getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<MicQueueApproveRequest>
+        PARSER = new com.google.protobuf.AbstractParser<MicQueueApproveRequest>() {
+      @java.lang.Override
+      public MicQueueApproveRequest parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<MicQueueApproveRequest> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<MicQueueApproveRequest> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.voice.Voice.MicQueueApproveRequest getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  public interface MicQueueReleaseRequestOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.voice.MicQueueReleaseRequest)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>string user_id = 1;</code>
+     * @return The userId.
+     */
+    java.lang.String getUserId();
+    /**
+     * <code>string user_id = 1;</code>
+     * @return The bytes for userId.
+     */
+    com.google.protobuf.ByteString
+        getUserIdBytes();
+
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The roomId.
+     */
+    java.lang.String getRoomId();
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The bytes for roomId.
+     */
+    com.google.protobuf.ByteString
+        getRoomIdBytes();
+  }
+  /**
+   * <pre>
+   * The holder (or the host) releases the mic (下麦).
+   * </pre>
+   *
+   * Protobuf type {@code chirp.voice.MicQueueReleaseRequest}
+   */
+  public static final class MicQueueReleaseRequest extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.voice.MicQueueReleaseRequest)
+      MicQueueReleaseRequestOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "MicQueueReleaseRequest");
+    }
+    // Use MicQueueReleaseRequest.newBuilder() to construct.
+    private MicQueueReleaseRequest(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private MicQueueReleaseRequest() {
+      userId_ = "";
+      roomId_ = "";
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.voice.Voice.internal_static_chirp_voice_MicQueueReleaseRequest_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.voice.Voice.internal_static_chirp_voice_MicQueueReleaseRequest_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.voice.Voice.MicQueueReleaseRequest.class, chirp.voice.Voice.MicQueueReleaseRequest.Builder.class);
+    }
+
+    public static final int USER_ID_FIELD_NUMBER = 1;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object userId_ = "";
+    /**
+     * <code>string user_id = 1;</code>
+     * @return The userId.
+     */
+    @java.lang.Override
+    public java.lang.String getUserId() {
+      java.lang.Object ref = userId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        userId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string user_id = 1;</code>
+     * @return The bytes for userId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getUserIdBytes() {
+      java.lang.Object ref = userId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        userId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int ROOM_ID_FIELD_NUMBER = 2;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object roomId_ = "";
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The roomId.
+     */
+    @java.lang.Override
+    public java.lang.String getRoomId() {
+      java.lang.Object ref = roomId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        roomId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The bytes for roomId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getRoomIdBytes() {
+      java.lang.Object ref = roomId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        roomId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(userId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 1, userId_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(roomId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 2, roomId_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(userId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(1, userId_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(roomId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(2, roomId_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.voice.Voice.MicQueueReleaseRequest)) {
+        return super.equals(obj);
+      }
+      chirp.voice.Voice.MicQueueReleaseRequest other = (chirp.voice.Voice.MicQueueReleaseRequest) obj;
+
+      if (!getUserId()
+          .equals(other.getUserId())) return false;
+      if (!getRoomId()
+          .equals(other.getRoomId())) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + USER_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getUserId().hashCode();
+      hash = (37 * hash) + ROOM_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getRoomId().hashCode();
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.voice.Voice.MicQueueReleaseRequest parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.MicQueueReleaseRequest parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueReleaseRequest parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.MicQueueReleaseRequest parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueReleaseRequest parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.MicQueueReleaseRequest parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueReleaseRequest parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.voice.Voice.MicQueueReleaseRequest parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.voice.Voice.MicQueueReleaseRequest parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.voice.Voice.MicQueueReleaseRequest parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueReleaseRequest parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.voice.Voice.MicQueueReleaseRequest parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.voice.Voice.MicQueueReleaseRequest prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * <pre>
+     * The holder (or the host) releases the mic (下麦).
+     * </pre>
+     *
+     * Protobuf type {@code chirp.voice.MicQueueReleaseRequest}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.voice.MicQueueReleaseRequest)
+        chirp.voice.Voice.MicQueueReleaseRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.voice.Voice.internal_static_chirp_voice_MicQueueReleaseRequest_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.voice.Voice.internal_static_chirp_voice_MicQueueReleaseRequest_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.voice.Voice.MicQueueReleaseRequest.class, chirp.voice.Voice.MicQueueReleaseRequest.Builder.class);
+      }
+
+      // Construct using chirp.voice.Voice.MicQueueReleaseRequest.newBuilder()
+      private Builder() {
+
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        userId_ = "";
+        roomId_ = "";
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.voice.Voice.internal_static_chirp_voice_MicQueueReleaseRequest_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.MicQueueReleaseRequest getDefaultInstanceForType() {
+        return chirp.voice.Voice.MicQueueReleaseRequest.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.MicQueueReleaseRequest build() {
+        chirp.voice.Voice.MicQueueReleaseRequest result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.MicQueueReleaseRequest buildPartial() {
+        chirp.voice.Voice.MicQueueReleaseRequest result = new chirp.voice.Voice.MicQueueReleaseRequest(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.voice.Voice.MicQueueReleaseRequest result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.userId_ = userId_;
+        }
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.roomId_ = roomId_;
+        }
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.voice.Voice.MicQueueReleaseRequest) {
+          return mergeFrom((chirp.voice.Voice.MicQueueReleaseRequest)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.voice.Voice.MicQueueReleaseRequest other) {
+        if (other == chirp.voice.Voice.MicQueueReleaseRequest.getDefaultInstance()) return this;
+        if (!other.getUserId().isEmpty()) {
+          userId_ = other.userId_;
+          bitField0_ |= 0x00000001;
+          onChanged();
+        }
+        if (!other.getRoomId().isEmpty()) {
+          roomId_ = other.roomId_;
+          bitField0_ |= 0x00000002;
+          onChanged();
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 10: {
+                userId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 10
+              case 18: {
+                roomId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000002;
+                break;
+              } // case 18
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private java.lang.Object userId_ = "";
+      /**
+       * <code>string user_id = 1;</code>
+       * @return The userId.
+       */
+      public java.lang.String getUserId() {
+        java.lang.Object ref = userId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          userId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string user_id = 1;</code>
+       * @return The bytes for userId.
+       */
+      public com.google.protobuf.ByteString
+          getUserIdBytes() {
+        java.lang.Object ref = userId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          userId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string user_id = 1;</code>
+       * @param value The userId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setUserId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        userId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string user_id = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearUserId() {
+        userId_ = getDefaultInstance().getUserId();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string user_id = 1;</code>
+       * @param value The bytes for userId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setUserIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        userId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object roomId_ = "";
+      /**
+       * <code>string room_id = 2;</code>
+       * @return The roomId.
+       */
+      public java.lang.String getRoomId() {
+        java.lang.Object ref = roomId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          roomId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @return The bytes for roomId.
+       */
+      public com.google.protobuf.ByteString
+          getRoomIdBytes() {
+        java.lang.Object ref = roomId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          roomId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @param value The roomId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setRoomId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        roomId_ = value;
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearRoomId() {
+        roomId_ = getDefaultInstance().getRoomId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @param value The bytes for roomId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setRoomIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        roomId_ = value;
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.voice.MicQueueReleaseRequest)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.voice.MicQueueReleaseRequest)
+    private static final chirp.voice.Voice.MicQueueReleaseRequest DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.voice.Voice.MicQueueReleaseRequest();
+    }
+
+    public static chirp.voice.Voice.MicQueueReleaseRequest getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<MicQueueReleaseRequest>
+        PARSER = new com.google.protobuf.AbstractParser<MicQueueReleaseRequest>() {
+      @java.lang.Override
+      public MicQueueReleaseRequest parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<MicQueueReleaseRequest> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<MicQueueReleaseRequest> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.voice.Voice.MicQueueReleaseRequest getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  public interface MicQueueGrantRequestOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.voice.MicQueueGrantRequest)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <pre>
+     * the host
+     * </pre>
+     *
+     * <code>string user_id = 1;</code>
+     * @return The userId.
+     */
+    java.lang.String getUserId();
+    /**
+     * <pre>
+     * the host
+     * </pre>
+     *
+     * <code>string user_id = 1;</code>
+     * @return The bytes for userId.
+     */
+    com.google.protobuf.ByteString
+        getUserIdBytes();
+
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The roomId.
+     */
+    java.lang.String getRoomId();
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The bytes for roomId.
+     */
+    com.google.protobuf.ByteString
+        getRoomIdBytes();
+
+    /**
+     * <code>string target_user_id = 3;</code>
+     * @return The targetUserId.
+     */
+    java.lang.String getTargetUserId();
+    /**
+     * <code>string target_user_id = 3;</code>
+     * @return The bytes for targetUserId.
+     */
+    com.google.protobuf.ByteString
+        getTargetUserIdBytes();
+  }
+  /**
+   * <pre>
+   * Host hands the mic straight to a member (切麦), bypassing the queue.
+   * </pre>
+   *
+   * Protobuf type {@code chirp.voice.MicQueueGrantRequest}
+   */
+  public static final class MicQueueGrantRequest extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.voice.MicQueueGrantRequest)
+      MicQueueGrantRequestOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "MicQueueGrantRequest");
+    }
+    // Use MicQueueGrantRequest.newBuilder() to construct.
+    private MicQueueGrantRequest(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private MicQueueGrantRequest() {
+      userId_ = "";
+      roomId_ = "";
+      targetUserId_ = "";
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.voice.Voice.internal_static_chirp_voice_MicQueueGrantRequest_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.voice.Voice.internal_static_chirp_voice_MicQueueGrantRequest_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.voice.Voice.MicQueueGrantRequest.class, chirp.voice.Voice.MicQueueGrantRequest.Builder.class);
+    }
+
+    public static final int USER_ID_FIELD_NUMBER = 1;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object userId_ = "";
+    /**
+     * <pre>
+     * the host
+     * </pre>
+     *
+     * <code>string user_id = 1;</code>
+     * @return The userId.
+     */
+    @java.lang.Override
+    public java.lang.String getUserId() {
+      java.lang.Object ref = userId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        userId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * the host
+     * </pre>
+     *
+     * <code>string user_id = 1;</code>
+     * @return The bytes for userId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getUserIdBytes() {
+      java.lang.Object ref = userId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        userId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int ROOM_ID_FIELD_NUMBER = 2;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object roomId_ = "";
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The roomId.
+     */
+    @java.lang.Override
+    public java.lang.String getRoomId() {
+      java.lang.Object ref = roomId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        roomId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string room_id = 2;</code>
+     * @return The bytes for roomId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getRoomIdBytes() {
+      java.lang.Object ref = roomId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        roomId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int TARGET_USER_ID_FIELD_NUMBER = 3;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object targetUserId_ = "";
+    /**
+     * <code>string target_user_id = 3;</code>
+     * @return The targetUserId.
+     */
+    @java.lang.Override
+    public java.lang.String getTargetUserId() {
+      java.lang.Object ref = targetUserId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        targetUserId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string target_user_id = 3;</code>
+     * @return The bytes for targetUserId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getTargetUserIdBytes() {
+      java.lang.Object ref = targetUserId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        targetUserId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(userId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 1, userId_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(roomId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 2, roomId_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(targetUserId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 3, targetUserId_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(userId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(1, userId_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(roomId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(2, roomId_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(targetUserId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(3, targetUserId_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.voice.Voice.MicQueueGrantRequest)) {
+        return super.equals(obj);
+      }
+      chirp.voice.Voice.MicQueueGrantRequest other = (chirp.voice.Voice.MicQueueGrantRequest) obj;
+
+      if (!getUserId()
+          .equals(other.getUserId())) return false;
+      if (!getRoomId()
+          .equals(other.getRoomId())) return false;
+      if (!getTargetUserId()
+          .equals(other.getTargetUserId())) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + USER_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getUserId().hashCode();
+      hash = (37 * hash) + ROOM_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getRoomId().hashCode();
+      hash = (37 * hash) + TARGET_USER_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getTargetUserId().hashCode();
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.voice.Voice.MicQueueGrantRequest parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.MicQueueGrantRequest parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueGrantRequest parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.MicQueueGrantRequest parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueGrantRequest parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.MicQueueGrantRequest parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueGrantRequest parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.voice.Voice.MicQueueGrantRequest parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.voice.Voice.MicQueueGrantRequest parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.voice.Voice.MicQueueGrantRequest parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueGrantRequest parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.voice.Voice.MicQueueGrantRequest parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.voice.Voice.MicQueueGrantRequest prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * <pre>
+     * Host hands the mic straight to a member (切麦), bypassing the queue.
+     * </pre>
+     *
+     * Protobuf type {@code chirp.voice.MicQueueGrantRequest}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.voice.MicQueueGrantRequest)
+        chirp.voice.Voice.MicQueueGrantRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.voice.Voice.internal_static_chirp_voice_MicQueueGrantRequest_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.voice.Voice.internal_static_chirp_voice_MicQueueGrantRequest_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.voice.Voice.MicQueueGrantRequest.class, chirp.voice.Voice.MicQueueGrantRequest.Builder.class);
+      }
+
+      // Construct using chirp.voice.Voice.MicQueueGrantRequest.newBuilder()
+      private Builder() {
+
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        userId_ = "";
+        roomId_ = "";
+        targetUserId_ = "";
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.voice.Voice.internal_static_chirp_voice_MicQueueGrantRequest_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.MicQueueGrantRequest getDefaultInstanceForType() {
+        return chirp.voice.Voice.MicQueueGrantRequest.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.MicQueueGrantRequest build() {
+        chirp.voice.Voice.MicQueueGrantRequest result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.MicQueueGrantRequest buildPartial() {
+        chirp.voice.Voice.MicQueueGrantRequest result = new chirp.voice.Voice.MicQueueGrantRequest(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.voice.Voice.MicQueueGrantRequest result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.userId_ = userId_;
+        }
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.roomId_ = roomId_;
+        }
+        if (((from_bitField0_ & 0x00000004) != 0)) {
+          result.targetUserId_ = targetUserId_;
+        }
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.voice.Voice.MicQueueGrantRequest) {
+          return mergeFrom((chirp.voice.Voice.MicQueueGrantRequest)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.voice.Voice.MicQueueGrantRequest other) {
+        if (other == chirp.voice.Voice.MicQueueGrantRequest.getDefaultInstance()) return this;
+        if (!other.getUserId().isEmpty()) {
+          userId_ = other.userId_;
+          bitField0_ |= 0x00000001;
+          onChanged();
+        }
+        if (!other.getRoomId().isEmpty()) {
+          roomId_ = other.roomId_;
+          bitField0_ |= 0x00000002;
+          onChanged();
+        }
+        if (!other.getTargetUserId().isEmpty()) {
+          targetUserId_ = other.targetUserId_;
+          bitField0_ |= 0x00000004;
+          onChanged();
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 10: {
+                userId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 10
+              case 18: {
+                roomId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000002;
+                break;
+              } // case 18
+              case 26: {
+                targetUserId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000004;
+                break;
+              } // case 26
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private java.lang.Object userId_ = "";
+      /**
+       * <pre>
+       * the host
+       * </pre>
+       *
+       * <code>string user_id = 1;</code>
+       * @return The userId.
+       */
+      public java.lang.String getUserId() {
+        java.lang.Object ref = userId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          userId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * the host
+       * </pre>
+       *
+       * <code>string user_id = 1;</code>
+       * @return The bytes for userId.
+       */
+      public com.google.protobuf.ByteString
+          getUserIdBytes() {
+        java.lang.Object ref = userId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          userId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * the host
+       * </pre>
+       *
+       * <code>string user_id = 1;</code>
+       * @param value The userId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setUserId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        userId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * the host
+       * </pre>
+       *
+       * <code>string user_id = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearUserId() {
+        userId_ = getDefaultInstance().getUserId();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * the host
+       * </pre>
+       *
+       * <code>string user_id = 1;</code>
+       * @param value The bytes for userId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setUserIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        userId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object roomId_ = "";
+      /**
+       * <code>string room_id = 2;</code>
+       * @return The roomId.
+       */
+      public java.lang.String getRoomId() {
+        java.lang.Object ref = roomId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          roomId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @return The bytes for roomId.
+       */
+      public com.google.protobuf.ByteString
+          getRoomIdBytes() {
+        java.lang.Object ref = roomId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          roomId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @param value The roomId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setRoomId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        roomId_ = value;
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearRoomId() {
+        roomId_ = getDefaultInstance().getRoomId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string room_id = 2;</code>
+       * @param value The bytes for roomId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setRoomIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        roomId_ = value;
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object targetUserId_ = "";
+      /**
+       * <code>string target_user_id = 3;</code>
+       * @return The targetUserId.
+       */
+      public java.lang.String getTargetUserId() {
+        java.lang.Object ref = targetUserId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          targetUserId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string target_user_id = 3;</code>
+       * @return The bytes for targetUserId.
+       */
+      public com.google.protobuf.ByteString
+          getTargetUserIdBytes() {
+        java.lang.Object ref = targetUserId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          targetUserId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string target_user_id = 3;</code>
+       * @param value The targetUserId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setTargetUserId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        targetUserId_ = value;
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string target_user_id = 3;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearTargetUserId() {
+        targetUserId_ = getDefaultInstance().getTargetUserId();
+        bitField0_ = (bitField0_ & ~0x00000004);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string target_user_id = 3;</code>
+       * @param value The bytes for targetUserId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setTargetUserIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        targetUserId_ = value;
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.voice.MicQueueGrantRequest)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.voice.MicQueueGrantRequest)
+    private static final chirp.voice.Voice.MicQueueGrantRequest DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.voice.Voice.MicQueueGrantRequest();
+    }
+
+    public static chirp.voice.Voice.MicQueueGrantRequest getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<MicQueueGrantRequest>
+        PARSER = new com.google.protobuf.AbstractParser<MicQueueGrantRequest>() {
+      @java.lang.Override
+      public MicQueueGrantRequest parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<MicQueueGrantRequest> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<MicQueueGrantRequest> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.voice.Voice.MicQueueGrantRequest getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  public interface MicQueueResponseOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.voice.MicQueueResponse)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>.chirp.common.ErrorCode code = 1;</code>
+     * @return The enum numeric value on the wire for code.
+     */
+    int getCodeValue();
+    /**
+     * <code>.chirp.common.ErrorCode code = 1;</code>
+     * @return The code.
+     */
+    chirp.common.Common.ErrorCode getCode();
+
+    /**
+     * <code>int64 server_time = 2;</code>
+     * @return The serverTime.
+     */
+    long getServerTime();
+
+    /**
+     * <pre>
+     * holder after the op
+     * </pre>
+     *
+     * <code>string holder_user_id = 3;</code>
+     * @return The holderUserId.
+     */
+    java.lang.String getHolderUserId();
+    /**
+     * <pre>
+     * holder after the op
+     * </pre>
+     *
+     * <code>string holder_user_id = 3;</code>
+     * @return The bytes for holderUserId.
+     */
+    com.google.protobuf.ByteString
+        getHolderUserIdBytes();
+
+    /**
+     * <pre>
+     * waiting applicants after the op
+     * </pre>
+     *
+     * <code>int32 queue_depth = 4;</code>
+     * @return The queueDepth.
+     */
+    int getQueueDepth();
+  }
+  /**
+   * <pre>
+   * Shared ack for the speaking-queue operations.
+   * </pre>
+   *
+   * Protobuf type {@code chirp.voice.MicQueueResponse}
+   */
+  public static final class MicQueueResponse extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.voice.MicQueueResponse)
+      MicQueueResponseOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "MicQueueResponse");
+    }
+    // Use MicQueueResponse.newBuilder() to construct.
+    private MicQueueResponse(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private MicQueueResponse() {
+      code_ = 0;
+      holderUserId_ = "";
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.voice.Voice.internal_static_chirp_voice_MicQueueResponse_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.voice.Voice.internal_static_chirp_voice_MicQueueResponse_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.voice.Voice.MicQueueResponse.class, chirp.voice.Voice.MicQueueResponse.Builder.class);
+    }
+
+    public static final int CODE_FIELD_NUMBER = 1;
+    private int code_ = 0;
+    /**
+     * <code>.chirp.common.ErrorCode code = 1;</code>
+     * @return The enum numeric value on the wire for code.
+     */
+    @java.lang.Override public int getCodeValue() {
+      return code_;
+    }
+    /**
+     * <code>.chirp.common.ErrorCode code = 1;</code>
+     * @return The code.
+     */
+    @java.lang.Override public chirp.common.Common.ErrorCode getCode() {
+      chirp.common.Common.ErrorCode result = chirp.common.Common.ErrorCode.forNumber(code_);
+      return result == null ? chirp.common.Common.ErrorCode.UNRECOGNIZED : result;
+    }
+
+    public static final int SERVER_TIME_FIELD_NUMBER = 2;
+    private long serverTime_ = 0L;
+    /**
+     * <code>int64 server_time = 2;</code>
+     * @return The serverTime.
+     */
+    @java.lang.Override
+    public long getServerTime() {
+      return serverTime_;
+    }
+
+    public static final int HOLDER_USER_ID_FIELD_NUMBER = 3;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object holderUserId_ = "";
+    /**
+     * <pre>
+     * holder after the op
+     * </pre>
+     *
+     * <code>string holder_user_id = 3;</code>
+     * @return The holderUserId.
+     */
+    @java.lang.Override
+    public java.lang.String getHolderUserId() {
+      java.lang.Object ref = holderUserId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        holderUserId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * holder after the op
+     * </pre>
+     *
+     * <code>string holder_user_id = 3;</code>
+     * @return The bytes for holderUserId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getHolderUserIdBytes() {
+      java.lang.Object ref = holderUserId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        holderUserId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int QUEUE_DEPTH_FIELD_NUMBER = 4;
+    private int queueDepth_ = 0;
+    /**
+     * <pre>
+     * waiting applicants after the op
+     * </pre>
+     *
+     * <code>int32 queue_depth = 4;</code>
+     * @return The queueDepth.
+     */
+    @java.lang.Override
+    public int getQueueDepth() {
+      return queueDepth_;
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (code_ != chirp.common.Common.ErrorCode.OK.getNumber()) {
+        output.writeEnum(1, code_);
+      }
+      if (serverTime_ != 0L) {
+        output.writeInt64(2, serverTime_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(holderUserId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 3, holderUserId_);
+      }
+      if (queueDepth_ != 0) {
+        output.writeInt32(4, queueDepth_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (code_ != chirp.common.Common.ErrorCode.OK.getNumber()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(1, code_);
+      }
+      if (serverTime_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(2, serverTime_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(holderUserId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(3, holderUserId_);
+      }
+      if (queueDepth_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(4, queueDepth_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.voice.Voice.MicQueueResponse)) {
+        return super.equals(obj);
+      }
+      chirp.voice.Voice.MicQueueResponse other = (chirp.voice.Voice.MicQueueResponse) obj;
+
+      if (code_ != other.code_) return false;
+      if (getServerTime()
+          != other.getServerTime()) return false;
+      if (!getHolderUserId()
+          .equals(other.getHolderUserId())) return false;
+      if (getQueueDepth()
+          != other.getQueueDepth()) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + CODE_FIELD_NUMBER;
+      hash = (53 * hash) + code_;
+      hash = (37 * hash) + SERVER_TIME_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getServerTime());
+      hash = (37 * hash) + HOLDER_USER_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getHolderUserId().hashCode();
+      hash = (37 * hash) + QUEUE_DEPTH_FIELD_NUMBER;
+      hash = (53 * hash) + getQueueDepth();
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.voice.Voice.MicQueueResponse parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.MicQueueResponse parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueResponse parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.MicQueueResponse parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueResponse parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.MicQueueResponse parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueResponse parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.voice.Voice.MicQueueResponse parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.voice.Voice.MicQueueResponse parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.voice.Voice.MicQueueResponse parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueResponse parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.voice.Voice.MicQueueResponse parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.voice.Voice.MicQueueResponse prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * <pre>
+     * Shared ack for the speaking-queue operations.
+     * </pre>
+     *
+     * Protobuf type {@code chirp.voice.MicQueueResponse}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.voice.MicQueueResponse)
+        chirp.voice.Voice.MicQueueResponseOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.voice.Voice.internal_static_chirp_voice_MicQueueResponse_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.voice.Voice.internal_static_chirp_voice_MicQueueResponse_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.voice.Voice.MicQueueResponse.class, chirp.voice.Voice.MicQueueResponse.Builder.class);
+      }
+
+      // Construct using chirp.voice.Voice.MicQueueResponse.newBuilder()
+      private Builder() {
+
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        code_ = 0;
+        serverTime_ = 0L;
+        holderUserId_ = "";
+        queueDepth_ = 0;
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.voice.Voice.internal_static_chirp_voice_MicQueueResponse_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.MicQueueResponse getDefaultInstanceForType() {
+        return chirp.voice.Voice.MicQueueResponse.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.MicQueueResponse build() {
+        chirp.voice.Voice.MicQueueResponse result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.MicQueueResponse buildPartial() {
+        chirp.voice.Voice.MicQueueResponse result = new chirp.voice.Voice.MicQueueResponse(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.voice.Voice.MicQueueResponse result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.code_ = code_;
+        }
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.serverTime_ = serverTime_;
+        }
+        if (((from_bitField0_ & 0x00000004) != 0)) {
+          result.holderUserId_ = holderUserId_;
+        }
+        if (((from_bitField0_ & 0x00000008) != 0)) {
+          result.queueDepth_ = queueDepth_;
+        }
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.voice.Voice.MicQueueResponse) {
+          return mergeFrom((chirp.voice.Voice.MicQueueResponse)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.voice.Voice.MicQueueResponse other) {
+        if (other == chirp.voice.Voice.MicQueueResponse.getDefaultInstance()) return this;
+        if (other.code_ != 0) {
+          setCodeValue(other.getCodeValue());
+        }
+        if (other.getServerTime() != 0L) {
+          setServerTime(other.getServerTime());
+        }
+        if (!other.getHolderUserId().isEmpty()) {
+          holderUserId_ = other.holderUserId_;
+          bitField0_ |= 0x00000004;
+          onChanged();
+        }
+        if (other.getQueueDepth() != 0) {
+          setQueueDepth(other.getQueueDepth());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 8: {
+                code_ = input.readEnum();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 8
+              case 16: {
+                serverTime_ = input.readInt64();
+                bitField0_ |= 0x00000002;
+                break;
+              } // case 16
+              case 26: {
+                holderUserId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000004;
+                break;
+              } // case 26
+              case 32: {
+                queueDepth_ = input.readInt32();
+                bitField0_ |= 0x00000008;
+                break;
+              } // case 32
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private int code_ = 0;
+      /**
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @return The enum numeric value on the wire for code.
+       */
+      @java.lang.Override public int getCodeValue() {
+        return code_;
+      }
+      /**
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @param value The enum numeric value on the wire for code to set.
+       * @return This builder for chaining.
+       */
+      public Builder setCodeValue(int value) {
+        code_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @return The code.
+       */
+      @java.lang.Override
+      public chirp.common.Common.ErrorCode getCode() {
+        chirp.common.Common.ErrorCode result = chirp.common.Common.ErrorCode.forNumber(code_);
+        return result == null ? chirp.common.Common.ErrorCode.UNRECOGNIZED : result;
+      }
+      /**
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @param value The code to set.
+       * @return This builder for chaining.
+       */
+      public Builder setCode(chirp.common.Common.ErrorCode value) {
+        if (value == null) { throw new NullPointerException(); }
+        bitField0_ |= 0x00000001;
+        code_ = value.getNumber();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearCode() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        code_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private long serverTime_ ;
+      /**
+       * <code>int64 server_time = 2;</code>
+       * @return The serverTime.
+       */
+      @java.lang.Override
+      public long getServerTime() {
+        return serverTime_;
+      }
+      /**
+       * <code>int64 server_time = 2;</code>
+       * @param value The serverTime to set.
+       * @return This builder for chaining.
+       */
+      public Builder setServerTime(long value) {
+
+        serverTime_ = value;
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>int64 server_time = 2;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearServerTime() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        serverTime_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object holderUserId_ = "";
+      /**
+       * <pre>
+       * holder after the op
+       * </pre>
+       *
+       * <code>string holder_user_id = 3;</code>
+       * @return The holderUserId.
+       */
+      public java.lang.String getHolderUserId() {
+        java.lang.Object ref = holderUserId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          holderUserId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * holder after the op
+       * </pre>
+       *
+       * <code>string holder_user_id = 3;</code>
+       * @return The bytes for holderUserId.
+       */
+      public com.google.protobuf.ByteString
+          getHolderUserIdBytes() {
+        java.lang.Object ref = holderUserId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          holderUserId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * holder after the op
+       * </pre>
+       *
+       * <code>string holder_user_id = 3;</code>
+       * @param value The holderUserId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setHolderUserId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        holderUserId_ = value;
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * holder after the op
+       * </pre>
+       *
+       * <code>string holder_user_id = 3;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearHolderUserId() {
+        holderUserId_ = getDefaultInstance().getHolderUserId();
+        bitField0_ = (bitField0_ & ~0x00000004);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * holder after the op
+       * </pre>
+       *
+       * <code>string holder_user_id = 3;</code>
+       * @param value The bytes for holderUserId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setHolderUserIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        holderUserId_ = value;
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return this;
+      }
+
+      private int queueDepth_ ;
+      /**
+       * <pre>
+       * waiting applicants after the op
+       * </pre>
+       *
+       * <code>int32 queue_depth = 4;</code>
+       * @return The queueDepth.
+       */
+      @java.lang.Override
+      public int getQueueDepth() {
+        return queueDepth_;
+      }
+      /**
+       * <pre>
+       * waiting applicants after the op
+       * </pre>
+       *
+       * <code>int32 queue_depth = 4;</code>
+       * @param value The queueDepth to set.
+       * @return This builder for chaining.
+       */
+      public Builder setQueueDepth(int value) {
+
+        queueDepth_ = value;
+        bitField0_ |= 0x00000008;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * waiting applicants after the op
+       * </pre>
+       *
+       * <code>int32 queue_depth = 4;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearQueueDepth() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        queueDepth_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.voice.MicQueueResponse)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.voice.MicQueueResponse)
+    private static final chirp.voice.Voice.MicQueueResponse DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.voice.Voice.MicQueueResponse();
+    }
+
+    public static chirp.voice.Voice.MicQueueResponse getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<MicQueueResponse>
+        PARSER = new com.google.protobuf.AbstractParser<MicQueueResponse>() {
+      @java.lang.Override
+      public MicQueueResponse parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<MicQueueResponse> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<MicQueueResponse> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.voice.Voice.MicQueueResponse getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  public interface MicQueueStateNotifyOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.voice.MicQueueStateNotify)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>string room_id = 1;</code>
+     * @return The roomId.
+     */
+    java.lang.String getRoomId();
+    /**
+     * <code>string room_id = 1;</code>
+     * @return The bytes for roomId.
+     */
+    com.google.protobuf.ByteString
+        getRoomIdBytes();
+
+    /**
+     * <code>.chirp.voice.MicMode mode = 2;</code>
+     * @return The enum numeric value on the wire for mode.
+     */
+    int getModeValue();
+    /**
+     * <code>.chirp.voice.MicMode mode = 2;</code>
+     * @return The mode.
+     */
+    chirp.voice.Voice.MicMode getMode();
+
+    /**
+     * <code>string holder_user_id = 3;</code>
+     * @return The holderUserId.
+     */
+    java.lang.String getHolderUserId();
+    /**
+     * <code>string holder_user_id = 3;</code>
+     * @return The bytes for holderUserId.
+     */
+    com.google.protobuf.ByteString
+        getHolderUserIdBytes();
+
+    /**
+     * <code>repeated string queue_user_ids = 4;</code>
+     * @return A list containing the queueUserIds.
+     */
+    java.util.List<java.lang.String>
+        getQueueUserIdsList();
+    /**
+     * <code>repeated string queue_user_ids = 4;</code>
+     * @return The count of queueUserIds.
+     */
+    int getQueueUserIdsCount();
+    /**
+     * <code>repeated string queue_user_ids = 4;</code>
+     * @param index The index of the element to return.
+     * @return The queueUserIds at the given index.
+     */
+    java.lang.String getQueueUserIds(int index);
+    /**
+     * <code>repeated string queue_user_ids = 4;</code>
+     * @param index The index of the value to return.
+     * @return The bytes of the queueUserIds at the given index.
+     */
+    com.google.protobuf.ByteString
+        getQueueUserIdsBytes(int index);
+
+    /**
+     * <code>int64 timestamp = 5;</code>
+     * @return The timestamp.
+     */
+    long getTimestamp();
+  }
+  /**
+   * <pre>
+   * Broadcast on every mode/holder/queue change.
+   * </pre>
+   *
+   * Protobuf type {@code chirp.voice.MicQueueStateNotify}
+   */
+  public static final class MicQueueStateNotify extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.voice.MicQueueStateNotify)
+      MicQueueStateNotifyOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "MicQueueStateNotify");
+    }
+    // Use MicQueueStateNotify.newBuilder() to construct.
+    private MicQueueStateNotify(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private MicQueueStateNotify() {
+      roomId_ = "";
+      mode_ = 0;
+      holderUserId_ = "";
+      queueUserIds_ =
+          com.google.protobuf.LazyStringArrayList.emptyList();
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.voice.Voice.internal_static_chirp_voice_MicQueueStateNotify_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.voice.Voice.internal_static_chirp_voice_MicQueueStateNotify_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.voice.Voice.MicQueueStateNotify.class, chirp.voice.Voice.MicQueueStateNotify.Builder.class);
+    }
+
+    public static final int ROOM_ID_FIELD_NUMBER = 1;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object roomId_ = "";
+    /**
+     * <code>string room_id = 1;</code>
+     * @return The roomId.
+     */
+    @java.lang.Override
+    public java.lang.String getRoomId() {
+      java.lang.Object ref = roomId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        roomId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string room_id = 1;</code>
+     * @return The bytes for roomId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getRoomIdBytes() {
+      java.lang.Object ref = roomId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        roomId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int MODE_FIELD_NUMBER = 2;
+    private int mode_ = 0;
+    /**
+     * <code>.chirp.voice.MicMode mode = 2;</code>
+     * @return The enum numeric value on the wire for mode.
+     */
+    @java.lang.Override public int getModeValue() {
+      return mode_;
+    }
+    /**
+     * <code>.chirp.voice.MicMode mode = 2;</code>
+     * @return The mode.
+     */
+    @java.lang.Override public chirp.voice.Voice.MicMode getMode() {
+      chirp.voice.Voice.MicMode result = chirp.voice.Voice.MicMode.forNumber(mode_);
+      return result == null ? chirp.voice.Voice.MicMode.UNRECOGNIZED : result;
+    }
+
+    public static final int HOLDER_USER_ID_FIELD_NUMBER = 3;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object holderUserId_ = "";
+    /**
+     * <code>string holder_user_id = 3;</code>
+     * @return The holderUserId.
+     */
+    @java.lang.Override
+    public java.lang.String getHolderUserId() {
+      java.lang.Object ref = holderUserId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        holderUserId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string holder_user_id = 3;</code>
+     * @return The bytes for holderUserId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getHolderUserIdBytes() {
+      java.lang.Object ref = holderUserId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        holderUserId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int QUEUE_USER_IDS_FIELD_NUMBER = 4;
+    @SuppressWarnings("serial")
+    private com.google.protobuf.LazyStringArrayList queueUserIds_ =
+        com.google.protobuf.LazyStringArrayList.emptyList();
+    /**
+     * <code>repeated string queue_user_ids = 4;</code>
+     * @return A list containing the queueUserIds.
+     */
+    public com.google.protobuf.ProtocolStringList
+        getQueueUserIdsList() {
+      return queueUserIds_;
+    }
+    /**
+     * <code>repeated string queue_user_ids = 4;</code>
+     * @return The count of queueUserIds.
+     */
+    public int getQueueUserIdsCount() {
+      return queueUserIds_.size();
+    }
+    /**
+     * <code>repeated string queue_user_ids = 4;</code>
+     * @param index The index of the element to return.
+     * @return The queueUserIds at the given index.
+     */
+    public java.lang.String getQueueUserIds(int index) {
+      return queueUserIds_.get(index);
+    }
+    /**
+     * <code>repeated string queue_user_ids = 4;</code>
+     * @param index The index of the value to return.
+     * @return The bytes of the queueUserIds at the given index.
+     */
+    public com.google.protobuf.ByteString
+        getQueueUserIdsBytes(int index) {
+      return queueUserIds_.getByteString(index);
+    }
+
+    public static final int TIMESTAMP_FIELD_NUMBER = 5;
+    private long timestamp_ = 0L;
+    /**
+     * <code>int64 timestamp = 5;</code>
+     * @return The timestamp.
+     */
+    @java.lang.Override
+    public long getTimestamp() {
+      return timestamp_;
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(roomId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 1, roomId_);
+      }
+      if (mode_ != chirp.voice.Voice.MicMode.MIC_FREE.getNumber()) {
+        output.writeEnum(2, mode_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(holderUserId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 3, holderUserId_);
+      }
+      for (int i = 0; i < queueUserIds_.size(); i++) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 4, queueUserIds_.getRaw(i));
+      }
+      if (timestamp_ != 0L) {
+        output.writeInt64(5, timestamp_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(roomId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(1, roomId_);
+      }
+      if (mode_ != chirp.voice.Voice.MicMode.MIC_FREE.getNumber()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(2, mode_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(holderUserId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(3, holderUserId_);
+      }
+      {
+        int dataSize = 0;
+        for (int i = 0; i < queueUserIds_.size(); i++) {
+          dataSize += computeStringSizeNoTag(queueUserIds_.getRaw(i));
+        }
+        size += dataSize;
+        size += 1 * getQueueUserIdsList().size();
+      }
+      if (timestamp_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(5, timestamp_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.voice.Voice.MicQueueStateNotify)) {
+        return super.equals(obj);
+      }
+      chirp.voice.Voice.MicQueueStateNotify other = (chirp.voice.Voice.MicQueueStateNotify) obj;
+
+      if (!getRoomId()
+          .equals(other.getRoomId())) return false;
+      if (mode_ != other.mode_) return false;
+      if (!getHolderUserId()
+          .equals(other.getHolderUserId())) return false;
+      if (!getQueueUserIdsList()
+          .equals(other.getQueueUserIdsList())) return false;
+      if (getTimestamp()
+          != other.getTimestamp()) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + ROOM_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getRoomId().hashCode();
+      hash = (37 * hash) + MODE_FIELD_NUMBER;
+      hash = (53 * hash) + mode_;
+      hash = (37 * hash) + HOLDER_USER_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getHolderUserId().hashCode();
+      if (getQueueUserIdsCount() > 0) {
+        hash = (37 * hash) + QUEUE_USER_IDS_FIELD_NUMBER;
+        hash = (53 * hash) + getQueueUserIdsList().hashCode();
+      }
+      hash = (37 * hash) + TIMESTAMP_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getTimestamp());
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.voice.Voice.MicQueueStateNotify parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.MicQueueStateNotify parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueStateNotify parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.MicQueueStateNotify parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueStateNotify parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.voice.Voice.MicQueueStateNotify parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueStateNotify parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.voice.Voice.MicQueueStateNotify parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.voice.Voice.MicQueueStateNotify parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.voice.Voice.MicQueueStateNotify parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.voice.Voice.MicQueueStateNotify parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.voice.Voice.MicQueueStateNotify parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.voice.Voice.MicQueueStateNotify prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * <pre>
+     * Broadcast on every mode/holder/queue change.
+     * </pre>
+     *
+     * Protobuf type {@code chirp.voice.MicQueueStateNotify}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.voice.MicQueueStateNotify)
+        chirp.voice.Voice.MicQueueStateNotifyOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.voice.Voice.internal_static_chirp_voice_MicQueueStateNotify_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.voice.Voice.internal_static_chirp_voice_MicQueueStateNotify_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.voice.Voice.MicQueueStateNotify.class, chirp.voice.Voice.MicQueueStateNotify.Builder.class);
+      }
+
+      // Construct using chirp.voice.Voice.MicQueueStateNotify.newBuilder()
+      private Builder() {
+
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        roomId_ = "";
+        mode_ = 0;
+        holderUserId_ = "";
+        queueUserIds_ =
+            com.google.protobuf.LazyStringArrayList.emptyList();
+        timestamp_ = 0L;
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.voice.Voice.internal_static_chirp_voice_MicQueueStateNotify_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.MicQueueStateNotify getDefaultInstanceForType() {
+        return chirp.voice.Voice.MicQueueStateNotify.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.MicQueueStateNotify build() {
+        chirp.voice.Voice.MicQueueStateNotify result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.voice.Voice.MicQueueStateNotify buildPartial() {
+        chirp.voice.Voice.MicQueueStateNotify result = new chirp.voice.Voice.MicQueueStateNotify(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.voice.Voice.MicQueueStateNotify result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.roomId_ = roomId_;
+        }
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.mode_ = mode_;
+        }
+        if (((from_bitField0_ & 0x00000004) != 0)) {
+          result.holderUserId_ = holderUserId_;
+        }
+        if (((from_bitField0_ & 0x00000008) != 0)) {
+          queueUserIds_.makeImmutable();
+          result.queueUserIds_ = queueUserIds_;
+        }
+        if (((from_bitField0_ & 0x00000010) != 0)) {
+          result.timestamp_ = timestamp_;
+        }
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.voice.Voice.MicQueueStateNotify) {
+          return mergeFrom((chirp.voice.Voice.MicQueueStateNotify)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.voice.Voice.MicQueueStateNotify other) {
+        if (other == chirp.voice.Voice.MicQueueStateNotify.getDefaultInstance()) return this;
+        if (!other.getRoomId().isEmpty()) {
+          roomId_ = other.roomId_;
+          bitField0_ |= 0x00000001;
+          onChanged();
+        }
+        if (other.mode_ != 0) {
+          setModeValue(other.getModeValue());
+        }
+        if (!other.getHolderUserId().isEmpty()) {
+          holderUserId_ = other.holderUserId_;
+          bitField0_ |= 0x00000004;
+          onChanged();
+        }
+        if (!other.queueUserIds_.isEmpty()) {
+          if (queueUserIds_.isEmpty()) {
+            queueUserIds_ = other.queueUserIds_;
+            bitField0_ |= 0x00000008;
+          } else {
+            ensureQueueUserIdsIsMutable();
+            queueUserIds_.addAll(other.queueUserIds_);
+          }
+          onChanged();
+        }
+        if (other.getTimestamp() != 0L) {
+          setTimestamp(other.getTimestamp());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 10: {
+                roomId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 10
+              case 16: {
+                mode_ = input.readEnum();
+                bitField0_ |= 0x00000002;
+                break;
+              } // case 16
+              case 26: {
+                holderUserId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000004;
+                break;
+              } // case 26
+              case 34: {
+                java.lang.String s = input.readStringRequireUtf8();
+                ensureQueueUserIdsIsMutable();
+                queueUserIds_.add(s);
+                break;
+              } // case 34
+              case 40: {
+                timestamp_ = input.readInt64();
+                bitField0_ |= 0x00000010;
+                break;
+              } // case 40
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private java.lang.Object roomId_ = "";
+      /**
+       * <code>string room_id = 1;</code>
+       * @return The roomId.
+       */
+      public java.lang.String getRoomId() {
+        java.lang.Object ref = roomId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          roomId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string room_id = 1;</code>
+       * @return The bytes for roomId.
+       */
+      public com.google.protobuf.ByteString
+          getRoomIdBytes() {
+        java.lang.Object ref = roomId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          roomId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string room_id = 1;</code>
+       * @param value The roomId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setRoomId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        roomId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string room_id = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearRoomId() {
+        roomId_ = getDefaultInstance().getRoomId();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string room_id = 1;</code>
+       * @param value The bytes for roomId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setRoomIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        roomId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+
+      private int mode_ = 0;
+      /**
+       * <code>.chirp.voice.MicMode mode = 2;</code>
+       * @return The enum numeric value on the wire for mode.
+       */
+      @java.lang.Override public int getModeValue() {
+        return mode_;
+      }
+      /**
+       * <code>.chirp.voice.MicMode mode = 2;</code>
+       * @param value The enum numeric value on the wire for mode to set.
+       * @return This builder for chaining.
+       */
+      public Builder setModeValue(int value) {
+        mode_ = value;
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.voice.MicMode mode = 2;</code>
+       * @return The mode.
+       */
+      @java.lang.Override
+      public chirp.voice.Voice.MicMode getMode() {
+        chirp.voice.Voice.MicMode result = chirp.voice.Voice.MicMode.forNumber(mode_);
+        return result == null ? chirp.voice.Voice.MicMode.UNRECOGNIZED : result;
+      }
+      /**
+       * <code>.chirp.voice.MicMode mode = 2;</code>
+       * @param value The mode to set.
+       * @return This builder for chaining.
+       */
+      public Builder setMode(chirp.voice.Voice.MicMode value) {
+        if (value == null) { throw new NullPointerException(); }
+        bitField0_ |= 0x00000002;
+        mode_ = value.getNumber();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.voice.MicMode mode = 2;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearMode() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        mode_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object holderUserId_ = "";
+      /**
+       * <code>string holder_user_id = 3;</code>
+       * @return The holderUserId.
+       */
+      public java.lang.String getHolderUserId() {
+        java.lang.Object ref = holderUserId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          holderUserId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string holder_user_id = 3;</code>
+       * @return The bytes for holderUserId.
+       */
+      public com.google.protobuf.ByteString
+          getHolderUserIdBytes() {
+        java.lang.Object ref = holderUserId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          holderUserId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string holder_user_id = 3;</code>
+       * @param value The holderUserId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setHolderUserId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        holderUserId_ = value;
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string holder_user_id = 3;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearHolderUserId() {
+        holderUserId_ = getDefaultInstance().getHolderUserId();
+        bitField0_ = (bitField0_ & ~0x00000004);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string holder_user_id = 3;</code>
+       * @param value The bytes for holderUserId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setHolderUserIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        holderUserId_ = value;
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return this;
+      }
+
+      private com.google.protobuf.LazyStringArrayList queueUserIds_ =
+          com.google.protobuf.LazyStringArrayList.emptyList();
+      private void ensureQueueUserIdsIsMutable() {
+        if (!queueUserIds_.isModifiable()) {
+          queueUserIds_ = new com.google.protobuf.LazyStringArrayList(queueUserIds_);
+        }
+        bitField0_ |= 0x00000008;
+      }
+      /**
+       * <code>repeated string queue_user_ids = 4;</code>
+       * @return A list containing the queueUserIds.
+       */
+      public com.google.protobuf.ProtocolStringList
+          getQueueUserIdsList() {
+        queueUserIds_.makeImmutable();
+        return queueUserIds_;
+      }
+      /**
+       * <code>repeated string queue_user_ids = 4;</code>
+       * @return The count of queueUserIds.
+       */
+      public int getQueueUserIdsCount() {
+        return queueUserIds_.size();
+      }
+      /**
+       * <code>repeated string queue_user_ids = 4;</code>
+       * @param index The index of the element to return.
+       * @return The queueUserIds at the given index.
+       */
+      public java.lang.String getQueueUserIds(int index) {
+        return queueUserIds_.get(index);
+      }
+      /**
+       * <code>repeated string queue_user_ids = 4;</code>
+       * @param index The index of the value to return.
+       * @return The bytes of the queueUserIds at the given index.
+       */
+      public com.google.protobuf.ByteString
+          getQueueUserIdsBytes(int index) {
+        return queueUserIds_.getByteString(index);
+      }
+      /**
+       * <code>repeated string queue_user_ids = 4;</code>
+       * @param index The index to set the value at.
+       * @param value The queueUserIds to set.
+       * @return This builder for chaining.
+       */
+      public Builder setQueueUserIds(
+          int index, java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        ensureQueueUserIdsIsMutable();
+        queueUserIds_.set(index, value);
+        bitField0_ |= 0x00000008;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string queue_user_ids = 4;</code>
+       * @param value The queueUserIds to add.
+       * @return This builder for chaining.
+       */
+      public Builder addQueueUserIds(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        ensureQueueUserIdsIsMutable();
+        queueUserIds_.add(value);
+        bitField0_ |= 0x00000008;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string queue_user_ids = 4;</code>
+       * @param values The queueUserIds to add.
+       * @return This builder for chaining.
+       */
+      public Builder addAllQueueUserIds(
+          java.lang.Iterable<java.lang.String> values) {
+        ensureQueueUserIdsIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, queueUserIds_);
+        bitField0_ |= 0x00000008;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string queue_user_ids = 4;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearQueueUserIds() {
+        queueUserIds_ =
+          com.google.protobuf.LazyStringArrayList.emptyList();
+        bitField0_ = (bitField0_ & ~0x00000008);;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string queue_user_ids = 4;</code>
+       * @param value The bytes of the queueUserIds to add.
+       * @return This builder for chaining.
+       */
+      public Builder addQueueUserIdsBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        ensureQueueUserIdsIsMutable();
+        queueUserIds_.add(value);
+        bitField0_ |= 0x00000008;
+        onChanged();
+        return this;
+      }
+
+      private long timestamp_ ;
+      /**
+       * <code>int64 timestamp = 5;</code>
+       * @return The timestamp.
+       */
+      @java.lang.Override
+      public long getTimestamp() {
+        return timestamp_;
+      }
+      /**
+       * <code>int64 timestamp = 5;</code>
+       * @param value The timestamp to set.
+       * @return This builder for chaining.
+       */
+      public Builder setTimestamp(long value) {
+
+        timestamp_ = value;
+        bitField0_ |= 0x00000010;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>int64 timestamp = 5;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearTimestamp() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        timestamp_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.voice.MicQueueStateNotify)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.voice.MicQueueStateNotify)
+    private static final chirp.voice.Voice.MicQueueStateNotify DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.voice.Voice.MicQueueStateNotify();
+    }
+
+    public static chirp.voice.Voice.MicQueueStateNotify getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<MicQueueStateNotify>
+        PARSER = new com.google.protobuf.AbstractParser<MicQueueStateNotify>() {
+      @java.lang.Override
+      public MicQueueStateNotify parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<MicQueueStateNotify> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<MicQueueStateNotify> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.voice.Voice.MicQueueStateNotify getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
 
@@ -20571,6 +27411,41 @@ java.lang.String defaultValue) {
   private static final 
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_chirp_voice_SpeakingNotify_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_voice_SetMicModeRequest_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_voice_SetMicModeRequest_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_voice_MicQueueApplyRequest_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_voice_MicQueueApplyRequest_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_voice_MicQueueApproveRequest_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_voice_MicQueueApproveRequest_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_voice_MicQueueReleaseRequest_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_voice_MicQueueReleaseRequest_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_voice_MicQueueGrantRequest_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_voice_MicQueueGrantRequest_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_voice_MicQueueResponse_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_voice_MicQueueResponse_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_voice_MicQueueStateNotify_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_voice_MicQueueStateNotify_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -20593,62 +27468,85 @@ java.lang.String defaultValue) {
       "ver\022\014\n\004urls\030\001 \003(\t\022\020\n\010username\030\002 \001(\t\022\022\n\nc" +
       "redential\030\003 \001(\t\"F\n\017JoinRoomRequest\022\017\n\007us" +
       "er_id\030\001 \001(\t\022\017\n\007room_id\030\002 \001(\t\022\021\n\tsdp_offe" +
-      "r\030\003 \001(\t\"\271\001\n\020JoinRoomResponse\022%\n\004code\030\001 \001" +
+      "r\030\003 \001(\t\"\377\001\n\020JoinRoomResponse\022%\n\004code\030\001 \001" +
       "(\0162\027.chirp.common.ErrorCode\022\017\n\007room_id\030\002" +
       " \001(\t\022\022\n\nsdp_answer\030\003 \001(\t\022\027\n\017participant_" +
       "ids\030\004 \003(\t\022\023\n\013server_time\030\005 \001(\003\022+\n\013ice_se" +
-      "rvers\030\006 \003(\0132\026.chirp.voice.IceServer\"4\n\020L" +
-      "eaveRoomRequest\022\017\n\007user_id\030\001 \001(\t\022\017\n\007room" +
-      "_id\030\002 \001(\t\"O\n\021LeaveRoomResponse\022%\n\004code\030\001" +
-      " \001(\0162\027.chirp.common.ErrorCode\022\023\n\013server_" +
-      "time\030\002 \001(\003\"K\n\014IceCandidate\022\021\n\tcandidate\030" +
-      "\001 \001(\t\022\017\n\007sdp_mid\030\002 \001(\t\022\027\n\017sdp_mline_inde" +
-      "x\030\003 \001(\005\"~\n\023IceCandidateMessage\022\017\n\007room_i" +
-      "d\030\001 \001(\t\022\024\n\014from_user_id\030\002 \001(\t\022\022\n\nto_user" +
-      "_id\030\003 \001(\t\022,\n\tcandidate\030\004 \001(\0132\031.chirp.voi" +
-      "ce.IceCandidate\"_\n\017SdpOfferMessage\022\017\n\007ro" +
-      "om_id\030\001 \001(\t\022\024\n\014from_user_id\030\002 \001(\t\022\022\n\nto_" +
-      "user_id\030\003 \001(\t\022\021\n\tsdp_offer\030\004 \001(\t\"a\n\020SdpA" +
-      "nswerMessage\022\017\n\007room_id\030\001 \001(\t\022\024\n\014from_us" +
-      "er_id\030\002 \001(\t\022\022\n\nto_user_id\030\003 \001(\t\022\022\n\nsdp_a" +
-      "nswer\030\004 \001(\t\"\253\001\n\017ParticipantInfo\022\017\n\007user_" +
-      "id\030\001 \001(\t\022\020\n\010username\030\002 \001(\t\022,\n\005state\030\003 \001(" +
-      "\0162\035.chirp.voice.ParticipantState\022\021\n\tjoin" +
-      "ed_at\030\004 \001(\003\022\023\n\013is_speaking\030\005 \001(\010\022\r\n\005mute" +
-      "d\030\006 \001(\010\022\020\n\010deafened\030\007 \001(\010\"%\n\022GetRoomInfo" +
-      "Request\022\017\n\007room_id\030\001 \001(\t\"\330\001\n\023GetRoomInfo" +
-      "Response\022%\n\004code\030\001 \001(\0162\027.chirp.common.Er" +
-      "rorCode\022\017\n\007room_id\030\002 \001(\t\022\021\n\troom_name\030\003 " +
-      "\001(\t\022(\n\troom_type\030\004 \001(\0162\025.chirp.voice.Roo" +
-      "mType\0222\n\014participants\030\005 \003(\0132\034.chirp.voic" +
-      "e.ParticipantInfo\022\030\n\020max_participants\030\006 " +
-      "\001(\005\"%\n\022GetUserRoomRequest\022\017\n\007user_id\030\001 \001" +
-      "(\t\"\200\001\n\023GetUserRoomResponse\022%\n\004code\030\001 \001(\016" +
-      "2\027.chirp.common.ErrorCode\022\017\n\007room_id\030\002 \001" +
-      "(\t\0221\n\013participant\030\003 \001(\0132\034.chirp.voice.Pa" +
-      "rticipantInfo\"A\n\016SetMuteRequest\022\017\n\007user_" +
-      "id\030\001 \001(\t\022\017\n\007room_id\030\002 \001(\t\022\r\n\005muted\030\003 \001(\010" +
-      "\"M\n\017SetMuteResponse\022%\n\004code\030\001 \001(\0162\027.chir" +
-      "p.common.ErrorCode\022\023\n\013server_time\030\002 \001(\003\"" +
-      "F\n\020SetDeafenRequest\022\017\n\007user_id\030\001 \001(\t\022\017\n\007" +
-      "room_id\030\002 \001(\t\022\020\n\010deafened\030\003 \001(\010\"O\n\021SetDe" +
-      "afenResponse\022%\n\004code\030\001 \001(\0162\027.chirp.commo" +
-      "n.ErrorCode\022\023\n\013server_time\030\002 \001(\003\"p\n\027Part" +
-      "icipantJoinedNotify\022\017\n\007room_id\030\001 \001(\t\0221\n\013" +
-      "participant\030\002 \001(\0132\034.chirp.voice.Particip" +
-      "antInfo\022\021\n\ttimestamp\030\003 \001(\003\"L\n\025Participan" +
-      "tLeftNotify\022\017\n\007room_id\030\001 \001(\t\022\017\n\007user_id\030" +
-      "\002 \001(\t\022\021\n\ttimestamp\030\003 \001(\003\"\202\001\n\035Participant" +
-      "StateChangedNotify\022\017\n\007room_id\030\001 \001(\t\022\017\n\007u" +
-      "ser_id\030\002 \001(\t\022,\n\005state\030\003 \001(\0162\035.chirp.voic" +
-      "e.ParticipantState\022\021\n\ttimestamp\030\004 \001(\003\"W\n" +
-      "\016SpeakingNotify\022\017\n\007room_id\030\001 \001(\t\022\017\n\007user" +
-      "_id\030\002 \001(\t\022\020\n\010speaking\030\003 \001(\010\022\021\n\ttimestamp" +
-      "\030\004 \001(\003*4\n\010RoomType\022\020\n\014PEER_TO_PEER\020\000\022\t\n\005" +
-      "GROUP\020\001\022\013\n\007CHANNEL\020\002*Y\n\020ParticipantState" +
-      "\022\013\n\007JOINING\020\000\022\r\n\tCONNECTED\020\001\022\t\n\005MUTED\020\002\022" +
-      "\014\n\010DEAFENED\020\003\022\020\n\014DISCONNECTED\020\004B%Z#githu" +
-      "b.com/cui/chirp/proto/go/voiceb\006proto3"
+      "rvers\030\006 \003(\0132\026.chirp.voice.IceServer\022*\n\nm" +
+      "edia_tier\030\007 \001(\0162\026.chirp.voice.MediaTier\022" +
+      "\030\n\020rtcp_feedback_ms\030\010 \001(\005\"4\n\020LeaveRoomRe" +
+      "quest\022\017\n\007user_id\030\001 \001(\t\022\017\n\007room_id\030\002 \001(\t\"" +
+      "O\n\021LeaveRoomResponse\022%\n\004code\030\001 \001(\0162\027.chi" +
+      "rp.common.ErrorCode\022\023\n\013server_time\030\002 \001(\003" +
+      "\"K\n\014IceCandidate\022\021\n\tcandidate\030\001 \001(\t\022\017\n\007s" +
+      "dp_mid\030\002 \001(\t\022\027\n\017sdp_mline_index\030\003 \001(\005\"~\n" +
+      "\023IceCandidateMessage\022\017\n\007room_id\030\001 \001(\t\022\024\n" +
+      "\014from_user_id\030\002 \001(\t\022\022\n\nto_user_id\030\003 \001(\t\022" +
+      ",\n\tcandidate\030\004 \001(\0132\031.chirp.voice.IceCand" +
+      "idate\"_\n\017SdpOfferMessage\022\017\n\007room_id\030\001 \001(" +
+      "\t\022\024\n\014from_user_id\030\002 \001(\t\022\022\n\nto_user_id\030\003 " +
+      "\001(\t\022\021\n\tsdp_offer\030\004 \001(\t\"a\n\020SdpAnswerMessa" +
+      "ge\022\017\n\007room_id\030\001 \001(\t\022\024\n\014from_user_id\030\002 \001(" +
+      "\t\022\022\n\nto_user_id\030\003 \001(\t\022\022\n\nsdp_answer\030\004 \001(" +
+      "\t\"\253\001\n\017ParticipantInfo\022\017\n\007user_id\030\001 \001(\t\022\020" +
+      "\n\010username\030\002 \001(\t\022,\n\005state\030\003 \001(\0162\035.chirp." +
+      "voice.ParticipantState\022\021\n\tjoined_at\030\004 \001(" +
+      "\003\022\023\n\013is_speaking\030\005 \001(\010\022\r\n\005muted\030\006 \001(\010\022\020\n" +
+      "\010deafened\030\007 \001(\010\"%\n\022GetRoomInfoRequest\022\017\n" +
+      "\007room_id\030\001 \001(\t\"\270\002\n\023GetRoomInfoResponse\022%" +
+      "\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\017\n" +
+      "\007room_id\030\002 \001(\t\022\021\n\troom_name\030\003 \001(\t\022(\n\troo" +
+      "m_type\030\004 \001(\0162\025.chirp.voice.RoomType\0222\n\014p" +
+      "articipants\030\005 \003(\0132\034.chirp.voice.Particip" +
+      "antInfo\022\030\n\020max_participants\030\006 \001(\005\022&\n\010mic" +
+      "_mode\030\007 \001(\0162\024.chirp.voice.MicMode\022\032\n\022mic" +
+      "_holder_user_id\030\010 \001(\t\022\032\n\022mic_queue_user_" +
+      "ids\030\t \003(\t\"%\n\022GetUserRoomRequest\022\017\n\007user_" +
+      "id\030\001 \001(\t\"\200\001\n\023GetUserRoomResponse\022%\n\004code" +
+      "\030\001 \001(\0162\027.chirp.common.ErrorCode\022\017\n\007room_" +
+      "id\030\002 \001(\t\0221\n\013participant\030\003 \001(\0132\034.chirp.vo" +
+      "ice.ParticipantInfo\"A\n\016SetMuteRequest\022\017\n" +
+      "\007user_id\030\001 \001(\t\022\017\n\007room_id\030\002 \001(\t\022\r\n\005muted" +
+      "\030\003 \001(\010\"M\n\017SetMuteResponse\022%\n\004code\030\001 \001(\0162" +
+      "\027.chirp.common.ErrorCode\022\023\n\013server_time\030" +
+      "\002 \001(\003\"F\n\020SetDeafenRequest\022\017\n\007user_id\030\001 \001" +
+      "(\t\022\017\n\007room_id\030\002 \001(\t\022\020\n\010deafened\030\003 \001(\010\"O\n" +
+      "\021SetDeafenResponse\022%\n\004code\030\001 \001(\0162\027.chirp" +
+      ".common.ErrorCode\022\023\n\013server_time\030\002 \001(\003\"p" +
+      "\n\027ParticipantJoinedNotify\022\017\n\007room_id\030\001 \001" +
+      "(\t\0221\n\013participant\030\002 \001(\0132\034.chirp.voice.Pa" +
+      "rticipantInfo\022\021\n\ttimestamp\030\003 \001(\003\"L\n\025Part" +
+      "icipantLeftNotify\022\017\n\007room_id\030\001 \001(\t\022\017\n\007us" +
+      "er_id\030\002 \001(\t\022\021\n\ttimestamp\030\003 \001(\003\"\202\001\n\035Parti" +
+      "cipantStateChangedNotify\022\017\n\007room_id\030\001 \001(" +
+      "\t\022\017\n\007user_id\030\002 \001(\t\022,\n\005state\030\003 \001(\0162\035.chir" +
+      "p.voice.ParticipantState\022\021\n\ttimestamp\030\004 " +
+      "\001(\003\"g\n\016SpeakingNotify\022\017\n\007room_id\030\001 \001(\t\022\017" +
+      "\n\007user_id\030\002 \001(\t\022\020\n\010speaking\030\003 \001(\010\022\021\n\ttim" +
+      "estamp\030\004 \001(\003\022\016\n\006volume\030\005 \001(\005\"Y\n\021SetMicMo" +
+      "deRequest\022\017\n\007user_id\030\001 \001(\t\022\017\n\007room_id\030\002 " +
+      "\001(\t\022\"\n\004mode\030\003 \001(\0162\024.chirp.voice.MicMode\"" +
+      "8\n\024MicQueueApplyRequest\022\017\n\007user_id\030\001 \001(\t" +
+      "\022\017\n\007room_id\030\002 \001(\t\"R\n\026MicQueueApproveRequ" +
+      "est\022\017\n\007user_id\030\001 \001(\t\022\017\n\007room_id\030\002 \001(\t\022\026\n" +
+      "\016target_user_id\030\003 \001(\t\":\n\026MicQueueRelease" +
+      "Request\022\017\n\007user_id\030\001 \001(\t\022\017\n\007room_id\030\002 \001(" +
+      "\t\"P\n\024MicQueueGrantRequest\022\017\n\007user_id\030\001 \001" +
+      "(\t\022\017\n\007room_id\030\002 \001(\t\022\026\n\016target_user_id\030\003 " +
+      "\001(\t\"{\n\020MicQueueResponse\022%\n\004code\030\001 \001(\0162\027." +
+      "chirp.common.ErrorCode\022\023\n\013server_time\030\002 " +
+      "\001(\003\022\026\n\016holder_user_id\030\003 \001(\t\022\023\n\013queue_dep" +
+      "th\030\004 \001(\005\"\215\001\n\023MicQueueStateNotify\022\017\n\007room" +
+      "_id\030\001 \001(\t\022\"\n\004mode\030\002 \001(\0162\024.chirp.voice.Mi" +
+      "cMode\022\026\n\016holder_user_id\030\003 \001(\t\022\026\n\016queue_u" +
+      "ser_ids\030\004 \003(\t\022\021\n\ttimestamp\030\005 \001(\003*4\n\010Room" +
+      "Type\022\020\n\014PEER_TO_PEER\020\000\022\t\n\005GROUP\020\001\022\013\n\007CHA" +
+      "NNEL\020\002*Y\n\020ParticipantState\022\013\n\007JOINING\020\000\022" +
+      "\r\n\tCONNECTED\020\001\022\t\n\005MUTED\020\002\022\014\n\010DEAFENED\020\003\022" +
+      "\020\n\014DISCONNECTED\020\004*(\n\007MicMode\022\014\n\010MIC_FREE" +
+      "\020\000\022\017\n\013MIC_MANAGED\020\001*-\n\tMediaTier\022\014\n\010FULL" +
+      "_MIX\020\000\022\022\n\016FORWARD_BYPASS\020\001B%Z#github.com" +
+      "/cui/chirp/proto/go/voiceb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -20690,7 +27588,7 @@ java.lang.String defaultValue) {
     internal_static_chirp_voice_JoinRoomResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_voice_JoinRoomResponse_descriptor,
-        new java.lang.String[] { "Code", "RoomId", "SdpAnswer", "ParticipantIds", "ServerTime", "IceServers", });
+        new java.lang.String[] { "Code", "RoomId", "SdpAnswer", "ParticipantIds", "ServerTime", "IceServers", "MediaTier", "RtcpFeedbackMs", });
     internal_static_chirp_voice_LeaveRoomRequest_descriptor =
       getDescriptor().getMessageType(5);
     internal_static_chirp_voice_LeaveRoomRequest_fieldAccessorTable = new
@@ -20744,7 +27642,7 @@ java.lang.String defaultValue) {
     internal_static_chirp_voice_GetRoomInfoResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_voice_GetRoomInfoResponse_descriptor,
-        new java.lang.String[] { "Code", "RoomId", "RoomName", "RoomType", "Participants", "MaxParticipants", });
+        new java.lang.String[] { "Code", "RoomId", "RoomName", "RoomType", "Participants", "MaxParticipants", "MicMode", "MicHolderUserId", "MicQueueUserIds", });
     internal_static_chirp_voice_GetUserRoomRequest_descriptor =
       getDescriptor().getMessageType(14);
     internal_static_chirp_voice_GetUserRoomRequest_fieldAccessorTable = new
@@ -20804,7 +27702,49 @@ java.lang.String defaultValue) {
     internal_static_chirp_voice_SpeakingNotify_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_voice_SpeakingNotify_descriptor,
-        new java.lang.String[] { "RoomId", "UserId", "Speaking", "Timestamp", });
+        new java.lang.String[] { "RoomId", "UserId", "Speaking", "Timestamp", "Volume", });
+    internal_static_chirp_voice_SetMicModeRequest_descriptor =
+      getDescriptor().getMessageType(24);
+    internal_static_chirp_voice_SetMicModeRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_voice_SetMicModeRequest_descriptor,
+        new java.lang.String[] { "UserId", "RoomId", "Mode", });
+    internal_static_chirp_voice_MicQueueApplyRequest_descriptor =
+      getDescriptor().getMessageType(25);
+    internal_static_chirp_voice_MicQueueApplyRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_voice_MicQueueApplyRequest_descriptor,
+        new java.lang.String[] { "UserId", "RoomId", });
+    internal_static_chirp_voice_MicQueueApproveRequest_descriptor =
+      getDescriptor().getMessageType(26);
+    internal_static_chirp_voice_MicQueueApproveRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_voice_MicQueueApproveRequest_descriptor,
+        new java.lang.String[] { "UserId", "RoomId", "TargetUserId", });
+    internal_static_chirp_voice_MicQueueReleaseRequest_descriptor =
+      getDescriptor().getMessageType(27);
+    internal_static_chirp_voice_MicQueueReleaseRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_voice_MicQueueReleaseRequest_descriptor,
+        new java.lang.String[] { "UserId", "RoomId", });
+    internal_static_chirp_voice_MicQueueGrantRequest_descriptor =
+      getDescriptor().getMessageType(28);
+    internal_static_chirp_voice_MicQueueGrantRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_voice_MicQueueGrantRequest_descriptor,
+        new java.lang.String[] { "UserId", "RoomId", "TargetUserId", });
+    internal_static_chirp_voice_MicQueueResponse_descriptor =
+      getDescriptor().getMessageType(29);
+    internal_static_chirp_voice_MicQueueResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_voice_MicQueueResponse_descriptor,
+        new java.lang.String[] { "Code", "ServerTime", "HolderUserId", "QueueDepth", });
+    internal_static_chirp_voice_MicQueueStateNotify_descriptor =
+      getDescriptor().getMessageType(30);
+    internal_static_chirp_voice_MicQueueStateNotify_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_voice_MicQueueStateNotify_descriptor,
+        new java.lang.String[] { "RoomId", "Mode", "HolderUserId", "QueueUserIds", "Timestamp", });
     descriptor.resolveAllFeaturesImmutable();
     chirp.common.Common.getDescriptor();
   }

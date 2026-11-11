@@ -22,6 +22,22 @@ enum ParticipantState {
   DISCONNECTED = 4;    // Left the room
 }
 
+// Host-controlled speaking queue (麦序模式, VOICE-RT): rooms run MIC_FREE
+// (the default, everyone may speak) or MIC_MANAGED (only the mic holder
+// speaks; the host approves applications off a FIFO queue).
+enum MicMode {
+  MIC_FREE = 0;
+  MIC_MANAGED = 1;
+}
+
+// Media delivery tier (大规模旁路分级, VOICE-RT): the server classifies each
+// room and the clients configure their engine accordingly - small rooms mix
+// every stream, large rooms forward through the SFU bypass.
+enum MediaTier {
+  FULL_MIX = 0;        // peer mesh with full mixing (small rooms)
+  FORWARD_BYPASS = 1;  // SFU forwarding bypass (large rooms)
+}
+
 // Create voice room
 message CreateRoomRequest {
   string user_id = 1;
@@ -59,6 +75,11 @@ message JoinRoomResponse {
   repeated string participant_ids = 4;
   int64 server_time = 5;
   repeated IceServer ice_servers = 6;
+  // Delivery tier the server picked for this room (VOICE-RT 旁路分级);
+  // rtcp_feedback_ms is the tier's receiver-report pacing the engine should
+  // use (smaller tier = more frequent feedback for tight mixing).
+  MediaTier media_tier = 7;
+  int32 rtcp_feedback_ms = 8;
 }
 
 // Leave voice room
@@ -126,6 +147,10 @@ message GetRoomInfoResponse {
   RoomType room_type = 4;
   repeated ParticipantInfo participants = 5;
   int32 max_participants = 6;
+  // Speaking queue snapshot for late joiners (VOICE-RT 麦序模式).
+  MicMode mic_mode = 7;
+  string mic_holder_user_id = 8;
+  repeated string mic_queue_user_ids = 9;
 }
 
 // Get user's current room
@@ -188,4 +213,57 @@ message SpeakingNotify {
   string user_id = 2;
   bool speaking = 3;
   int64 timestamp = 4;
+  // 0-100 loudness level from the client's audio stats (0 when speaking is
+  // false); drives the SDK volume callbacks.
+  int32 volume = 5;
+}
+
+// Set the room's speaking mode (host only).
+message SetMicModeRequest {
+  string user_id = 1;   // the host
+  string room_id = 2;
+  MicMode mode = 3;
+}
+
+// Apply for the mic (managed mode): joins the FIFO queue.
+message MicQueueApplyRequest {
+  string user_id = 1;
+  string room_id = 2;
+}
+
+// Host approves the queue head, or a specific applicant.
+message MicQueueApproveRequest {
+  string user_id = 1;          // the host
+  string room_id = 2;
+  string target_user_id = 3;   // empty = queue head
+}
+
+// The holder (or the host) releases the mic (下麦).
+message MicQueueReleaseRequest {
+  string user_id = 1;
+  string room_id = 2;
+}
+
+// Host hands the mic straight to a member (切麦), bypassing the queue.
+message MicQueueGrantRequest {
+  string user_id = 1;          // the host
+  string room_id = 2;
+  string target_user_id = 3;
+}
+
+// Shared ack for the speaking-queue operations.
+message MicQueueResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+  string holder_user_id = 3;   // holder after the op
+  int32 queue_depth = 4;       // waiting applicants after the op
+}
+
+// Broadcast on every mode/holder/queue change.
+message MicQueueStateNotify {
+  string room_id = 1;
+  MicMode mode = 2;
+  string holder_user_id = 3;
+  repeated string queue_user_ids = 4;
+  int64 timestamp = 5;
 }
