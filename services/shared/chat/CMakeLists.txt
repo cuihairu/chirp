@@ -145,6 +145,9 @@ add_executable(chirp_chat_distributed
     src/delivery_ack_manager.cc
     src/main_distributed.cc
     src/runtime_utils.cc
+    # Audit 2026-11-11 follow-up: history reads now go through the shared
+    # request validator, same as the basic and enhanced builds.
+    src/chat_validation.cc
     src/group_manager.cc
     src/read_receipt_manager.cc
     src/push_bridge.cc

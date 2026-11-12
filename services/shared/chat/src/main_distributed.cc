@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstdint>
@@ -16,6 +17,7 @@
 #include "logger.h"
 #include "delivery_ack_manager.h"
 #include "history_compression.h"
+#include "chat_validation.h"
 #include "distributed_dispatch.h"
 #include "common/metrics.h"
 #include "common/metrics_http_server.h"
@@ -422,11 +424,33 @@ void HandleGetHistory(const chirp::chat::GetHistoryRequest& req,
                       const std::shared_ptr<chirp::network::Session>& session,
                       const std::shared_ptr<DistributedMessageStore>& store,
                       bool supports_gzip,
-                      int64_t seq) {
+                      int64_t seq,
+                      const std::string& authenticated_user_id) {
+  // Audit 2026-11-11 follow-up: this build read history with no identity check
+  // and an unbounded page size, the same hole the basic and enhanced builds
+  // already closed.
+  const chirp::common::ErrorCode validation =
+      chirp::chat::ValidateGetHistoryRequest(req, authenticated_user_id);
+  if (validation != chirp::common::OK) {
+    chirp::chat::GetHistoryResponse resp;
+    resp.set_code(validation);
+    resp.set_has_more(false);
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_HISTORY_RESP, seq, resp.SerializeAsString());
+    return;
+  }
+
+  // Same page window as the basic and enhanced builds.
+  int32_t limit = req.limit();
+  if (limit <= 0) {
+    limit = 50;
+  }
+  constexpr int32_t kMaxHistoryPageSize = 200;
+  limit = std::min(limit, kMaxHistoryPageSize);
+
   chirp::chat::GetHistoryResponse resp;
   resp.set_code(chirp::common::OK);
 
-  const auto history_data = store->GetHistory(req.channel_id(), req.limit());
+  const auto history_data = store->GetHistory(req.channel_id(), limit);
   for (const auto& msg_data : history_data) {
     chirp::chat::ChatMessage* msg = resp.add_messages();
     if (!msg->ParseFromArray(msg_data.data(), static_cast<int>(msg_data.size()))) {
@@ -540,7 +564,8 @@ int main(int argc, char** argv) {
   handlers.on_get_history = [store, state](const std::shared_ptr<chirp::network::Session>& session,
                                     const chirp::chat::GetHistoryRequest& req,
                                     int64_t seq) {
-    HandleGetHistory(req, session, store, state->IsGzipCapable(session.get()), seq);
+    HandleGetHistory(req, session, store, state->IsGzipCapable(session.get()), seq,
+                 state->GetUserId(session.get()));
   };
   handlers.on_logout = [state, acks](const std::shared_ptr<chirp::network::Session>& session,
                                      const chirp::auth::LogoutRequest&,

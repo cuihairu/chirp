@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <limits>
 #include <set>
 #include <string>
 #include <thread>
@@ -1986,9 +1987,11 @@ TEST_F(DistributedInternalsTest, HandleGetHistoryFiltersBadEntries) {
 
   auto session = std::make_shared<MockSession>();
   chirp::chat::GetHistoryRequest req;
+  req.set_channel_type(chirp::chat::TEAM);
   req.set_channel_id("c1");
+  req.set_user_id("alice");
   req.set_limit(10);
-  HandleGetHistory(req, session, store_, /*supports_gzip=*/false, 2);
+  HandleGetHistory(req, session, store_, /*supports_gzip=*/false, 2, "alice");
 
   Packet pkt;
   ASSERT_TRUE(DecodeFramed(session->sent[0], &pkt));
@@ -2016,9 +2019,11 @@ TEST_F(DistributedInternalsTest, HandleGetHistoryGzipForCapableSession) {
   auto session = std::make_shared<MockSession>();
   state_->SetGzipCapable(session.get(), true);
   chirp::chat::GetHistoryRequest req;
+  req.set_channel_type(chirp::chat::TEAM);
   req.set_channel_id("c1");
+  req.set_user_id("alice");
   req.set_limit(10);
-  HandleGetHistory(req, session, store_, /*supports_gzip=*/true, 2);
+  HandleGetHistory(req, session, store_, /*supports_gzip=*/true, 2, "alice");
 
   Packet pkt;
   ASSERT_TRUE(DecodeFramed(session->sent[0], &pkt));
@@ -2041,10 +2046,12 @@ TEST_F(DistributedInternalsTest, HandleGetHistoryGzipForCapableSession) {
 TEST_F(DistributedInternalsTest, HandleGetHistoryWithoutRedisSucceeds) {
   auto session = std::make_shared<MockSession>();
   chirp::chat::GetHistoryRequest req;
+  req.set_channel_type(chirp::chat::TEAM);
   req.set_channel_id("c1");
+  req.set_user_id("alice");
   req.set_limit(10);
 
-  HandleGetHistory(req, session, store_, /*supports_gzip=*/false, /*seq=*/7);
+  HandleGetHistory(req, session, store_, /*supports_gzip=*/false, /*seq=*/7, "alice");
 
   Packet pkt;
   ASSERT_TRUE(DecodeFramed(session->sent[0], &pkt));
@@ -2054,6 +2061,59 @@ TEST_F(DistributedInternalsTest, HandleGetHistoryWithoutRedisSucceeds) {
   EXPECT_EQ(resp.code(), chirp::common::OK);
   EXPECT_EQ(resp.messages_size(), 0);
   EXPECT_FALSE(resp.has_more());
+}
+
+TEST_F(DistributedInternalsTest, HandleGetHistoryRejectsUnbackedIdentityAndClampsPage) {
+  // Audit follow-up: the same gate as the basic/enhanced builds. Three
+  // identities never see a page, and an oversized limit is clamped.
+  auto session = std::make_shared<MockSession>();
+  chirp::chat::GetHistoryRequest req;
+  req.set_channel_type(chirp::chat::TEAM);
+  req.set_channel_id("c1");
+  req.set_user_id("alice");
+
+  const std::string unauthenticated[] = {"", "mallory"};
+  for (const std::string& who : unauthenticated) {
+    req.set_limit(10);
+    session->sent.clear();
+    HandleGetHistory(req, session, store_, /*supports_gzip=*/false, /*seq=*/3, who);
+    ASSERT_EQ(session->sent.size(), 1u);
+    Packet pkt;
+    ASSERT_TRUE(DecodeFramed(session->sent[0], &pkt));
+    chirp::chat::GetHistoryResponse resp;
+    ASSERT_TRUE(resp.ParseFromString(pkt.body()));
+    EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED);
+    EXPECT_EQ(resp.messages_size(), 0);
+  }
+
+  // INT32_MAX must not fan out into an unbounded LRANGE.
+  chirp::chat::ChatMessage good;
+  good.set_message_id("g1");
+  good.set_content("valid");
+  int32_t seen_limit = 0;
+  chirp_test::FakeRedisServer fake([&](const std::vector<std::string>& args) {
+    if (!args.empty() && args[0] == "LRANGE") {
+      seen_limit = -std::stoi(args[2]);
+      return chirp_test::Array({good.SerializeAsString()});
+    }
+    return chirp_test::Simple("OK");
+  });
+  store_->redis = std::make_shared<chirp::network::RedisClient>("127.0.0.1", fake.port());
+
+  for (const int32_t limit : {0, -5, std::numeric_limits<int32_t>::max()}) {
+    req.set_limit(limit);
+    session->sent.clear();
+    HandleGetHistory(req, session, store_, /*supports_gzip=*/false, /*seq=*/4, "alice");
+    ASSERT_EQ(session->sent.size(), 1u);
+    Packet pkt;
+    ASSERT_TRUE(DecodeFramed(session->sent[0], &pkt));
+    chirp::chat::GetHistoryResponse resp;
+    ASSERT_TRUE(resp.ParseFromString(pkt.body()));
+    EXPECT_EQ(resp.code(), chirp::common::OK);
+    EXPECT_EQ(resp.messages_size(), 1);
+    EXPECT_EQ(resp.messages(0).content(), "valid");
+  }
+  EXPECT_EQ(seen_limit, 200);  // LRANGE saw the clamped window, not INT32_MAX
 }
 
 // ---------------------------------------------------------------------------
