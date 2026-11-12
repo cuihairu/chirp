@@ -117,6 +117,20 @@
 - [x] 审核发现：审计表「三桶计数/Totals」计游离右括号 55 行（合计 62），而 #4 修复列自称「56 处 + 全量补扫 245 处（222 行）」≈300 处，汇总表与明细列对不上（docs/审计-文档一致性.md:697）——已清（本 commit）+证据：属实。#4 明示 56 处原批 + 245 处补扫 + 5 处其他括号修复＝306 个差异条目，原汇总仅把 55 计入 Total 62。已把表拆为 56 与 250 两行，Total 改为 313（2+56+250+3+2 处自漂移条目），中英两份同步；复测当前表格 56+250+3+2+2＝313。测试证据见本 commit 全量门禁。file:line：docs/审计-文档一致性.md:685、docs/zh/审计-文档一致性.md:803。
 - [x] 审核发现：docs/api/overview.md:204 Party 行在本提交改过后仍把英文页链向 ../zh/CAPABILITY_MATRIX.md（中文矩阵），同页其余引用用 ../CAPABILITY_MATRIX.md，语言错向（docs/api/overview.md:204）——已清（本 commit）+证据：属实。修复前该行唯一使用 `../zh/CAPABILITY_MATRIX.md`，同页 4 个同类链接均为 `../CAPABILITY_MATRIX.md`；已统一英文目标，复测 `rg -n '\\.\\./zh/CAPABILITY_MATRIX\\.md' docs/api/overview.md`＝0 且 `rg -n 'CAPABILITY_MATRIX' docs/api/overview.md` 5 处全为英文矩阵链接。测试证据见本 commit 全量门禁。file:line：docs/api/overview.md:204。
 
+## Codex 深审发现（2026-11-12，luna profile 全 diff 审核，2C/5M/3m，待修）
+
+- [ ] [C] 绑定 enhanced/distributed 历史存储命名空间与频道真实类型，读取权限不得信任客户端自报 channel_type，补跨类型私聊越权回归测试（services/shared/chat/src/chat_validation.cc:270、enhanced_dispatch.cc:1044、main_distributed.cc:433）
+- [ ] [C] auth Redis 限流/失败计数替换无异常受控解析，覆盖 298/315/334/342/353 行的 stoi 同型点，补非数字/越界/最大递增测试（services/app/auth/src/redis_auth_store.cc:298）
+- [ ] [M] basic history 补 min(limit,200) 上限与 Redis 有界分页（替换 LRange 0,-1 全量拉取），并更正 todo.md:262「三实现钳制口径一致」的不实记账（services/shared/chat/src/basic_message_store.h:303、basic_packet_handler.cc:843）
+- [ ] [M] VOICE LEAVE 按用户当前房间条件更新成员索引，拒绝非成员/错误房间的 LEAVE，补迟到旧房 LEAVE 测试（services/voice/src/voice_dispatch.cc:683）
+- [ ] [M] VOICE LEAVE 使用 AuthorizeActor 返回的绑定身份执行全部清理，或明确拒绝空 claim，更正 todo.md:259「强校验」不实记账（services/voice/src/voice_dispatch.cc:666）
+- [ ] [M] 为创建后从未 JOIN 的房间补回收生命周期（到期回收或创建者断连联动），补 CREATE→断连从未 JOIN 测试（services/voice/src/voice_dispatch.cc:504）
+- [ ] [M] core SDK 检测 framer overflow 后进入统一断线/重连处理，定义重连时错误状态重置语义，补 SDK 回归测试（sdks/core/src/sdk_client.cc:612）
+- [ ] [m] rate limiter 脏计数器窄化前处理负值（下界钳制），补负数边界测试（services/shared/chat/src/chat_rate_limiter.cc:73）
+- [ ] [m] 增强 history 分页测试：逐请求断言实际窗口，>200 条数据验证上限；distributed 补 {0,-5} 回退断言（tests/unit/chat_enhanced_session_test.cc:2038、chat_managers_test.cc:2116）
+- [ ] [m] 拆分 VOICE-RT 勾选口径：媒体策略字段已完成 vs 真实媒体链路（RTCP 分级/混音）待验收，如实改现（todo.md:254）
+
+
 ## 代码深审发现（2026-11-01，requesting-code-review 流程，全部 P3 防御缺口，未修）
 
 - [x] 代码深审 P3-1：JWT 签名密钥默认值 `change_this_secret_in_production` 是潜在隐患——现两个生产入口均 `RequireArg` 门禁（缺参拒启），默认值实际是死代码，但未来直建 `Config` 的路径会静默用已知密钥（services/app/auth/src/auth_service.h:30）
