@@ -39,6 +39,12 @@ const VOICE_BIN = process.env.VOICE_BIN ?? path.join(REPO_ROOT, 'build/services/
 
 const log = (...a) => console.log('[e2e]', ...a);
 const fail = (...a) => console.error('[e2e] FAIL:', ...a);
+// First bytes of a ws frame as hex — the ChirpClient header carries the msg
+// id, so the sequence of frame sizes/ids shows where signalling stops.
+const hexHead = (payload) => {
+  const b = typeof payload === 'string' ? Buffer.from(payload) : Buffer.from(payload ?? []);
+  return b.subarray(0, 6).toString('hex');
+};
 
 // Same bind(0)->close dedup as web_smoke.sh: the kernel hands the port right
 // back to the next bind(0), so redraw on repeats and on occupied ports.
@@ -103,12 +109,20 @@ async function stopAll() {
 }
 
 // Injected before app code on every page: record every RTCPeerConnection so
-// the test can inspect negotiation state and pull WebRTC stats live.
-const PC_CAPTURE = `
+// the test can inspect negotiation state and pull WebRTC stats live. With
+// FORCE_RELAY the pc is pinned to relay-only ICE (iceTransportPolicy) so the
+// connection can only complete through the TURN allocation — the honest way
+// to prove the relay path instead of trusting a host-candidate win.
+const PC_CAPTURE = (forceRelay) => `
   window.__chirpPcs = [];
   const NativePC = window.RTCPeerConnection;
   class CapturedPC extends NativePC {
-    constructor(cfg) { super(cfg); window.__chirpPcs.push(this); }
+    constructor(cfg) {
+      if (${forceRelay} && cfg) cfg = { ...cfg, iceTransportPolicy: 'relay' };
+      super(cfg);
+      window.__chirpPcs.push(this);
+      window.__chirpPcConfig = cfg;
+    }
   }
   window.RTCPeerConnection = CapturedPC;
 `;
@@ -159,6 +173,19 @@ async function main() {
   }
   fs.mkdirSync(ART_DIR, { recursive: true });
 
+  // TURN mode: E2E_TURN_URI + E2E_TURN_SECRET hand the voice service its
+  // coturn REST credentials (--turn_uri/--turn_static_secret); with
+  // E2E_FORCE_RELAY=1 the pcs are pinned to relay-only ICE so the media can
+  // only flow through the TURN allocation.
+  const turnUri = process.env.E2E_TURN_URI ?? '';
+  const turnSecret = process.env.E2E_TURN_SECRET ?? '';
+  const forceRelay = process.env.E2E_FORCE_RELAY === '1';
+  if (forceRelay && !turnUri) {
+    fail('E2E_FORCE_RELAY=1 needs E2E_TURN_URI (relay-only ICE has no other path)');
+    process.exit(1);
+  }
+  log(`mode: ${turnUri ? `turn (${turnUri})` : 'host-candidates'}${forceRelay ? ', relay-only ICE' : ''}`);
+
   const chatPort = await pickPort();
   const chatWsPort = await pickPort();
   const socialPort = await pickPort();
@@ -172,7 +199,9 @@ async function main() {
   const voiceLog = '/tmp/chirp_media_e2e_voice.log';
   start(CHAT_BIN, ['--port', String(chatPort), '--ws_port', String(chatWsPort)], chatLog);
   start(SOCIAL_BIN, ['--port', String(socialPort), '--ws_port', String(socialWsPort)], socialLog);
-  start(VOICE_BIN, ['--port', String(voicePort), '--ws_port', String(voiceWsPort)], voiceLog);
+  const voiceArgs = ['--port', String(voicePort), '--ws_port', String(voiceWsPort)];
+  if (turnUri) voiceArgs.push('--turn_uri', turnUri, '--turn_static_secret', turnSecret);
+  start(VOICE_BIN, voiceArgs, voiceLog);
   await waitPort(chatWsPort, 'chat-ws');
   await waitPort(socialWsPort, 'social-ws');
   await waitPort(voiceWsPort, 'voice-ws');
@@ -216,11 +245,22 @@ async function main() {
 
   const ctxA = await browser.newContext();
   const ctxB = await browser.newContext();
-  await ctxA.addInitScript(PC_CAPTURE);
-  await ctxB.addInitScript(PC_CAPTURE);
+  await ctxA.addInitScript(PC_CAPTURE(forceRelay));
+  await ctxB.addInitScript(PC_CAPTURE(forceRelay));
   const alice = await ctxA.newPage();
   const bob = await ctxB.newPage();
-  for (const p of [alice, bob]) p.on('pageerror', (e) => fail('pageerror:', e.message));
+  for (const p of [alice, bob]) {
+    p.on('pageerror', (e) => fail('pageerror:', e.message));
+    if (process.env.E2E_DEBUG === '1') {
+      p.on('console', (m) => log(`console[${m.type()}]:`, m.text().slice(0, 200)));
+      p.on('websocket', (ws) => {
+        const tag = ws.url().replace(/^.*\/ws\//, 'ws:').slice(0, 24);
+        log(`+socket ${tag}`);
+        ws.on('framesent', (f) => log(`${tag} >> ${String(f.payload).length}b ${hexHead(f.payload)}`));
+        ws.on('framereceived', (f) => log(`${tag} << ${String(f.payload).length}b ${hexHead(f.payload)}`));
+      });
+    }
+  }
 
   try {
     // ---- drive the real UI: alice creates, bob joins by the shown id ----
@@ -280,22 +320,47 @@ async function main() {
     log('alice mesh:', JSON.stringify(factsA[0]));
     log('bob mesh:', JSON.stringify(factsB[0]));
 
+    // ---- TURN surface: the join response must have carried the configured
+    // ice servers down to the pc config, with REST credentials when set ----
+    const cfg = await alice.evaluate(() => window.__chirpPcConfig ?? {});
+    const cfgServers = cfg.iceServers ?? [];
+    log('pc iceServers:', JSON.stringify(cfgServers));
+    if (turnUri) {
+      if (cfgServers.length === 0) throw new Error('TURN mode: pc config carries no iceServers');
+      const urls = cfgServers.flatMap((s) => (Array.isArray(s.urls) ? s.urls : [s.urls]));
+      if (!urls.some((u) => String(u).startsWith('turn:'))) {
+        throw new Error(`TURN mode: no turn: url in pc config: ${urls.join(',')}`);
+      }
+      if (turnSecret && (!cfgServers[0].username || !cfgServers[0].credential)) {
+        throw new Error('TURN mode: REST credentials missing from pc config');
+      }
+    } else if (cfgServers.length > 0) {
+      throw new Error(`host mode: unexpected iceServers in pc config: ${JSON.stringify(cfgServers)}`);
+    }
+
     // ---- audio frames flow: bytes must grow over a 3s window ----
     const sample = async (page, label) => {
       const s = await page.evaluate(async () => {
         const pc = window.__chirpPcs[0];
         const report = await pc.getStats();
-        const out = { inboundBytes: 0, outboundBytes: 0, rttMs: null, packetsIn: 0 };
+        const out = { inboundBytes: 0, outboundBytes: 0, rttMs: null, packetsIn: 0, pair: null };
+        const cands = new Map();
         report.forEach((st) => {
           if (st.type === 'inbound-rtp' && st.kind === 'audio') {
             out.inboundBytes = st.bytesReceived ?? 0;
             out.packetsIn = st.packetsReceived ?? 0;
           }
           if (st.type === 'outbound-rtp' && st.kind === 'audio') out.outboundBytes = st.bytesSent ?? 0;
+          if (st.type.endsWith('candidate')) cands.set(st.id ?? st.address, st);
           if (st.type === 'candidate-pair' && st.state === 'succeeded' && st.nominated && st.currentRoundTripTime != null) {
             out.rttMs = Math.round(st.currentRoundTripTime * 1000);
+            out.pair = { localId: st.localCandidateId, remoteId: st.remoteCandidateId };
           }
         });
+        if (out.pair) {
+          const t = (id) => cands.get(id)?.candidateType ?? '?';
+          out.pair = `${t(out.pair.localId)}->${t(out.pair.remoteId)}`;
+        }
         return out;
       });
       log(`${label} stats:`, JSON.stringify(s));
@@ -309,8 +374,15 @@ async function main() {
 
     if (a2.inboundBytes <= a1.inboundBytes) throw new Error(`alice inbound bytes not flowing: ${a1.inboundBytes} -> ${a2.inboundBytes}`);
     if (b2.inboundBytes <= b1.inboundBytes) throw new Error(`bob inbound bytes not flowing: ${b1.inboundBytes} -> ${b2.inboundBytes}`);
-    log(`alice inbound bytes +${a2.inboundBytes - a1.inboundBytes} over 3s (rtt ${a2.rttMs ?? '?'}ms)`);
-    log(`bob inbound bytes +${b2.inboundBytes - b1.inboundBytes} over 3s (rtt ${b2.rttMs ?? '?'}ms)`);
+    log(`alice inbound bytes +${a2.inboundBytes - a1.inboundBytes} over 3s (rtt ${a2.rttMs ?? '?'}ms, pair ${a2.pair ?? '?'})`);
+    log(`bob inbound bytes +${b2.inboundBytes - b1.inboundBytes} over 3s (rtt ${b2.rttMs ?? '?'}ms, pair ${b2.pair ?? '?'})`);
+    if (forceRelay) {
+      for (const [who, s] of [['alice', a2], ['bob', b2]]) {
+        if (!s.pair || !s.pair.startsWith('relay->relay')) {
+          throw new Error(`${who}: relay-only ICE selected pair ${s.pair}, not relay->relay`);
+        }
+      }
+    }
 
     // ---- speaking dots: the fake device's pulsed tone drives the analyser
     // path in a real browser; a dot must appear within the poll window ----
@@ -336,7 +408,7 @@ async function main() {
     log(`screenshots: ${shotA}, ${shotB}`);
 
     console.log('\n=== VOICE MEDIA E2E PASS ===');
-    console.log(`room=${roomId} bytes alice +${a2.inboundBytes - a1.inboundBytes} / bob +${b2.inboundBytes - b1.inboundBytes} rtt ${a2.rttMs ?? '?'}ms/${b2.rttMs ?? '?'}ms speaking A:${speakingA} B:${speakingB}`);
+    console.log(`mode=${turnUri ? (forceRelay ? 'turn-relay' : 'turn') : 'host'} room=${roomId} bytes alice +${a2.inboundBytes - a1.inboundBytes} / bob +${b2.inboundBytes - b1.inboundBytes} rtt ${a2.rttMs ?? '?'}ms/${b2.rttMs ?? '?'}ms pair ${a2.pair ?? '?'}/${b2.pair ?? '?'} speaking A:${speakingA} B:${speakingB}`);
   } finally {
     await browser.close().catch(() => {});
     await vite.close().catch(() => {});
