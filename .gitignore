@@ -98,5 +98,8 @@ apps/ios/xcuserdata/
 # crashpad 本地落盘目录(数据库布局,不手工管理)
 crash_dumps/
 
+# 浏览器媒体 E2E 的截图证据(scripts/voice_media_e2e.mjs 落盘,本地查看)
+apps/web_companion/e2e-artifacts/
+
 # python 字节码(scripts/ 下的覆盖率报告/钉子表工具)
 __pycache__/
