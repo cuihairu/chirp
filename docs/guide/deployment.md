@@ -58,6 +58,24 @@ Every service with a listener accepts `--host <addr>` (default `0.0.0.0`, all in
 
 The rate-limit switches are on chat: `--login_rate_limit_per_min` (default 30/minute, per client IP) and `--send_rate_limit_per_min` (default 120/minute, per user). Window data lives in Redis, and Redis failures let traffic through (fail-open); with no `--redis_host` configured at all, rate limiting is not enabled.
 
+**Voice media TURN/STUN (coturn REST credentials)**: the WebRTC mesh dials peer-to-peer; `chirp_voice` itself relays only signalling. The ICE servers reach clients in the `JOIN_ROOM_RESP`:
+
+- `--turn_uri <url>[,<url>...]` — the TURN/STUN URLs handed to clients (comma-separated list goes out as one `IceServer.urls` array; spaces around entries are trimmed). With no flag at all the join response carries no ICE servers and the mesh runs on host candidates only — fine on a LAN, breaks across NAT.
+- `--turn_static_secret <secret>` — with the URI set, every join response mints coturn REST short-term credentials: username `<unix-expiry>:<user_id>` (`turn_credential_ttl_seconds` from its config, expiry leading per the coturn convention) and credential `base64(HMAC-SHA1(secret, username))`. The URI without a secret is refused at startup with a warning (STUN-only access). Both flags off is the current compose default.
+
+The TURN server must run in REST-secret mode with the same secret — e.g. coturn in a container, publishing one plain TURN port:
+
+```bash
+docker run -d --name coturn -p 3478:3478/udp -p 3478:3478/tcp \
+  coturn/coturn:latest -n --listening-port 3478 --realm chirp \
+  --use-auth-secret --static-auth-secret <same secret as --turn_static_secret>
+```
+
+Then `chirp_voice --turn_uri turn:<coturn-host>:3478?transport=udp --turn_static_secret <secret>`. Verified pairing (2026-11-13, browser media E2E `apps/web_companion/scripts/voice_media_e2e.mjs`): `E2E_TURN_URI` + `E2E_TURN_SECRET` wire the same flags into the E2E stack; with `E2E_FORCE_RELAY=1` the clients pin `iceTransportPolicy: 'relay'` so the connection can only complete through the TURN allocation — the run asserted `relay->relay` selected pairs on both sides with inbound audio flowing (~8-10 KB per 3 s per client through coturn), and coturn's log shows the allocations authenticated with the chirp-minted usernames (`user <...:alice>` / `<...:bob>`). Host-candidate form runs (`pair host->host`) pass without the TURN flags. Two same-host gotchas the E2E surfaced:
+
+- coturn publishes relayed addresses on the interface the allocation arrived on. With `--network host` and a `turn:127.0.0.1` URL, the relayed address is loopback and every `CREATE_PERMISSION` fails `403: Forbidden IP` (coturn refuses loopback peers); the bridge container with a published port hands out a container-IP relayed address and works.
+- The client's relayed address must be routable from the other peer — in deployments, point `--turn_uri` at coturn's service address and make sure the relay port range/`--external-ip` matches the public topology (the single-box dev pair above dodges this by putting coturn on a bridge the host can route).
+
 ## Production checklist
 
 - Change MySQL and Redis away from the repo's example passwords (`chirp_pass` etc.) and replace `--jwt_secret` with a real secret

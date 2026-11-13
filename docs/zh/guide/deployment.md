@@ -58,6 +58,24 @@ build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001 \
 
 限流开关在 chat 上:`--login_rate_limit_per_min`(默认 30 次/分钟,按客户端 IP)和 `--send_rate_limit_per_min`(默认 120 次/分钟,按用户)。窗口数据放 Redis,Redis 故障时放行(fail-open);完全不配 `--redis_host` 时不启用限流。
 
+**语音媒体 TURN/STUN(coturn REST 凭据)**:WebRTC 网格走端到端对连,`chirp_voice` 只中继信令。ICE 服务器经 `JOIN_ROOM_RESP` 下发给客户端:
+
+- `--turn_uri <url>[,<url>...]` — 下发客户端的 TURN/STUN URL(逗号分隔合并为一个 `IceServer.urls` 数组,条目两侧空格会裁剪)。完全不配时 join 响应不带 ICE 服务器,网格只靠 host 候选连通——同机/局域网够用,跨 NAT 不通。
+- `--turn_static_secret <secret>` — 配了 URI 后,每次 join 响应铸造 coturn REST 短期凭据:用户名 `<unix 过期秒>:<user_id>`(`turn_credential_ttl_seconds` 取自其配置,过期时间按 coturn 惯例放前导位),凭据为 `base64(HMAC-SHA1(secret, username))`。只配 URI 不配密钥启动时告警拒绝(STUN-only 访问)。两 flag 均不配是当前 compose 默认。
+
+TURN 服务器须以 REST-secret 模式运行同一密钥——例如容器 coturn,发布一个纯 TURN 端口:
+
+```bash
+docker run -d --name coturn -p 3478:3478/udp -p 3478:3478/tcp \
+  coturn/coturn:latest -n --listening-port 3478 --realm chirp \
+  --use-auth-secret --static-auth-secret <与 --turn_static_secret 相同>
+```
+
+然后 `chirp_voice --turn_uri turn:<coturn-host>:3478?transport=udp --turn_static_secret <secret>`。已验证配对(2026-11-13,浏览器媒体 E2E `apps/web_companion/scripts/voice_media_e2e.mjs`):`E2E_TURN_URI` + `E2E_TURN_SECRET` 把同组 flag 接进 E2E 栈;`E2E_FORCE_RELAY=1` 时客户端钉死 `iceTransportPolicy: 'relay'`,连接只能经 TURN 分配完成——该跑法断言两端选中对均为 `relay->relay` 且入向音频流动(每端约 8-10 KB / 3 s 经 coturn),coturn 日志可见以 chirp 铸造用户名认证的分配(`user <...:alice>` / `<...:bob>`)。host 候选形态(选中对 `host->host`)不带 TURN flag 亦通过。E2E 暴露的两个同机坑:
+
+- coturn 把 relay 地址发在分配入口所在接口。`--network host` + `turn:127.0.0.1` 时 relay 地址是回环,每笔 `CREATE_PERMISSION` 报 `403: Forbidden IP`(coturn 拒绝 loopback peer);bridge 容器 + 发布端口发的是容器网段 relay 地址,可正常工作。
+- 客户端拿到的 relay 地址必须能被对端路由到——部署时 `--turn_uri` 指 coturn 的服务地址,并让 relay 端口段/`--external-ip` 与公网拓扑一致(上面的单机开发配对靠把 coturn 放在宿主可路由的 bridge 上绕开此坑)。
+
 ## 生产检查清单
 
 - MySQL 与 Redis 改掉仓库里的示例密码(`chirp_pass` 等),`--jwt_secret` 换成真实密钥
