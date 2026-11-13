@@ -16,6 +16,8 @@ export interface VoiceParticipant {
   /** Flag details only arrive with a full roster pull; notifies carry state only. */
   muted?: boolean;
   deafened?: boolean;
+  /** Media plane (client-measured analyser level, hysteresis-applied). */
+  speaking?: boolean;
 }
 
 /** Narrowed copy of chirp.voice.GetRoomInfoResponse the UI renders. */
@@ -29,10 +31,12 @@ export interface VoiceRoomSnapshot {
 export interface VoiceState {
   /** The room we are sitting in; null when not in a voice room. */
   room: VoiceRoomSnapshot | null;
+  /** Media-plane failure (mic permission denied, no device...), for the UI. */
+  mediaError: string | null;
 }
 
 export const createVoiceStore = (
-  initial: VoiceState = { room: null },
+  initial: VoiceState = { room: null, mediaError: null },
 ): Store<VoiceState> => createStore<VoiceState>(initial);
 
 /** Applies a full server roster (GET_ROOM_INFO / join / restore path). */
@@ -42,7 +46,40 @@ export function applyRoomSnapshot(store: Store<VoiceState>, snapshot: VoiceRoomS
 
 /** Leaving (or a failed restore) drops the mirror entirely. */
 export function clearRoom(store: Store<VoiceState>): void {
-  store.set((prev) => (prev.room === null ? prev : { ...prev, room: null }));
+  store.set((prev) =>
+    prev.room === null && prev.mediaError === null
+      ? prev
+      : { ...prev, room: null, mediaError: null },
+  );
+}
+
+/** Media-plane failure surfaced for the UI (null clears it). */
+export function setMediaError(
+  store: Store<VoiceState>,
+  message: string | null,
+): void {
+  store.set((prev) => ({ ...prev, mediaError: message }));
+}
+
+/** Speaking flip from the media layer's analyser loop (client-measured). */
+export function setSpeaking(
+  store: Store<VoiceState>,
+  roomId: string,
+  userId: string,
+  speaking: boolean,
+): void {
+  store.set((prev) => {
+    if (!prev.room || prev.room.roomId !== roomId) return prev;
+    return {
+      ...prev,
+      room: {
+        ...prev.room,
+        participants: prev.room.participants.map((p) =>
+          p.userId === userId ? { ...p, speaking } : p,
+        ),
+      },
+    };
+  });
 }
 
 /** PARTICIPANT_JOINED_NOTIFY (never for ourselves — the actor is excluded). */
@@ -132,6 +169,6 @@ export function derivedState(muted: boolean, deafened: boolean): ParticipantStat
 
 /** Our own participant row, if we hold a roster. */
 export const selfParticipantOf = (
-  state: VoiceState,
+  state: Pick<VoiceState, 'room'>,
   userId: string,
 ): VoiceParticipant | undefined => state.room?.participants.find((p) => p.userId === userId);

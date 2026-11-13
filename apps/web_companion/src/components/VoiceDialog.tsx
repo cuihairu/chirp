@@ -19,15 +19,15 @@ import { selfParticipantOf } from '../state/voice_store';
 import { zh } from '../i18n/zh';
 
 /**
- * Voice room management (protocol layer): create / join by room id, the
- * member roster with state tags, own mute / deafen toggles, and leave.
- * No media plane — the UI is a protocol-plane closed loop that holds the
- * roster/state surface the voice service offers without driving WebRTC.
+ * Voice room management: create / join by room id, the member roster with
+ * state tags, speaking dots (analyser-driven) and own mute / deafen toggles.
+ * The media plane lives behind VoiceApi/VoiceMediaApi; this component only
+ * renders store state (including the mic-permission error line).
  */
 export default function VoiceDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { voiceApi, voiceState, auth } = useServices();
   const selfId = useStoreValue(auth).userId ?? '';
-  const { room } = useStoreValue(voiceState);
+  const { room, mediaError } = useStoreValue(voiceState);
   const [roomName, setRoomName] = useState('');
   const [joinId, setJoinId] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -120,6 +120,16 @@ export default function VoiceDialog({ open, onClose }: { open: boolean; onClose:
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
               {zh.voice.participants(room.participants.length, room.maxParticipants)}
             </Typography>
+            {mediaError !== null && (
+              <Typography
+                variant="caption"
+                color="error"
+                data-testid="voice-media-error"
+                sx={{ display: 'block', mb: 1 }}
+              >
+                {`${zh.voice.mediaFailed} [${mediaError}]`}
+              </Typography>
+            )}
             {self && (
               <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
                 <Button size="small" onClick={toggleMute} data-testid="voice-mute-toggle">
@@ -135,9 +145,25 @@ export default function VoiceDialog({ open, onClose }: { open: boolean; onClose:
                 <ListItem key={participant.userId}>
                   <ListItemText
                     primary={
-                      participant.userId === selfId
-                        ? `${participant.userId} (${zh.voice.selfTag})`
-                        : participant.userId
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        {participant.speaking && (
+                          <span
+                            aria-label={zh.voice.speaking}
+                            title={zh.voice.speaking}
+                            data-testid={`voice-speaking-${participant.userId}`}
+                            style={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              background: '#2e7d32',
+                              display: 'inline-block',
+                            }}
+                          />
+                        )}
+                        {participant.userId === selfId
+                          ? `${participant.userId} (${zh.voice.selfTag})`
+                          : participant.userId}
+                      </span>
                     }
                     secondary={stateLabel(participant.state)}
                   />

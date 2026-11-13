@@ -169,6 +169,8 @@ export const zh = {
     stateMuted: '已静音',
     stateDeafened: '拒听',
     selfTag: '我',
+    speaking: '正在说话',
+    mediaFailed: '麦克风不可用(语音成员仍显示,但无声音)',
     unavailable: '语音服务未连接',
   },
   device: {
