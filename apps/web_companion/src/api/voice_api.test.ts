@@ -67,19 +67,43 @@ describe('VoiceApi.login', () => {
 });
 
 describe('VoiceApi room lifecycle', () => {
-  it('creates a room and pulls the roster', async () => {
+  it('creates a room, joins it as creator, then pulls the roster', async () => {
     const h = makeHarness();
+    const requested: MsgID[] = [];
     h.conn.setResponder(async (msgId, req) => {
+      requested.push(msgId);
       if (msgId === MsgID.CREATE_ROOM_REQ) {
         expect((req as { roomType: number }).roomType).toBe(1);
         return { code: 0, roomId: 'room-1' };
+      }
+      // The service does not join the creator automatically — the room sits
+      // at zero participants until the creator sends JOIN_ROOM themselves.
+      if (msgId === MsgID.JOIN_ROOM_REQ) {
+        expect((req as { roomId: string }).roomId).toBe('room-1');
+        expect((req as { sdpOffer: string }).sdpOffer).toBe('');
+        return { code: 0, roomId: 'room-1', iceServers: [] };
       }
       if (msgId === MsgID.GET_ROOM_INFO_REQ) return rosterResp();
       return { code: 0 };
     });
     expect(await h.api.createRoom('smoke-room', 5)).toBe(0);
+    expect(requested).toEqual([
+      MsgID.CREATE_ROOM_REQ,
+      MsgID.JOIN_ROOM_REQ,
+      MsgID.GET_ROOM_INFO_REQ,
+    ]);
     expect(h.voice.get().room?.roomName).toBe('smoke-room');
     expect(h.voice.get().room?.maxParticipants).toBe(5);
+  });
+
+  it('reports the join failure when the creator join is rejected', async () => {
+    const h = makeHarness();
+    h.conn.setResponder(async (msgId) => {
+      if (msgId === MsgID.CREATE_ROOM_REQ) return { code: 0, roomId: 'room-1' };
+      if (msgId === MsgID.JOIN_ROOM_REQ) return { code: 21 };
+      return { code: 0 };
+    });
+    expect(await h.api.createRoom('smoke-room', 5)).toBe(21);
   });
 
   it('join sends the empty scaffold offer and refreshes via GET_ROOM_INFO', async () => {

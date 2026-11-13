@@ -140,16 +140,26 @@ export class VoiceApi {
   async createRoom(roomName = '', maxParticipants = 0): Promise<number> {
     const userId = this.auth.get().userId;
     if (!userId) return -1;
-    const resp = await this.conn.request(CREATE_ROOM, {
+    const created = await this.conn.request(CREATE_ROOM, {
       userId,
       roomType: RoomType.GROUP,
       roomName,
       maxParticipants,
     });
+    if (created.code !== 0) return created.code;
+    // Creating does not join: the room sits at zero participants until its
+    // creator sends JOIN_ROOM like any other member (the service-side rule,
+    // caught by the browser media E2E — the roster pull used to come back
+    // empty and nobody ever dialed).
+    const resp = await this.conn.request(JOIN_ROOM, {
+      userId,
+      roomId: created.roomId,
+      sdpOffer: '',
+    });
     if (resp.code !== 0) return resp.code;
-    await this.refreshRoom(resp.roomId);
-    await this.startMedia(resp.roomId, []);
-    return resp.code;
+    await this.refreshRoom(created.roomId);
+    await this.startMedia(created.roomId, resp.iceServers ?? []);
+    return created.code;
   }
 
   /**

@@ -156,6 +156,7 @@ export const zh = {
     createFailed: '创建房间失败',
     join: '加入',
     joinLabel: '房间 ID',
+    roomIdLabel: '房间号',
     joinFailed: '加入房间失败',
     noRoom: '未在语音房间中,创建或加入一个。',
     participants: (n: number, max: number) => `成员 ${n}/${max}`,

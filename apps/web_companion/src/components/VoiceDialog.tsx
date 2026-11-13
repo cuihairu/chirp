@@ -120,6 +120,11 @@ export default function VoiceDialog({ open, onClose }: { open: boolean; onClose:
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
               {zh.voice.participants(room.participants.length, room.maxParticipants)}
             </Typography>
+            {/* The room id is only returned by CREATE/JOIN here — show it so the
+                creator can hand it to joiners (the join flow needs it). */}
+            <Typography variant="caption" sx={{ display: 'block', mb: 1 }} data-testid="voice-room-id">
+              {`${zh.voice.roomIdLabel}: ${room.roomId}`}
+            </Typography>
             {mediaError !== null && (
               <Typography
                 variant="caption"
