@@ -56,7 +56,7 @@
 | --- | --- | --- |
 | 单元测试 | `tests/unit` 下 46 个套件;凡链接进测试二进制的后端包,行覆盖按 `scripts/run_coverage.sh` 按包不低于 98%(仅限已登记的 `KNOWN_UNCOVERABLE` 行豁免与 `KNOWN_UNCOVERABLE_ARMS` 分支臂豁免——后者 2026-09-27 批次审计六文件 27 条未覆盖分支臂后落地:可达臂补真单测清零,残留的 unwind-only/不变量/竞态臂带理由与行号锚定逐条豁免并在每次报告列出。累计豁免 210 行/197 臂(`KNOWN_UNCOVERABLE_ARMS` 87 处行号锚点),另有 `KNOWN_UNCOVERABLE_FUNCTIONS` 9 条函数级豁免,门槛为上文按包 98%(当前整体高于 99%))。`chirp_app_sdk_gateway`、`chirp_voice`、`chirp_party` 有套件(`app_sdk_gateway_tests`、`voice_tests`、`party_tests`),但它们的 `main.cc` 不在覆盖测量范围内 | Supported |
 | 标准本地构建经 `ctest` 跑测试 | `ctest --preset dev`(gcov 构建用 `--preset coverage`);全新树可构建并通过 | Supported |
-| CI 把测试失败当硬失败 | `ci.yml` 跑 Debug + Release 构建 + `ctest`,外加一个 coverage job:任何包行覆盖跌破 100%(登记豁免除外)即失败 | Supported |
+| CI 把测试失败当硬失败 | `ci.yml` 跑 Debug + Release 构建 + `ctest`,外加一个 coverage job:任何包行覆盖跌破 CI 实际执行的门槛——按包 98%(`ci.yml` 以 `--fail-under 98` 传给 `scripts/run_coverage.sh`;该脚本不带此参数时的自身默认值是 100%)——即失败;登记豁免两种情形都排除 | Supported |
 | 进程级冒烟覆盖 | `test_services.sh --smoke / --smoke-chat / --smoke-sdk / --smoke-npc / --smoke-edge / --smoke-jwt / --smoke-redis / --smoke-game / --smoke-voice / --smoke-party` 十条腿全部本地逐条验证且跑在 CI smoke job 里(`--smoke-redis` 用 docker redis 验跨实例踢线);另有 `--smoke-search` 腿(chat+search+game_sdk_gateway 双桥真实进程,种子私聊经 chat 桥落 MySQL,客户端 2248 经 gateway search 桥重试命中),2026-10-09 落立、跑在 CI smoke job,起搜 mysql 坐标按生效坐标显式传(search 的 `--mysql_host` 无默认,CI 无 env 时必须显式) | Supported |
 | 核心服务的 Docker Compose 路径 | 已具备 | Supported |
 | 路线图与默认构建产物一致 | 是——todo.md 是活的路线图(2026-09 重写);已完成项在 README.md 中划线 | Supported |
