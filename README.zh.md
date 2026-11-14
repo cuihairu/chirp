@@ -42,7 +42,7 @@ chirp 基于以下开源组件构建，完整依赖清单见 `vcpkg.json`：
 
 诚实地讲：chirp 目前是**可运行的核心通信骨架 + 一批实验性扩展**，不是所有目录都同等成熟的完整产品。
 
-- 成熟主线是 `gateway + auth + chat`：登录、心跳、会话绑定、私聊、群组、历史、离线队列，`tests/unit` 下 45 个单测套件覆盖，行覆盖率 100%（CI 按 100% 门槛硬卡，登记在 `KNOWN_UNCOVERABLE` 等豁免表的行除外；`scripts/run_coverage.sh` 本地可复现）。
+- 成熟主线是 `gateway + auth + chat`：登录、心跳、会话绑定、私聊、群组、历史、离线队列，`tests/unit` 下 46 个单测套件覆盖，行覆盖率按包不低于 98%（CI 按包硬卡 98% 门槛，登记在 `KNOWN_UNCOVERABLE` 等豁免表的行除外；`scripts/run_coverage.sh` 本地可复现）。
 - 服务器平面 `server_gateway`（游戏服务端接入）枢纽与 chat 侧注入消费均已实现并全覆盖（进程级端到端验证 `./test_services.sh --smoke-npc`），标记为实验中。
 - 其余（`social`、`voice`、`notification`、多端 SDK、移动端、管理后台）完成度不一致，不要对外当作稳定能力介绍。真实状态见[能力矩阵](docs/CAPABILITY_MATRIX.md)。
 
@@ -118,11 +118,11 @@ curl -fsSL https://raw.githubusercontent.com/cuihairu/chirp/main/install.sh | ba
 irm https://raw.githubusercontent.com/cuihairu/chirp/main/install.ps1 | iex
 ```
 
-默认装桌面聊天 App（Linux x86_64/aarch64，root 走 `dpkg -i`，无 root 解包进 `~/.local`）；`--component app|cpp|go|ts|all`（默认 `app`）选择组件——cpp 装 C++ core SDK（`--prefix`）、go 装 Go SDK 源码包（`--install-dir`）、ts 装 `@chirp/protocol` npm 包。darwin/windows 与 armv7 等无产物的平台会明确报错（构建矩阵见 [nightly.yml](.github/workflows/nightly.yml)，可用面见 [nightly-dist/manifest.json](https://github.com/cuihairu/chirp/tree/nightly-dist)）。下载走 `nightly-dist` 分支镜像，匿名可直链，不要求登录。
+默认装桌面聊天 App（Linux x86_64/aarch64：root 走 `dpkg -i`，无 root 解包进 `~/.local`；macOS arm64 挂载 `.dmg` 把 `.app` 拷进 `/Applications`，无权限时进 `~/Applications`；Windows x64 走 `install.ps1`）；`--component app|cpp|go|ts|all`（默认 `app`）选择组件——cpp 装 C++ core SDK（`--prefix`）、go 装 Go SDK 源码包（`--install-dir`）、ts 装 `@chirp/protocol` npm 包。每日构建矩阵外的目标（darwin-x64、windows-arm64、armv7 等）会明确报错（构建矩阵见 [nightly.yml](.github/workflows/nightly.yml)，可用面见 [nightly-dist/manifest.json](https://github.com/cuihairu/chirp/tree/nightly-dist)）。下载走 `nightly-dist` 分支镜像，匿名可直链，不要求登录。
 
 ## 快速开始
 
-平台目标为 Linux（CI 仅跑 Linux）。依赖：CMake 3.21+、C++23、Protocol Buffers。Docker、MySQL、libsodium 为可选增强依赖。
+平台目标为 Linux：主 CI 仅在 Linux 上构建与测试，macOS/Windows 编译验证腿见 `cmake-multi-platform.yml`。依赖：CMake 3.21+、C++23、Protocol Buffers。Docker、MySQL、libsodium 为可选增强依赖。
 
 ```bash
 ./gen_proto.sh
