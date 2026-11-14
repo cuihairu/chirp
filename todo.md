@@ -98,6 +98,8 @@
 
 - [ ] **DOC-GIF · P2 · 文档 · 配置开关效果动态图(每个开关 off→on 对比+GIF)**。BLOCKED 2026-11-04 缺可登录的本地后端栈：GUI 与绝大多数 CLI 开关的证据生成都需要真实 gateway+auth+chat（含 MariaDB `chirp` 库）在线；`mysql -h127.0.0.1 -P3306 -uchirp`／`-uroot` 均 Access denied 1698（与 UI-AUDIT 同源阻塞，2026-11-03 已记录），仓内无运行中的 MySQL 容器。且交付含「自动流水线」与双语「配置效果」页，需先有稳定的可跑通栈与 asciinema/test-electron 录制工具才可落地；无待补实现，仅环境/凭据阻塞。【2026-11-04 复核：本机 MySQL 容器仅 `doggo` 库且凭据不可用，无 `chirp` 库；gateway/auth/chat 全栈未运行；外部条件未变，不重试】【2026-11-06 复核：本机 MySQL 容器仅 `doggo` 库且凭据不可用，无 `chirp` 库；gateway/auth/chat 全栈未运行；外部条件未变，不重试】 【2026-11-12 复核：`mysql -uchirp` 仍 1045 Access denied，无 `chirp` 库，gateway/auth/chat 全栈未运行；外部条件未变，不重试】
   - 交付:枚举本仓全部「开启后有效果」的开关/配置项;自动流水线生成证据——GUI 类用 @vscode/test-electron 或应用截图(off 一张/on 一张+切换过程录屏),CLI 类用终端录屏(asciinema→GIF 或 ffmpeg);ffmpeg 缝合动态 GIF。
+- [ ] **DOC-I18N-AUTO · P2 · 文档 · 文档站浏览器语言自动跳转（待拍板，不实施）**。G2 审计（2026-11-14，`35bbc7c`）面二结论：`docs/.vitepress/config.mjs` 为双语站（locales root=en `/`、zh=zh-CN `/zh/`，内置 `langMenuLabel` 手动切换），**无自动跳转且为有意设计**——config 未见 `rootLocale` 重定向、未见 `navigator.language` 探测，md 页源无内联 `<script setup>`，注释明载「不写浏览器自动跳转」。线上探针 `/` →200 `lang=en-US` CJK0、`/zh/` →200 `lang=zh-CN` CJK19，locale 契约正常。基线＝手动切换+显式链接（受规），自动识别属增强项；**是否落地须用户/舰队统一拍板**，本项仅记账不改实现。
+
   - 文档:docs「配置效果」页(双语)逐开关嵌入:说明+off 图+on 图+GIF。
   - 验收:清单内每个开关都有 off/on+GIF;流水线可重跑(配置变更随时再生成);兼作配置效果回归测试。
   - 参考:kode todo C-24 同款流水线模式(2026-11-01 用户令全舰队推广)。
