@@ -662,36 +662,72 @@ void HandleLeaveRoom(const std::shared_ptr<VoiceState>& state,
   // Audit 2026-11-11: LEAVE_ROOM ran without any identity check, so an
   // unauthenticated JWT-mode frame could drive a bound user out of their
   // room. The gate also rejects a bound session claiming someone else's id.
+  // Follow-up 2026-11-14: every cleanup step below runs on the gate's bound
+  // identity, and an empty claim is rejected outright - a leave carrying no
+  // usable identity names no membership to tear down.
   chirp::voice::LeaveRoomResponse auth_resp;
-  if (!AuthorizeActor(state, session, pkt, chirp::gateway::LEAVE_ROOM_RESP,
-                      req.user_id(), &auth_resp).has_value()) {
+  const std::optional<std::string> authorized = AuthorizeActor(state, session, pkt,
+                                                               chirp::gateway::LEAVE_ROOM_RESP,
+                                                               req.user_id(), &auth_resp);
+  if (!authorized.has_value()) {
+    return;
+  }
+  const std::string actor = *authorized;
+  if (actor.empty()) {
+    chirp::voice::LeaveRoomResponse resp;
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::LEAVE_ROOM_RESP, pkt.sequence(), resp.SerializeAsString());
     return;
   }
 
+  // The member index decides whether this leave names a real seat (audit
+  // follow-up 2026-11-14): a user sitting in another room - or in none -
+  // must not have their index entry erased for this room, and a live room
+  // must not run its teardown for a non-member. Only a leave naming a room
+  // that is already gone stays idempotent-OK (client retries after a
+  // reclaim or disconnect).
   std::shared_ptr<VoiceRoom> room;
+  bool member = false;
   {
     std::lock_guard<std::mutex> lock(state->mu);
-    auto it = state->rooms.find(req.room_id());
-    if (it == state->rooms.end()) {
-      chirp::voice::LeaveRoomResponse resp;
-      resp.set_code(chirp::common::OK);  // Already left or room doesn't exist
-      resp.set_server_time(NowMs());
-      SendPacket(session, chirp::gateway::LEAVE_ROOM_RESP, pkt.sequence(), resp.SerializeAsString());
-      return;
+    auto idx = state->user_to_room.find(actor);
+    if (idx != state->user_to_room.end() && idx->second == req.room_id()) {
+      state->user_to_room.erase(idx);  // stale entry if the room vanished below
+      member = true;
     }
-    room = it->second;
-    state->user_to_room.erase(req.user_id());
+    auto it = state->rooms.find(req.room_id());
+    if (it != state->rooms.end()) {
+      room = it->second;
+    }
+  }
+  if (!member) {
+    chirp::voice::LeaveRoomResponse resp;
+    // Idempotent only when the target room itself is gone; a live room
+    // refuses a non-member's leave.
+    resp.set_code(room ? chirp::common::INVALID_PARAM : chirp::common::OK);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::LEAVE_ROOM_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
+  }
+  if (!room) {
+    // The indexed room was reclaimed under us: nothing left to tear down.
+    chirp::voice::LeaveRoomResponse resp;
+    resp.set_code(chirp::common::OK);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::LEAVE_ROOM_RESP, pkt.sequence(), resp.SerializeAsString());
+    return;
   }
 
   {
     std::lock_guard<std::mutex> lock(room->mu);
-    room->participants.erase(req.user_id());
+    room->participants.erase(actor);
   }
 
   // Pull the leaver off the speaking queue / clear the floor if they held it
   // (VOICE-RT 麦序模式); the room state change fans out separately.
-  if (DetachFromMicQueue(room.get(), req.user_id())) {
-    BroadcastMicQueueState(state, room, req.user_id());
+  if (DetachFromMicQueue(room.get(), actor)) {
+    BroadcastMicQueueState(state, room, actor);
   }
 
   // An emptied room is reclaimed: state->rooms must not grow forever.
@@ -700,9 +736,9 @@ void HandleLeaveRoom(const std::shared_ptr<VoiceState>& state,
   // Notify other participants
   chirp::voice::ParticipantLeftNotify left_notify;
   left_notify.set_room_id(req.room_id());
-  left_notify.set_user_id(req.user_id());
+  left_notify.set_user_id(actor);
   left_notify.set_timestamp(NowMs());
-  BroadcastToRoom(room, chirp::gateway::PARTICIPANT_LEFT_NOTIFY, left_notify.SerializeAsString(), state, req.user_id());
+  BroadcastToRoom(room, chirp::gateway::PARTICIPANT_LEFT_NOTIFY, left_notify.SerializeAsString(), state, actor);
 
   chirp::voice::LeaveRoomResponse resp;
   resp.set_code(chirp::common::OK);
@@ -1437,6 +1473,37 @@ void HandleDisconnect(const std::shared_ptr<VoiceState>& state,
       left_notify.set_user_id(user_id);
       left_notify.set_timestamp(NowMs());
       BroadcastToRoom(room, chirp::gateway::PARTICIPANT_LEFT_NOTIFY, left_notify.SerializeAsString(), state, user_id);
+    }
+  }
+
+  // A CREATE that never saw a JOIN leaves a zero-participant room that no
+  // leave/disconnect path can ever touch: it has no members, so the member
+  // index holds nothing and MaybeReclaimRoom has no trigger (audit
+  // follow-up 2026-11-14). Empty rooms still hosted by the departing user
+  // die with their session; occupied ones keep their members and end at the
+  // last leave, but lose the host's moderation setup right here (same
+  // walk-out rule as a member leave, so a managed room is never stranded
+  // without an approver).
+  std::vector<std::shared_ptr<VoiceRoom>> hosted_occupied;
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    for (auto it = state->rooms.begin(); it != state->rooms.end();) {
+      const std::shared_ptr<VoiceRoom>& orphan = it->second;
+      std::lock_guard<std::mutex> room_lock(orphan->mu);
+      if (orphan->host_user_id == user_id) {
+        if (orphan->participants.empty()) {
+          it = state->rooms.erase(it);
+          continue;
+        }
+        hosted_occupied.push_back(orphan);
+      }
+      ++it;
+    }
+  }
+  // Broadcasts run outside state->mu (BroadcastToRoom locks it).
+  for (const auto& room : hosted_occupied) {
+    if (DetachFromMicQueue(room.get(), user_id)) {
+      BroadcastMicQueueState(state, room, user_id);
     }
   }
 }
