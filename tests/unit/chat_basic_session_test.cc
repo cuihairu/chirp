@@ -2993,12 +2993,13 @@ TEST_F(BasicChatTest, MessageStoreRedisHistoryFetchIsBoundedNotFullScan) {
   ASSERT_EQ(whole.size(), 5u);
   EXPECT_FALSE(has_more);
 
-  // The before filter can empty a clipped window: entries older than the
-  // window exist but were not examined, so has_more honestly reports true
-  // (the full-scan read would have said false here — the bounded contract).
+  // The before filter can empty a clipped window: before=300 excludes every
+  // entry the lim+1 window examined (m3..m5, ts 300..500) while older entries
+  // m1..m2 exist unexamined, so has_more honestly reports true (the full-scan
+  // read would have said false here — the bounded contract).
   has_more = false;
   const auto old_page =
-      redis_store.GetHistory(chirp::chat::WORLD, "world", /*before=*/2500, /*limit=*/2,
+      redis_store.GetHistory(chirp::chat::WORLD, "world", /*before=*/300, /*limit=*/2,
                              &has_more);
   EXPECT_TRUE(old_page.empty());
   EXPECT_TRUE(has_more);

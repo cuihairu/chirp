@@ -541,7 +541,9 @@ class FakeGateway {
       }
       socket_ = sock;
       client_connected_ = true;
+      partial_ = 0;  // fresh connection: any stale bytes belong to the old one
       DoRead();
+      DoAccept();  // keep listening: reconnect tests bring a second client
     });
   }
 
@@ -551,6 +553,10 @@ class FakeGateway {
         asio::buffer(read_buf_.data() + partial_, read_buf_.size() - partial_),
         [this, self_socket](const std::error_code& ec, std::size_t n) mutable {
           if (ec) {
+            // The client went away (or overflowed its framer and closed):
+            // re-arm WaitClient so a reconnect waits for the *new* accept
+            // instead of returning on the dead connection's stale flag.
+            client_connected_ = false;
             return;
           }
           partial_ += n;
@@ -1883,6 +1889,7 @@ TEST_F(ChatClientLoopbackTest, FramerOverflowDropsConnectionAndReconnectRecovers
   WaitState(client, ConnectionState::WaitingReconnect);
   // The ~0.5s backoff lands the reconnect; the gateway answers LOGIN again.
   WaitState(client, ConnectionState::Connected);
+  gateway.WaitClient();  // reconnected socket must be accepted before Push
 
   // The fresh connection actually processes frames: a normal notify arrives.
   std::atomic<bool> notify_seen{false};
