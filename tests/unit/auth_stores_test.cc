@@ -664,6 +664,47 @@ TEST_F(RedisAuthStoreTest, FailedLoginTracking) {
   EXPECT_EQ(store_->GetFailedLoginCount("alice"), 0);
 }
 
+TEST_F(RedisAuthStoreTest, CorruptCountersDegradeToZeroInsteadOfThrowing) {
+  // Audit 2026-11-12: these counters are parsed on every login attempt. A
+  // shared Redis can hold a value the service never wrote (foreign key,
+  // manual edit, a partial write), and std::stoi would throw invalid_argument
+  // or out_of_range out of the request path and take the auth service down.
+  // Anything but digits-only-in-range must read as a fresh zero.
+  const char* corrupt[] = {"", "abc", "12abc", "-3", "0x10",
+                          "99999999999999999999999", " 7"};
+  for (const char* bad : corrupt) {
+    const std::string rate_key = "login:" + std::string(bad);
+    const std::string failed_key = "user:" + std::string(bad);
+    redis_.SetDirect("chirp:auth:rate_limit:" + rate_key, bad);
+    redis_.SetDirect("chirp:auth:failed_login:" + failed_key, bad);
+
+    EXPECT_EQ(store_->GetRateLimitCount(rate_key), 0) << bad;
+    EXPECT_EQ(store_->GetFailedLoginCount(failed_key), 0) << bad;
+
+    // The next attempt starts counting from zero rather than from the seed.
+    EXPECT_TRUE(store_->CheckRateLimit(rate_key, 3)) << bad;
+    EXPECT_EQ(store_->GetRateLimitCount(rate_key), 1) << bad;
+    EXPECT_TRUE(store_->RecordFailedLogin(failed_key, "9.9.9.9")) << bad;
+    EXPECT_EQ(store_->GetFailedLoginCount(failed_key), 1) << bad;
+  }
+}
+
+TEST_F(RedisAuthStoreTest, OversizedCounterClampsAndSaturatesInsteadOfWrapping) {
+  // A counter that fits a long long but overflows int clamps to INT_MAX, and
+  // an already-maxed counter stays maxed instead of wrapping negative on the
+  // next increment.
+  redis_.SetDirect("chirp:auth:rate_limit:login:big", "99999999999999");
+  EXPECT_EQ(store_->GetRateLimitCount("login:big"), std::numeric_limits<int>::max());
+  // A maxed counter denies instead of writing a wrapped value.
+  EXPECT_FALSE(store_->CheckRateLimit("login:big", 3));
+  EXPECT_EQ(store_->GetRateLimitCount("login:big"), std::numeric_limits<int>::max());
+
+  redis_.SetDirect("chirp:auth:failed_login:maxed", "2147483647");
+  redis_.SetDirect("chirp:auth:failed_login:ip:9.9.9.9", "2147483647");
+  EXPECT_TRUE(store_->RecordFailedLogin("maxed", "9.9.9.9"));
+  EXPECT_EQ(store_->GetFailedLoginCount("maxed"), std::numeric_limits<int>::max());
+}
+
 TEST_F(RedisAuthStoreTest, AccountLocking) {
   EXPECT_TRUE(store_->LockAccount("u1", 60));
   EXPECT_TRUE(store_->IsAccountLocked("u1"));

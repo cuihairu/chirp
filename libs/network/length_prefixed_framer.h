@@ -23,7 +23,14 @@ public:
   // latches overflow(); the caller is expected to close the connection.
   std::optional<std::string> PopFrame();
 
-  void Clear() { buf_.clear(); }
+  // Full reset back to a fresh framer: buffer and the overflow latch. The
+  // SDK client calls this on (re)connect, so a latched overflow from the
+  // previous connection must not survive into the new one and silently
+  // swallow every frame.
+  void Clear() {
+    buf_.clear();
+    overflow_ = false;
+  }
   size_t BufferedBytes() const { return buf_.size(); }
   bool overflow() const { return overflow_; }
 

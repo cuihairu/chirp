@@ -12,6 +12,13 @@ namespace chirp::chat {
 
 bool PrivateChannelContainsUser(std::string_view channel_id, std::string_view user_id);
 
+// True when channel_id is the canonical private shape the service itself
+// mints: exactly one '|', both sides non-empty ("alice|bob"). '|' is the
+// reserved private-channel separator, so this shape decides which storage
+// namespace a channel id belongs to — reads key permissions off the shape,
+// never off the client-reported channel_type.
+bool LooksLikePrivateChannelId(std::string_view channel_id);
+
 // Parses a comma-separated channel-type list ("private,guild") for the CLI
 // flags that take a channel allowlist. Tokens are trimmed and case-folded;
 // unknown tokens are dropped (a typo therefore narrows the list instead of

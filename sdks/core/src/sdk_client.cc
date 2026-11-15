@@ -617,6 +617,14 @@ private:
             }
             HandleFrame(*frame);
           }
+          if (framer_.overflow()) {
+            // A declared length past the cap is a hostile or corrupt stream:
+            // same unified lost-connection path as a transport error — flush
+            // pending requests, notify listeners, let the auto-reconnect
+            // rebuild a fresh framer (Clear() on connect resets the latch).
+            OnConnectionLost(MakeEc(ChatError::BadResponse));
+            return;
+          }
           DoRead();
         });
   }

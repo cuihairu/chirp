@@ -70,8 +70,12 @@ ChatRateLimiter::Result ChatRateLimiter::Check(const std::string& key, int limit
   if (current) {
     ParseI64(*current, &parsed);
   }
-  const int count =
-      static_cast<int>(std::min<int64_t>(parsed, std::numeric_limits<int>::max()));
+  // Clamp before narrowing: the stored value is a hit count, so anything
+  // below zero is the same as zero. A negative count would otherwise be
+  // reported in current_count and rewritten as-is, leaving the window stuck
+  // under zero until the key expires.
+  const int count = static_cast<int>(std::min<int64_t>(std::max<int64_t>(parsed, 0),
+                                                       std::numeric_limits<int>::max()));
   if (count >= limit) {
     Logger::Instance().Warn("chat rate limit exceeded for " + key + " (" +
                             std::to_string(count) + "/" + std::to_string(limit) + ")");

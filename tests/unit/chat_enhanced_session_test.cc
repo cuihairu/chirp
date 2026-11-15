@@ -2048,6 +2048,167 @@ TEST_F(EnhancedSessionTest, GetHistoryRejectsUnbackedIdentityAndClampsPage) {
   }
 }
 
+// Audit fix 2026-11-12: history permission must not read the client's
+// channel_type. The hybrid store keys Redis history by channel id alone, so the
+// minted pair "alice|bob" is private storage no matter what type a request
+// claims — a third party reporting TEAM over that id would otherwise read a
+// private conversation (cross-type privilege escalation).
+TEST_F(EnhancedSessionTest, HistoryNamespaceIgnoresReportedChannelType) {
+  LiveHistoryRecall live;
+  StartLiveHistory(live);
+  auto alice = std::make_shared<MockSession>();
+  Login(alice, "alice", "a1", 1);
+  std::string mid;
+  ASSERT_EQ(SendPrivate(alice, "alice", "bob", "between alice and bob", &mid, live.store,
+                        live.recall.handlers.get()),
+            chirp::common::OK);
+  auto retriever =
+      std::make_shared<chirp::chat::PaginatedHistoryRetriever>(live.store);
+
+  // A third party reporting a group type over the private pair: refused by the
+  // id's shape, not by the identity gate (carol == the authenticated user).
+  auto mallory = std::make_shared<MockSession>();
+  chirp::chat::GetHistoryRequest req;
+  req.set_user_id("carol");
+  req.set_channel_type(chirp::chat::TEAM);
+  req.set_channel_id("alice|bob");
+  req.set_limit(10);
+  HandleGetHistory(req, mallory, retriever, /*supports_gzip=*/false, /*seq=*/8, "carol");
+  const auto denied = FramesOf(*mallory, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(denied.size(), 1u);
+  chirp::chat::GetHistoryResponse denied_resp;
+  ASSERT_TRUE(denied_resp.ParseFromString(denied[0].body()));
+  EXPECT_EQ(denied_resp.code(), chirp::common::AUTH_FAILED);
+  EXPECT_EQ(denied_resp.messages_size(), 0);
+
+  // A real participant is admitted by the id's shape, wrong type report or not.
+  req.set_user_id("alice");
+  req.set_channel_type(chirp::chat::TEAM);
+  HandleGetHistory(req, mallory, retriever, /*supports_gzip=*/false, /*seq=*/9, "alice");
+  const auto allowed = FramesOf(*mallory, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(allowed.size(), 2u);
+  chirp::chat::GetHistoryResponse allowed_resp;
+  ASSERT_TRUE(allowed_resp.ParseFromString(allowed[1].body()));
+  EXPECT_EQ(allowed_resp.code(), chirp::common::OK);
+  ASSERT_EQ(allowed_resp.messages_size(), 1);
+  EXPECT_EQ(allowed_resp.messages(0).content(), "between alice and bob");
+
+  // Send side: a group-typed send may not plant into the private namespace.
+  auto carol = std::make_shared<MockSession>();
+  Login(carol, "carol", "c1", 2);
+  chirp::chat::SendMessageRequest plant;
+  plant.set_sender_id("carol");
+  plant.set_channel_type(chirp::chat::TEAM);
+  plant.set_channel_id("alice|bob");
+  plant.set_content("planted");
+  InvokeSendMessage(plant, carol, state_, live.store, tracker_, /*acks=*/nullptr,
+                    &delivery_prefs_, router_, /*hub_peer=*/nullptr,
+                    /*npc_service_id=*/"", /*npc_prefix=*/"npc:",
+                    /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
+                    live.recall.handlers.get(), /*directory=*/nullptr,
+                    /*hub=*/nullptr, /*groups=*/nullptr, /*reactions=*/nullptr,
+                    &friend_graph_, /*seq=*/3);
+  const auto plant_resps = FramesOf(*carol, chirp::gateway::SEND_MESSAGE_RESP);
+  ASSERT_EQ(plant_resps.size(), 1u);
+  chirp::chat::SendMessageResponse plant_resp;
+  ASSERT_TRUE(plant_resp.ParseFromString(plant_resps[0].body()));
+  EXPECT_EQ(plant_resp.code(), chirp::common::INVALID_PARAM);
+
+  // The private history is untouched: a fresh read as alice still sees
+  // exactly the one real message and nothing planted.
+  auto verifier = std::make_shared<MockSession>();
+  req.set_user_id("alice");
+  req.set_channel_type(chirp::chat::TEAM);
+  req.set_limit(10);
+  HandleGetHistory(req, verifier, retriever, /*supports_gzip=*/false, /*seq=*/10, "alice");
+  const auto after = FramesOf(*verifier, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(after.size(), 1u);
+  chirp::chat::GetHistoryResponse after_resp;
+  ASSERT_TRUE(after_resp.ParseFromString(after[0].body()));
+  EXPECT_EQ(after_resp.code(), chirp::common::OK);
+  ASSERT_EQ(after_resp.messages_size(), 1);
+  EXPECT_EQ(after_resp.messages(0).content(), "between alice and bob");
+}
+
+// --- 分页：逐请求断言实际窗口，>200 条数据验证上限 ----------------------------
+
+TEST_F(EnhancedSessionTest, GetHistoryWindowAndPageSizeCapWithLargeHistory) {
+  LiveHistoryRecall live;
+  StartLiveHistory(live);
+  auto alice = std::make_shared<MockSession>();
+  Login(alice, "alice", "a1", 1);
+
+  // 确定性种子：250 条错秒时间戳，直灌 Redis 热层（与生产发送同一层；
+  // MySQL 异步写因 io 不运转永不落地）。显式时间戳避免同毫秒并列让
+  // before 分页丢条目。
+  for (int i = 1; i <= 250; ++i) {
+    chirp::chat::MessageData seeded;
+    seeded.message_id = "s" + std::to_string(i);
+    seeded.sender_id = "alice";
+    seeded.receiver_id = "bob";
+    seeded.channel_id = "alice|bob";
+    seeded.channel_type = 0;
+    seeded.content = "body " + std::to_string(i);
+    seeded.timestamp = 1000 + i;
+    live.store->StoreMessageAsync(seeded, nullptr);
+  }
+  auto retriever =
+      std::make_shared<chirp::chat::PaginatedHistoryRetriever>(live.store);
+
+  chirp::chat::GetHistoryRequest req;
+  req.set_user_id("alice");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_channel_id("alice|bob");
+
+  // 上限：INT32_MAX 钳到 200；返回恰为最新 200 条（s51..s250，时间正序）。
+  req.set_limit(std::numeric_limits<int32_t>::max());
+  HandleGetHistory(req, alice, retriever, /*supports_gzip=*/false, /*seq=*/1, "alice");
+  const auto capped = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(capped.size(), 1u);
+  chirp::chat::GetHistoryResponse resp;
+  ASSERT_TRUE(resp.ParseFromString(capped[0].body()));
+  ASSERT_EQ(resp.code(), chirp::common::OK);
+  ASSERT_EQ(resp.messages_size(), 200);
+  EXPECT_TRUE(resp.has_more());
+  EXPECT_EQ(resp.messages(0).message_id(), "s51");
+  EXPECT_EQ(resp.messages(199).message_id(), "s250");
+
+  // 逐请求实际窗口：热层 Redis 臂只取最新 limit 条尾窗，before 游标在
+  // 窗口内做严格小于过滤；窗口不满 limit 时转投 MySQL 冷层（生产兜底——
+  // 本测试 io 不运转，冷层永不落地，故只钉热层可确定的口径）。
+  auto read_window = [&](int64_t before, int seq) {
+    req.set_before_timestamp(before);
+    HandleGetHistory(req, alice, retriever, /*supports_gzip=*/false, seq, "alice");
+    const auto frames = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+    chirp::chat::GetHistoryResponse page_resp;
+    EXPECT_TRUE(page_resp.ParseFromString(frames.back().body()));
+    EXPECT_EQ(page_resp.code(), chirp::common::OK);
+    return page_resp;
+  };
+
+  // 首页无游标：恰为最新 30 条（s221..s250），时间正序，has_more 如实。
+  req.set_limit(30);
+  const auto first = read_window(0, 2);
+  ASSERT_EQ(first.messages_size(), 30);
+  EXPECT_EQ(first.messages(0).message_id(), "s221");
+  EXPECT_EQ(first.messages(29).message_id(), "s250");
+  EXPECT_TRUE(first.messages(0).timestamp() < first.messages(29).timestamp());
+  EXPECT_TRUE(first.has_more());
+
+  // 窗口内游标：before=1230 过滤掉 ts>=1230 的 s230..s250，恰余 9 条。
+  const auto middle = read_window(1230, 3);
+  ASSERT_EQ(middle.messages_size(), 9);
+  EXPECT_EQ(middle.messages(0).message_id(), "s221");
+  EXPECT_EQ(middle.messages(8).message_id(), "s229");
+  EXPECT_TRUE(middle.has_more());
+
+  // 游标卡在窗口最老一条（s221 ts=1221）：严格小于全数排除，热层窗口
+  // 空——更老的 s220..s1 只能由冷层接手（生产路径），此处如实钉空窗。
+  const auto exhausted = read_window(1221, 4);
+  EXPECT_EQ(exhausted.messages_size(), 0);
+  EXPECT_FALSE(exhausted.has_more());
+}
+
 // --- GET_HISTORY_V2：游标面未实现前的显式降级（INVALID_PARAM） --------------
 
 TEST_F(EnhancedSessionTest, GetHistoryV2AlwaysRejects) {

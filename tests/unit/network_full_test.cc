@@ -635,6 +635,28 @@ TEST(LengthPrefixedFramerTest, OversizeLengthDropsBufferAndFlagsOverflow) {
   EXPECT_EQ(at_cap.BufferedBytes(), 4u);
 }
 
+TEST(LengthPrefixedFramerTest, ClearResetsTheOverflowLatch) {
+  // The SDK client Clear()s its framer on every (re)connect: a latch left
+  // set from the previous connection would make the fresh connection drop
+  // every frame forever. Clear is a full reset, latch included.
+  LengthPrefixedFramer f;
+  f.Append(reinterpret_cast<const uint8_t*>("\xff\xff\xff\xff"), 4);
+  EXPECT_FALSE(f.PopFrame().has_value());
+  ASSERT_TRUE(f.overflow());
+
+  f.Clear();
+  EXPECT_FALSE(f.overflow());
+  EXPECT_EQ(f.BufferedBytes(), 0u);
+
+  // Post-reset the framer processes frames again.
+  const std::string good = LpFrame("after reset");
+  f.Append(reinterpret_cast<const uint8_t*>(good.data()), good.size());
+  auto out = f.PopFrame();
+  ASSERT_TRUE(out.has_value());
+  EXPECT_EQ(*out, "after reset");
+  EXPECT_FALSE(f.overflow());
+}
+
 TEST(ProtobufFramingTest, EncodeDecodeRoundTripAndNullOut) {
   chirp::chat::SendMessageRequest req;
   req.set_content("hello framing");

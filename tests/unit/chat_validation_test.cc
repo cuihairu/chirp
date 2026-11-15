@@ -153,6 +153,14 @@ TEST(ChatValidationTest, RejectsHistoryWithEmptyUserId) {
   EXPECT_EQ(ValidateGetHistoryRequest(req, "alice"), chirp::common::AUTH_FAILED);
 }
 
+TEST(ChatValidationTest, RejectsHistoryWithEmptyChannelId) {
+  GetHistoryRequest req;
+  req.set_user_id("alice");
+  req.set_channel_type(GUILD);
+
+  EXPECT_EQ(ValidateGetHistoryRequest(req, "alice"), chirp::common::INVALID_PARAM);
+}
+
 TEST(ChatValidationTest, RejectsHistoryForDifferentUser) {
   GetHistoryRequest req;
   req.set_user_id("mallory");
@@ -186,6 +194,49 @@ TEST(ChatValidationTest, RejectsGroupHistoryWithoutChannelId) {
   req.set_channel_type(GUILD);
 
   EXPECT_EQ(ValidateGetHistoryRequest(req, "alice"), chirp::common::INVALID_PARAM);
+}
+
+TEST(ChatValidationTest, PrivateChannelIdShapeOnlyForMintedPairs) {
+  // '|' is reserved by the service for minted private ids; everything else is
+  // a group/world style id and must not be treated as private storage.
+  EXPECT_TRUE(LooksLikePrivateChannelId("alice|bob"));
+  EXPECT_TRUE(LooksLikePrivateChannelId("a|b"));
+  EXPECT_FALSE(LooksLikePrivateChannelId(""));
+  EXPECT_FALSE(LooksLikePrivateChannelId("g1"));
+  EXPECT_FALSE(LooksLikePrivateChannelId("|bob"));
+  EXPECT_FALSE(LooksLikePrivateChannelId("alice|"));
+  EXPECT_FALSE(LooksLikePrivateChannelId("a|b|c"));
+  EXPECT_FALSE(LooksLikePrivateChannelId("a|b|"));
+}
+
+TEST(ChatValidationTest, CrossTypePrivateHistoryReadIsRejected) {
+  // Audit 2026-11-12: the enhanced/distributed stores key Redis history by
+  // channel id alone, so a "a|b" id is private storage whatever channel_type
+  // the request reports. A third party reporting TEAM/GUILD/WORLD must not
+  // reach alice and bob's conversation.
+  const ChannelType non_private_types[] = {TEAM, GUILD, WORLD, SYSTEM_CHANNEL, MARQUEE};
+  for (const ChannelType type : non_private_types) {
+    GetHistoryRequest req;
+    req.set_user_id("carol");
+    req.set_channel_type(type);
+    req.set_channel_id("alice|bob");
+    req.set_limit(10);
+
+    EXPECT_EQ(ValidateGetHistoryRequest(req, "carol"), chirp::common::AUTH_FAILED)
+        << "type " << type;
+  }
+}
+
+TEST(ChatValidationTest, PrivateShapeReadIgnoresReportedType) {
+  // A real participant is admitted by the channel id's shape, so a client that
+  // reports the wrong non-private type still reads its own conversation.
+  GetHistoryRequest req;
+  req.set_user_id("alice");
+  req.set_channel_type(TEAM);
+  req.set_channel_id("alice|bob");
+  req.set_limit(10);
+
+  EXPECT_EQ(ValidateGetHistoryRequest(req, "alice"), chirp::common::OK);
 }
 
 TEST(ChatValidationTest, RejectsLogoutForAnonymousSession) {
