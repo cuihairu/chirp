@@ -141,6 +141,27 @@ token 会回退成 *token 即 user_id*——桌面 dev 栈正是靠这个脚手�
 关＝应答 `code=AUTH_FAILED (3)` 且无 `session_id`/`user_id`；开＝应答 `code=OK (0)`、
 `session_id="uia_sess"`、`user_id="uia"`。
 
+### `--kick_previous <0|1>`（`chirp_app_auth`）
+
+缺省 `1`。**只在密码登录路径被消费，且只在账号撞上会话上限（`--max_sessions`，
+缺省 5）时才分叉**：给 `1` 则撤销该账号旧会话并让新登录成功，响应带
+`kick_previous=true`；给 `0` 则这次登录被拒，回 `SESSION_EXPIRED`。
+
+| 关 | 开 |
+| --- | --- |
+| ![顶替旧会话 关](../../screenshots/switches/cli-kick-previous-off.png) | ![顶替旧会话 开](../../screenshots/switches/cli-kick-previous-on.png) |
+
+![顶替旧会话 动图](../../screenshots/switches/cli-kick-previous.gif)
+
+取证手法：在本机 `chirp` MySQL 库里注册一次性账号（不外借凭据），带
+`--max_sessions 1`，让这个账号的第 2 次登录撞上限。关＝应答
+`code=SESSION_EXPIRED (4)`、`error_message="Maximum session limit reached..."`
+且不带 kick 标记；开＝应答 `code=OK (0)`、`session_id` 与第 1 次不同、
+`kick_previous=true`。探针账号在跑完后从用户表/会话表/刷新令牌表删干净。
+
+注意：老的 `LOGIN_REQ` 脚手架路径**无论该旗标如何**都固定应答 `kick_previous=true`
+（`services/app/auth/src/main_enhanced.cc`），所以这个开关只改变密码登录的行为。
+
 
 ## 开关清单
 
@@ -165,7 +186,7 @@ token 会回退成 *token 即 user_id*——桌面 dev 栈正是靠这个脚手�
 | `hub_mode` | chirp_chat | 0 | 未覆盖：要自建服务实例/双实例对照（要 hub+spoke 双实例才看得出差异） |
 | `enable_migration` | chirp_chat（增强版） | 1 | 未覆盖：要自建服务实例/双实例对照（需要带数据的旧库做迁移对照） |
 | `broker_consumer` | chirp_server_gateway | (空=关) | 未覆盖：要自建服务实例/双实例对照（需要 broker 流 + 双消费实例） |
-| `kick_previous` | chirp_app_auth | 1 | 未覆盖：要自建服务实例/双实例对照（需自建一个 auth 实例做同账号双登录对照） |
+| `kick_previous` | chirp_app_auth | 1 | ✅ 有 off/on 图+GIF |
 | `allow_scaffold_login` | chirp_app_auth | 0 | ✅ 有 off/on 图+GIF |
 | `word_filter_policy` | chirp_chat | replace | 未覆盖：要自建服务实例/双实例对照（要发消息穿过过滤链才能取证，属脚本化双跑） |
 | `asr_disposition` | chirp_voice | flag | 未覆盖：要 ASR 引擎（整条 ASR 链要 ASR 引擎与 --asr_lexicon 才在位） |

@@ -15,6 +15,12 @@
                           编解码照 libs/network/protobuf_framing.h 的 u32be 长度前缀，
                           与 scripts/demo_account.py 同手法）。off = code 3 AUTH_FAILED，
                           on = code 0 且 user_id 回填成 token。
+  --kick_previous <0|1>   缺省 1。仅密码登录路径消费，且只在会话数撞上限（--max_sessions）
+                          时才分叉：1 = 撤销该用户旧会话并让新登录成功（响应带
+                          kick_previous=true）；0 = 返回 SESSION_EXPIRED「Maximum
+                          session limit reached」。探针注册一次性账号（前缀 kickprobe-），
+                          发两次 PASSWORD_LOGIN_REQ，跑完把账号连用户表/会话表/刷新令牌表
+                          一并删干净，不污染外部席位的共享开发库。
 
 未覆盖（同页「开关清单」表里逐条写了缺什么）：--push_transport / --apns-* 这组要一个把
 chirp_app_notification 接进栈的 rig（桌面 dev 栈没起这个服务，gateway 侧还要配
@@ -25,7 +31,8 @@ chirp_app_notification 接进栈的 rig（桌面 dev 栈没起这个服务，gat
 成终端样式再用 ffmpeg 缝合——帧内每一行都是实测拿回来的文本（连 curl 的报错串都是真的）。
 
 用法：python3 scripts/capture_cli_switch_effects.py
-产物：docs/screenshots/switches/cli-{metrics-port,scaffold-login}-{off,on}.png 与 .gif
+产物：docs/screenshots/switches/cli-{metrics-port,scaffold-login,kick-previous}-{off,on}.png
+      与 .gif（需本机 mariadbd 上的 chirp 库，凭据=编译默认值）
 """
 
 import http.client
@@ -46,10 +53,15 @@ OUT = REPO / "docs/screenshots/switches"
 
 # ---- proto/gateway.proto: Packet{msg_id=1, sequence=2, body=3} ----
 LOGIN_REQ, LOGIN_RESP = 1003, 1004
+REGISTER_REQ, REGISTER_RESP = 1008, 1009
+PASSWORD_LOGIN_REQ, PASSWORD_LOGIN_RESP = 1010, 1011
 # ---- proto/common.proto ----
-OK, AUTH_FAILED = 0, 3
+OK, AUTH_FAILED, SESSION_EXPIRED = 0, 3, 4
 CODE_NAMES = {OK: "OK", 1: "INTERNAL_ERROR", 2: "INVALID_PARAM",
              3: "AUTH_FAILED", 4: "SESSION_EXPIRED", 5: "USER_NOT_FOUND"}
+# --max_sessions 的默认 5，探针用 1 让第二个登录撞会话上限。
+MAX_SESSIONS = 1
+PROBE_PREFIX = "kickprobe"
 
 
 def _varint(value):
@@ -137,6 +149,70 @@ def _recv_exact(sock, count, timeout):
             raise RuntimeError(f"connection closed after {len(buf)}/{count} bytes")
         buf += chunk
     return buf
+
+
+def _rpc(port, msg_id, sequence, body, timeout=6.0):
+    """连 auth 收发一个 Packet，回读并解出 body（字段号→值，varint→int、串→str）。"""
+    sock = socket.create_connection(("127.0.0.1", port), timeout=timeout)
+    try:
+        raw = packet(msg_id, sequence, body)
+        sock.sendall(struct.pack(">I", len(raw)) + raw)
+        header = _recv_exact(sock, 4, timeout)
+        (length,) = struct.unpack(">I", header)
+        fields = decode_packet(_recv_exact(sock, length, timeout))
+        if not fields or 3 not in fields:
+            raise RuntimeError(f"no body in reply to msg {msg_id}")
+        out, pos = {}, 0
+        body = fields[3][-1]
+        while pos < len(body):
+            key, pos = _read_varint(body, pos)
+            field, wire = key >> 3, key & 7
+            if wire == 0:
+                value, pos = _read_varint(body, pos)
+            elif wire == 2:
+                length, pos = _read_varint(body, pos)
+                value = body[pos:pos + length].decode("utf-8", "replace")
+                pos += length
+            else:
+                break
+            out[field] = value
+        return out
+    finally:
+        sock.close()
+
+
+def register_user(port, username, email, password):
+    """REGISTER_REQ；返回 (code, user_id, error_message)。code 缺省按 proto3 视为 0=OK。"""
+    body = (_sfield(1, username) + _sfield(2, email) + _sfield(3, password)
+            + _sfield(4, username))
+    out = _rpc(port, REGISTER_REQ, 1, body)
+    return out.get(1, 0), out.get(2), out.get(4, "")
+
+
+def password_login(port, identifier, password, device, sequence):
+    """PASSWORD_LOGIN_REQ；返回 (code, session_id, kick_previous, error_message)。"""
+    body = (_sfield(1, identifier) + _sfield(2, password)
+            + _sfield(3, device) + _sfield(4, "cli-probe"))
+    out = _rpc(port, PASSWORD_LOGIN_REQ, sequence, body)
+    return out.get(1, 0), out.get(4), out.get(10, 0), out.get(11, "")
+
+
+def db_cleanup(usernames):
+    """删掉本脚本注册的探针账号（users/sessions/refresh_tokens/failed_login_attempts）。
+
+    探针往共享开发库写了两三个一次性账号，跑完即清，避免污染外部席位的 dev 栈。
+    """
+    if not usernames:
+        return
+    subprocess.run(
+        ["mysql", "-h127.0.0.1", "-P3306", "-uchirp", "-pchirp_password", "chirp", "-e",
+         f"DELETE FROM sessions WHERE user_id IN (SELECT user_id FROM users "
+         f"WHERE username LIKE '{PROBE_PREFIX}%');"
+         f"DELETE FROM refresh_tokens WHERE user_id IN (SELECT user_id FROM users "
+         f"WHERE username LIKE '{PROBE_PREFIX}%');"
+         f"DELETE FROM failed_login_attempts WHERE identifier LIKE '{PROBE_PREFIX}%';"
+         f"DELETE FROM users WHERE username LIKE '{PROBE_PREFIX}%';"],
+        capture_output=True, timeout=30)
 
 
 def pick_port(used):
@@ -288,6 +364,46 @@ def login_fields_of(fields):
     return code, session_id, user_id
 
 
+# ---------------------------------------------------------------- 开关 3
+def capture_kick(used):
+    """--kick_previous off/on：同账号两次密码登录，--max_sessions 1 撞会话上限。
+
+    off：第二次登录被拒（SESSION_EXPIRED），旧会话原样保留。
+    on：最后一次登录获胜——旧会话被撤销，新登录成功且响应带 kick_previous=true。
+    两个变体各用独立的一次性账号，避免 off 跑留下的活跃会话污染 on 跑。
+    """
+    auth = REPO / "build/services/app/auth/chirp_app_auth"
+    stamp = int(time.time())
+    results = {}
+    for flag, label in ((["--kick_previous", "0"], "off"),
+                        (["--kick_previous", "1"], "on")):
+        username = f"{PROBE_PREFIX}-{label}-{stamp}"
+        password = "KickProbe-2026"
+        port = pick_port(used)
+        proc = start(auth, ["--port", str(port), "--jwt_secret", "dev_secret",
+                            "--max_sessions", str(MAX_SESSIONS), *flag])
+        try:
+            if not wait_port(port):
+                sys.exit(f"auth (kick {label}) never came up on {port}")
+            code, _uid, msg = register_user(port, username,
+                                            f"{username}@example.com", password)
+            if code != OK:
+                sys.exit(f"kick ({label}): register failed code={code} msg={msg!r}")
+            first = password_login(port, username, password, "kick-probe-1", 2)
+            second = password_login(port, username, password, "kick-probe-2", 3)
+            if first[0] != OK:
+                sys.exit(f"kick ({label}): first login failed {first!r}")
+            results[label] = {"username": username, "first": first, "second": second}
+        finally:
+            stop(proc)
+    return results
+
+
+def _sid(session_id):
+    """帧里用的缩写形式（session_id 是真实值，只截前 24 字符排版）。"""
+    return (session_id[:24] + "...") if session_id and len(session_id) > 27 else session_id
+
+
 def main():
     if not (REPO / "build/services/shared/chat/chirp_chat").exists():
         sys.exit("missing build/services/shared/chat/chirp_chat")
@@ -352,6 +468,52 @@ def main():
 
     print(f"scaffold off: code={off_code} ({CODE_NAMES.get(off_code, off_code)})")
     print(f"scaffold on : code={on_code} ({CODE_NAMES.get(on_code, on_code)}) user_id={on_user}")
+
+    # ---- 开关 3：--kick_previous ----
+    probe_names = []
+    try:
+        kick = capture_kick(used)
+        probe_names = [kick["off"]["username"], kick["on"]["username"]]
+        off_first, off_second = kick["off"]["first"], kick["off"]["second"]
+        on_first, on_second = kick["on"]["first"], kick["on"]["second"]
+        if off_second[0] != SESSION_EXPIRED:
+            sys.exit(f"kick off: 2nd login expected SESSION_EXPIRED(4), got {off_second!r}")
+        if "Maximum session limit" not in off_second[3]:
+            sys.exit(f"kick off: unexpected error_message {off_second[3]!r}")
+        if off_second[2]:
+            sys.exit(f"kick off: refused login must not report kick_previous, got {off_second!r}")
+        if on_second[0] != OK or on_second[2] != 1:
+            sys.exit(f"kick on: 2nd login expected OK+kick_previous, got {on_second!r}")
+        if on_second[1] == on_first[1]:
+            sys.exit("kick on: 2nd login reused the first session_id")
+
+        render_frame([
+            ("$ chirp_app_auth --port <p> --jwt_secret dev_secret "
+             f"--max_sessions {MAX_SESSIONS} --kick_previous 0", PROMPT),
+            (f"$ probe: register {kick['off']['username']}, then two password logins", PROMPT),
+            (f"login #1: code=OK session_id=\"{_sid(off_first[1])}\"", TEXT),
+            (f"login #2: code={CODE_NAMES.get(off_second[0], off_second[0])} "
+             f"({off_second[0]})", ERROR),
+            (f"  error_message=\"{off_second[3]}\"", ERROR),
+            ("# flag off: the second login is refused, the old session survives", TEXT),
+        ], OUT / "cli-kick-previous-off.png")
+        render_frame([
+            ("$ chirp_app_auth --port <p> --jwt_secret dev_secret "
+             f"--max_sessions {MAX_SESSIONS} --kick_previous 1", PROMPT),
+            (f"$ probe: register {kick['on']['username']}, then two password logins", PROMPT),
+            (f"login #1: code=OK session_id=\"{_sid(on_first[1])}\"", TEXT),
+            (f"login #2: code=OK session_id=\"{_sid(on_second[1])}\" kick_previous=true", TEXT),
+            ("# flag on: last login wins - old session revoked, new login lands", TEXT),
+        ], OUT / "cli-kick-previous-on.png")
+        stitch_gif(OUT / "cli-kick-previous-off.png", OUT / "cli-kick-previous-on.png",
+                   OUT / "cli-kick-previous.gif")
+        print(f"kick off: login#2 code={off_second[0]} "
+              f"({CODE_NAMES.get(off_second[0], off_second[0])})")
+        print(f"kick on : login#2 code={on_second[0]} "
+              f"({CODE_NAMES.get(on_second[0], on_second[0])}) kick_previous={on_second[2]}")
+    finally:
+        db_cleanup(probe_names)
+
     print("DONE")
 
 

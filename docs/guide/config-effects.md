@@ -157,6 +157,32 @@ one with the flag on — probed over raw TCP with a `LOGIN_REQ` carrying
 `code=AUTH_FAILED (3)` with no `session_id`/`user_id`; on answers `code=OK (0)`
 with `session_id="uia_sess"` and `user_id="uia"`.
 
+### `--kick_previous <0|1>` (`chirp_app_auth`)
+
+Default `1`. Consumed only on the password-login path, and only when the account
+has hit its session cap (`--max_sessions`, default 5): with `1` the old sessions
+are revoked and the new login succeeds, answering `kick_previous=true`; with
+`0` the login is refused with `SESSION_EXPIRED`.
+
+| Off | On |
+| --- | --- |
+| ![kick previous off](../screenshots/switches/cli-kick-previous-off.png) | ![kick previous on](../screenshots/switches/cli-kick-previous-on.png) |
+
+![kick previous animation](../screenshots/switches/cli-kick-previous.gif)
+
+Evidence method: a throwaway account registered against the local `chirp` MySQL
+database (no external credentials) with `--max_sessions 1`, so the second login
+of that account hits the cap. Off answers `code=SESSION_EXPIRED (4)` with
+`error_message="Maximum session limit reached..."` and no kick flag; on answers
+`code=OK (0)` with a different `session_id` and `kick_previous=true`. The probe
+accounts are deleted from the user / session / refresh-token tables after the
+run.
+
+Note: the legacy `LOGIN_REQ` scaffold path always answers
+`kick_previous=true` regardless of this flag
+(`services/app/auth/src/main_enhanced.cc`), so this switch only changes
+behavior for password logins.
+
 ## Complete switch inventory
 
 Generated and source-verified by `scripts/build_config_switch_inventory.py` (it re-reads
@@ -183,7 +209,7 @@ compile-time or test-only switches.
 | `hub_mode` | chirp_chat | 0 | not covered: needs a scripted service rig — needs a hub+spoke two-instance pair to show any difference |
 | `enable_migration` | chirp_chat (enhanced) | 1 | not covered: needs a scripted service rig — needs a data-bearing old database to diff the migration against |
 | `broker_consumer` | chirp_server_gateway | (空=关) | not covered: needs a scripted service rig — needs the broker stream plus two consumer instances |
-| `kick_previous` | chirp_app_auth | 1 | not covered: needs a scripted service rig — needs a self-hosted auth instance to diff two logins of one account |
+| `kick_previous` | chirp_app_auth | 1 | ✅ off/on + GIF |
 | `allow_scaffold_login` | chirp_app_auth | 0 | ✅ off/on + GIF |
 | `word_filter_policy` | chirp_chat | replace | not covered: needs a scripted service rig — needs a message driven through the filter chain — a scripted two-run diff |
 | `asr_disposition` | chirp_voice | flag | not covered: needs the ASR engine — the whole ASR chain needs the ASR engine and --asr_lexicon in place |
