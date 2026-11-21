@@ -168,7 +168,7 @@ export default function ChatPage() {
         <Box sx={{ width: 260, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
           <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'baseline', gap: 1 }}>
             <Typography variant="subtitle1">{zh.appName}</Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="textSecondary">
               {userId}
             </Typography>
           </Box>
@@ -177,7 +177,7 @@ export default function ChatPage() {
             {notifyPerm === 'default' && (
               <Typography
                 variant="caption"
-                color="text.secondary"
+                color="textSecondary"
                 sx={{ cursor: 'pointer', textDecoration: 'underline' }}
                 onClick={requestNotify}
                 data-testid="notify-enable"
@@ -186,13 +186,13 @@ export default function ChatPage() {
               </Typography>
             )}
             {notifyPerm === 'granted' && (
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" color="textSecondary">
                 {zh.notify.enabled}
               </Typography>
             )}
             <Typography
               variant="caption"
-              color="text.secondary"
+              color="textSecondary"
               sx={{ cursor: 'pointer', textDecoration: 'underline' }}
               onClick={() => void signOut()}
             >
@@ -204,7 +204,7 @@ export default function ChatPage() {
           <ChatWindow key={channelKey} channelKey={channelKey} />
         ) : (
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Typography color="text.secondary">{zh.chat.emptyChannel}</Typography>
+            <Typography color="textSecondary">{zh.chat.emptyChannel}</Typography>
           </Box>
         )}
       </Box>

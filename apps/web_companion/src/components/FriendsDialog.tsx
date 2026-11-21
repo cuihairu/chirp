@@ -229,14 +229,14 @@ export default function FriendsDialog({
             );
           })}
           {friendState.friends.length === 0 && friendState.pendingIn.length === 0 && (
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="textSecondary">
               {zh.social.empty}
             </Typography>
           )}
         </List>
 
         {friendState.pendingOut.length > 0 && (
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" color="textSecondary">
             {zh.social.pendingOut(friendState.pendingOut.join(', '))}
           </Typography>
         )}

@@ -205,7 +205,7 @@ export default function GroupSettingsDialog({
             );
           })}
           {members.length === 0 && (
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="textSecondary">
               {zh.chat.loading}
             </Typography>
           )}

@@ -51,7 +51,7 @@ export default function LoginPage() {
         <Typography variant="h5" component="h1" gutterBottom>
           {zh.login.title}
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
           {zh.login.subtitle}
         </Typography>
         <form onSubmit={(e) => void onSubmit(e)}>

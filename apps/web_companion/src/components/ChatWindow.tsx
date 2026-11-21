@@ -170,7 +170,7 @@ export default function ChatWindow({ channelKey }: { channelKey: string }) {
             {title}
           </Typography>
           {typists.length > 0 && (
-            <Typography variant="caption" color="text.secondary" data-testid="typing-row">
+            <Typography variant="caption" color="textSecondary" data-testid="typing-row">
               {zh.chat.typing(typists.join(', '))}
             </Typography>
           )}

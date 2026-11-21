@@ -78,7 +78,7 @@ export default function VoiceDialog({ open, onClose }: { open: boolean; onClose:
       <DialogContent>
         {room === null ? (
           <>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
               {zh.voice.noRoom}
             </Typography>
             <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
@@ -117,7 +117,7 @@ export default function VoiceDialog({ open, onClose }: { open: boolean; onClose:
           </>
         ) : (
           <>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+            <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 1 }}>
               {zh.voice.participants(room.participants.length, room.maxParticipants)}
             </Typography>
             {/* The room id is only returned by CREATE/JOIN here — show it so the

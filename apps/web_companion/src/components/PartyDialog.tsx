@@ -90,7 +90,7 @@ export default function PartyDialog({ open, onClose }: { open: boolean; onClose:
       <DialogContent>
         {party === null ? (
           <>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
               {zh.party.noParty}
             </Typography>
             <Stack direction="row" spacing={1}>
@@ -110,7 +110,7 @@ export default function PartyDialog({ open, onClose }: { open: boolean; onClose:
           </>
         ) : (
           <>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+            <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 1 }}>
               {zh.party.members(party.members.length, party.maxMembers)}
             </Typography>
             <Stack direction="row" spacing={1} sx={{ mb: 1 }}>

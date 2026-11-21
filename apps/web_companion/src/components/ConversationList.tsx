@@ -188,7 +188,7 @@ export default function ConversationList({
           );
         })}
         {list.length === 0 && (
-          <Typography variant="caption" sx={{ px: 2, py: 1 }} color="text.secondary">
+          <Typography variant="caption" sx={{ px: 2, py: 1 }} color="textSecondary">
             {zh.chat.emptyChannel}
           </Typography>
         )}

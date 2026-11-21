@@ -121,12 +121,12 @@ export default function SearchDialog({
           </Typography>
         )}
         {!searched && error === null && (
-          <Typography variant="body2" color="text.secondary" data-testid="search-prompt">
+          <Typography variant="body2" color="textSecondary" data-testid="search-prompt">
             {zh.search.prompt}
           </Typography>
         )}
         {searched && matches.length === 0 && error === null && (
-          <Typography variant="body2" color="text.secondary" data-testid="search-empty">
+          <Typography variant="body2" color="textSecondary" data-testid="search-empty">
             {zh.search.empty}
           </Typography>
         )}

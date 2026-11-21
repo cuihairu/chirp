@@ -40,17 +40,17 @@ export default function DevicesDialog({ open, onClose }: { open: boolean; onClos
       <DialogTitle>{zh.device.title}</DialogTitle>
       <DialogContent>
         {unavailable ? (
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="textSecondary">
             {zh.device.unavailable}
           </Typography>
         ) : (
           <>
             {!selfRegistered && (
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
                 {zh.device.notRegistered}
               </Typography>
             )}
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+            <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 1 }}>
               {zh.device.pushNote}
             </Typography>
             {error !== null && (
@@ -59,7 +59,7 @@ export default function DevicesDialog({ open, onClose }: { open: boolean; onClos
               </Typography>
             )}
             {list.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="textSecondary">
                 {zh.device.empty}
               </Typography>
             ) : (
