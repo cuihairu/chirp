@@ -244,6 +244,56 @@ still 0 and the log says the worker is disabled. On: within one interval the
 row count is 1 and the log says the worker started. The `miguia-*` probe rows
 and both probe redis instances are cleaned up afterwards.
 
+### `--hub_mode <0|1>` (`chirp_chat`)
+
+Default `0`. With `1` the chat opens the game-chat peer acceptor on
+`--hub_peer_port` (default 8200) and logs `hub mode enabled: peer_port=<port>`.
+With `0` (default) no such listener exists — the chat serves only the client
+protocol on its main port. This is the "hub" half of the hub+spoke topology.
+
+| Off | On |
+| --- | --- |
+| ![hub mode off](../screenshots/switches/cli-hub-mode-off.png) | ![hub mode on](../screenshots/switches/cli-hub-mode-on.png) |
+
+![hub mode animation](../screenshots/switches/cli-hub-mode.gif)
+
+Evidence method: no real spoke is needed — the probe speaks the peer
+registration protocol itself. Two `chirp_chat` instances (each with its own
+probe redis): one without `--hub_mode`, one with
+`--hub_mode 1 --hub_peer_port <port> --allowed_peers peuhub:peusecret`. The
+probe connects to the peer port and sends `PEER_REGISTER_REQ`
+(`gateway.proto`, msg 5050, same u32be+Packet framing) with
+`service_id=peuhub, service_secret=peusecret, protocol_version=1,
+game_id=peuigame`. Off: the connect is refused (the port was never bound) and
+there is no `hub mode enabled` log line. On: the register answers
+`code=OK (0)` with a `heartbeat_interval_seconds` and the log shows
+`chat peer registered: peuhub game=peuigame version=1`
+(`libs/network/chat_peer_hub.cc`). Registration is in-memory only, so nothing
+persists to clean up.
+
+### `--allow_unknown_peers <0|1>` (`chirp_chat`)
+
+Default `0`. Consumed only when `--hub_mode 1`. Controls the peer
+registration gate: with `0` (default) a peer whose `service_id` is not in
+`--allowed_peers` is refused (`code=AUTH_FAILED (3)`, connection closed, Warn
+log `chat peer registration rejected (not whitelisted): <id>`); with `1` the
+same peer is accepted in open-registration mode (`code=OK (0)`).
+
+| Off | On |
+| --- | --- |
+| ![allow unknown peers off](../screenshots/switches/cli-allow-unknown-peers-off.png) | ![allow unknown peers on](../screenshots/switches/cli-allow-unknown-peers-on.png) |
+
+![allow unknown peers animation](../screenshots/switches/cli-allow-unknown-peers.gif)
+
+Evidence method: two `chirp_chat` instances, both `--hub_mode 1` on fresh
+peer ports with their own probe redis and **no `--allowed_peers`** (so the
+whitelist is empty); one with `--allow_unknown_peers 0`, one with `1`. The
+probe sends the same `PEER_REGISTER_REQ` for an unknown `service_id`
+(`peu-off`/`peu-on`, `protocol_version=1`, `game_id=peuigame`). Off answers
+`code=AUTH_FAILED (3)` with `min_version=1` and the Warn log; on answers
+`code=OK (0)` with a `heartbeat_interval_seconds` and the log
+`chat peer registered: <id> game=peuigame version=1`.
+
 ## Complete switch inventory
 
 Generated and source-verified by `scripts/build_config_switch_inventory.py` (it re-reads
@@ -266,8 +316,8 @@ compile-time or test-only switches.
 | `dm-restriction-switch` | web companion | — | ✅ off/on + GIF |
 | `game-presence-toggle` | web companion | — | ✅ off/on + GIF |
 | `metrics_port` | chirp_chat and the other long-lived services | 0 | ✅ off/on + GIF |
-| `allow_unknown_peers` | chirp_chat | 0 | not covered: needs a scripted service rig — the effect only shows up across hub multi-instance forwarding; a single instance cannot show a difference |
-| `hub_mode` | chirp_chat | 0 | not covered: needs a scripted service rig — needs a hub+spoke two-instance pair to show any difference |
+| `allow_unknown_peers` | chirp_chat | 0 | ✅ off/on + GIF |
+| `hub_mode` | chirp_chat | 0 | ✅ off/on + GIF |
 | `enable_migration` | chirp_chat (enhanced) | 1 | ✅ off/on + GIF |
 | `broker_consumer` | chirp_server_gateway | (空=关) | not covered: needs a scripted service rig — needs the broker stream plus two consumer instances |
 | `kick_previous` | chirp_app_auth | 1 | ✅ off/on + GIF |

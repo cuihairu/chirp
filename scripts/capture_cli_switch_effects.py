@@ -30,10 +30,20 @@
                           帧按 3 帧轮播，不走 off/on 对。
   --enable_migration <0|1>  缺省 1。控制后台「Redis 热层 -> MySQL 冷层」迁移 worker：
                           0=worker 不启动（日志 MessageMigrationWorker disabled by
-                          configuration）；1=worker 周期扫 chirp:chat:history:* 逐条
-                          INSERT。探针发一条消息（发送路径 Redis+MySQL 双写），删掉
-                          MySQL 行造出「仅存 Redis」的输入态——on 的行会在下一个 tick
-                          被搬回来，off 的行保持删除。
+                          configuration）；1=worker 周期扫 chirp:chat:history:* 与
+                          chirp:chat:offline:* 逐条 INSERT。探针不造旧库——直接把一条
+                          序化 ChatMessage（字段布局与 store 写入一致，键用
+                          PrivateChannelId 的 a|b 排序拼接）RPUSH 进 chirp:chat:history:*，
+                          该消息从没走过 SendMessage，除 worker 外无路径能落库：on 的行
+                          下一个 tick 进 messages 表，off 的行保持只在 Redis。
+  --hub_mode <0|1>         缺省 0。1 = chirp_chat 开出 game-chat peer 接入器
+                          （--hub_peer_port，缺省 8200，日志 hub mode enabled）。探针
+                          裸 TCP 发 PEER_REGISTER_REQ（5050，白名单 peer）：off=该
+                          端口拒连；on=应答 code=OK 且回心跳节奏。
+  --allow_unknown_peers <0|1>  缺省 0。只在 --hub_mode 1 时被消费：白名单
+                          （--allowed_peers）外的 peer 注册，0=拒（AUTH_FAILED+连接
+                          关+日志 not whitelisted）；1=开放注册（code=OK）。探针两变体
+                          都不开白名单，注册同一个未知 service_id 对照。
 
 未覆盖（同页「开关清单」表里逐条写了缺什么）：--push_transport / --apns-* 这组要一个把
 chirp_app_notification 接进栈的 rig（桌面 dev 栈没起这个服务，gateway 侧还要配
@@ -45,8 +55,9 @@ chirp_app_notification 接进栈的 rig（桌面 dev 栈没起这个服务，gat
 
 用法：python3 scripts/capture_cli_switch_effects.py
 产物：docs/screenshots/switches/cli-{metrics-port,scaffold-login,kick-previous,
-      enable-migration}-{off,on}.png 与 .gif、cli-word-filter-{replace,reject,record}.png
-      与 .gif（需本机 mariadbd 上的 chirp 库与 redis-server，凭据=编译默认值）
+      enable-migration,hub-mode,allow-unknown-peers}-{off,on}.png 与 .gif、
+      cli-word-filter-{replace,reject,record}.png 与 .gif（需本机 mariadbd 上的
+      chirp 库与 redis-server，凭据=编译默认值）
 """
 
 import http.client
@@ -637,6 +648,119 @@ def capture_migration(used):
     return results
 
 
+# ---------------------------------------------------------------- 开关 6+7
+PEER_REGISTER_REQ, PEER_REGISTER_RESP = 5050, 5051   # gateway.proto MsgID
+HUB_SERVICE = "peuhub"
+HUB_SECRET = "peusecret"
+PEU_GAME_ID = "peuigame"
+
+
+def peer_register_request(service_id, secret, version=1):
+    """gateway.proto PeerRegisterReq{service_id=1, service_secret=2,
+    protocol_version=3, game_id=4, supported_features=5}（特征可省）。"""
+    return (_sfield(1, service_id) + _sfield(2, secret)
+            + _tag(3, 0) + _varint(version) + _sfield(4, PEU_GAME_ID))
+
+
+def _probe_register(peer_port, service_id, secret, timeout=6.0):
+    """连 hub 的 peer 端口，发 PEER_REGISTER_REQ，回读 PEER_REGISTER_RESP body。
+
+    帧与客户端协议同款：u32be 长度前缀 + Packet{msg_id,sequence,body}
+    （libs/network/protobuf_framing.h）。hub 用同步 asio::write 回 resp 再
+    Close，所以被拒路径也能先读到 code。端口未监听时 create_connection 抛
+    ConnectionRefusedError——这正是 hub_mode off 的签名。
+    """
+    sock = socket.create_connection(("127.0.0.1", peer_port), timeout=timeout)
+    try:
+        return _rpc_on(sock, PEER_REGISTER_REQ, 1,
+                       peer_register_request(service_id, secret), timeout)
+    finally:
+        sock.close()
+
+
+def _start_hub(used, args_extra, label, peer_port, hub_value):
+    """起一个 chirp_chat hub 变体：自带探针 redis，返回 (proc, redis, log_path)。"""
+    redis_port = pick_port(used)
+    redis = subprocess.Popen(
+        ["redis-server", "--port", str(redis_port), "--save", "", "--appendonly", "no"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    if not wait_port(redis_port):
+        sys.exit("probe redis never came up")
+    port, ws = pick_port(used), pick_port(used)
+    log_path = Path(f"/tmp/chirp-hub-{label}.log")
+    with log_path.open("wb") as log:
+        proc = subprocess.Popen(
+            [str(REPO / "build/services/shared/chat/chirp_chat"),
+             "--port", str(port), "--ws_port", str(ws),
+             "--redis_port", str(redis_port),
+             "--hub_mode", hub_value,
+             "--hub_peer_port", str(peer_port),
+             *args_extra],
+            stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+    return proc, redis, log_path
+
+
+def _hub_line(log_path, needle):
+    return next((line.strip() for line in
+                 log_path.read_text(errors="replace").splitlines()
+                 if needle in line), "")
+
+
+def capture_hub_mode(used):
+    """--hub_mode off/on：off 不绑 peer 端口（连接被拒），on 绑口并放行白名单注册。"""
+    results = {}
+    for label, value in (("off", "0"), ("on", "1")):
+        peer_port = pick_port(used)
+        proc, redis, log_path = _start_hub(
+            used, ["--allowed_peers", f"{HUB_SERVICE}:{HUB_SECRET}"],
+            f"hubmode-{label}", peer_port, value)
+        try:
+            if value == "1":
+                if not wait_port(peer_port):
+                    sys.exit(f"hub peer port {peer_port} never came up")
+                resp = _probe_register(peer_port, HUB_SERVICE, HUB_SECRET)
+                code = resp.get(1, 0)
+                heartbeat = resp.get(4)
+            else:
+                try:
+                    _probe_register(peer_port, HUB_SERVICE, HUB_SECRET)
+                    code, heartbeat = "UNEXPECTED-ACCEPT", None
+                except (ConnectionRefusedError, OSError):
+                    code, heartbeat = "REFUSED", None
+            results[label] = {"code": code, "heartbeat": heartbeat,
+                              "peer_port": peer_port}
+        finally:
+            stop(proc)
+            stop(redis)
+        results[label]["log"] = _hub_line(log_path, "hub mode")
+        results[label]["reg_log"] = _hub_line(log_path, "peer registered")
+        log_path.unlink(missing_ok=True)
+    return results
+
+
+def capture_allow_unknown(used):
+    """--allow_unknown_peers off/on：无 --allowed_peers 时未知 peer 被拒
+    （AUTH_FAILED + 连接关）或放行（OK + 心跳节奏）。两变体都开 --hub_mode 1。"""
+    results = {}
+    for label, value in (("off", "0"), ("on", "1")):
+        peer_port = pick_port(used)
+        proc, redis, log_path = _start_hub(
+            used, ["--allow_unknown_peers", value], f"peu-{label}", peer_port, "1")
+        try:
+            if not wait_port(peer_port):
+                sys.exit(f"hub peer port {peer_port} never came up")
+            resp = _probe_register(peer_port, f"peu-{label}", "any-secret")
+            results[label] = {"code": resp.get(1, 0), "min": resp.get(3),
+                              "heartbeat": resp.get(4), "peer_port": peer_port}
+        finally:
+            stop(proc)
+            stop(redis)
+        needle = "peer registration" if value == "0" else "peer registered"
+        results[label]["log"] = _hub_line(log_path, needle)
+        log_path.unlink(missing_ok=True)
+    return results
+
+
 def _sid(session_id):
     """帧里用的缩写形式（session_id 是真实值，只截前 24 字符排版）。"""
     return (session_id[:24] + "...") if session_id and len(session_id) > 27 else session_id
@@ -843,6 +967,82 @@ def main():
                OUT / "cli-enable-migration.gif")
     print(f"migration off: log={mig['off']['log']!r} row_back={mig['off']['back']}")
     print(f"migration on : log={mig['on']['log']!r} row_back={mig['on']['back']}")
+
+    # ---- 开关 6：--hub_mode ----
+    hub = capture_hub_mode(used)
+    if hub["off"]["code"] != "REFUSED":
+        sys.exit(f"hub off: expected the peer port to refuse, got {hub['off']!r}")
+    if hub["on"]["code"] != OK:
+        sys.exit(f"hub on: expected a whitelisted register to answer OK, got {hub['on']!r}")
+    if "hub mode enabled" not in hub["on"]["log"] or hub["on"]["log"] in hub["off"]["log"]:
+        sys.exit(f"hub: expected a 'hub mode enabled' log only on the on side, got {hub!r}")
+
+    render_frame([
+        ("$ chirp_chat --port <p> --ws_port <w> --redis_port <r> \\", PROMPT),
+        (f"    --hub_mode 0 --hub_peer_port {hub['off']['peer_port']} \\", PROMPT),
+        (f"    --allowed_peers {HUB_SERVICE}:{HUB_SECRET}", PROMPT),
+        ("chat log: (no \"hub mode enabled\" line at all)", ERROR),
+        ("$ probe: TCP connect to the peer port, then PEER_REGISTER_REQ", PROMPT),
+        ("connect: Connection refused", ERROR),
+        ("# hub off: the chat never opens the game-chat peer acceptor -", TEXT),
+        ("# nothing listens on --hub_peer_port, so no spoke can register", TEXT),
+    ], OUT / "cli-hub-mode-off.png")
+    render_frame([
+        ("$ chirp_chat --port <p> --ws_port <w> --redis_port <r> \\", PROMPT),
+        (f"    --hub_mode 1 --hub_peer_port {hub['on']['peer_port']} \\", PROMPT),
+        (f"    --allowed_peers {HUB_SERVICE}:{HUB_SECRET}", PROMPT),
+        (f"chat log: {hub['on']['log']}", TEXT),
+        ("$ probe: PEER_REGISTER_REQ {service_id=peuhub, secret=peusecret,", PROMPT),
+        ("          protocol_version=1, game_id=peuigame}", TEXT),
+        (f"PEER_REGISTER_RESP: code={CODE_NAMES.get(hub['on']['code'], hub['on']['code'])} "
+         f"({hub['on']['code']}), heartbeat_interval_seconds={hub['on']['heartbeat']}", TEXT),
+        (f"chat log: {hub['on']['reg_log']}", TEXT),
+        ("# hub on: the peer acceptor is up and a whitelisted spoke", TEXT),
+        ("# registers cleanly", TEXT),
+    ], OUT / "cli-hub-mode-on.png")
+    stitch_gif(OUT / "cli-hub-mode-off.png", OUT / "cli-hub-mode-on.png",
+               OUT / "cli-hub-mode.gif")
+    print(f"hub off: code={hub['off']['code']} log={hub['off']['log']!r}")
+    print(f"hub on : code={hub['on']['code']} heartbeat={hub['on']['heartbeat']} "
+          f"log={hub['on']['log']!r}")
+
+    # ---- 开关 7：--allow_unknown_peers ----
+    peu = capture_allow_unknown(used)
+    if peu["off"]["code"] != AUTH_FAILED:
+        sys.exit(f"allow_unknown off: expected AUTH_FAILED, got {peu['off']!r}")
+    if peu["on"]["code"] != OK:
+        sys.exit(f"allow_unknown on: expected OK, got {peu['on']!r}")
+
+    render_frame([
+        ("$ chirp_chat --port <p> --ws_port <w> --redis_port <r> \\", PROMPT),
+        (f"    --hub_mode 1 --hub_peer_port {peu['off']['peer_port']} \\", PROMPT),
+        ("    --allow_unknown_peers 0      # no --allowed_peers at all", PROMPT),
+        ("chat log: hub mode enabled: peer_port=<peer_port>", TEXT),
+        ("$ probe: PEER_REGISTER_REQ {service_id=peu-off, secret=any-secret,", PROMPT),
+        ("          protocol_version=1, game_id=peuigame}", TEXT),
+        (f"PEER_REGISTER_RESP: code={CODE_NAMES[peu['off']['code']]} "
+         f"({peu['off']['code']}), min_version={peu['off']['min']}", ERROR),
+        (f"chat log: {peu['off']['log']}", ERROR),
+        ("# unknown peer denied: an empty whitelist rejects everyone", TEXT),
+        ("# unless open registration is turned on", TEXT),
+    ], OUT / "cli-allow-unknown-peers-off.png")
+    render_frame([
+        ("$ chirp_chat --port <p> --ws_port <w> --redis_port <r> \\", PROMPT),
+        (f"    --hub_mode 1 --hub_peer_port {peu['on']['peer_port']} \\", PROMPT),
+        ("    --allow_unknown_peers 1    # open registration", PROMPT),
+        ("chat log: hub mode enabled: peer_port=<peer_port>", TEXT),
+        ("$ probe: PEER_REGISTER_REQ {service_id=peu-on, secret=any-secret,", PROMPT),
+        ("          protocol_version=1, game_id=peuigame}", TEXT),
+        (f"PEER_REGISTER_RESP: code={CODE_NAMES[peu['on']['code']]} ({peu['on']['code']}), "
+         f"heartbeat_interval_seconds={peu['on']['heartbeat']}", TEXT),
+        (f"chat log: {peu['on']['log']}", TEXT),
+        ("# open registration: an unknown peer with a valid version and", TEXT),
+        ("# a namespace-safe game_id is accepted as-is", TEXT),
+    ], OUT / "cli-allow-unknown-peers-on.png")
+    stitch_gif(OUT / "cli-allow-unknown-peers-off.png", OUT / "cli-allow-unknown-peers-on.png",
+               OUT / "cli-allow-unknown-peers.gif")
+    print(f"allow_unknown off: code={peu['off']['code']} log={peu['off']['log']!r}")
+    print(f"allow_unknown on : code={peu['on']['code']} log={peu['on']['log']!r}")
 
     print("DONE")
 

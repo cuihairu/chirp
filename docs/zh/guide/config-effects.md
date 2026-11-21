@@ -212,6 +212,50 @@ ChatMessage」，探针直接手工种一条。两种变体各起独立 redis + 
 未启动；开：一个 interval 内行数变 1，日志是 worker 已启动。探针用户 `miguia-*`
 与两个自起 redis 在跑完后清干净。
 
+### `--hub_mode <0|1>`（`chirp_chat`）
+
+缺省 `0`。给 `1` 则 chirp_chat 在 `--hub_peer_port`（缺省 8200）开出
+game-chat peer 接入器，日志 `hub mode enabled: peer_port=<port>`；缺省 `0`
+则根本没有这个监听器，chat 只在主端口服务客户端协议。这是 hub+spoke 拓扑里
+的 hub 半边。
+
+| 关 | 开 |
+| --- | --- |
+| ![hub 关](../screenshots/switches/cli-hub-mode-off.png) | ![hub 开](../screenshots/switches/cli-hub-mode-on.png) |
+
+![hub 动图](../screenshots/switches/cli-hub-mode.gif)
+
+取证手法：不需要真 spoke——探针自己说 peer 注册协议。两个 `chirp_chat`（各自独立
+探针 redis）：一个不带 `--hub_mode`，一个带
+`--hub_mode 1 --hub_peer_port <端口> --allowed_peers peuhub:peusecret`。探针连到
+peer 端口发 `PEER_REGISTER_REQ`（`gateway.proto`，msg 5050，与客户端同款的
+u32be+Packet 帧），`service_id=peuhub, service_secret=peusecret,
+protocol_version=1, game_id=peuigame`。关：连接被拒（该端口从未绑定），日志里也
+没有 `hub mode enabled`；开：应答 `code=OK (0)` 带 `heartbeat_interval_seconds`，
+日志 `chat peer registered: peuhub game=peuigame version=1`
+（`libs/network/chat_peer_hub.cc`）。注册只存内存，跑完没有残留要清。
+
+### `--allow_unknown_peers <0|1>`（`chirp_chat`）
+
+缺省 `0`。**只在 `--hub_mode 1` 时被消费**。管的是 peer 注册闸门：缺省 `0` 时，
+`service_id` 不在 `--allowed_peers` 里的 peer 被拒（`code=AUTH_FAILED (3)`、连接
+关闭、Warn 日志 `chat peer registration rejected (not whitelisted): <id>`）；给 `1`
+则同一个 peer 走开放注册被放行（`code=OK (0)`）。
+
+| 关 | 开 |
+| --- | --- |
+| ![开放注册 关](../screenshots/switches/cli-allow-unknown-peers-off.png) | ![开放注册 开](../screenshots/switches/cli-allow-unknown-peers-on.png) |
+
+![开放注册 动图](../screenshots/switches/cli-allow-unknown-peers.gif)
+
+取证手法：两个 `chirp_chat`，都 `--hub_mode 1`、各占全新 peer 端口、各起独立探针
+redis，**都不给 `--allowed_peers`**（白名单为空）；一个 `--allow_unknown_peers 0`、
+一个 `1`。探针用同一个未知 `service_id`（`peu-off`/`peu-on`、`protocol_version=1`、
+`game_id=peuigame`）发同样的 `PEER_REGISTER_REQ`。关：应答 `code=AUTH_FAILED (3)`
+带 `min_version=1` 与那条 Warn 日志；开：应答 `code=OK (0)` 带
+`heartbeat_interval_seconds`，日志 `chat peer registered: <id> game=peuigame
+version=1`。
+
 ## 开关清单
 
 由 `scripts/build_config_switch_inventory.py` 生成并回源码核对（每一行都会重读其源码文件，
@@ -231,8 +275,8 @@ ChatMessage」，探针直接手工种一条。两种变体各起独立 redis + 
 | `dm-restriction-switch` | web 端 | — | ✅ 有 off/on 图+GIF |
 | `game-presence-toggle` | web 端 | — | ✅ 有 off/on 图+GIF |
 | `metrics_port` | chirp_chat 等 10 个长驻服务 | 0 | ✅ 有 off/on 图+GIF |
-| `allow_unknown_peers` | chirp_chat | 0 | 未覆盖：要自建服务实例/双实例对照（效果在 hub 多实例转发上，单机跑不出差别） |
-| `hub_mode` | chirp_chat | 0 | 未覆盖：要自建服务实例/双实例对照（要 hub+spoke 双实例才看得出差异） |
+| `allow_unknown_peers` | chirp_chat | 0 | ✅ 有 off/on 图+GIF |
+| `hub_mode` | chirp_chat | 0 | ✅ 有 off/on 图+GIF |
 | `enable_migration` | chirp_chat（增强版） | 1 | ✅ 有 off/on 图+GIF |
 | `broker_consumer` | chirp_server_gateway | (空=关) | 未覆盖：要自建服务实例/双实例对照（需要 broker 流 + 双消费实例） |
 | `kick_previous` | chirp_app_auth | 1 | ✅ 有 off/on 图+GIF |
