@@ -34,6 +34,12 @@ export default function MarqueeStrip({ content, ttlSeconds, onExpire }: MarqueeS
             '0%': { transform: 'translateX(0)' },
             '100%': { transform: 'translateX(-100%)' },
           },
+          // WCAG 2.2.2：持续超过 5 秒的移动内容要给静止选项。关动态时文案
+          // 原样整条显示（同时去掉 pl:100%，否则内容会停在视口外看不见）。
+          '@media (prefers-reduced-motion: reduce)': {
+            animation: 'none',
+            paddingLeft: 0,
+          },
         }}
       >
         {content}

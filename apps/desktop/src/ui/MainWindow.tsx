@@ -226,7 +226,7 @@ export default function MainWindow(props: {
         <Typography variant="h6" sx={{ mr: 2, fontWeight: 700 }}>
           Chirp
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="textSecondary">
           {selfId}
           {authState.kicked ? '（会话已被其他设备接管）' : ''}
         </Typography>
@@ -309,7 +309,7 @@ export default function MainWindow(props: {
             </Stack>
           ) : (
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-              <Typography color="text.secondary">从左侧选择一个会话开始聊天</Typography>
+              <Typography color="textSecondary">从左侧选择一个会话开始聊天</Typography>
             </Box>
           )}
         </Box>

@@ -327,7 +327,7 @@ export function GroupManageDialog(props: {
           </Stack>
         ) : null}
         <Box>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" color="textSecondary">
             成员（{members.length}）
           </Typography>
           <List dense>
@@ -412,7 +412,7 @@ export function PartyDialog(props: {
           <>
             {partyState.invites.length > 0 ? (
               <Box>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" color="textSecondary">
                   收到的邀请
                 </Typography>
                 <List dense>
@@ -609,7 +609,7 @@ export function DevicesDialog(props: {
   return (
     <Shell title="我的在线设备" open={props.open} onClose={props.onClose}>
       {list.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="textSecondary">
           暂无其他在线端（本桌面端除外）
         </Typography>
       ) : (
@@ -624,7 +624,7 @@ export function DevicesDialog(props: {
           ))}
         </List>
       )}
-      <Typography variant="caption" color="text.disabled" sx={{ mt: 1, display: 'block' }}>
+      <Typography variant="caption" color="textDisabled" sx={{ mt: 1, display: 'block' }}>
         同平台新登录会顶掉旧会话（同型顶号），跨平台可共存。
       </Typography>
     </Shell>
