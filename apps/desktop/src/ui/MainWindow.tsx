@@ -236,7 +236,12 @@ export default function MainWindow(props: {
             搜索
           </Button>
           <Tooltip title={notifyOn ? '桌面通知已开启' : '开启桌面通知'}>
-            <Button size="small" variant={notifyOn ? 'contained' : 'outlined'} onClick={() => void toggleNotify()}>
+            <Button
+              size="small"
+              variant={notifyOn ? 'contained' : 'outlined'}
+              onClick={() => void toggleNotify()}
+              data-testid="desktop-notify"
+            >
               通知
             </Button>
           </Tooltip>
