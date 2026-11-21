@@ -20,7 +20,9 @@ python3 scripts/build_config_switch_inventory.py --write   # refresh the switch 
 Outputs land in `docs/screenshots/switches/`. Every script asserts that the
 switch actually changed state (desktop: button variant flips contained ↔
 outlined; web: the switch input's `checked` property flips; CLI: the port goes
-from refusing connections to answering `/health`) and fails loudly otherwise.
+from refusing connections to answering `/health`, and the auth probe's
+`LOGIN_RESP` code flips from `AUTH_FAILED` to `OK` with a `user_id` echo) and
+fails loudly otherwise.
 
 Note on the CLI frames: this machine has no `xterm` or `asciinema`, so there is
 no live terminal recording. The frames are the two real runs' captured output
@@ -135,6 +137,25 @@ into `SimpleMetrics` (e.g. `CHIRP_GAUGE_INC("chirp_chat_sessions")` in
 `services/shared/chat/src/enhanced_dispatch.cc`) are never exported. Collected,
 not published.
 
+### `--allow_scaffold_login <0|1>` (`chirp_app_auth`)
+
+Default `0`. With `1`, a `LOGIN_REQ` whose token is neither a valid access
+token nor a live session falls back to *token == user_id* — the development
+scaffold login the desktop dev stack relies on. With `0` (default) that login is
+refused outright instead of trusting an arbitrary token as a user id.
+
+| Off | On |
+| --- | --- |
+| ![scaffold login off](../screenshots/switches/cli-scaffold-login-off.png) | ![scaffold login on](../screenshots/switches/cli-scaffold-login-on.png) |
+
+![scaffold login animation](../screenshots/switches/cli-scaffold-login.gif)
+
+Evidence method: two `chirp_app_auth` instances on fresh ports — one default,
+one with the flag on — probed over raw TCP with a `LOGIN_REQ` carrying
+`LoginRequest{token:"uia"}`, same framing as `scripts/demo_account.py`
+(`u32be` length prefix per `libs/network/protobuf_framing.h`). Off answers
+`code=AUTH_FAILED (3)` with no `session_id`/`user_id`; on answers `code=OK (0)`
+with `session_id="uia_sess"` and `user_id="uia"`.
 
 ## Complete switch inventory
 
@@ -163,7 +184,7 @@ compile-time or test-only switches.
 | `enable_migration` | chirp_chat (enhanced) | 1 | not covered: needs a scripted service rig — needs a data-bearing old database to diff the migration against |
 | `broker_consumer` | chirp_server_gateway | (空=关) | not covered: needs a scripted service rig — needs the broker stream plus two consumer instances |
 | `kick_previous` | chirp_app_auth | 1 | not covered: needs a scripted service rig — needs a self-hosted auth instance to diff two logins of one account |
-| `allow_scaffold_login` | chirp_app_auth | 0 | not covered: needs a scripted service rig — the dev stack relies on it being on; proving the difference needs a self-hosted auth instance |
+| `allow_scaffold_login` | chirp_app_auth | 0 | ✅ off/on + GIF |
 | `word_filter_policy` | chirp_chat | replace | not covered: needs a scripted service rig — needs a message driven through the filter chain — a scripted two-run diff |
 | `asr_disposition` | chirp_voice | flag | not covered: needs the ASR engine — the whole ASR chain needs the ASR engine and --asr_lexicon in place |
 | `push_transport` | chirp_app_notification | logging | not covered: needs provider credentials — the dev stack does not run that service; real egress is also gated on FCM/APNs credentials |

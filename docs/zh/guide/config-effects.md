@@ -17,7 +17,8 @@ python3 scripts/build_config_switch_inventory.py --write   # 刷新开关清单�
 
 产物落 `docs/screenshots/switches/`。三条脚本都断言开关真的变了状态（桌面端：按钮
 variant 在 contained↔outlined 间翻转；web 端：开关 input 的 `checked` 属性翻转；
-CLI：端口从拒绝连接变成应答 `/health`），没变就直接报错。
+CLI：端口从拒绝连接变成应答 `/health`，auth 探针的 `LOGIN_RESP` code 从 `AUTH_FAILED`
+翻成 `OK` 且回填 `user_id`），没变就直接报错。
 
 CLI 帧的口径说明：本机没有 `xterm` / `asciinema`，录不了真终端录屏。帧是把两次真实
 运行的实测输出渲染成终端样式再用 ffmpeg 缝合——帧里每一行都是实际拿回来的文本
@@ -122,6 +123,24 @@ off/on 就是这次文案变化。
 `SimpleMetrics` 的计数器（例如 `services/shared/chat/src/enhanced_dispatch.cc` 里的
 `CHIRP_GAUGE_INC("chirp_chat_sessions")`）根本没被导出——收是收了，但没发出去。
 
+### `--allow_scaffold_login <0|1>`（`chirp_app_auth`）
+
+缺省 `0`。给 `1` 后，`LOGIN_REQ` 里既不是有效 access token 也不是活跃 session 的
+token 会回退成 *token 即 user_id*——桌面 dev 栈正是靠这个脚手架登录跑起来的。
+`0`（缺省）则直接拒绝这种登录，不再把任意 token 当 user id 用。
+
+| 关 | 开 |
+| --- | --- |
+| ![脚手架登录 关](../../screenshots/switches/cli-scaffold-login-off.png) | ![脚手架登录 开](../../screenshots/switches/cli-scaffold-login-on.png) |
+
+![脚手架登录 动图](../../screenshots/switches/cli-scaffold-login.gif)
+
+取证手法：两个 `chirp_app_auth` 实例各占一个全新端口——一个缺省、一个带旗标——
+用裸 TCP 发 `LOGIN_REQ`、body 为 `LoginRequest{token:"uia"}` 探测，帧格式与
+`scripts/demo_account.py` 相同（`libs/network/protobuf_framing.h` 的 u32be 长度前缀）。
+关＝应答 `code=AUTH_FAILED (3)` 且无 `session_id`/`user_id`；开＝应答 `code=OK (0)`、
+`session_id="uia_sess"`、`user_id="uia"`。
+
 
 ## 开关清单
 
@@ -147,7 +166,7 @@ off/on 就是这次文案变化。
 | `enable_migration` | chirp_chat（增强版） | 1 | 未覆盖：要自建服务实例/双实例对照（需要带数据的旧库做迁移对照） |
 | `broker_consumer` | chirp_server_gateway | (空=关) | 未覆盖：要自建服务实例/双实例对照（需要 broker 流 + 双消费实例） |
 | `kick_previous` | chirp_app_auth | 1 | 未覆盖：要自建服务实例/双实例对照（需自建一个 auth 实例做同账号双登录对照） |
-| `allow_scaffold_login` | chirp_app_auth | 0 | 未覆盖：要自建服务实例/双实例对照（dev 栈正是靠它开着的；关不关的差异要一个自建 auth 实例） |
+| `allow_scaffold_login` | chirp_app_auth | 0 | ✅ 有 off/on 图+GIF |
 | `word_filter_policy` | chirp_chat | replace | 未覆盖：要自建服务实例/双实例对照（要发消息穿过过滤链才能取证，属脚本化双跑） |
 | `asr_disposition` | chirp_voice | flag | 未覆盖：要 ASR 引擎（整条 ASR 链要 ASR 引擎与 --asr_lexicon 才在位） |
 | `push_transport` | chirp_app_notification | logging | 未覆盖：要 FCM/APNs 凭据（dev 栈没起这个服务；真投递又卡在 FCM/APNs 凭据） |

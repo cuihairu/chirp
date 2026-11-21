@@ -1,73 +1,160 @@
 #!/usr/bin/env python3
-"""配置开关效果证据采集（服务端 CLI 旗标）。
+"""配置开关效果证据采集（服务端 CLI 旗标）：off/on 两次真跑 + 终端样式帧 + GIF。
 
 覆盖口径：能不带凭据、不依赖外部网络就证明「开≠关」的旗标。当前清单：
 
-  --metrics_port <port>  默认 0=不监听；给端口后 libs/common 的 MetricsHttpServer
-                         起来。off = 该端口连不上（connection refused），on =
-                         GET /health 返回 200 "OK" 且 GET /metrics 200。
-                         实测发现：/metrics 的正文是空的——仓内没有任何服务调
-                         SetMetricsHandler（只有 tests/unit/common_metrics_test.cc
-                         调过），而 counter/gauge 是在 SimpleMetrics 里收集的
-                         （services/shared/chat/src/enhanced_dispatch.cc 有
-                         CHIRP_GAUGE_INC("chirp_chat_sessions")），收了没导出。
-                         脚本把正文长度如实打印出来，空就空、非空就打印样本行。
+  --metrics_port <port>   默认 0=不监听；给端口后 libs/common 的 MetricsHttpServer 起来。
+                          off = 该端口拒连；on = GET /health 200 "OK"、GET /metrics 200。
+                          实测发现 /metrics 正文是空的：仓内没有任何服务注册
+                          SetMetricsHandler（只有 tests/unit/common_metrics_test.cc 调过），
+                          计数确实在收（services/shared/chat/src/enhanced_dispatch.cc 有
+                          CHIRP_GAUGE_INC("chirp_chat_sessions")）但从未导出。
+  --allow_scaffold_login  默认 0。1 = 允许「token 即用户 ID」的开发脚手架登录；
+                          0 = token 既不是有效 access token 也不是活跃 session 就拒绝。
+                          用裸 TCP 客户端直连 auth 发 LOGIN_REQ 取证（零第三方依赖，
+                          编解码照 libs/network/protobuf_framing.h 的 u32be 长度前缀，
+                          与 scripts/demo_account.py 同手法）。off = code 3 AUTH_FAILED，
+                          on = code 0 且 user_id 回填成 token。
 
-未覆盖（同一页的「尚未覆盖」段有原因）：--push_transport / --apns-* 这组要一个
-把 chirp_app_notification 接进栈的 rig（桌面 dev 栈根本没起这个服务，gateway 侧
-还有 --notification_host/--notification_port/--notification_secret 要配），且真实
-投递证明又卡在 APNs/FCM 凭据上（todo L25）。
+未覆盖（同页「开关清单」表里逐条写了缺什么）：--push_transport / --apns-* 这组要一个把
+chirp_app_notification 接进栈的 rig（桌面 dev 栈没起这个服务，gateway 侧还要配
+--notification_host/--notification_port/--notification_secret），真投递又卡在 FCM/APNs
+凭据上（台账 L25）。
 
-取证形态说明：本机没有 xterm/asciinema，录不了真终端录屏。这里做的是**把上面两次
-真实运行的实测输出渲染成终端样式的帧**，再用 ffmpeg 缝成 GIF——帧内每一行都是实测
-拿到的文本（连 curl 的报错串都是真的），不是手写文案。
+取证形态：本机没有 xterm/asciinema，录不了真终端录屏。帧是把两次真实运行的实测输出渲染
+成终端样式再用 ffmpeg 缝合——帧内每一行都是实测拿回来的文本（连 curl 的报错串都是真的）。
 
 用法：python3 scripts/capture_cli_switch_effects.py
-产物落 docs/screenshots/switches/cli-metrics-port-{off,on}.png 与 .gif。
+产物：docs/screenshots/switches/cli-{metrics-port,scaffold-login}-{off,on}.png 与 .gif
 """
 
 import http.client
 import os
-import shutil
 import signal
 import socket
+import struct
 import subprocess
 import sys
 import time
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from switch_frames import (ERROR, PROMPT, TEXT, render_frame, stitch_gif)  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
-CHIRP_CHAT = REPO / "build/services/shared/chat/chirp_chat"
 OUT = REPO / "docs/screenshots/switches"
-FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
-BG, PROMPT, TEXT, ERROR = "#1e1e28", "#7ec699", "#e6e6e6", "#e57373"
-W, H = 900, 430
-NAME = "cli-metrics-port"
+
+# ---- proto/gateway.proto: Packet{msg_id=1, sequence=2, body=3} ----
+LOGIN_REQ, LOGIN_RESP = 1003, 1004
+# ---- proto/common.proto ----
+OK, AUTH_FAILED = 0, 3
+CODE_NAMES = {OK: "OK", 1: "INTERNAL_ERROR", 2: "INVALID_PARAM",
+             3: "AUTH_FAILED", 4: "SESSION_EXPIRED", 5: "USER_NOT_FOUND"}
+
+
+def _varint(value):
+    out = bytearray()
+    while True:
+        b = value & 0x7F
+        value >>= 7
+        out.append(b | (0x80 if value else 0))
+        if not value:
+            return bytes(out)
+
+
+def _tag(field, wire):
+    return _varint((field << 3) | wire)
+
+
+def _sfield(field, text):
+    raw = text.encode("utf-8")
+    return _tag(field, 2) + _varint(len(raw)) + raw
+
+
+def login_request(token):
+    # proto/auth.proto: LoginRequest{token=1, device_id=2, platform=3, ...}
+    return _sfield(1, token)
+
+
+def packet(msg_id, sequence, body):
+    return (_tag(1, 0) + _varint(msg_id) + _tag(2, 0) + _varint(sequence)
+            + _tag(3, 2) + _varint(len(body)) + body)
+
+
+def _read_varint(buf, pos):
+    value = shift = 0
+    while True:
+        byte = buf[pos]
+        pos += 1
+        value |= (byte & 0x7F) << shift
+        if not byte & 0x80:
+            return value, pos
+        shift += 7
+
+
+def decode_packet(raw):
+    """只解我们要的 msg_id/sequence/body（字段号 1/2/3）。"""
+    fields, pos = {}, 0
+    while pos < len(raw):
+        key, pos = _read_varint(raw, pos)
+        field, wire = key >> 3, key & 7
+        if wire == 0:
+            value, pos = _read_varint(raw, pos)
+        elif wire == 2:
+            length, pos = _read_varint(raw, pos)
+            value = raw[pos:pos + length]
+            pos += length
+        else:
+            return None
+        fields.setdefault(field, []).append(value)
+    return fields
+
+
+def scaffold_probe(port, token="uia", timeout=4.0):
+    """裸 TCP 连 auth，发一个 LOGIN_REQ，回读 LOGIN_RESP。零依赖。
+
+    帧 = u32be 长度前缀 + Packet{msg_id=1003, sequence=1, body=LoginRequest{token}}，
+    与 libs/network/protobuf_framing.h / demo_account.py 同格式。
+    """
+    sock = socket.create_connection(("127.0.0.1", port), timeout=timeout)
+    try:
+        raw = packet(LOGIN_REQ, 1, login_request(token))
+        sock.sendall(struct.pack(">I", len(raw)) + raw)
+        header = _recv_exact(sock, 4, timeout)
+        (length,) = struct.unpack(">I", header)
+        fields = decode_packet(_recv_exact(sock, length, timeout))
+        return fields
+    finally:
+        sock.close()
+
+
+def _recv_exact(sock, count, timeout):
+    sock.settimeout(timeout)
+    buf = b""
+    while len(buf) < count:
+        chunk = sock.recv(count - len(buf))
+        if not chunk:
+            raise RuntimeError(f"connection closed after {len(buf)}/{count} bytes")
+        buf += chunk
+    return buf
 
 
 def pick_port(used):
-    """bind(0) 取一个空闲端口；记录到 used 里避免同一轮重复挑到同一个。"""
+    """bind(0) 取空闲端口；记进 used 避免同一轮重复挑到同一个。"""
     for _ in range(20):
-        s = socket.socket()
-        s.bind(("127.0.0.1", 0))
-        port = s.getsockname()[1]
-        s.close()
+        sock = socket.socket()
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+        sock.close()
         if port not in used:
             used.add(port)
             return port
     raise RuntimeError("no free port")
 
 
-def start_chat(extra_flags):
-    proc = subprocess.Popen(
-        [str(CHIRP_CHAT), "--port", str(extra_flags[0]), "--ws_port", str(extra_flags[1]), *extra_flags[2:]],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        start_new_session=True,
-    )
-    return proc
+def start(binary, args):
+    return subprocess.Popen([str(binary), *args], stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT, start_new_session=True)
 
 
 def stop(proc):
@@ -83,168 +170,188 @@ def stop(proc):
 def wait_port(port, deadline=25.0):
     end = time.time() + deadline
     while time.time() < end:
-        s = socket.socket()
-        s.settimeout(0.5)
+        sock = socket.socket()
+        sock.settimeout(0.5)
         try:
-            if s.connect_ex(("127.0.0.1", port)) == 0:
-                s.close()
+            if sock.connect_ex(("127.0.0.1", port)) == 0:
                 return True
         finally:
-            s.close()
+            sock.close()
         time.sleep(0.25)
     return False
 
 
 def port_dead(port):
-    """--metrics_port 0 的判据：该端口不接受连接。"""
-    s = socket.socket()
-    s.settimeout(1.0)
+    sock = socket.socket()
+    sock.settimeout(1.0)
     try:
-        return s.connect_ex(("127.0.0.1", port)) != 0
+        return sock.connect_ex(("127.0.0.1", port)) != 0
     finally:
-        s.close()
+        sock.close()
 
 
-def get_path(metrics_port, path):
-    conn = http.client.HTTPConnection("127.0.0.1", metrics_port, timeout=3)
-    conn.request("GET", path)
-    resp = conn.getresponse()
-    body = resp.read().decode("utf-8", "replace")
-    conn.close()
-    return resp.status, body
-
-
-def render(lines, path):
-    """把 (文本, 颜色) 列表画成终端样式帧；文本超长自动折行。"""
-    img = Image.new("RGB", (W, H), BG)
-    draw = ImageDraw.Draw(img)
-    font = ImageFont.truetype(FONT, 15)
-    x, y = 18, 16
-    for text, color in lines:
-        for row in textwrap(text, 104):
-            if y > H - 20:
-                break
-            draw.text((x, y), row, font=font, fill=color)
-            y += 22
-    img.save(path)
-
-
-def textwrap(text, width):
-    out = []
-    for chunk in text.split("\n"):
-        while len(chunk) > width:
-            out.append(chunk[:width])
-            chunk = chunk[width:]
-        out.append(chunk)
-    return out
-
-
-def curl_probe(metrics_port):
-    """真实跑一次 curl，取回它的输出串——报错文案也是实测的。"""
-    proc = subprocess.run(
-        ["curl", "-sS", "--max-time", "3", f"http://127.0.0.1:{metrics_port}/health"],
-        capture_output=True,
-        text=True,
-        timeout=10,
-    )
-    return (proc.stdout + proc.stderr).strip()
-
-
-def main():
-    if not CHIRP_CHAT.exists():
-        sys.exit(f"missing {CHIRP_CHAT}")
-    OUT.mkdir(parents=True, exist_ok=True)
-    used = set()
+# ---------------------------------------------------------------- 开关 1
+def capture_metrics(used):
     metrics_port = pick_port(used)
-    chat_port = pick_port(used)
-    ws_port = pick_port(used)
-
-    off_curl = curl_probe(metrics_port)
-    if "Failed to connect" not in off_curl and "Connection refused" not in off_curl:
-        sys.exit(f"unexpected off-run curl output: {off_curl!r}")
     if not port_dead(metrics_port):
         sys.exit("metrics port already listening before the off run")
 
-    proc = start_chat([chat_port, ws_port])
+    probe = subprocess.run(["curl", "-sS", "--max-time", "3",
+                           f"http://127.0.0.1:{metrics_port}/health"],
+                          capture_output=True, text=True, timeout=10)
+    off_curl = (probe.stdout + probe.stderr).strip()
+    if "Failed to connect" not in off_curl:
+        sys.exit(f"unexpected off-run curl output: {off_curl!r}")
+
+    chat_port, ws_port = pick_port(used), pick_port(used)
+    proc = start(REPO / "build/services/shared/chat/chirp_chat",
+                 ["--port", str(chat_port), "--ws_port", str(ws_port)])
     try:
         if not wait_port(chat_port):
-            log = proc.stdout.read().decode("utf-8", "replace") if proc.poll() else ""
-            sys.exit(f"off-run chirp_chat never came up on {chat_port}\n{log[-1500:]}")
+            sys.exit(f"off-run chirp_chat never came up on {chat_port}")
         if not port_dead(metrics_port):
             sys.exit("off run: /metrics unexpectedly listening")
     finally:
         stop(proc)
 
-    on_chat_port = pick_port(used)
-    on_ws_port = pick_port(used)
-    # 换一组端口再跑 on：上一个实例的端口可能还在 TIME_WAIT。
-    proc = start_chat([on_chat_port, on_ws_port, "--metrics_port", str(metrics_port)])
+    on_chat, on_ws = pick_port(used), pick_port(used)
+    proc = start(REPO / "build/services/shared/chat/chirp_chat",
+                 ["--port", str(on_chat), "--ws_port", str(on_ws),
+                  "--metrics_port", str(metrics_port)])
+    health = metrics_body = None
     try:
-        if not wait_port(on_chat_port):
-            sys.exit(f"on-run chirp_chat never came up on {on_chat_port}")
-        try:
-            health_status, health_body = get_path(metrics_port, "/health")
-            metrics_status, metrics_body = get_path(metrics_port, "/metrics")
-        except OSError as exc:
-            sys.exit(f"on run: endpoint unreachable: {exc}")
-        if health_status != 200 or health_body.strip() != "OK":
-            sys.exit(f"on run: /health unexpected (status={health_status} body={health_body!r})")
-        if metrics_status != 200:
-            sys.exit(f"on run: /metrics returned {metrics_status}")
+        if not wait_port(on_chat):
+            sys.exit(f"on-run chirp_chat never came up on {on_chat}")
+        health = _http_get(metrics_port, "/health")
+        metrics_body = _http_get(metrics_port, "/metrics")[1]
     finally:
         stop(proc)
+    if health != (200, b"OK"):
+        sys.exit(f"on run: /health answered {health!r}, expected (200, b'OK')")
+    return off_curl, metrics_body
 
-    if metrics_body.strip():
-        samples = [ln for ln in metrics_body.splitlines() if not ln.startswith("#")]
-        metric_lines = [(ln, TEXT) for ln in (samples or metrics_body.splitlines())[:5]]
-        empty_note = []
-    else:
-        metric_lines = []
-        # 实测为空就如实写出来——这是当前代码的真实行为，不是脚本的文案。
-        empty_note = [
-            ("# /metrics answers 200 with an EMPTY body: no service in the repo", TEXT),
-            ("# registers a SetMetricsHandler, so the counters collected in", TEXT),
-            ("# SimpleMetrics (e.g. chirp_chat_sessions) are never exported", TEXT),
-        ]
 
-    off_frame = [
-        (f"$ chirp_chat --port {chat_port} --ws_port {ws_port}", PROMPT),
-        (f"$ curl -sS --max-time 3 http://127.0.0.1:{metrics_port}/health", PROMPT),
-        (f"# --metrics_port defaults to 0: nothing listens on {metrics_port}", TEXT),
-        *[(ln, ERROR) for ln in textwrap(off_curl, 68)],
-    ]
-    on_frame = [
-        (f"$ chirp_chat --port {on_chat_port} --ws_port {on_ws_port} --metrics_port {metrics_port}", PROMPT),
-        (f"$ curl -sS --max-time 3 http://127.0.0.1:{metrics_port}/health", PROMPT),
-        (health_body.strip(), TEXT),
-        (f"$ curl -sS --max-time 3 http://127.0.0.1:{metrics_port}/metrics", PROMPT),
-        (str(metrics_status), TEXT),
-        *empty_note,
-        *metric_lines,
-    ]
-    render(off_frame, OUT / f"{NAME}-off.png")
-    render(on_frame, OUT / f"{NAME}-on.png")
+def _http_get(port, path):
+    conn = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
+    conn.request("GET", path)
+    resp = conn.getresponse()
+    status, body = resp.status, resp.read()
+    conn.close()
+    return status, body
 
-    seq = OUT / f".seq-{NAME}"
-    shutil.rmtree(seq, ignore_errors=True)
-    seq.mkdir()
-    shutil.copyfile(OUT / f"{NAME}-off.png", seq / "01.png")
-    shutil.copyfile(OUT / f"{NAME}-on.png", seq / "02.png")
-    subprocess.run(
-        [
-            "ffmpeg", "-y", "-loglevel", "error", "-framerate", "0.6",
-            "-i", str(seq / "%02d.png"),
-            "-filter_complex", "split[a][b];[a]palettegen[p];[b][p]paletteuse",
-            "-loop", "0", str(OUT / f"{NAME}.gif"),
-        ],
-        check=True,
-    )
-    shutil.rmtree(seq)
-    print(f"off: {off_curl.splitlines()[0] if off_curl.splitlines() else off_curl}")
-    print(
-        f"on: /health={health_body.strip()!r}，/metrics HTTP {metrics_status}，"
-        f"正文 {len(metrics_body)} 字节"
-    )
+
+# ---------------------------------------------------------------- 开关 2
+def capture_scaffold(used):
+    auth = REPO / "build/services/app/auth/chirp_app_auth"
+    results = {}
+    for flag, label in (([], "off"), (["--allow_scaffold_login", "1"], "on")):
+        port = pick_port(used)
+        proc = start(auth, ["--port", str(port), "--jwt_secret", "dev_secret", *flag])
+        try:
+            if not wait_port(port):
+                sys.exit(f"auth ({label}) never came up on {port}")
+            fields = scaffold_probe(port)
+            if not fields or 3 not in fields:
+                sys.exit(f"scaffold ({label}): no LOGIN_RESP body in the reply")
+            results[label] = fields
+        finally:
+            stop(proc)
+    return results
+
+
+def login_fields_of(fields):
+    """从 Packet 的 body 里解 LoginResponse{code=1, session_id=2, user_id=4, ...}。
+
+    返回 (code, session_id, user_id)。code 缺省按 protobuf3 规则视为 0（=OK，
+    零值不写盘）；session_id/user_id 缺省为 None。
+    """
+    body = fields[3][-1]
+    code, session_id, user_id = 0, None, None
+    pos = 0
+    while pos < len(body):
+        key, pos = _read_varint(body, pos)
+        field, wire = key >> 3, key & 7
+        if wire == 0:
+            value, pos = _read_varint(body, pos)
+            if field == 1:
+                code = value
+        elif wire == 2:
+            length, pos = _read_varint(body, pos)
+            value = body[pos:pos + length].decode("utf-8", "replace")
+            pos += length
+            if field == 2:
+                session_id = value
+            elif field == 4:
+                user_id = value
+        else:
+            break
+    return code, session_id, user_id
+
+
+def main():
+    if not (REPO / "build/services/shared/chat/chirp_chat").exists():
+        sys.exit("missing build/services/shared/chat/chirp_chat")
+    if not (REPO / "build/services/app/auth/chirp_app_auth").exists():
+        sys.exit("missing build/services/app/auth/chirp_app_auth")
+    OUT.mkdir(parents=True, exist_ok=True)
+    used = set()
+
+    # ---- 开关 1：--metrics_port ----
+    off_curl, metrics_body = capture_metrics(used)
+    render_frame([
+        ("$ chirp_chat --port <p> --ws_port <w>   # 不带 --metrics_port", PROMPT),
+        ("$ curl -sS http://127.0.0.1:<m>/health", PROMPT),
+        (off_curl, ERROR),
+        ("# 缺省 0：MetricsHttpServer 根本不起，端口上什么都没有", TEXT),
+    ], OUT / "cli-metrics-port-off.png")
+    render_frame([
+        ("$ chirp_chat --port <p> --ws_port <w> --metrics_port <m>", PROMPT),
+        ("$ curl -sS http://127.0.0.1:<m>/health", PROMPT),
+        ("OK", TEXT),
+        ("$ curl -sS http://127.0.0.1:<m>/metrics", PROMPT),
+        (f"HTTP 200, body {len(metrics_body)} bytes (empty: no service registers "
+         "SetMetricsHandler)", TEXT),
+    ], OUT / "cli-metrics-port-on.png")
+    stitch_gif(OUT / "cli-metrics-port-off.png", OUT / "cli-metrics-port-on.png",
+               OUT / "cli-metrics-port.gif")
+    print(f"metrics off: {off_curl}")
+    print(f"metrics on : /health 200 OK, /metrics body {len(metrics_body)} bytes")
+
+    # ---- 开关 2：--allow_scaffold_login ----
+    results = capture_scaffold(used)
+    off_fields, on_fields = results["off"], results["on"]
+    off_code, off_session, off_user = login_fields_of(off_fields)
+    on_code, on_session, on_user = login_fields_of(on_fields)
+    if off_code != AUTH_FAILED:
+        sys.exit(f"off run: expected AUTH_FAILED(3), got {off_code!r}")
+    if off_session is not None or off_user is not None:
+        sys.exit(f"off run: refused login should carry no session/user, got "
+                 f"{off_session!r}/{off_user!r}")
+    if on_code != OK or on_session != "uia_sess" or on_user != "uia":
+        sys.exit(f"on run: expected OK+session_id=uia_sess+user_id=uia, got "
+                 f"{on_code!r}/{on_session!r}/{on_user!r}")
+
+    render_frame([
+        ("$ chirp_app_auth --port <p> --jwt_secret dev_secret", PROMPT),
+        ("$ probe: LOGIN_REQ(1003) body=LoginRequest{token:\"uia\"}", PROMPT),
+        (f"LOGIN_RESP(1004) code={CODE_NAMES.get(off_code, off_code)} ({off_code})", ERROR),
+        ("# --allow_scaffold_login defaults to 0: token is neither a valid access", TEXT),
+        ("# token nor a live session, so the login is refused outright", TEXT),
+    ], OUT / "cli-scaffold-login-off.png")
+    render_frame([
+        ("$ chirp_app_auth --port <p> --jwt_secret dev_secret --allow_scaffold_login 1", PROMPT),
+        ("$ probe: LOGIN_REQ(1003) body=LoginRequest{token:\"uia\"}", PROMPT),
+        (f"LOGIN_RESP(1004) code={CODE_NAMES.get(on_code, on_code)} ({on_code})", TEXT),
+        (f"session_id=\"{on_session}\"", TEXT),
+        (f"user_id=\"{on_user}\"", TEXT),
+        ("# same probe, same token: with the flag on, the login lands and", TEXT),
+        ("# user_id echoes the token", TEXT),
+    ], OUT / "cli-scaffold-login-on.png")
+    stitch_gif(OUT / "cli-scaffold-login-off.png", OUT / "cli-scaffold-login-on.png",
+               OUT / "cli-scaffold-login.gif")
+
+    print(f"scaffold off: code={off_code} ({CODE_NAMES.get(off_code, off_code)})")
+    print(f"scaffold on : code={on_code} ({CODE_NAMES.get(on_code, on_code)}) user_id={on_user}")
     print("DONE")
 
 
