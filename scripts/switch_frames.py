@@ -50,14 +50,19 @@ def render_frame(lines, path, width=W, height=H):
     return path
 
 
-def stitch_gif(off_png, on_png, gif_path, framerate="0.6"):
-    """把 off/on 两帧缝成循环 GIF；帧是交替播放的（0.6 帧/秒）。"""
-    off_png, on_png, gif_path = map(Path, (off_png, on_png, gif_path))
-    seq = off_png.parent / f".seq-{gif_path.stem}"
+def stitch_gif_many(pngs, gif_path, framerate="0.6"):
+    """把 N 帧缝成循环 GIF；帧按顺序交替播放（0.6 帧/秒）。
+
+    pngs 是至少 2 张的 PNG 路径列表（任意长度，枚举型开关 3 态也走这里）。
+    """
+    pngs, gif_path = [Path(p) for p in pngs], Path(gif_path)
+    if len(pngs) < 2:
+        raise ValueError("need at least two frames")
+    seq = pngs[0].parent / f".seq-{gif_path.stem}"
     shutil.rmtree(seq, ignore_errors=True)
     seq.mkdir()
-    shutil.copyfile(off_png, seq / "01.png")
-    shutil.copyfile(on_png, seq / "02.png")
+    for i, png in enumerate(pngs, start=1):
+        shutil.copyfile(png, seq / f"{i:02d}.png")
     try:
         subprocess.run(
             [
@@ -71,3 +76,8 @@ def stitch_gif(off_png, on_png, gif_path, framerate="0.6"):
     finally:
         shutil.rmtree(seq, ignore_errors=True)
     return gif_path
+
+
+def stitch_gif(off_png, on_png, gif_path, framerate="0.6"):
+    """把 off/on 两帧缝成循环 GIF；帧是交替播放的（0.6 帧/秒）。"""
+    return stitch_gif_many([off_png, on_png], gif_path, framerate)

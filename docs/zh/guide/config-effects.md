@@ -163,13 +163,36 @@ token 会回退成 *token 即 user_id*——桌面 dev 栈正是靠这个脚手�
 注意：老的 `LOGIN_REQ` 脚手架路径**无论该旗标如何**都固定应答 `kick_previous=true`
 （`services/app/auth/src/main_enhanced.cc`），所以这个开关只改变密码登录的行为。
 
+### `--word_filter_policy <replace|reject|record>`（`chirp_chat`）
+
+缺省 `replace`。词源是 `WordFilterPolicyFromString`
+（`services/shared/chat/src/word_filter.cc`），**只认这三个串**，写错任何其它值都
+回落 `replace`。控制的是「含敏感词的消息怎么处置」：
+
+- `replace`（缺省）：命中被原位掩码（默认替换串 `**`），掩码后的内容照常落库。
+- `reject`：整条消息在进库前被拒，应答 `code=WORD_FILTERED (10)`，什么都不落。
+- `record`：内容**原样**落库，命中只进服务端 Warn 日志（`word filter recorded a hit
+  from <sender> (N term hit(s))`）留待审阅。
+
+| replace | reject | record |
+| --- | --- | --- |
+| ![替换](../../screenshots/switches/cli-word-filter-replace.png) | ![拒绝](../../screenshots/switches/cli-word-filter-reject.png) | ![记录](../../screenshots/switches/cli-word-filter-record.png) |
+
+![敏感词策略 动图](../../screenshots/switches/cli-word-filter.gif)
+
+取证手法：写一个只含 `badword` 的词表文件，三种策略各起一个带
+`--word_filter_file <词表> --word_filter_policy <策略>` 的 `chirp_chat`（各自全新端口、
+自起的探针 redis，不碰共享 dev 栈），脚手架登录（`--token_secret` 缺省空＝token 即
+user id）后发同一条私信 `content="hello badword world"`，读 `SEND_MESSAGE_RESP` 的
+code，再回读 `messages` 表落库内容：replace→`hello ** world`、reject→零行、
+record→`hello badword world`（原样）。探针用户 `wfuia-*` 与自起 redis 在跑完后清干净。
 
 ## 开关清单
 
 由 `scripts/build_config_switch_inventory.py` 生成并回源码核对（每一行都会重读其源码文件，
 旗标消失或缺省值漂移就报错退出，所以这张表不会悄悄过期）。口径：**离散**开关——开启后会改变
 应用行为的 GUI 开关控件，加上取值是离散枚举（`on`/`off`、`0`/`1`、`logging|http`、
-`replace|drop|log`）的服务端 CLI 旗标。明确排除在表外：数值调优旋钮（限流、TTL、上限、超时、
+`replace|reject|record`）的服务端 CLI 旗标。明确排除在表外：数值调优旋钮（限流、TTL、上限、超时、
 重试次数）、连接端点（host/port）、凭据类（secret/token/password/key）、编译期与仅测试用的开关。
 
 <!-- switch-inventory:begin -->
@@ -189,7 +212,7 @@ token 会回退成 *token 即 user_id*——桌面 dev 栈正是靠这个脚手�
 | `broker_consumer` | chirp_server_gateway | (空=关) | 未覆盖：要自建服务实例/双实例对照（需要 broker 流 + 双消费实例） |
 | `kick_previous` | chirp_app_auth | 1 | ✅ 有 off/on 图+GIF |
 | `allow_scaffold_login` | chirp_app_auth | 0 | ✅ 有 off/on 图+GIF |
-| `word_filter_policy` | chirp_chat | replace | 未覆盖：要自建服务实例/双实例对照（要发消息穿过过滤链才能取证，属脚本化双跑） |
+| `word_filter_policy` | chirp_chat | replace | ✅ 有 3 态图+GIF（replace/reject/record） |
 | `asr_disposition` | chirp_voice | flag | 未覆盖：要 ASR 引擎（整条 ASR 链要 ASR 引擎与 --asr_lexicon 才在位） |
 | `push_transport` | chirp_app_notification | logging | 未覆盖：要 FCM/APNs 凭据（dev 栈没起这个服务；真投递又卡在 FCM/APNs 凭据） |
 | `push_verify_tls` | chirp_app_notification | on | 未覆盖：要 FCM/APNs 凭据（同上，要有一次真实推送出向） |

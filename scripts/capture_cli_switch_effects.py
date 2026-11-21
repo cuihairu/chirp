@@ -21,6 +21,13 @@
                           session limit reached」。探针注册一次性账号（前缀 kickprobe-），
                           发两次 PASSWORD_LOGIN_REQ，跑完把账号连用户表/会话表/刷新令牌表
                           一并删干净，不污染外部席位的共享开发库。
+  --word_filter_policy   取值 replace|reject|record（词源 word_filter.cc 的
+                          WordFilterPolicyFromString；写错也回落 replace）。三种策略各起
+                          一个带词表的 chirp_chat，同一发件人发同一条含敏感词的私信，
+                          对照 SEND_MESSAGE_RESP 的 code 与 messages 表落库内容：
+                          replace=OK+内容被掩码落库；reject=WORD_FILTERED+零落库；
+                          record=OK+原文落库（命中只进服务端 Warn 日志）。这是 3 态枚举，
+                          帧按 3 帧轮播，不走 off/on 对。
 
 未覆盖（同页「开关清单」表里逐条写了缺什么）：--push_transport / --apns-* 这组要一个把
 chirp_app_notification 接进栈的 rig（桌面 dev 栈没起这个服务，gateway 侧还要配
@@ -32,11 +39,13 @@ chirp_app_notification 接进栈的 rig（桌面 dev 栈没起这个服务，gat
 
 用法：python3 scripts/capture_cli_switch_effects.py
 产物：docs/screenshots/switches/cli-{metrics-port,scaffold-login,kick-previous}-{off,on}.png
-      与 .gif（需本机 mariadbd 上的 chirp 库，凭据=编译默认值）
+      与 .gif、cli-word-filter-{replace,reject,record}.png 与 .gif
+      （需本机 mariadbd 上的 chirp 库与 redis-server，凭据=编译默认值）
 """
 
 import http.client
 import os
+import shutil
 import signal
 import socket
 import struct
@@ -46,7 +55,8 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from switch_frames import (ERROR, PROMPT, TEXT, render_frame, stitch_gif)  # noqa: E402
+from switch_frames import (ERROR, PROMPT, TEXT, render_frame, stitch_gif,  # noqa: E402
+                           stitch_gif_many)
 
 REPO = Path(__file__).resolve().parents[1]
 OUT = REPO / "docs/screenshots/switches"
@@ -55,10 +65,12 @@ OUT = REPO / "docs/screenshots/switches"
 LOGIN_REQ, LOGIN_RESP = 1003, 1004
 REGISTER_REQ, REGISTER_RESP = 1008, 1009
 PASSWORD_LOGIN_REQ, PASSWORD_LOGIN_RESP = 1010, 1011
+SEND_MESSAGE_REQ, SEND_MESSAGE_RESP = 2001, 2002
 # ---- proto/common.proto ----
-OK, AUTH_FAILED, SESSION_EXPIRED = 0, 3, 4
+OK, AUTH_FAILED, SESSION_EXPIRED, WORD_FILTERED = 0, 3, 4, 10
 CODE_NAMES = {OK: "OK", 1: "INTERNAL_ERROR", 2: "INVALID_PARAM",
-             3: "AUTH_FAILED", 4: "SESSION_EXPIRED", 5: "USER_NOT_FOUND"}
+             3: "AUTH_FAILED", 4: "SESSION_EXPIRED", 5: "USER_NOT_FOUND",
+             10: "WORD_FILTERED"}
 # --max_sessions 的默认 5，探针用 1 让第二个登录撞会话上限。
 MAX_SESSIONS = 1
 PROBE_PREFIX = "kickprobe"
@@ -151,32 +163,41 @@ def _recv_exact(sock, count, timeout):
     return buf
 
 
+def _decode_body(fields):
+    """从 Packet 的 body 里解字段号→值（varint→int、串→str，proto3 缺省省略）。"""
+    if not fields or 3 not in fields:
+        raise RuntimeError("no body in reply")
+    out, pos = {}, 0
+    body = fields[3][-1]
+    while pos < len(body):
+        key, pos = _read_varint(body, pos)
+        field, wire = key >> 3, key & 7
+        if wire == 0:
+            value, pos = _read_varint(body, pos)
+        elif wire == 2:
+            length, pos = _read_varint(body, pos)
+            value = body[pos:pos + length].decode("utf-8", "replace")
+            pos += length
+        else:
+            break
+        out[field] = value
+    return out
+
+
+def _rpc_on(sock, msg_id, sequence, body, timeout=6.0):
+    """在已连的 socket 上收发一个 Packet，回读并解出 body（同 _rpc）。"""
+    raw = packet(msg_id, sequence, body)
+    sock.sendall(struct.pack(">I", len(raw)) + raw)
+    header = _recv_exact(sock, 4, timeout)
+    (length,) = struct.unpack(">I", header)
+    return _decode_body(decode_packet(_recv_exact(sock, length, timeout)))
+
+
 def _rpc(port, msg_id, sequence, body, timeout=6.0):
     """连 auth 收发一个 Packet，回读并解出 body（字段号→值，varint→int、串→str）。"""
     sock = socket.create_connection(("127.0.0.1", port), timeout=timeout)
     try:
-        raw = packet(msg_id, sequence, body)
-        sock.sendall(struct.pack(">I", len(raw)) + raw)
-        header = _recv_exact(sock, 4, timeout)
-        (length,) = struct.unpack(">I", header)
-        fields = decode_packet(_recv_exact(sock, length, timeout))
-        if not fields or 3 not in fields:
-            raise RuntimeError(f"no body in reply to msg {msg_id}")
-        out, pos = {}, 0
-        body = fields[3][-1]
-        while pos < len(body):
-            key, pos = _read_varint(body, pos)
-            field, wire = key >> 3, key & 7
-            if wire == 0:
-                value, pos = _read_varint(body, pos)
-            elif wire == 2:
-                length, pos = _read_varint(body, pos)
-                value = body[pos:pos + length].decode("utf-8", "replace")
-                pos += length
-            else:
-                break
-            out[field] = value
-        return out
+        return _rpc_on(sock, msg_id, sequence, body, timeout)
     finally:
         sock.close()
 
@@ -399,6 +420,120 @@ def capture_kick(used):
     return results
 
 
+# ---------------------------------------------------------------- 开关 4
+WF_POLICIES = ("replace", "reject", "record")
+WF_TERM = "badword"
+WF_SENDER = {p: f"wfuia-{p}" for p in WF_POLICIES}
+WF_RECEIVER = "wfuib"
+WF_CONTENT = f"hello {WF_TERM} world"
+
+
+def send_message_request(sender, receiver, content):
+    # proto/chat.proto: SendMessageRequest{sender_id=1, receiver_id=2,
+    # channel_type=3, channel_id=4, msg_type=5, content=6, client_timestamp=7}
+    return (_sfield(1, sender) + _sfield(2, receiver)
+            + _tag(3, 0) + _varint(0)                    # PRIVATE
+            + _tag(5, 0) + _varint(0)                    # TEXT
+            + _sfield(6, content)
+            + _tag(7, 0) + _varint(int(time.time() * 1000)))
+
+
+def mysql_query(sql):
+    """对本地 chirp 库跑一条查询，返回第一列文本（-N -B 去了表头）。"""
+    out = subprocess.run(
+        ["mysql", "-h127.0.0.1", "-P3306", "-uchirp", "-pchirp_password", "chirp",
+         "-N", "-B", "-e", sql],
+        capture_output=True, text=True, timeout=30)
+    if out.returncode != 0:
+        raise RuntimeError(f"mysql query failed: {out.stderr.strip()}")
+    return out.stdout.strip()
+
+
+def chat_probe(port, token, content):
+    """一条 TCP 连接上先 LOGIN_REQ 绑会话、再 SEND_MESSAGE_REQ（会话跟连接走）。
+
+    --token_secret 缺省空 = 脚手架登录（token 即 user_id，无需 JWT），与桌面
+    dev 栈同一条路径。返回 (login_code, send_code, message_id)。
+    """
+    sock = socket.create_connection(("127.0.0.1", port), timeout=6.0)
+    try:
+        login = _rpc_on(sock, LOGIN_REQ, 1, login_request(token))
+        send = _rpc_on(sock, SEND_MESSAGE_REQ, 2,
+                       send_message_request(token, WF_RECEIVER, content))
+        return login.get(1, 0), send.get(1, 0), send.get(2)
+    finally:
+        sock.close()
+
+
+def capture_word_filter(used):
+    """--word_filter_policy replace|reject|record：同一条消息穿三种处置策略。
+
+    每种策略起一个带词表文件的 chirp_chat（各自全新端口、各自探针用户
+    wfuia-<policy>），脚手架登录后发同一条 "hello badword world"，读
+    SEND_MESSAGE_RESP 的 code/message_id，再回读 messages 表看落库内容。
+    探针用户与 redis 都是本脚本起的，跑完连 redis 带 messages 行一起清掉。
+    """
+    chat = REPO / "build/services/shared/chat/chirp_chat"
+    if not shutil.which("redis-server"):
+        sys.exit("need redis-server for the word_filter probe")
+    stamp = int(time.time())
+    lexicon = Path(f"/tmp/chirp-wf-lexicon-{stamp}.txt")
+    lexicon.write_text(WF_TERM + "\n", encoding="utf-8")
+    redis_port = pick_port(used)
+    redis = subprocess.Popen(
+        ["redis-server", "--port", str(redis_port), "--save", "", "--appendonly", "no"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    results = {}
+    try:
+        if not wait_port(redis_port):
+            sys.exit("probe redis never came up")
+        for policy in WF_POLICIES:
+            port, ws = pick_port(used), pick_port(used)
+            log_path = Path(f"/tmp/chirp-wf-{policy}-{stamp}.log")
+            with log_path.open("wb") as log:
+                proc = subprocess.Popen(
+                    [str(chat), "--port", str(port), "--ws_port", str(ws),
+                     "--redis_port", str(redis_port),
+                     "--word_filter_file", str(lexicon),
+                     "--word_filter_policy", policy],
+                    stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+            try:
+                if not wait_port(port):
+                    sys.exit(f"chat ({policy}) never came up on {port}")
+                sender = WF_SENDER[policy]
+                login_code, send_code, message_id = chat_probe(port, sender, WF_CONTENT)
+                if login_code != OK:
+                    sys.exit(f"word filter ({policy}): scaffold login failed {login_code}")
+                if send_code == OK and message_id:
+                    stored = ""
+                    for _ in range(20):            # StoreMessageAsync 异步落库，轮询
+                        stored = mysql_query(
+                            f"SELECT content FROM messages WHERE message_id='{message_id}'")
+                        if stored:
+                            break
+                        time.sleep(0.25)
+                else:
+                    time.sleep(1.0)                # 给异步落库留窗，再数行
+                    stored = mysql_query(
+                        f"SELECT COUNT(*) FROM messages WHERE sender_id='{sender}'")
+                results[policy] = {"code": send_code, "message_id": message_id,
+                                   "stored": stored}
+            finally:
+                stop(proc)
+            # 取命中的那行 Warn（词表「已加载」INFO 会先出现，按 hit 措辞挑）
+            log_line = next((line.strip() for line in
+                             log_path.read_text(errors="replace").splitlines()
+                             if ("term hit" in line or "rejected a message" in line
+                                 or "replaced a hit" in line)), "")
+            results[policy]["log"] = log_line
+            log_path.unlink(missing_ok=True)
+    finally:
+        stop(redis)
+        lexicon.unlink(missing_ok=True)
+        mysql_query("DELETE FROM messages WHERE sender_id LIKE 'wfuia-%'")
+    return results
+
+
 def _sid(session_id):
     """帧里用的缩写形式（session_id 是真实值，只截前 24 字符排版）。"""
     return (session_id[:24] + "...") if session_id and len(session_id) > 27 else session_id
@@ -513,6 +648,62 @@ def main():
               f"({CODE_NAMES.get(on_second[0], on_second[0])}) kick_previous={on_second[2]}")
     finally:
         db_cleanup(probe_names)
+
+    # ---- 开关 4：--word_filter_policy（3 态枚举）----
+    wf = capture_word_filter(used)
+    rep, rej, rec = wf["replace"], wf["reject"], wf["record"]
+    if rep["code"] != OK or rep["stored"] != "hello ** world":
+        sys.exit(f"replace: expected OK+masked content, got {rep!r}")
+    if rej["code"] != WORD_FILTERED or rej["stored"] != "0":
+        sys.exit(f"reject: expected WORD_FILTERED(10)+zero rows, got {rej!r}")
+    if rec["code"] != OK or rec["stored"] != WF_CONTENT:
+        sys.exit(f"record: expected OK+unchanged content, got {rec!r}")
+
+    render_frame([
+        ("$ chirp_chat --port <p> --ws_port <w> --redis_port <r> \\", PROMPT),
+        ("    --word_filter_file /tmp/wf-lexicon.txt --word_filter_policy replace", PROMPT),
+        ("$ probe: LOGIN_REQ(token:\"wfuia-replace\") then SEND_MESSAGE_REQ", PROMPT),
+        (f'  content = "{WF_CONTENT}"', TEXT),
+        (f"SEND_MESSAGE_RESP code={CODE_NAMES.get(rep['code'], rep['code'])} "
+         f"({rep['code']}) message_id=\"{_sid(rep['message_id'])}\"", TEXT),
+        ("$ mysql -e \"SELECT content FROM messages WHERE message_id='...'\"", PROMPT),
+        (f"content = \"{rep['stored']}\"", TEXT),
+        ("# replace (default): the lexicon hit is masked in place - what lands", TEXT),
+        ("# in the store is the masked text", TEXT),
+    ], OUT / "cli-word-filter-replace.png")
+    render_frame([
+        ("$ chirp_chat --port <p> --ws_port <w> --redis_port <r> \\", PROMPT),
+        ("    --word_filter_file /tmp/wf-lexicon.txt --word_filter_policy reject", PROMPT),
+        ("$ probe: LOGIN_REQ(token:\"wfuia-reject\") then SEND_MESSAGE_REQ", PROMPT),
+        (f'  content = "{WF_CONTENT}"', TEXT),
+        (f"SEND_MESSAGE_RESP code={CODE_NAMES.get(rej['code'], rej['code'])} "
+         f"({rej['code']})  # no message_id", ERROR),
+        ("$ mysql -e \"SELECT COUNT(*) FROM messages WHERE sender_id='wfuia-reject'\"",
+         PROMPT),
+        (f"count = {rej['stored']}", TEXT),
+        ("# reject: the send is refused before the store - nothing persisted", TEXT),
+    ], OUT / "cli-word-filter-reject.png")
+    render_frame([
+        ("$ chirp_chat --port <p> --ws_port <w> --redis_port <r> \\", PROMPT),
+        ("    --word_filter_file /tmp/wf-lexicon.txt --word_filter_policy record", PROMPT),
+        ("$ probe: LOGIN_REQ(token:\"wfuia-record\") then SEND_MESSAGE_REQ", PROMPT),
+        (f'  content = "{WF_CONTENT}"', TEXT),
+        (f"SEND_MESSAGE_RESP code={CODE_NAMES.get(rec['code'], rec['code'])} "
+         f"({rec['code']}) message_id=\"{_sid(rec['message_id'])}\"", TEXT),
+        ("$ mysql -e \"SELECT content FROM messages WHERE message_id='...'\"", PROMPT),
+        (f"content = \"{rec['stored']}\"  # unchanged", TEXT),
+        (f"chat log: {rec['log']}", TEXT),
+        ("# record: delivered as sent - the hit only shows up in the server", TEXT),
+        ("# Warn log for later review", TEXT),
+    ], OUT / "cli-word-filter-record.png")
+    stitch_gif_many([OUT / "cli-word-filter-replace.png",
+                     OUT / "cli-word-filter-reject.png",
+                     OUT / "cli-word-filter-record.png"],
+                    OUT / "cli-word-filter.gif")
+    print(f"word filter replace: code={rep['code']} stored={rep['stored']!r}")
+    print(f"word filter reject : code={rej['code']} stored={rej['stored']!r}")
+    print(f"word filter record : code={rec['code']} stored={rec['stored']!r} "
+          f"log={rec['log']!r}")
 
     print("DONE")
 

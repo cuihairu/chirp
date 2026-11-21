@@ -184,13 +184,44 @@ Note: the legacy `LOGIN_REQ` scaffold path always answers
 (`services/app/auth/src/main_enhanced.cc`), so this switch only changes
 behavior for password logins.
 
+### `--word_filter_policy <replace|reject|record>` (`chirp_chat`)
+
+Default `replace`. The source of truth is `WordFilterPolicyFromString`
+(`services/shared/chat/src/word_filter.cc`), which accepts **only these three
+strings**; any other value falls back to `replace`. It controls what happens to
+a message that hits the sensitive-word lexicon:
+
+- `replace` (default): every hit is masked in place (the default replacement
+  is `**`) and the masked text is stored.
+- `reject`: the whole message is refused before it reaches the store,
+  answering `code=WORD_FILTERED (10)`; nothing is persisted.
+- `record`: the content is stored **unchanged**; the hit only shows up in a
+  server Warn log (`word filter recorded a hit from <sender> (N term hit(s))`)
+  for later review.
+
+| replace | reject | record |
+| --- | --- | --- |
+| ![replace](../screenshots/switches/cli-word-filter-replace.png) | ![reject](../screenshots/switches/cli-word-filter-reject.png) | ![record](../screenshots/switches/cli-word-filter-record.png) |
+
+![word filter policy animation](../screenshots/switches/cli-word-filter.gif)
+
+Evidence method: a lexicon file containing only `badword`; for each policy a
+separate `chirp_chat` with `--word_filter_file <lexicon>
+--word_filter_policy <policy>` on fresh ports (plus a probe-owned redis, so the
+shared dev-stack redis is untouched), a scaffold login (`--token_secret` empty
+means token == user id), then one private message `content="hello badword
+world"`. The `SEND_MESSAGE_RESP` code and the `messages`-table content are
+compared across the three: `hello ** world` (replace), zero rows (reject), and
+`hello badword world` unchanged (record). The `wfuia-*` probe users and the
+probe redis are cleaned up afterwards.
+
 ## Complete switch inventory
 
 Generated and source-verified by `scripts/build_config_switch_inventory.py` (it re-reads
 every row's source file and fails loudly if a flag disappears or its default drifts, so the
 table cannot silently go stale). Scope: **discrete** switches that change what the app does
 once enabled — GUI switch controls plus CLI flags whose value is a discrete enum
-(`on`/`off`, `0`/`1`, `logging|http`, `replace|drop|log`). Explicitly out of scope and
+(`on`/`off`, `0`/`1`, `logging|http`, `replace|reject|record`). Explicitly out of scope and
 excluded from the table: numeric tuning knobs (rate limits, TTLs, caps, timeouts, retry
 counts), connection endpoints (host/port), credentials (secret/token/password/key), and
 compile-time or test-only switches.
@@ -212,7 +243,7 @@ compile-time or test-only switches.
 | `broker_consumer` | chirp_server_gateway | (空=关) | not covered: needs a scripted service rig — needs the broker stream plus two consumer instances |
 | `kick_previous` | chirp_app_auth | 1 | ✅ off/on + GIF |
 | `allow_scaffold_login` | chirp_app_auth | 0 | ✅ off/on + GIF |
-| `word_filter_policy` | chirp_chat | replace | not covered: needs a scripted service rig — needs a message driven through the filter chain — a scripted two-run diff |
+| `word_filter_policy` | chirp_chat | replace | ✅ 3-state off/mid/on + GIF |
 | `asr_disposition` | chirp_voice | flag | not covered: needs the ASR engine — the whole ASR chain needs the ASR engine and --asr_lexicon in place |
 | `push_transport` | chirp_app_notification | logging | not covered: needs provider credentials — the dev stack does not run that service; real egress is also gated on FCM/APNs credentials |
 | `push_verify_tls` | chirp_app_notification | on | not covered: needs provider credentials — same as above: needs one real outbound push |

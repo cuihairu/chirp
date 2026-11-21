@@ -2,7 +2,7 @@
 """生成「本仓全部开关」清单表（docs 配置效果页的清单段）。
 
 枚举口径（2026-11-21 定）：「开启后有效果」的**离散**开关——GUI 上的开关控件，以及
-服务端 CLI 里取值是离散枚举（on/off、0/1、logging|http、replace|drop|log）的旗标。
+服务端 CLI 里取值是离散枚举（on/off、0/1、logging|http、replace|reject|record）的旗标。
 不在此口径内、因此在表里明确排除的：数值调优旋钮（限流/TTL/上限/超时/重试次数）、
 连接端点（host/port）、凭据类（secret/token/password/key）、编译期与仅测试用的开关。
 
@@ -61,9 +61,8 @@ SWITCHES = [
      "services/app/auth/src/main_enhanced.cc", "1", "covered", "", "", ""),
     ("allow_scaffold_login", "是否允许「用户 ID 即凭据」的脚手架登录", "chirp_app_auth",
      "services/app/auth/src/main_enhanced.cc", "0", "covered", "", "", ""),
-    ("word_filter_policy", "敏感词处理策略 replace|drop|log", "chirp_chat",
-     "services/shared/chat/src/main_enhanced.cc", "replace", "cli-needs-rig",
-     "要发消息穿过过滤链才能取证，属脚本化双跑", "needs a message driven through the filter chain — a scripted two-run diff", ""),
+    ("word_filter_policy", "敏感词处理策略 replace|reject|record", "chirp_chat",
+     "services/shared/chat/src/main_enhanced.cc", "replace", "covered-3state", "", "", ""),
     ("asr_disposition", "ASR 处置策略 flag|block", "chirp_voice",
      "services/voice/src/main.cc", "flag", "cli-needs-toolchain",
      "整条 ASR 链要 ASR 引擎与 --asr_lexicon 才在位", "the whole ASR chain needs the ASR engine and --asr_lexicon in place", ""),
@@ -90,6 +89,8 @@ WHERE_EN = {
 COVERAGE = {
     "gui": ("✅ 有 off/on 图+GIF", "✅ off/on + GIF"),
     "covered": ("✅ 有 off/on 图+GIF", "✅ off/on + GIF"),
+    "covered-3state": ("✅ 有 3 态图+GIF（replace/reject/record）",
+                       "✅ 3-state off/mid/on + GIF"),
     "cli-needs-rig": ("未覆盖：要自建服务实例/双实例对照", "not covered: needs a scripted service rig"),
     "cli-credential": ("未覆盖：要 FCM/APNs 凭据", "not covered: needs provider credentials"),
     "cli-needs-toolchain": ("未覆盖：要 ASR 引擎", "not covered: needs the ASR engine"),
