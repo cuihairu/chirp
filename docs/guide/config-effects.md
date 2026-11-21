@@ -10,12 +10,21 @@ one script — do not hand-edit the images.
 ## Regenerate
 
 ```bash
-# prerequisites: apps/desktop/dev/stack-up.sh stack running + vite dev server on :5180
-node apps/desktop/dev/capture-switch-effects.mjs
+# prerequisites: apps/desktop/dev/stack-up.sh stack online
+node apps/desktop/dev/capture-switch-effects.mjs        # desktop app toggles
+node apps/web_companion/scripts/capture-switch-effects.mjs   # web app toggles
+python3 scripts/capture_cli_switch_effects.py          # server CLI flags
 ```
 
-Outputs land in `docs/screenshots/switches/`. The script asserts that each
-toggle actually flips (contained ↔ outlined) and fails loudly otherwise.
+Outputs land in `docs/screenshots/switches/`. Every script asserts that the
+switch actually changed state (desktop: button variant flips contained ↔
+outlined; web: the switch input's `checked` property flips; CLI: the port goes
+from refusing connections to answering `/health`) and fails loudly otherwise.
+
+Note on the CLI frames: this machine has no `xterm` or `asciinema`, so there is
+no live terminal recording. The frames are the two real runs' captured output
+rendered in a terminal style and stitched with ffmpeg — every line in them is
+text that actually came back (`curl`'s error string included).
 
 ## Desktop app switches (covered)
 
@@ -55,11 +64,84 @@ When on, only friends and same-group members can DM you (server-enforced).
 
 ![dm restriction animation](../screenshots/switches/dm-restriction.gif)
 
+## Web companion switches (covered)
+
+The web app runs against the same dev stack; its own capture pipeline starts a
+vite server on 3001 and retargets the `/ws/*` proxy at the stack's ports (the
+`vite.config.ts` values such as 7001 are product defaults, not dev-stack ports).
+
+### Desktop notifications (`开启桌面通知`)
+
+Not a switch control: clicking the left-rail link asks the browser for the
+permission, after which the link is replaced by `桌面通知已开启`. Off/on is
+that label change.
+
+| Off | On |
+| --- | --- |
+| ![web notifications off](../screenshots/switches/web-notify-off.png) | ![web notifications on](../screenshots/switches/web-notify-on.png) |
+
+![web notifications animation](../screenshots/switches/web-notify.gif)
+
+### Friend-online notifications (`好友` dialog)
+
+Toast when a friend comes online.
+
+| Off | On |
+| --- | --- |
+| ![web friend online notify off](../screenshots/switches/web-friend-online-notify-off.png) | ![web friend online notify on](../screenshots/switches/web-friend-online-notify-on.png) |
+
+![web friend online notify animation](../screenshots/switches/web-friend-online-notify.gif)
+
+### Direct-message restriction (`好友` dialog)
+
+Only friends / same-group members can DM you.
+
+| Off | On |
+| --- | --- |
+| ![web dm restriction off](../screenshots/switches/web-dm-restriction-off.png) | ![web dm restriction on](../screenshots/switches/web-dm-restriction-on.png) |
+
+![web dm restriction animation](../screenshots/switches/web-dm-restriction.gif)
+
+### Game presence (`在线设备` dialog)
+
+Friends can see what you are playing; private messages also get delivered into
+the game. Off/on flips this switch.
+
+| Off | On |
+| --- | --- |
+| ![web game presence off](../screenshots/switches/web-game-presence-off.png) | ![web game presence on](../screenshots/switches/web-game-presence-on.png) |
+
+![web game presence animation](../screenshots/switches/web-game-presence.gif)
+
+## Server CLI flags (covered)
+
+### `--metrics_port <port>` (`chirp_chat` and the other long-lived services)
+
+Default `0` means no listener at all; with a port, `libs/common`'s
+`MetricsHttpServer` comes up on it. Off = connections to that port are refused,
+on = `GET /health` answers `OK` and `GET /metrics` answers `200`.
+
+| Off | On |
+| --- | --- |
+| ![metrics port off](../screenshots/switches/cli-metrics-port-off.png) | ![metrics port on](../screenshots/switches/cli-metrics-port-on.png) |
+
+![metrics port animation](../screenshots/switches/cli-metrics-port.gif)
+
+**Real behavior worth knowing**: the `/metrics` body comes back **empty**. No
+service in the repo calls `SetMetricsHandler` (only
+`tests/unit/common_metrics_test.cc` does), so the counters that are collected
+into `SimpleMetrics` (e.g. `CHIRP_GAUGE_INC("chirp_chat_sessions")` in
+`services/shared/chat/src/enhanced_dispatch.cc`) are never exported. Collected,
+not published.
+
 ## Not covered yet
 
-- `web_companion` toggles — same capture pipeline can be extended once its
-  dev rig is scripted the same way.
-- Server CLI flags (`--push_transport`, `--apns-*`, rate-limit knobs, …) —
-  off→on evidence needs a scripted two-run server diff (logs/behavior capture);
-  `asciinema` and `test-electron` are not installed on the current machine, so
-  terminal-style recordings are not produced yet.
+- `--push_transport logging|http` and the `--apns-*` / `--fcm-*` flags —
+  proving delivery needs a dev stack that also runs `chirp_app_notification`
+  with the gateway's `--notification_host/--notification_port/
+  --notification_secret` wired to it (the desktop dev stack does not start that
+  service at all), plus FCM/APNs credentials for a real egress. See the
+  provider-egress paragraph in [deployment.md](deployment.md) for the runbook.
+- Rate-limit / TTL knobs and compile-time or test-only switches — they change
+  throughput or limits rather than an observable screen or endpoint, so an
+  off/on image pair would not actually prove the effect.
