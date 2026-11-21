@@ -187,6 +187,31 @@ user id）后发同一条私信 `content="hello badword world"`，读 `SEND_MESS
 code，再回读 `messages` 表落库内容：replace→`hello ** world`、reject→零行、
 record→`hello badword world`（原样）。探针用户 `wfuia-*` 与自起 redis 在跑完后清干净。
 
+### `--enable_migration <0|1>`（`chirp_chat` 增强版）
+
+缺省 `1`。控制「redis 热层 → MySQL 冷层」后台迁移 worker：给 `1` 则
+`MessageMigrationWorker` 启动，每 `--migration_interval` 秒（缺省 30）扫一遍
+`chirp:chat:history:*` 与 `chirp:chat:offline:*`，逐条解析后 INSERT 进
+`messages` 表；给 `0` 则 worker 根本不启动（启动日志
+`MessageMigrationWorker disabled by configuration`），只存在 redis 热层的东西就
+留在那里。
+
+| 关 | 开 |
+| --- | --- |
+| ![迁移 关](../../screenshots/switches/cli-enable-migration-off.png) | ![迁移 开](../../screenshots/switches/cli-enable-migration-on.png) |
+
+![迁移 动图](../../screenshots/switches/cli-enable-migration.gif)
+
+取证手法：不需要带数据的旧库——worker 的输入态就是「一条只存在于 redis 热层的
+ChatMessage」，探针直接手工种一条。两种变体各起独立 redis + 独立 `chirp_chat`
+（`--migration_interval 3` 让 worker 快走），探针用 `redis-cli -x RPUSH` 把一条
+序列化的 `ChatMessage`（字段布局与 store 写入的一致，键含
+`PrivateChannelId` 的 `a|b` 排序拼接）推进 `chirp:chat:history:<channel>`——
+这条消息从没走过 `SendMessage`，除了迁移 worker 没有任何路径能把它落库。
+关：等过两个 interval 后该 message_id 在 `messages` 表仍 0 行，日志是 worker
+未启动；开：一个 interval 内行数变 1，日志是 worker 已启动。探针用户 `miguia-*`
+与两个自起 redis 在跑完后清干净。
+
 ## 开关清单
 
 由 `scripts/build_config_switch_inventory.py` 生成并回源码核对（每一行都会重读其源码文件，
@@ -208,7 +233,7 @@ record→`hello badword world`（原样）。探针用户 `wfuia-*` 与自起 re
 | `metrics_port` | chirp_chat 等 10 个长驻服务 | 0 | ✅ 有 off/on 图+GIF |
 | `allow_unknown_peers` | chirp_chat | 0 | 未覆盖：要自建服务实例/双实例对照（效果在 hub 多实例转发上，单机跑不出差别） |
 | `hub_mode` | chirp_chat | 0 | 未覆盖：要自建服务实例/双实例对照（要 hub+spoke 双实例才看得出差异） |
-| `enable_migration` | chirp_chat（增强版） | 1 | 未覆盖：要自建服务实例/双实例对照（需要带数据的旧库做迁移对照） |
+| `enable_migration` | chirp_chat（增强版） | 1 | ✅ 有 off/on 图+GIF |
 | `broker_consumer` | chirp_server_gateway | (空=关) | 未覆盖：要自建服务实例/双实例对照（需要 broker 流 + 双消费实例） |
 | `kick_previous` | chirp_app_auth | 1 | ✅ 有 off/on 图+GIF |
 | `allow_scaffold_login` | chirp_app_auth | 0 | ✅ 有 off/on 图+GIF |

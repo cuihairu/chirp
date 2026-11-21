@@ -28,6 +28,12 @@
                           replace=OK+内容被掩码落库；reject=WORD_FILTERED+零落库；
                           record=OK+原文落库（命中只进服务端 Warn 日志）。这是 3 态枚举，
                           帧按 3 帧轮播，不走 off/on 对。
+  --enable_migration <0|1>  缺省 1。控制后台「Redis 热层 -> MySQL 冷层」迁移 worker：
+                          0=worker 不启动（日志 MessageMigrationWorker disabled by
+                          configuration）；1=worker 周期扫 chirp:chat:history:* 逐条
+                          INSERT。探针发一条消息（发送路径 Redis+MySQL 双写），删掉
+                          MySQL 行造出「仅存 Redis」的输入态——on 的行会在下一个 tick
+                          被搬回来，off 的行保持删除。
 
 未覆盖（同页「开关清单」表里逐条写了缺什么）：--push_transport / --apns-* 这组要一个把
 chirp_app_notification 接进栈的 rig（桌面 dev 栈没起这个服务，gateway 侧还要配
@@ -38,9 +44,9 @@ chirp_app_notification 接进栈的 rig（桌面 dev 栈没起这个服务，gat
 成终端样式再用 ffmpeg 缝合——帧内每一行都是实测拿回来的文本（连 curl 的报错串都是真的）。
 
 用法：python3 scripts/capture_cli_switch_effects.py
-产物：docs/screenshots/switches/cli-{metrics-port,scaffold-login,kick-previous}-{off,on}.png
-      与 .gif、cli-word-filter-{replace,reject,record}.png 与 .gif
-      （需本机 mariadbd 上的 chirp 库与 redis-server，凭据=编译默认值）
+产物：docs/screenshots/switches/cli-{metrics-port,scaffold-login,kick-previous,
+      enable-migration}-{off,on}.png 与 .gif、cli-word-filter-{replace,reject,record}.png
+      与 .gif（需本机 mariadbd 上的 chirp 库与 redis-server，凭据=编译默认值）
 """
 
 import http.client
@@ -449,7 +455,7 @@ def mysql_query(sql):
     return out.stdout.strip()
 
 
-def chat_probe(port, token, content):
+def chat_probe(port, token, content, receiver=WF_RECEIVER):
     """一条 TCP 连接上先 LOGIN_REQ 绑会话、再 SEND_MESSAGE_REQ（会话跟连接走）。
 
     --token_secret 缺省空 = 脚手架登录（token 即 user_id，无需 JWT），与桌面
@@ -459,7 +465,7 @@ def chat_probe(port, token, content):
     try:
         login = _rpc_on(sock, LOGIN_REQ, 1, login_request(token))
         send = _rpc_on(sock, SEND_MESSAGE_REQ, 2,
-                       send_message_request(token, WF_RECEIVER, content))
+                       send_message_request(token, receiver, content))
         return login.get(1, 0), send.get(1, 0), send.get(2)
     finally:
         sock.close()
@@ -531,6 +537,103 @@ def capture_word_filter(used):
         stop(redis)
         lexicon.unlink(missing_ok=True)
         mysql_query("DELETE FROM messages WHERE sender_id LIKE 'wfuia-%'")
+    return results
+
+
+# ---------------------------------------------------------------- 开关 5
+MIG_INTERVAL = 3                 # --migration_interval 秒，探针压短加速 tick
+MIG_SENDER = {"off": "miguia-off", "on": "miguia-on"}
+MIG_RECEIVER = "miguib"
+MIG_CONTENT = "migration probe"
+
+
+def _row_count(message_id):
+    """该 message_id 在 messages 表的行数（int——COUNT 的字符串 \"0\" 是真值）。"""
+    return int(mysql_query(f"SELECT COUNT(*) FROM messages WHERE message_id='{message_id}'"))
+
+
+def _mig_channel_id(a, b):
+    """HybridMessageStore::PrivateChannelId 的排序拼接（小者在前）。"""
+    return a + "|" + b if a < b else b + "|" + a
+
+
+def _seed_redis(redis_port, message_id, sender, receiver, content):
+    """往 chirp:chat:history:<channel> 手工种一条 ChatMessage（与 MessageData 同构）。
+
+    这条消息从不写 MySQL——正是一份「仅存 Redis 热层」的消息，即迁移 worker 的
+    输入态。字段号照 proto/chat.proto 的 ChatMessage。
+    """
+    channel_id = _mig_channel_id(sender, receiver)
+    key = f"chirp:chat:history:{channel_id}"
+    raw = (_sfield(1, message_id) + _sfield(2, sender) + _sfield(3, receiver)
+           + _tag(4, 0) + _varint(0)                        # PRIVATE
+           + _sfield(5, channel_id)
+           + _tag(6, 0) + _varint(0)                        # TEXT
+           + _sfield(7, content)                            # bytes
+           + _tag(8, 0) + _varint(int(time.time() * 1000)))
+    out = subprocess.run(["redis-cli", "-p", str(redis_port), "-x", "RPUSH", key],
+                         input=raw, capture_output=True, timeout=10)
+    if out.returncode != 0:
+        raise RuntimeError(f"redis RPUSH failed: {out.stderr.decode(errors='replace')}")
+
+
+def capture_migration(used):
+    """--enable_migration off/on：种一条「仅存 Redis」的消息，看后台迁移是否落 MySQL。
+
+    on（--enable_migration 1 --migration_interval N）：worker 周期扫
+    chirp:chat:history:* 逐条 INSERT，种进去的消息会在下一个 tick 落进 messages；
+    off（--enable_migration 0）：worker 不启动（日志 "MessageMigrationWorker
+    disabled by configuration"），消息只留在 Redis 热层。两种变体各自独立 redis +
+    独立探针用户，跑完从 messages 表删干净。
+    """
+    chat = REPO / "build/services/shared/chat/chirp_chat"
+    if not shutil.which("redis-cli"):
+        sys.exit("need redis-cli for the migration probe")
+    results = {}
+    for label, value in (("off", "0"), ("on", "1")):
+        redis_port = pick_port(used)
+        redis = subprocess.Popen(
+            ["redis-server", "--port", str(redis_port), "--save", "", "--appendonly", "no"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        try:
+            if not wait_port(redis_port):
+                sys.exit("probe redis never came up")
+            port, ws = pick_port(used), pick_port(used)
+            log_path = Path(f"/tmp/chirp-mig-{label}.log")
+            with log_path.open("wb") as log:
+                proc = subprocess.Popen(
+                    [str(chat), "--port", str(port), "--ws_port", str(ws),
+                     "--redis_port", str(redis_port),
+                     "--enable_migration", value,
+                     "--migration_interval", str(MIG_INTERVAL)],
+                    stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+            try:
+                if not wait_port(port):
+                    sys.exit(f"chat (migration {label}) never came up on {port}")
+                sender, receiver = MIG_SENDER[label], MIG_RECEIVER
+                message_id = f"migmsg-{label}-{int(time.time() * 1000)}"
+                _seed_redis(redis_port, message_id, sender, receiver, MIG_CONTENT)
+                appeared = False
+                if label == "on":
+                    for _ in range(24):          # worker 每 MIG_INTERVAL 秒 tick
+                        if _row_count(message_id):
+                            appeared = True
+                            break
+                        time.sleep(0.5)
+                else:
+                    time.sleep(MIG_INTERVAL * 2 + 2)   # 等两倍 interval 确认不落库
+                    appeared = bool(_row_count(message_id))
+                results[label] = {"message_id": message_id, "back": appeared}
+            finally:
+                stop(proc)
+            log_line = next((line.strip() for line in
+                             log_path.read_text(errors="replace").splitlines()
+                             if "MessageMigrationWorker" in line), "")
+            results[label]["log"] = log_line
+            log_path.unlink(missing_ok=True)
+        finally:
+            stop(redis)
+    mysql_query("DELETE FROM messages WHERE sender_id LIKE 'miguia-%'")
     return results
 
 
@@ -704,6 +807,42 @@ def main():
     print(f"word filter reject : code={rej['code']} stored={rej['stored']!r}")
     print(f"word filter record : code={rec['code']} stored={rec['stored']!r} "
           f"log={rec['log']!r}")
+
+    # ---- 开关 5：--enable_migration ----
+    mig = capture_migration(used)
+    if "disabled" not in mig["off"]["log"] or mig["off"]["back"]:
+        sys.exit(f"migration off: expected disabled-log + row still gone, got {mig['off']!r}")
+    if "started" not in mig["on"]["log"] or not mig["on"]["back"]:
+        sys.exit(f"migration on: expected started-log + row back, got {mig['on']!r}")
+
+    render_frame([
+        ("$ chirp_chat --port <p> --ws_port <w> --redis_port <r> \\", PROMPT),
+        (f"    --enable_migration 0 --migration_interval {MIG_INTERVAL}", PROMPT),
+        (f"chat log: {mig['off']['log']}", ERROR),
+        ("$ probe: RPUSH a redis-only ChatMessage into chirp:chat:history:...", PROMPT),
+        (f"  message_id=\"{mig['off']['message_id']}\"  (never sent - no MySQL row)", TEXT),
+        (f"$ sleep {MIG_INTERVAL * 2 + 2}   # > 2x the migration interval", PROMPT),
+        ("$ mysql: SELECT COUNT(*) FROM messages WHERE message_id='...'", PROMPT),
+        ("count = 0", ERROR),
+        ("# migration off: the worker never starts - the message stays in the", TEXT),
+        ("# redis hot tier only, MySQL never sees it", TEXT),
+    ], OUT / "cli-enable-migration-off.png")
+    render_frame([
+        ("$ chirp_chat --port <p> --ws_port <w> --redis_port <r> \\", PROMPT),
+        (f"    --enable_migration 1 --migration_interval {MIG_INTERVAL}", PROMPT),
+        (f"chat log: {mig['on']['log']}", TEXT),
+        ("$ probe: RPUSH a redis-only ChatMessage into chirp:chat:history:...", PROMPT),
+        (f"  message_id=\"{mig['on']['message_id']}\"  (never sent - no MySQL row)", TEXT),
+        ("$ (worker ticks every 3s) then:", PROMPT),
+        ("$ mysql: SELECT COUNT(*) FROM messages WHERE message_id='...'", PROMPT),
+        ("count = 1", TEXT),
+        ("# migration on: the worker scanned chirp:chat:history:* and persisted", TEXT),
+        ("# the redis-only message into the MySQL cold tier", TEXT),
+    ], OUT / "cli-enable-migration-on.png")
+    stitch_gif(OUT / "cli-enable-migration-off.png", OUT / "cli-enable-migration-on.png",
+               OUT / "cli-enable-migration.gif")
+    print(f"migration off: log={mig['off']['log']!r} row_back={mig['off']['back']}")
+    print(f"migration on : log={mig['on']['log']!r} row_back={mig['on']['back']}")
 
     print("DONE")
 

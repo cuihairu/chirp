@@ -215,6 +215,35 @@ compared across the three: `hello ** world` (replace), zero rows (reject), and
 `hello badword world` unchanged (record). The `wfuia-*` probe users and the
 probe redis are cleaned up afterwards.
 
+### `--enable_migration <0|1>` (`chirp_chat` enhanced)
+
+Default `1`. Controls the background migration worker that moves the redis
+hot tier into the MySQL cold tier: with `1` a `MessageMigrationWorker` starts
+and scans the `chirp:chat:history:*` and `chirp:chat:offline:*` key patterns
+every `--migration_interval` seconds (default 30), parsing each entry and
+INSERT-ing it into the `messages` table; with `0` the worker never starts
+(startup log: `MessageMigrationWorker disabled by configuration`) and whatever
+lives only in redis stays there.
+
+| Off | On |
+| --- | --- |
+| ![enable migration off](../screenshots/switches/cli-enable-migration-off.png) | ![enable migration on](../screenshots/switches/cli-enable-migration-on.png) |
+
+![enable migration animation](../screenshots/switches/cli-enable-migration.gif)
+
+Evidence method: no legacy data-bearing database is needed — the worker's
+input state is simply "a ChatMessage that exists only in the redis hot tier",
+so the probe hand-crafts one. Each variant gets its own redis and its own
+`chirp_chat` (`--migration_interval 3` to make the worker tick fast); the
+probe RPUSHes a serialized `ChatMessage` (same field layout the store writes,
+`PrivateChannelId`'s sorted `a|b` key included) into
+`chirp:chat:history:<channel>` — a message that never went through
+`SendMessage`, so nothing but the migration worker could persist it. Off:
+after more than two intervals the `messages` row count for that message_id is
+still 0 and the log says the worker is disabled. On: within one interval the
+row count is 1 and the log says the worker started. The `miguia-*` probe rows
+and both probe redis instances are cleaned up afterwards.
+
 ## Complete switch inventory
 
 Generated and source-verified by `scripts/build_config_switch_inventory.py` (it re-reads
@@ -239,7 +268,7 @@ compile-time or test-only switches.
 | `metrics_port` | chirp_chat and the other long-lived services | 0 | ✅ off/on + GIF |
 | `allow_unknown_peers` | chirp_chat | 0 | not covered: needs a scripted service rig — the effect only shows up across hub multi-instance forwarding; a single instance cannot show a difference |
 | `hub_mode` | chirp_chat | 0 | not covered: needs a scripted service rig — needs a hub+spoke two-instance pair to show any difference |
-| `enable_migration` | chirp_chat (enhanced) | 1 | not covered: needs a scripted service rig — needs a data-bearing old database to diff the migration against |
+| `enable_migration` | chirp_chat (enhanced) | 1 | ✅ off/on + GIF |
 | `broker_consumer` | chirp_server_gateway | (空=关) | not covered: needs a scripted service rig — needs the broker stream plus two consumer instances |
 | `kick_previous` | chirp_app_auth | 1 | ✅ off/on + GIF |
 | `allow_scaffold_login` | chirp_app_auth | 0 | ✅ off/on + GIF |
