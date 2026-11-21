@@ -20,9 +20,10 @@ python3 scripts/build_config_switch_inventory.py --write   # refresh the switch 
 Outputs land in `docs/screenshots/switches/`. Every script asserts that the
 switch actually changed state (desktop: button variant flips contained ↔
 outlined; web: the switch input's `checked` property flips; CLI: the port goes
-from refusing connections to answering `/health`, and the auth probe's
-`LOGIN_RESP` code flips from `AUTH_FAILED` to `OK` with a `user_id` echo) and
-fails loudly otherwise.
+from refusing connections to answering `/health`; the auth scaffold probe's
+`LOGIN_RESP` code flips from `AUTH_FAILED` to `OK` with a `user_id` echo; and
+the password-login probe's second login flips from `SESSION_EXPIRED`-refused
+to `OK` with `kick_previous=true`) and fails loudly otherwise.
 
 Note on the CLI frames: this machine has no `xterm` or `asciinema`, so there is
 no live terminal recording. The frames are the two real runs' captured output

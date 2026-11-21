@@ -17,8 +17,9 @@ python3 scripts/build_config_switch_inventory.py --write   # 刷新开关清单�
 
 产物落 `docs/screenshots/switches/`。三条脚本都断言开关真的变了状态（桌面端：按钮
 variant 在 contained↔outlined 间翻转；web 端：开关 input 的 `checked` 属性翻转；
-CLI：端口从拒绝连接变成应答 `/health`，auth 探针的 `LOGIN_RESP` code 从 `AUTH_FAILED`
-翻成 `OK` 且回填 `user_id`），没变就直接报错。
+CLI：端口从拒绝连接变成应答 `/health`，脚手架探针的 `LOGIN_RESP` code 从 `AUTH_FAILED`
+翻成 `OK` 且回填 `user_id`，密码登录探针的第 2 次登录从 `SESSION_EXPIRED` 被拒翻成
+`OK` 且 `kick_previous=true`），没变就直接报错。
 
 CLI 帧的口径说明：本机没有 `xterm` / `asciinema`，录不了真终端录屏。帧是把两次真实
 运行的实测输出渲染成终端样式再用 ffmpeg 缝合——帧里每一行都是实际拿回来的文本
