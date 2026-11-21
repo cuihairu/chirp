@@ -221,9 +221,9 @@ game-chat peer 接入器，日志 `hub mode enabled: peer_port=<port>`；缺省 
 
 | 关 | 开 |
 | --- | --- |
-| ![hub 关](../screenshots/switches/cli-hub-mode-off.png) | ![hub 开](../screenshots/switches/cli-hub-mode-on.png) |
+| ![hub 关](../../screenshots/switches/cli-hub-mode-off.png) | ![hub 开](../../screenshots/switches/cli-hub-mode-on.png) |
 
-![hub 动图](../screenshots/switches/cli-hub-mode.gif)
+![hub 动图](../../screenshots/switches/cli-hub-mode.gif)
 
 取证手法：不需要真 spoke——探针自己说 peer 注册协议。两个 `chirp_chat`（各自独立
 探针 redis）：一个不带 `--hub_mode`，一个带
@@ -244,9 +244,9 @@ protocol_version=1, game_id=peuigame`。关：连接被拒（该端口从未绑�
 
 | 关 | 开 |
 | --- | --- |
-| ![开放注册 关](../screenshots/switches/cli-allow-unknown-peers-off.png) | ![开放注册 开](../screenshots/switches/cli-allow-unknown-peers-on.png) |
+| ![开放注册 关](../../screenshots/switches/cli-allow-unknown-peers-off.png) | ![开放注册 开](../../screenshots/switches/cli-allow-unknown-peers-on.png) |
 
-![开放注册 动图](../screenshots/switches/cli-allow-unknown-peers.gif)
+![开放注册 动图](../../screenshots/switches/cli-allow-unknown-peers.gif)
 
 取证手法：两个 `chirp_chat`，都 `--hub_mode 1`、各占全新 peer 端口、各起独立探针
 redis，**都不给 `--allowed_peers`**（白名单为空）；一个 `--allow_unknown_peers 0`、
@@ -266,9 +266,9 @@ version=1`。
 
 | 关 | 开 |
 | --- | --- |
-| ![broker 关](../screenshots/switches/cli-broker-off.png) | ![broker 开](../screenshots/switches/cli-broker-on.png) |
+| ![broker 关](../../screenshots/switches/cli-broker-off.png) | ![broker 开](../../screenshots/switches/cli-broker-on.png) |
 
-![broker 动图](../screenshots/switches/cli-broker.gif)
+![broker 动图](../../screenshots/switches/cli-broker.gif)
 
 取证手法：两个 `chirp_game_server_gateway`（各自全新端口、各自探针 redis，都带
 `--service brksvc=brksecret`）；关的不带 `--broker_redis_host`，开的带
