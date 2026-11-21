@@ -294,6 +294,39 @@ probe sends the same `PEER_REGISTER_REQ` for an unknown `service_id`
 `code=OK (0)` with a `heartbeat_interval_seconds` and the log
 `chat peer registered: <id> game=peuigame version=1`.
 
+### `--broker_redis_host <host>` (`chirp_server_gateway`)
+
+Default empty. An empty host disables the whole Redis Streams intake for game
+backends that cannot hold a long-connection client (`main.cc`:
+"empty `--broker_redis_host` disables it"); with a host set, a
+`StreamBrokerConsumer` starts, creates the consumer group and `XREADGROUP`s
+the stream. This is the "broker intake" switch — `--broker_consumer` only
+*names* the consumer (empty there just auto-fills `hostname:pid`) and does not
+turn anything off.
+
+| Off | On |
+| --- | --- |
+| ![broker off](../screenshots/switches/cli-broker-off.png) | ![broker on](../screenshots/switches/cli-broker-on.png) |
+
+![broker animation](../screenshots/switches/cli-broker.gif)
+
+Evidence method: two `chirp_game_server_gateway` instances on fresh ports, each
+with `--service brksvc=brksecret` and their own probe redis; the off one has no
+`--broker_redis_host`, the on one has
+`--broker_redis_host 127.0.0.1 --broker_redis_port <port>`. The probe XADDs the
+same inject envelope to `chirp:server_plane:inject` — a field/value pair entry
+(`sender_kind SERVICE`, `channel_type PRIVATE`, `sender_id`, `receiver_id`,
+`content`, `service_id brksvc`, `secret brksecret`; `stream_broker.cc`'s
+`ParseInjectEnvelope` plus the credential gate in `ProcessEntry`). Off: no
+`stream broker enabled` log line, `XPENDING` answers `NOGROUP` — nobody created
+the consumer group and the entry sits unconsumed. On: `stream broker enabled:
+stream=... group=chirp-plane consumer=hostname:pid`, then
+`inject brk-on from=brkia to=brkib: chat service unavailable` — `HandleInject`
+ran, but this isolated rig has no chat spoke registered, so the answer is
+`SERVER_UNAVAILABLE`, which by design keeps the entry unacked in the PEL for
+redelivery (`XPENDING` shows 1). The probes leave nothing behind except the
+throwaway probe redis.
+
 ## Complete switch inventory
 
 Generated and source-verified by `scripts/build_config_switch_inventory.py` (it re-reads
@@ -319,7 +352,7 @@ compile-time or test-only switches.
 | `allow_unknown_peers` | chirp_chat | 0 | ✅ off/on + GIF |
 | `hub_mode` | chirp_chat | 0 | ✅ off/on + GIF |
 | `enable_migration` | chirp_chat (enhanced) | 1 | ✅ off/on + GIF |
-| `broker_consumer` | chirp_server_gateway | (空=关) | not covered: needs a scripted service rig — needs the broker stream plus two consumer instances |
+| `broker_redis_host` | chirp_server_gateway | (空=关) | ✅ off/on + GIF |
 | `kick_previous` | chirp_app_auth | 1 | ✅ off/on + GIF |
 | `allow_scaffold_login` | chirp_app_auth | 0 | ✅ off/on + GIF |
 | `word_filter_policy` | chirp_chat | replace | ✅ 3-state off/mid/on + GIF |

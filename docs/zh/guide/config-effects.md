@@ -256,6 +256,34 @@ redis，**都不给 `--allowed_peers`**（白名单为空）；一个 `--allow_u
 `heartbeat_interval_seconds`，日志 `chat peer registered: <id> game=peuigame
 version=1`。
 
+### `--broker_redis_host <host>`（`chirp_server_gateway`）
+
+缺省空。host 为空＝整个 Redis Streams 摄入关闭（`main.cc` 注释：empty
+`--broker_redis_host` disables it）——这条摄入是给「握不住长连接客户端的 game
+后端」用的；给了 host，`StreamBrokerConsumer` 起来、建消费组、`XREADGROUP` 读流。
+这就是「broker 摄入」的开关——`--broker_consumer` 只是**给消费者起名**（空时自动
+填 `hostname:pid`），并不关任何东西。
+
+| 关 | 开 |
+| --- | --- |
+| ![broker 关](../screenshots/switches/cli-broker-off.png) | ![broker 开](../screenshots/switches/cli-broker-on.png) |
+
+![broker 动图](../screenshots/switches/cli-broker.gif)
+
+取证手法：两个 `chirp_game_server_gateway`（各自全新端口、各自探针 redis，都带
+`--service brksvc=brksecret`）；关的不带 `--broker_redis_host`，开的带
+`--broker_redis_host 127.0.0.1 --broker_redis_port <端口>`。探针往
+`chirp:server_plane:inject` XADD 同一条 inject 信封——键值对字段
+（`sender_kind SERVICE`、`channel_type PRIVATE`、`sender_id`、`receiver_id`、
+`content`、`service_id brksvc`、`secret brksecret`；`stream_broker.cc` 的
+`ParseInjectEnvelope` 字段口径 + `ProcessEntry` 的凭据闸门）。关：没有
+`stream broker enabled` 日志行，`XPENDING` 答 `NOGROUP`——没人建消费组，信封
+没人消费。开：`stream broker enabled: stream=... group=chirp-plane
+consumer=hostname:pid`，随后 `inject brk-on from=brkia to=brkib: chat service
+unavailable`——`HandleInject` 跑到了，但这个隔离 rig 里没有 chat spoke 注册进
+来，应答 `SERVER_UNAVAILABLE`，按语义不 ack、留在 PEL 等 redelivery
+（`XPENDING` 显示 1）。跑完只留下一个一次性探针 redis。
+
 ## 开关清单
 
 由 `scripts/build_config_switch_inventory.py` 生成并回源码核对（每一行都会重读其源码文件，
@@ -278,7 +306,7 @@ version=1`。
 | `allow_unknown_peers` | chirp_chat | 0 | ✅ 有 off/on 图+GIF |
 | `hub_mode` | chirp_chat | 0 | ✅ 有 off/on 图+GIF |
 | `enable_migration` | chirp_chat（增强版） | 1 | ✅ 有 off/on 图+GIF |
-| `broker_consumer` | chirp_server_gateway | (空=关) | 未覆盖：要自建服务实例/双实例对照（需要 broker 流 + 双消费实例） |
+| `broker_redis_host` | chirp_server_gateway | (空=关) | ✅ 有 off/on 图+GIF |
 | `kick_previous` | chirp_app_auth | 1 | ✅ 有 off/on 图+GIF |
 | `allow_scaffold_login` | chirp_app_auth | 0 | ✅ 有 off/on 图+GIF |
 | `word_filter_policy` | chirp_chat | replace | ✅ 有 3 态图+GIF（replace/reject/record） |

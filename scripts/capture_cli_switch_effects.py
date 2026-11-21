@@ -44,6 +44,14 @@
                           （--allowed_peers）外的 peer 注册，0=拒（AUTH_FAILED+连接
                           关+日志 not whitelisted）；1=开放注册（code=OK）。探针两变体
                           都不开白名单，注册同一个未知 service_id 对照。
+  --broker_redis_host <host>  缺省空＝整个 Redis Streams 摄入关闭（chirp_server_gateway）。
+                          非空＝StreamBrokerConsumer 起来建组读流。--broker_consumer
+                          只是消费者名（空=自动 hostname:pid），不是开关。探针 XADD 一条
+                          inject 信封（sender_kind/channel_type 取枚举名 + service_id/
+                          secret 过凭据闸门）：off=无 stream broker enabled 日志+
+                          XPENDING 报 NOGROUP（无人建组）；on=建组消费、HandleInject
+                          因无 chat spoke 答 SERVER_UNAVAILABLE（Warn chat service
+                          unavailable）+XPENDING 显示 1 条 pending。
 
 未覆盖（同页「开关清单」表里逐条写了缺什么）：--push_transport / --apns-* 这组要一个把
 chirp_app_notification 接进栈的 rig（桌面 dev 栈没起这个服务，gateway 侧还要配
@@ -55,7 +63,7 @@ chirp_app_notification 接进栈的 rig（桌面 dev 栈没起这个服务，gat
 
 用法：python3 scripts/capture_cli_switch_effects.py
 产物：docs/screenshots/switches/cli-{metrics-port,scaffold-login,kick-previous,
-      enable-migration,hub-mode,allow-unknown-peers}-{off,on}.png 与 .gif、
+      enable-migration,hub-mode,allow-unknown-peers,broker}-{off,on}.png 与 .gif、
       cli-word-filter-{replace,reject,record}.png 与 .gif（需本机 mariadbd 上的
       chirp 库与 redis-server，凭据=编译默认值）
 """
@@ -761,6 +769,99 @@ def capture_allow_unknown(used):
     return results
 
 
+# ---------------------------------------------------------------- 开关 8
+BROKER_STREAM = "chirp:server_plane:inject"
+BROKER_GROUP = "chirp-plane"
+BROKER_SVC, BROKER_SECRET = "brksvc", "brksecret"
+BROKER_SENDER, BROKER_RECEIVER = "brkia", "brkib"
+
+
+def _redis_cmd(redis_port, *args):
+    out = subprocess.run(["redis-cli", "-p", str(redis_port), *args],
+                         capture_output=True, text=True, timeout=10)
+    return (out.stdout + out.stderr).strip()
+
+
+def _xadd_inject(redis_port, inject_id):
+    """XADD 一条 inject 信封（stream_broker.cc ParseInjectEnvelope 的字段口径：
+    sender_kind/channel_type 取枚举名，service_id+secret 过凭据闸门）。"""
+    out = _redis_cmd(
+        redis_port, "XADD", BROKER_STREAM, "*",
+        "inject_id", inject_id,
+        "sender_kind", "SERVICE",
+        "channel_type", "PRIVATE",
+        "sender_id", BROKER_SENDER,
+        "receiver_id", BROKER_RECEIVER,
+        "content", "broker probe payload",
+        "service_id", BROKER_SVC,
+        "secret", BROKER_SECRET)
+    if out.startswith("(error)"):
+        raise RuntimeError(f"redis XADD failed: {out}")
+    return out
+
+
+def capture_broker(used):
+    """--broker_redis_host 空/非空（空=整个 broker 摄入关闭）。空：网关日志没有
+    stream broker enabled、流上无人建消费组（XINFO GROUPS 空、XPENDING 报
+    NOGROUP）、XADD 的信封无人消费；非空：StreamBrokerConsumer 起来（建组
+    chirp-plane、BLOCK 读流），消费信封过凭据闸门后进 HandleInject——本 rig 不接
+    chat spoke，应答 SERVER_UNAVAILABLE，Warn 日志 chat service unavailable，
+    信封按语义留在 PEL 等 redelivery（无 XACK）。"""
+    gw = REPO / "build/services/game/server_gateway/chirp_game_server_gateway"
+    if not gw.exists():
+        sys.exit(f"missing {gw}")
+    results = {}
+    for label, enabled in (("off", False), ("on", True)):
+        redis_port = pick_port(used)
+        redis = subprocess.Popen(
+            ["redis-server", "--port", str(redis_port), "--save", "", "--appendonly", "no"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        try:
+            if not wait_port(redis_port):
+                sys.exit("probe redis never came up")
+            port = pick_port(used)
+            log_path = Path(f"/tmp/chirp-brk-{label}.log")
+            args = [str(gw), "--port", str(port),
+                    "--service", f"{BROKER_SVC}={BROKER_SECRET}"]
+            if enabled:
+                args += ["--broker_redis_host", "127.0.0.1",
+                         "--broker_redis_port", str(redis_port)]
+            with log_path.open("wb") as log:
+                proc = subprocess.Popen(args, stdout=log, stderr=subprocess.STDOUT,
+                                        start_new_session=True)
+            try:
+                if not wait_port(port):
+                    sys.exit(f"gateway (broker {label}) never came up on {port}")
+                inject_id = f"brk-{label}"
+                entry = _xadd_inject(redis_port, inject_id)
+                log_text = ""
+                if enabled:
+                    for _ in range(24):        # 消费循环 BLOCK 读，秒级到达
+                        log_text = log_path.read_text(errors="replace")
+                        if "chat service unavailable" in log_text:
+                            break
+                        time.sleep(0.5)
+                else:
+                    time.sleep(4)              # 确认无人消费
+                    log_text = log_path.read_text(errors="replace")
+                pending = _redis_cmd(redis_port, "XPENDING", BROKER_STREAM, BROKER_GROUP)
+                results[label] = {"entry": entry, "inject_id": inject_id,
+                                  "xlen": _redis_cmd(redis_port, "XLEN", BROKER_STREAM),
+                                  "warn": "chat service unavailable" in log_text,
+                                  "pending": pending}
+            finally:
+                stop(proc)
+            lines = log_path.read_text(errors="replace").splitlines()
+            results[label]["log"] = next(
+                (line.strip() for line in lines if "stream broker enabled" in line), "")
+            results[label]["inject_log"] = next(
+                (line.strip() for line in lines if "chat service unavailable" in line), "")
+            log_path.unlink(missing_ok=True)
+        finally:
+            stop(redis)
+    return results
+
+
 def _sid(session_id):
     """帧里用的缩写形式（session_id 是真实值，只截前 24 字符排版）。"""
     return (session_id[:24] + "...") if session_id and len(session_id) > 27 else session_id
@@ -1043,6 +1144,55 @@ def main():
                OUT / "cli-allow-unknown-peers.gif")
     print(f"allow_unknown off: code={peu['off']['code']} log={peu['off']['log']!r}")
     print(f"allow_unknown on : code={peu['on']['code']} log={peu['on']['log']!r}")
+
+    # ---- 开关 8：--broker_redis_host（broker 摄入） ----
+    brk = capture_broker(used)
+    if "stream broker enabled" in brk["off"]["log"] or brk["off"]["warn"]:
+        sys.exit(f"broker off: expected no broker at all, got {brk['off']!r}")
+    if "stream broker enabled" not in brk["on"]["log"] or not brk["on"]["warn"]:
+        sys.exit(f"broker on: expected the broker to consume the entry, got {brk['on']!r}")
+    if "NOGROUP" not in brk["off"]["pending"] or brk["off"]["xlen"] != "1":
+        sys.exit(f"broker off: expected NOGROUP + the entry still in the stream, "
+                 f"got xlen={brk['off']['xlen']!r} pending={brk['off']['pending']!r}")
+    if brk["on"]["pending"].splitlines()[0] != "1":
+        sys.exit(f"broker on: expected 1 pending entry, got {brk['on']['pending']!r}")
+
+    render_frame([
+        ("$ chirp_game_server_gateway --port <p> \\", PROMPT),
+        (f"    --service {BROKER_SVC}={BROKER_SECRET}      # no --broker_redis_host", PROMPT),
+        ("chat log: (no \"stream broker enabled\" line at all)", ERROR),
+        (f"$ redis-cli XADD {BROKER_STREAM} * inject_id brk-off \\", PROMPT),
+        (f"    sender_kind SERVICE channel_type PRIVATE sender_id {BROKER_SENDER} \\", TEXT),
+        (f"    receiver_id {BROKER_RECEIVER} content \"broker probe payload\" \\", TEXT),
+        (f"    service_id {BROKER_SVC} secret {BROKER_SECRET}", TEXT),
+        (f"\"{brk['off']['entry']}\"", TEXT),
+        (f"$ redis-cli XLEN {BROKER_STREAM}", PROMPT),
+        (brk["off"]["xlen"], TEXT),
+        (f"$ redis-cli XPENDING {BROKER_STREAM} {BROKER_GROUP}", PROMPT),
+        (brk["off"]["pending"], ERROR),
+        ("# broker off (--broker_redis_host empty): the intake never starts -", TEXT),
+        ("# nobody creates the consumer group and the entry sits unconsumed", TEXT),
+    ], OUT / "cli-broker-off.png")
+    render_frame([
+        ("$ chirp_game_server_gateway --port <p> \\", PROMPT),
+        (f"    --service {BROKER_SVC}={BROKER_SECRET} \\", PROMPT),
+        (f"    --broker_redis_host 127.0.0.1 --broker_redis_port <r>", PROMPT),
+        (f"chat log: {brk['on']['log']}", TEXT),
+        (f"$ redis-cli XADD {BROKER_STREAM} * inject_id brk-on \\", PROMPT),
+        (f"    sender_kind SERVICE channel_type PRIVATE sender_id {BROKER_SENDER} \\", TEXT),
+        (f"    receiver_id {BROKER_RECEIVER} content \"broker probe payload\" \\", TEXT),
+        (f"    service_id {BROKER_SVC} secret {BROKER_SECRET}", TEXT),
+        (f"\"{brk['on']['entry']}\"", TEXT),
+        (f"chat log: {brk['on']['inject_log']}", ERROR),
+        (f"$ redis-cli XLEN {BROKER_STREAM}", PROMPT),
+        (brk["on"]["xlen"], TEXT),
+        (f"$ redis-cli XPENDING {BROKER_STREAM} {BROKER_GROUP}", PROMPT),
+        (brk["on"]["pending"].splitlines()[0], TEXT),
+    ], OUT / "cli-broker-on.png")
+    stitch_gif(OUT / "cli-broker-off.png", OUT / "cli-broker-on.png", OUT / "cli-broker.gif")
+    print(f"broker off: warn={brk['off']['warn']} pending={brk['off']['pending']!r}")
+    print(f"broker on : warn={brk['on']['warn']} pending={brk['on']['pending'].splitlines()[0]!r} "
+          f"log={brk['on']['log']!r}")
 
     print("DONE")
 
