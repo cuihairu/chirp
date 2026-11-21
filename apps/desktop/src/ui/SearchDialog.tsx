@@ -123,12 +123,12 @@ export default function SearchDialog({
           </Typography>
         )}
         {!searched && error === null && (
-          <Typography variant="body2" color="text.secondary" data-testid="search-prompt">
+          <Typography variant="body2" color="textSecondary" data-testid="search-prompt">
             输入关键词检索历史消息。
           </Typography>
         )}
         {searched && matches.length === 0 && error === null && (
-          <Typography variant="body2" color="text.secondary" data-testid="search-empty">
+          <Typography variant="body2" color="textSecondary" data-testid="search-empty">
             没有匹配的消息。
           </Typography>
         )}
