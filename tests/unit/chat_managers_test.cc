@@ -2116,6 +2116,79 @@ TEST_F(DistributedInternalsTest, HandleGetHistoryRejectsUnbackedIdentityAndClamp
   EXPECT_EQ(seen_limit, 200);  // LRANGE saw the clamped window, not INT32_MAX
 }
 
+TEST_F(DistributedInternalsTest, HistoryNamespaceIgnoresReportedChannelType) {
+  // Audit 2026-11-12: history here is keyed by channel id alone, so the minted
+  // pair "alice|bob" is private storage whatever channel_type a request claims.
+  // Membership follows the id's shape, and a non-private send may not plant
+  // data into that namespace.
+  chirp_test::InMemoryRedis redis;
+  chirp_test::FakeRedisServer fake([&](const std::vector<std::string>& args) {
+    return redis.Handle(args);
+  });
+  auto client = std::make_shared<chirp::network::RedisClient>("127.0.0.1", fake.port());
+  store_->redis = client;
+
+  asio::io_context io;
+  auto router = std::make_shared<chirp::network::MessageRouter>(io, "127.0.0.1", 1);
+  auto alice = std::make_shared<MockSession>();
+
+  chirp::chat::SendMessageRequest priv;
+  priv.set_sender_id("alice");
+  priv.set_receiver_id("bob");
+  priv.set_channel_type(chirp::chat::PRIVATE);
+  priv.set_content("between alice and bob");
+  HandleSendMessage(priv, alice, state_, store_, router, push_, nullptr, /*seq=*/1);
+  ASSERT_EQ(client->LRange(store_->HistoryKey("alice|bob"), 0, -1).size(), 1u);
+
+  // A third party reporting a group type over the private pair: refused before
+  // the store is read.
+  auto mallory = std::make_shared<MockSession>();
+  chirp::chat::GetHistoryRequest req;
+  req.set_user_id("carol");
+  req.set_channel_type(chirp::chat::TEAM);
+  req.set_channel_id("alice|bob");
+  req.set_limit(10);
+  HandleGetHistory(req, mallory, store_, /*supports_gzip=*/false, /*seq=*/2, "carol");
+  ASSERT_EQ(mallory->sent.size(), 1u);
+  Packet denied;
+  ASSERT_TRUE(DecodeFramed(mallory->sent[0], &denied));
+  ASSERT_EQ(denied.msg_id(), chirp::gateway::GET_HISTORY_RESP);
+  chirp::chat::GetHistoryResponse denied_resp;
+  ASSERT_TRUE(denied_resp.ParseFromString(denied.body()));
+  EXPECT_EQ(denied_resp.code(), chirp::common::AUTH_FAILED);
+  EXPECT_EQ(denied_resp.messages_size(), 0);
+
+  // A real participant is admitted by the id's shape, wrong type report or not.
+  req.set_user_id("alice");
+  HandleGetHistory(req, mallory, store_, /*supports_gzip=*/false, /*seq=*/3, "alice");
+  ASSERT_EQ(mallory->sent.size(), 2u);
+  Packet allowed;
+  ASSERT_TRUE(DecodeFramed(mallory->sent[1], &allowed));
+  chirp::chat::GetHistoryResponse allowed_resp;
+  ASSERT_TRUE(allowed_resp.ParseFromString(allowed.body()));
+  EXPECT_EQ(allowed_resp.code(), chirp::common::OK);
+  ASSERT_EQ(allowed_resp.messages_size(), 1);
+  EXPECT_EQ(allowed_resp.messages(0).content(), "between alice and bob");
+
+  // Send side: a group-typed send may not plant into the private namespace.
+  auto carol = std::make_shared<MockSession>();
+  chirp::chat::SendMessageRequest plant;
+  plant.set_sender_id("carol");
+  plant.set_channel_type(chirp::chat::TEAM);
+  plant.set_channel_id("alice|bob");
+  plant.set_content("planted");
+  HandleSendMessage(plant, carol, state_, store_, router, push_, nullptr, /*seq=*/4);
+  ASSERT_EQ(carol->sent.size(), 1u);
+  Packet plant_resp;
+  ASSERT_TRUE(DecodeFramed(carol->sent[0], &plant_resp));
+  ASSERT_EQ(plant_resp.msg_id(), chirp::gateway::SEND_MESSAGE_RESP);
+  chirp::chat::SendMessageResponse plant_code;
+  ASSERT_TRUE(plant_code.ParseFromString(plant_resp.body()));
+  EXPECT_EQ(plant_code.code(), chirp::common::INVALID_PARAM);
+  // The private conversation is untouched.
+  ASSERT_EQ(client->LRange(store_->HistoryKey("alice|bob"), 0, -1).size(), 1u);
+}
+
 // ---------------------------------------------------------------------------
 // Batch 21: the never-driven arms of the same seam — the delivery-ack requeue
 // / late-ack store callbacks, the ack-capable login and tracked local

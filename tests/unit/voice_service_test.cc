@@ -95,6 +95,12 @@ bool LastBody(const MockSession& s, T* out) {
   return out->ParseFromString(pkt.body());
 }
 
+// Drives a LOGIN on `s` against `state` (defined in the auth group below);
+// the leave/disconnect groups above use it to bind sessions.
+chirp::auth::LoginResponse DoLogin(const std::shared_ptr<VoiceState>& state,
+                                   const std::shared_ptr<MockSession>& s,
+                                   const std::string& token);
+
 class VoiceServiceTest : public ::testing::Test {
  protected:
   std::shared_ptr<VoiceState> state_ = std::make_shared<VoiceState>();
@@ -405,6 +411,150 @@ TEST_F(VoiceServiceTest, LeaveUnknownRoomIsIdempotentOk) {
   EXPECT_EQ(resp.code(), chirp::common::OK);
 }
 
+// Counts PARTICIPANT_LEFT_NOTIFY frames naming user_id in a session's feed.
+int LeftNotifiesFor(const MockSession& s, const std::string& user_id) {
+  int n = 0;
+  for (const auto& pkt : ReceivedPackets(s)) {
+    if (pkt.msg_id() != chirp::gateway::PARTICIPANT_LEFT_NOTIFY) {
+      continue;
+    }
+    chirp::voice::ParticipantLeftNotify notify;
+    if (notify.ParseFromString(pkt.body()) && notify.user_id() == user_id) {
+      ++n;
+    }
+  }
+  return n;
+}
+
+TEST_F(VoiceServiceTest, LeaveOldRoomAfterSwitchIsRejected) {
+  const std::string r1 = CreateRoom(0);
+  const std::string r2 = CreateRoom(0);
+  Join("u1", r1);
+  auto u2 = Join("u2", r1);  // keeps r1 alive past the switch
+  Join("u1", r2);            // u1 switches: the member index now names r2
+  (void)u2;
+
+  const int lefts_before = LeftNotifiesFor(*u2, "u1");
+  ASSERT_EQ(lefts_before, 1);  // the switch itself announced u1's exit
+
+  // A late/stale leave naming the old room must not erase u1's new index
+  // entry or replay the teardown against r1.
+  chirp::voice::LeaveRoomRequest req;
+  req.set_user_id("u1");
+  req.set_room_id(r1);
+  SendPacketBody(chirp::gateway::LEAVE_ROOM_REQ, 10, req.SerializeAsString());
+
+  chirp::voice::LeaveRoomResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  EXPECT_EQ(LeftNotifiesFor(*u2, "u1"), lefts_before);
+
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->user_to_room["u1"], r2);
+  ASSERT_EQ(state_->rooms.count(r1), 1u);
+  std::lock_guard<std::mutex> r1_lock(state_->rooms[r1]->mu);
+  EXPECT_EQ(state_->rooms[r1]->participants.count("u1"), 0u);
+  EXPECT_EQ(state_->rooms[r1]->participants.count("u2"), 1u);
+  std::lock_guard<std::mutex> r2_lock(state_->rooms[r2]->mu);
+  EXPECT_EQ(state_->rooms[r2]->participants.count("u1"), 1u);
+}
+
+TEST_F(VoiceServiceTest, LeaveNonMemberRejected) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+
+  chirp::voice::LeaveRoomRequest req;
+  req.set_user_id("u2");  // never joined anything
+  req.set_room_id(room);
+  SendPacketBody(chirp::gateway::LEAVE_ROOM_REQ, 11, req.SerializeAsString());
+
+  chirp::voice::LeaveRoomResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+
+  for (const auto& pkt : ReceivedPackets(*u1)) {
+    EXPECT_NE(pkt.msg_id(), chirp::gateway::PARTICIPANT_LEFT_NOTIFY);
+  }
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->rooms.count(room), 1u);
+  EXPECT_EQ(state_->user_to_room.count("u2"), 0u);
+  std::lock_guard<std::mutex> room_lock(state_->rooms[room]->mu);
+  EXPECT_EQ(state_->rooms[room]->participants.count("u1"), 1u);
+}
+
+TEST_F(VoiceServiceTest, LeaveEmptyClaimRejected) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+
+  chirp::voice::LeaveRoomRequest req;
+  req.set_user_id("");  // no identity at all: nothing to tear down
+  req.set_room_id(room);
+  SendPacketBody(chirp::gateway::LEAVE_ROOM_REQ, 12, req.SerializeAsString());
+
+  chirp::voice::LeaveRoomResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->user_to_room["u1"], room);
+  std::lock_guard<std::mutex> room_lock(state_->rooms[room]->mu);
+  EXPECT_EQ(state_->rooms[room]->participants.count("u1"), 1u);
+}
+
+TEST_F(VoiceServiceTest, LeaveStaleIndexOnReclaimedRoomIsOk) {
+  const std::string room = CreateRoom(0);
+  Join("u1", room);
+
+  // Simulate the reclaim-vs-index race the guard covers: the room entry is
+  // gone while the member index still names it.
+  {
+    std::lock_guard<std::mutex> lock(state_->mu);
+    state_->rooms.erase(room);
+  }
+
+  chirp::voice::LeaveRoomRequest req;
+  req.set_user_id("u1");
+  req.set_room_id(room);
+  SendPacketBody(chirp::gateway::LEAVE_ROOM_REQ, 13, req.SerializeAsString());
+
+  chirp::voice::LeaveRoomResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->user_to_room.count("u1"), 0u);
+}
+
+TEST_F(VoiceServiceTest, JwtModeLeaveWithEmptyClaimUsesBoundIdentity) {
+  chirp::common::LoginTokenVerifier verifier("s3cret");
+  state_->cfg.verifier = &verifier;
+  const int64_t now = NowMs() / 1000;
+  ASSERT_EQ(DoLogin(state_, session_, chirp::common::JwtSignHS256("u1", now, "s3cret", now + 600)).code(),
+            chirp::common::OK);
+  const std::string room = CreateRoom(0, "u1");
+
+  chirp::voice::JoinRoomRequest jreq;
+  jreq.set_user_id("u1");
+  jreq.set_room_id(room);
+  SendPacketBody(chirp::gateway::JOIN_ROOM_REQ, 14, jreq.SerializeAsString());
+  chirp::voice::JoinRoomResponse join_resp;
+  ASSERT_TRUE(LastBody(*session_, &join_resp));
+  ASSERT_EQ(join_resp.code(), chirp::common::OK);
+
+  // The claim is empty: the cleanup must still run on the bound identity,
+  // not fake an OK over an untouched seat (the pre-fix behavior).
+  chirp::voice::LeaveRoomRequest req;
+  req.set_user_id("");
+  req.set_room_id(room);
+  SendPacketBody(chirp::gateway::LEAVE_ROOM_REQ, 15, req.SerializeAsString());
+
+  chirp::voice::LeaveRoomResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->user_to_room.count("u1"), 0u);
+  EXPECT_EQ(state_->rooms.count(room), 0u);  // last member gone: reclaimed
+}
+
 TEST_F(VoiceServiceTest, HeartbeatPongEchoesTimestampAndSequence) {
   chirp::gateway::HeartbeatPing ping;
   ping.set_timestamp(1234567890);
@@ -614,6 +764,67 @@ TEST_F(VoiceServiceTest, DisconnectReclaimsEmptiedRoom) {
   }
   // The reclaimed id is dead for joiners, same as an unknown room.
   Join("u2", room, chirp::common::USER_NOT_FOUND);
+}
+
+TEST_F(VoiceServiceTest, DisconnectReclaimsNeverJoinedRoom) {
+  // CREATE != JOIN: a zero-participant room has no member index entry, so
+  // nothing else would ever reclaim it - the host's session dying is the
+  // cleanup trigger. Rooms that are occupied or hosted by somebody else
+  // survive the scan.
+  ASSERT_EQ(DoLogin(state_, session_, "creator").code(), chirp::common::OK);
+  const std::string orphan = CreateRoom(0);
+  const std::string occupied = CreateRoom(0);
+  Join("u1", occupied);
+
+  // A room hosted by somebody else, on its own session (the bound session
+  // cannot claim another identity).
+  auto host2 = std::make_shared<MockSession>();
+  chirp::voice::CreateRoomRequest foreign_req;
+  foreign_req.set_user_id("host2");
+  foreign_req.set_room_type(chirp::voice::GROUP);
+  foreign_req.set_room_name("foreign");
+  HandlePacket(state_, host2, MakePacket(chirp::gateway::CREATE_ROOM_REQ, 21,
+                                         foreign_req.SerializeAsString()).SerializeAsString());
+  chirp::voice::CreateRoomResponse foreign_resp;
+  ASSERT_TRUE(LastBody(*host2, &foreign_resp));
+  ASSERT_EQ(foreign_resp.code(), chirp::common::OK);
+  const std::string foreign = foreign_resp.room_id();
+
+  HandleDisconnect(state_, session_);
+
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->rooms.count(orphan), 0u);
+  EXPECT_EQ(state_->rooms.count(occupied), 1u);
+  EXPECT_EQ(state_->rooms.count(foreign), 1u);
+}
+
+TEST_F(VoiceServiceTest, DisconnectHostOfOccupiedManagedRoomResetsMic) {
+  // The host dies without ever joining: the room keeps its members but must
+  // not keep a managed queue nobody can approve in.
+  ASSERT_EQ(DoLogin(state_, session_, "creator").code(), chirp::common::OK);
+  const std::string room = CreateRoom(0);
+  auto alice = Join("alice", room);
+  SetManaged(room);
+
+  chirp::voice::MicQueueApplyRequest apply;
+  apply.set_user_id("alice");
+  apply.set_room_id(room);
+  ASSERT_TRUE(MicOp(alice, chirp::gateway::MIC_QUEUE_APPLY_REQ,
+                    chirp::gateway::MIC_QUEUE_APPLY_RESP, 50, apply).has_value());
+  chirp::voice::MicQueueApproveRequest approve;
+  approve.set_user_id("creator");
+  approve.set_room_id(room);
+  ASSERT_TRUE(MicOp(session_, chirp::gateway::MIC_QUEUE_APPROVE_REQ,
+                    chirp::gateway::MIC_QUEUE_APPROVE_RESP, 51, approve).has_value());
+
+  HandleDisconnect(state_, session_);
+
+  std::lock_guard<std::mutex> lock(state_->mu);
+  ASSERT_EQ(state_->rooms.count(room), 1u);
+  std::lock_guard<std::mutex> room_lock(state_->rooms[room]->mu);
+  EXPECT_EQ(state_->rooms[room]->mic_mode, chirp::voice::MIC_FREE);
+  EXPECT_TRUE(state_->rooms[room]->mic_holder_user_id.empty());
+  EXPECT_TRUE(state_->rooms[room]->mic_queue.empty());
 }
 
 TEST_F(VoiceServiceTest, DisconnectingMicHolderClearsFloor) {
@@ -1976,6 +2187,185 @@ TEST_F(VoiceServiceTest, MicQueueApproveEmptyQueueAndUnknownTargetRejected) {
   EXPECT_EQ(r->code(), chirp::common::USER_NOT_FOUND);
 }
 
+TEST_F(VoiceServiceTest, MicQueueGarbageBodiesAndBadModesRejected) {
+  const std::string room = CreateRoom(0);
+  Join("alice", room);
+
+  // Garbage bodies on every mic handler.
+  for (const auto& id : {chirp::gateway::SET_MIC_MODE_REQ,
+                         chirp::gateway::MIC_QUEUE_APPLY_REQ,
+                         chirp::gateway::MIC_QUEUE_APPROVE_REQ,
+                         chirp::gateway::MIC_QUEUE_RELEASE_REQ,
+                         chirp::gateway::MIC_QUEUE_GRANT_REQ}) {
+    session_->sent.clear();
+    HandlePacket(state_, session_, MakePacket(id, 5, "\xff\xfe\xfd").SerializeAsString());
+    chirp::voice::MicQueueResponse resp;
+    ASSERT_TRUE(LastBody(*session_, &resp)) << "msg " << static_cast<int>(id);
+    EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM) << "msg " << static_cast<int>(id);
+  }
+
+  // A mode outside the FREE/MANAGED pair is rejected before anything else.
+  chirp::voice::SetMicModeRequest mode;
+  mode.set_user_id("creator");
+  mode.set_room_id(room);
+  mode.set_mode(static_cast<chirp::voice::MicMode>(99));
+  auto r = MicOp(session_, chirp::gateway::SET_MIC_MODE_REQ,
+                 chirp::gateway::SET_MIC_MODE_RESP, 10, mode);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::INVALID_PARAM);
+
+  // A grant without a target never reaches the room.
+  chirp::voice::MicQueueGrantRequest grant;
+  grant.set_user_id("creator");
+  grant.set_room_id(room);
+  r = MicOp(session_, chirp::gateway::MIC_QUEUE_GRANT_REQ,
+            chirp::gateway::MIC_QUEUE_GRANT_RESP, 11, grant);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::INVALID_PARAM);
+}
+
+TEST_F(VoiceServiceTest, MicQueueUnknownRoomAndNonParticipantRejected) {
+  const std::string room = CreateRoom(0);
+  Join("alice", room);
+
+  // Unknown room id on every handler (host-faced ones included).
+  chirp::voice::SetMicModeRequest mode;
+  mode.set_user_id("creator");
+  mode.set_room_id("room_missing");
+  mode.set_mode(chirp::voice::MIC_MANAGED);
+  auto r = MicOp(session_, chirp::gateway::SET_MIC_MODE_REQ,
+                 chirp::gateway::SET_MIC_MODE_RESP, 10, mode);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::USER_NOT_FOUND);
+
+  chirp::voice::MicQueueApplyRequest apply;
+  apply.set_user_id("creator");
+  apply.set_room_id("room_missing");
+  r = MicOp(session_, chirp::gateway::MIC_QUEUE_APPLY_REQ,
+            chirp::gateway::MIC_QUEUE_APPLY_RESP, 11, apply);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::USER_NOT_FOUND);
+
+  chirp::voice::MicQueueApproveRequest approve;
+  approve.set_user_id("creator");
+  approve.set_room_id("room_missing");
+  r = MicOp(session_, chirp::gateway::MIC_QUEUE_APPROVE_REQ,
+            chirp::gateway::MIC_QUEUE_APPROVE_RESP, 12, approve);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::USER_NOT_FOUND);
+
+  chirp::voice::MicQueueReleaseRequest release;
+  release.set_user_id("creator");
+  release.set_room_id("room_missing");
+  r = MicOp(session_, chirp::gateway::MIC_QUEUE_RELEASE_REQ,
+            chirp::gateway::MIC_QUEUE_RELEASE_RESP, 13, release);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::USER_NOT_FOUND);
+
+  chirp::voice::MicQueueGrantRequest grant;
+  grant.set_user_id("creator");
+  grant.set_room_id("room_missing");
+  grant.set_target_user_id("alice");
+  r = MicOp(session_, chirp::gateway::MIC_QUEUE_GRANT_REQ,
+            chirp::gateway::MIC_QUEUE_GRANT_RESP, 14, grant);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::USER_NOT_FOUND);
+
+  // Live room, but the apply/release caller never joined it.
+  apply.set_room_id(room);
+  r = MicOp(session_, chirp::gateway::MIC_QUEUE_APPLY_REQ,
+            chirp::gateway::MIC_QUEUE_APPLY_RESP, 15, apply);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::USER_NOT_FOUND);
+
+  release.set_room_id(room);
+  r = MicOp(session_, chirp::gateway::MIC_QUEUE_RELEASE_REQ,
+            chirp::gateway::MIC_QUEUE_RELEASE_RESP, 16, release);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::USER_NOT_FOUND);
+
+  // A grant to somebody who is not in the room is refused.
+  grant.set_room_id(room);
+  grant.set_target_user_id("ghost");
+  r = MicOp(session_, chirp::gateway::MIC_QUEUE_GRANT_REQ,
+            chirp::gateway::MIC_QUEUE_GRANT_RESP, 17, grant);
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(r->code(), chirp::common::USER_NOT_FOUND);
+}
+
+TEST_F(VoiceServiceTest, MicQueueRequiresLoginWhenSecretConfigured) {
+  chirp::common::LoginTokenVerifier verifier("s3cret");
+  state_->cfg.verifier = &verifier;
+
+  chirp::voice::SetMicModeRequest mode;
+  mode.set_user_id("creator");
+  mode.set_room_id("room_x");
+  mode.set_mode(chirp::voice::MIC_MANAGED);
+  chirp::voice::MicQueueApplyRequest apply;
+  apply.set_user_id("creator");
+  apply.set_room_id("room_x");
+  chirp::voice::MicQueueApproveRequest approve;
+  approve.set_user_id("creator");
+  approve.set_room_id("room_x");
+  chirp::voice::MicQueueReleaseRequest release;
+  release.set_user_id("creator");
+  release.set_room_id("room_x");
+  chirp::voice::MicQueueGrantRequest grant;
+  grant.set_user_id("creator");
+  grant.set_room_id("room_x");
+  grant.set_target_user_id("alice");
+
+  auto visitor = std::make_shared<MockSession>();
+  auto expect_auth_failed = [&](chirp::gateway::MsgID req_id, const std::string& body) {
+    HandlePacket(state_, visitor, MakePacket(req_id, 5, body).SerializeAsString());
+    chirp::voice::MicQueueResponse resp;
+    ASSERT_TRUE(LastBody(*visitor, &resp)) << "msg " << static_cast<int>(req_id);
+    EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED) << "msg " << static_cast<int>(req_id);
+    visitor->sent.clear();
+  };
+  expect_auth_failed(chirp::gateway::SET_MIC_MODE_REQ, mode.SerializeAsString());
+  expect_auth_failed(chirp::gateway::MIC_QUEUE_APPLY_REQ, apply.SerializeAsString());
+  expect_auth_failed(chirp::gateway::MIC_QUEUE_APPROVE_REQ, approve.SerializeAsString());
+  expect_auth_failed(chirp::gateway::MIC_QUEUE_RELEASE_REQ, release.SerializeAsString());
+  expect_auth_failed(chirp::gateway::MIC_QUEUE_GRANT_REQ, grant.SerializeAsString());
+}
+
+TEST_F(VoiceServiceTest, MicQueueWaitingMemberLeaveRemovesFromQueue) {
+  const std::string room = CreateRoom(0);
+  auto alice = Join("alice", room);
+  auto charlie = Join("charlie", room);
+  SetManaged(room);
+
+  chirp::voice::MicQueueApplyRequest apply;
+  apply.set_user_id("alice");
+  apply.set_room_id(room);
+  ASSERT_TRUE(MicOp(alice, chirp::gateway::MIC_QUEUE_APPLY_REQ,
+                    chirp::gateway::MIC_QUEUE_APPLY_RESP, 11, apply).has_value());
+  apply.set_user_id("charlie");
+  ASSERT_TRUE(MicOp(charlie, chirp::gateway::MIC_QUEUE_APPLY_REQ,
+                    chirp::gateway::MIC_QUEUE_APPLY_RESP, 12, apply).has_value());
+
+  // A waiting (non-holder) member leaves: only their queue slot goes.
+  chirp::voice::LeaveRoomRequest leave;
+  leave.set_user_id("charlie");
+  leave.set_room_id(room);
+  HandlePacket(state_, charlie,
+               MakePacket(chirp::gateway::LEAVE_ROOM_REQ, 20, leave.SerializeAsString())
+                   .SerializeAsString());
+
+  const auto info = GetRoomInfo(room);
+  ASSERT_TRUE(info.has_value());
+  EXPECT_EQ(info->mic_holder_user_id(), "");
+  ASSERT_EQ(info->mic_queue_user_ids_size(), 1);
+  EXPECT_EQ(info->mic_queue_user_ids(0), "alice");
+
+  std::lock_guard<std::mutex> lock(state_->mu);
+  std::lock_guard<std::mutex> room_lock(state_->rooms[room]->mu);
+  EXPECT_EQ(state_->rooms[room]->mic_queue.size(), 1u);
+  EXPECT_EQ(state_->rooms[room]->mic_queue.front(), "alice");
+  EXPECT_EQ(state_->rooms[room]->participants.count("charlie"), 0u);
+}
+
 TEST_F(VoiceServiceTest, MicQueueLeaveClearsFloorAndKeepsQueue) {
   const std::string room = CreateRoom(0);
   auto alice = Join("alice", room);
@@ -2029,6 +2419,17 @@ TEST_F(VoiceServiceTest, MicQueueHostLeaveResetsRoomToFreeSpeech) {
   approve.set_room_id(room);
   ASSERT_TRUE(MicOp(session_, chirp::gateway::MIC_QUEUE_APPROVE_REQ,
                     chirp::gateway::MIC_QUEUE_APPROVE_RESP, 12, approve).has_value());
+
+  // CREATE != JOIN: the host holds a normal member seat before walking, and
+  // a leave for a room it never joined is rejected instead (see
+  // LeaveOldRoomAfterSwitchIsRejected / LeaveNonMemberRejected).
+  chirp::voice::JoinRoomRequest jreq;
+  jreq.set_user_id("creator");
+  jreq.set_room_id(room);
+  SendPacketBody(chirp::gateway::JOIN_ROOM_REQ, 19, jreq.SerializeAsString());
+  chirp::voice::JoinRoomResponse join_resp;
+  ASSERT_TRUE(LastBody(*session_, &join_resp));
+  ASSERT_EQ(join_resp.code(), chirp::common::OK);
 
   // The host walks: moderation ends, the room returns to free speech.
   chirp::voice::LeaveRoomRequest leave;

@@ -2939,6 +2939,134 @@ TEST_F(BasicChatTest, MessageStoreRedisMirrorsHistoryAndQueues) {
   EXPECT_FALSE(redis_store.HasMessage(chirp::chat::PRIVATE, "alice|bob", "m999"));
 }
 
+TEST_F(BasicChatTest, MessageStoreRedisHistoryFetchIsBoundedNotFullScan) {
+  // Audit 2026-11-12: the Redis branch reads a bounded tail window
+  // (-(lim+1),-1) instead of LRANGE 0,-1 — a hostile limit must not fan out
+  // into a full scan of a list unbounded traffic can grow.
+  chirp_test::InMemoryRedis redis;
+  auto fake = std::make_unique<chirp_test::FakeRedisServer>(
+      [&redis](const std::vector<std::string>& args) { return redis.Handle(args); });
+  auto client = std::make_shared<chirp::network::RedisClient>("127.0.0.1", fake->port());
+  MessageStore redis_store(client, /*ttl=*/60);
+
+  // 活性探针（batch 10 惯例）：下面的断言只有在客户端真的连上 fake 服务端
+  // 时才有意义。
+  ASSERT_TRUE(client->RPush("probe:list", "v1"));
+  ASSERT_EQ(client->LRange("probe:list", 0, -1), (std::vector<std::string>{"v1"}));
+  ASSERT_TRUE(client->Del("probe:list"));
+
+  chirp::chat::ChatMessage msg;
+  msg.set_channel_type(chirp::chat::WORLD);
+  msg.set_channel_id("world");
+  for (int i = 1; i <= 5; ++i) {
+    msg.set_message_id("m" + std::to_string(i));
+    msg.set_timestamp(i * 100);
+    redis_store.AddMessage(msg);
+  }
+  const std::string key = redis_store.HistoryKey(chirp::chat::WORLD, "world");
+  ASSERT_EQ(client->LRange(key, 0, -1).size(), 5u);
+
+  // lim=2: newest two, and the lim+1 window was clipped (older entries
+  // exist unexamined) -> has_more stays true.
+  bool has_more = false;
+  const auto page = redis_store.GetHistory(chirp::chat::WORLD, "world", 0, 2, &has_more);
+  ASSERT_EQ(page.size(), 2u);
+  EXPECT_EQ(page[0].message_id(), "m4");
+  EXPECT_EQ(page[1].message_id(), "m5");
+  EXPECT_TRUE(has_more);
+
+  // lim=4 with five stored: window is exactly lim+1, clipped -> true.
+  has_more = false;
+  const auto four = redis_store.GetHistory(chirp::chat::WORLD, "world", 0, 4, &has_more);
+  ASSERT_EQ(four.size(), 4u);
+  EXPECT_TRUE(has_more);
+
+  // lim=5 with five stored: window 6 reaches past the list head -> false.
+  has_more = true;
+  const auto all = redis_store.GetHistory(chirp::chat::WORLD, "world", 0, 5, &has_more);
+  ASSERT_EQ(all.size(), 5u);
+  EXPECT_FALSE(has_more);
+
+  // lim=10 over five stored: window 11, whole list fits -> false.
+  has_more = true;
+  const auto whole = redis_store.GetHistory(chirp::chat::WORLD, "world", 0, 10, &has_more);
+  ASSERT_EQ(whole.size(), 5u);
+  EXPECT_FALSE(has_more);
+
+  // The before filter can empty a clipped window: before=300 excludes every
+  // entry the lim+1 window examined (m3..m5, ts 300..500) while older entries
+  // m1..m2 exist unexamined, so has_more honestly reports true (the full-scan
+  // read would have said false here — the bounded contract).
+  has_more = false;
+  const auto old_page =
+      redis_store.GetHistory(chirp::chat::WORLD, "world", /*before=*/300, /*limit=*/2,
+                             &has_more);
+  EXPECT_TRUE(old_page.empty());
+  EXPECT_TRUE(has_more);
+
+  // A corrupt entry inside the window is skipped without hiding the page.
+  client->RPush(key, std::string("\xde\xad\xbe\xef", 4));
+  const auto filtered =
+      redis_store.GetHistory(chirp::chat::WORLD, "world", 0, 10, nullptr);
+  ASSERT_EQ(filtered.size(), 5u);
+}
+
+TEST_F(BasicChatTest, GetHistoryClampsOversizedLimitLikeOtherBuilds) {
+  // Audit 2026-11-12: the basic handler applies the same page window as the
+  // enhanced/distributed builds (<=0 -> 50, ceiling 200) instead of passing
+  // the request limit through raw. The store is Redis-backed because the
+  // in-memory ledger trims at kMaxHistory=100 and could never fill a
+  // 200-entry page.
+  chirp_test::InMemoryRedis redis;
+  auto fake = std::make_unique<chirp_test::FakeRedisServer>(
+      [&redis](const std::vector<std::string>& args) { return redis.Handle(args); });
+  auto redis_store = std::make_shared<MessageStore>(
+      std::make_shared<chirp::network::RedisClient>("127.0.0.1", fake->port()),
+      /*ttl=*/60);
+
+  auto alice = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice", "d1", "web").code(), chirp::common::OK);
+
+  chirp::chat::ChatMessage msg;
+  msg.set_channel_type(chirp::chat::WORLD);
+  msg.set_channel_id("world");
+  for (int i = 1; i <= 210; ++i) {
+    msg.set_message_id("m" + std::to_string(i));
+    msg.set_timestamp(i);
+    redis_store->AddMessage(msg);
+  }
+
+  chirp::chat::GetHistoryRequest hist;
+  hist.set_user_id("alice");
+  hist.set_channel_type(chirp::chat::WORLD);
+  hist.set_channel_id("world");
+
+  hist.set_limit(std::numeric_limits<int32_t>::max());
+  Dispatch(chirp::gateway::GET_HISTORY_REQ, hist.SerializeAsString(), alice, /*seq=*/1,
+           redis_store);
+  const auto clamped = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(clamped.size(), 1u);
+  chirp::chat::GetHistoryResponse resp;
+  ASSERT_TRUE(resp.ParseFromString(clamped[0].body()));
+  ASSERT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_EQ(resp.messages_size(), 200);
+  EXPECT_TRUE(resp.has_more());
+
+  // Non-positive falls back to the 50 default, not to an unbounded page.
+  for (int32_t bad : {0, -5}) {
+    const size_t seen = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP).size();
+    hist.set_limit(bad);
+    Dispatch(chirp::gateway::GET_HISTORY_REQ, hist.SerializeAsString(), alice,
+             /*seq=*/2, redis_store);
+    const auto frames = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+    ASSERT_EQ(frames.size(), seen + 1u);
+    chirp::chat::GetHistoryResponse default_resp;
+    ASSERT_TRUE(default_resp.ParseFromString(frames.back().body()));
+    EXPECT_EQ(default_resp.code(), chirp::common::OK);
+    EXPECT_EQ(default_resp.messages_size(), 50);
+  }
+}
+
 // --- MessageStore：裁剪上限与回退边界 ------------------------------------------
 
 TEST_F(BasicChatTest, MessageStoreTrimsCapsAndFallbackEdges) {

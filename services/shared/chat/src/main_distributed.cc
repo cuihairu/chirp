@@ -264,6 +264,17 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
     }
     channel_id = store->PrivateChannelId(req.sender_id(), req.receiver_id());
   } else {
+    // Audit 2026-11-12: '|' is the reserved private-channel separator, so a
+    // private-shaped id under a non-private type would land in the very
+    // history key the private conversation already occupies (this build keys
+    // history by channel id alone) and could then be read back through it.
+    if (chirp::chat::LooksLikePrivateChannelId(req.channel_id())) {
+      chirp::chat::SendMessageResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+      chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP, seq, resp.SerializeAsString());
+      return;
+    }
     channel_id = req.channel_id();
   }
   msg.set_channel_id(channel_id);

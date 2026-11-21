@@ -127,6 +127,16 @@ const PC_CAPTURE = (forceRelay) => `
   window.RTCPeerConnection = CapturedPC;
 `;
 
+// E2E_VIDEO=1 probe: upgrade the app's {audio:true} capture to a real media
+// stream so the app's own addTrack loop puts a video track on the same pc and
+// the relay has to negotiate it. Route A (mesh video) evidence: renegotiation
+// and the m-line flow through the unchanged signaling plane. The app is not
+// modified - this only widens the fake device the test injects.
+const UPGRADE_MEDIA = `
+  const nativeGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+  navigator.mediaDevices.getUserMedia = (c) => nativeGetUserMedia({ ...c, video: true });
+`;
+
 async function waitFor(fn, what, timeoutMs = 20000, stepMs = 250) {
   const deadline = Date.now() + timeoutMs;
   let last;
@@ -180,11 +190,12 @@ async function main() {
   const turnUri = process.env.E2E_TURN_URI ?? '';
   const turnSecret = process.env.E2E_TURN_SECRET ?? '';
   const forceRelay = process.env.E2E_FORCE_RELAY === '1';
+  const withVideo = process.env.E2E_VIDEO === '1';
   if (forceRelay && !turnUri) {
     fail('E2E_FORCE_RELAY=1 needs E2E_TURN_URI (relay-only ICE has no other path)');
     process.exit(1);
   }
-  log(`mode: ${turnUri ? `turn (${turnUri})` : 'host-candidates'}${forceRelay ? ', relay-only ICE' : ''}`);
+  log(`mode: ${turnUri ? `turn (${turnUri})` : 'host-candidates'}${forceRelay ? ', relay-only ICE' : ''}${withVideo ? ', video probe' : ''}`);
 
   const chatPort = await pickPort();
   const chatWsPort = await pickPort();
@@ -247,6 +258,10 @@ async function main() {
   const ctxB = await browser.newContext();
   await ctxA.addInitScript(PC_CAPTURE(forceRelay));
   await ctxB.addInitScript(PC_CAPTURE(forceRelay));
+  if (withVideo) {
+    await ctxA.addInitScript(UPGRADE_MEDIA);
+    await ctxB.addInitScript(UPGRADE_MEDIA);
+  }
   const alice = await ctxA.newPage();
   const bob = await ctxB.newPage();
   for (const p of [alice, bob]) {
@@ -381,6 +396,41 @@ async function main() {
         if (!s.pair || !s.pair.startsWith('relay->relay')) {
           throw new Error(`${who}: relay-only ICE selected pair ${s.pair}, not relay->relay`);
         }
+      }
+    }
+
+    // ---- E2E_VIDEO=1: the video m-line negotiated over the same relay and the
+    // frames really decode on the far side (framesDecoded grows, real width) ----
+    if (withVideo) {
+      const video = async (page) =>
+        page.evaluate(async () => {
+          const pc = window.__chirpPcs[0];
+          const s = { frames: 0, width: 0, height: 0, bytes: 0, liveVideoTracks: 0 };
+          s.liveVideoTracks = pc.getReceivers().filter(
+            (r) => r.track?.kind === 'video' && r.track.readyState === 'live',
+          ).length;
+          const report = await pc.getStats();
+          report.forEach((st) => {
+            if (st.type === 'inbound-rtp' && st.kind === 'video') {
+              s.frames = st.framesDecoded ?? 0;
+              s.width = st.frameWidth ?? 0;
+              s.height = st.frameHeight ?? 0;
+              s.bytes = st.bytesReceived ?? 0;
+            }
+          });
+          return s;
+        });
+      for (const [who, page] of [['alice', alice], ['bob', bob]]) {
+        const v1 = await video(page);
+        if (v1.liveVideoTracks === 0) throw new Error(`${who}: no live remote video track`);
+        log(`${who} video t0:`, JSON.stringify(v1));
+        await new Promise((r) => setTimeout(r, 2000));
+        const v2 = await video(page);
+        if (v2.frames <= v1.frames) {
+          throw new Error(`${who}: video frames not decoding: ${v1.frames} -> ${v2.frames}`);
+        }
+        if (v2.width <= 0) throw new Error(`${who}: video frame width ${v2.width}`);
+        log(`${who} video frames +${v2.frames - v1.frames} over 2s (${v2.width}x${v2.height}, inbound ${v2.bytes}b)`);
       }
     }
 

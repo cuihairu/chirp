@@ -99,6 +99,20 @@ bool ChannelTypeInList(const std::vector<ChannelType>& list, ChannelType type) {
   return false;
 }
 
+bool LooksLikePrivateChannelId(std::string_view channel_id) {
+  if (channel_id.empty()) {
+    return false;
+  }
+
+  const size_t sep = channel_id.find('|');
+  if (sep == std::string_view::npos || sep == 0 || sep + 1 >= channel_id.size()) {
+    return false;
+  }
+  // A second separator would make one side a pair, not a user id — the
+  // service never mints such an id, so it is not the private shape.
+  return channel_id.find('|', sep + 1) == std::string_view::npos;
+}
+
 bool PrivateChannelContainsUser(std::string_view channel_id, std::string_view user_id) {
   if (channel_id.empty() || user_id.empty()) {
     return false;
@@ -267,16 +281,23 @@ chirp::common::ErrorCode ValidateGetHistoryRequest(const GetHistoryRequest& req,
     return chirp::common::AUTH_FAILED;
   }
 
-  if (req.channel_type() == PRIVATE) {
+  if (req.channel_id().empty()) {
+    return chirp::common::INVALID_PARAM;
+  }
+
+  // Audit 2026-11-12: membership is decided by the channel id's canonical
+  // shape, not by the client-reported channel_type. The enhanced/distributed
+  // stores key Redis history by channel id alone, so a "a|b" id is private
+  // storage whatever type the request claims — the pair-membership gate must
+  // apply to it on every read, or a non-PRIVATE type report reads a private
+  // conversation's history (cross-type escalation).
+  if (LooksLikePrivateChannelId(req.channel_id())) {
     if (!PrivateChannelContainsUser(req.channel_id(), authenticated_user_id)) {
       return chirp::common::AUTH_FAILED;
     }
     return chirp::common::OK;
   }
 
-  if (req.channel_id().empty()) {
-    return chirp::common::INVALID_PARAM;
-  }
   return chirp::common::OK;
 }
 

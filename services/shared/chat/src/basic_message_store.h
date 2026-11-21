@@ -306,7 +306,13 @@ struct MessageStore {
     }
 
     if (redis) {
-      auto raw = redis->LRange(HistoryKey(type, channel_id), 0, -1);
+      // Bounded fetch (audit 2026-11-12): take only the newest lim+1 entries
+      // and filter in process, mirroring the hybrid store's tail window.
+      // LRANGE 0,-1 would run a full scan of a list unbounded traffic can
+      // grow, one hostile limit at a time. A full window (lim+1 entries
+      // came back) means older entries exist beyond the examined slice,
+      // which is exactly what has_more reports.
+      auto raw = redis->LRange(HistoryKey(type, channel_id), -(lim + 1), -1);
       if (!raw.empty()) {
         std::vector<chirp::chat::ChatMessage> result;
         result.reserve(raw.size());
@@ -320,11 +326,11 @@ struct MessageStore {
           }
           result.push_back(std::move(msg));
           if (static_cast<int32_t>(result.size()) >= lim) {
-            if (has_more) {
-              *has_more = (rit + 1) != raw.rend();
-            }
             break;
           }
+        }
+        if (has_more) {
+          *has_more = raw.size() == static_cast<size_t>(lim) + 1;
         }
         std::reverse(result.begin(), result.end());
         return result;

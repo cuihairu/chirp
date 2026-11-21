@@ -195,4 +195,25 @@ TEST_F(ChatRateLimiterTest, DirtyCounterValueRestartsTheWindowInsteadOfCrashing)
   EXPECT_EQ(locked.current_count, 2);
 }
 
+TEST_F(ChatRateLimiterTest, NegativeCounterClampsToZeroAndRewritesClean) {
+  // "not-a-number" restarts the window via parse failure, but a *negative*
+  // value parses fine — without a lower clamp the count narrows to -3, gets
+  // reported as a negative current_count and is rewritten back negative,
+  // leaving the window stuck under zero until the key expires.
+  ASSERT_TRUE(client_->SetEx("chirp:chat:rl:send:neg", "-3", 60));
+  ChatRateLimiter limiter(client_, StrictConfig());
+
+  const auto gate = limiter.CheckSend("neg");
+  EXPECT_TRUE(gate.allowed);
+  EXPECT_EQ(gate.current_count, 1);
+  EXPECT_EQ(redis_->GetDirect("chirp:chat:rl:send:neg"), "1");
+
+  // The window really rebuilt from 0: two more hits fit, the next denies.
+  EXPECT_TRUE(limiter.CheckSend("neg").allowed);
+  EXPECT_TRUE(limiter.CheckSend("neg").allowed);
+  const auto locked = limiter.CheckSend("neg");
+  EXPECT_FALSE(locked.allowed);
+  EXPECT_EQ(locked.current_count, 3);
+}
+
 }  // namespace

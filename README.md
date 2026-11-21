@@ -42,7 +42,7 @@ What this repository itself contains: the protocol definitions, the gateway/auth
 
 To be candid: chirp is currently a **runnable core communication skeleton plus a set of experimental extensions** — not a complete product in which every directory is equally mature.
 
-- The mature main line is `gateway + auth + chat`: login, heartbeat, session binding, direct messages, groups, history, and offline queues, covered by 45 unit test suites under `tests/unit` with 100% line coverage (CI enforces the 100% threshold as a hard gate, except for lines registered in the `KNOWN_UNCOVERABLE` exemption tables; `scripts/run_coverage.sh` reproduces this locally).
+- The mature main line is `gateway + auth + chat`: login, heartbeat, session binding, direct messages, groups, history, and offline queues, covered by 46 unit test suites under `tests/unit` (CI enforces a per-package line-coverage gate of at least 98% per `scripts/run_coverage.sh`, overall currently above 99%; lines registered in the `KNOWN_UNCOVERABLE` exemption tables are excluded, and the script reproduces this locally).
 - The server plane `server_gateway` (game server integration) hub and the chat-side injection consumption are both implemented and fully covered (process-level end-to-end verification via `./test_services.sh --smoke-npc`); they are marked as experimental.
 - The rest (`social`, `voice`, `notification`, the multi-platform SDKs, mobile clients, admin dashboard) vary in completeness and should not be presented externally as stable capabilities. See the [capability matrix](docs/CAPABILITY_MATRIX.md) for the actual status.
 
@@ -118,11 +118,11 @@ curl -fsSL https://raw.githubusercontent.com/cuihairu/chirp/main/install.sh | ba
 irm https://raw.githubusercontent.com/cuihairu/chirp/main/install.ps1 | iex
 ```
 
-By default this installs the desktop chat app (Linux x86_64/aarch64; with root it uses `dpkg -i`, without root it unpacks into `~/.local`); `--component app|cpp|go|ts|all` (default `app`) selects the component — cpp installs the C++ core SDK (`--prefix`), go installs the Go SDK source package (`--install-dir`), ts installs the `@chirp/protocol` npm package. Platforms without artifacts (darwin/windows, armv7, and similar) fail with an explicit error (build matrix in [nightly.yml](.github/workflows/nightly.yml), available artifacts in [nightly-dist/manifest.json](https://github.com/cuihairu/chirp/tree/nightly-dist)). Downloads are served from the `nightly-dist` branch mirror, directly linkable without login.
+By default this installs the desktop chat app (Linux x86_64/aarch64: with root it uses `dpkg -i`, without root it unpacks into `~/.local`; macOS arm64 mounts the `.dmg` and copies the `.app` into `/Applications`, or `~/Applications` without permission; Windows x64 goes through `install.ps1`); `--component app|cpp|go|ts|all` (default `app`) selects the component — cpp installs the C++ core SDK (`--prefix`), go installs the Go SDK source package (`--install-dir`), ts installs the `@chirp/protocol` npm package. Targets outside the nightly build matrix (darwin-x64, windows-arm64, armv7 and similar) fail with an explicit error (build matrix in [nightly.yml](.github/workflows/nightly.yml), available artifacts in [nightly-dist/manifest.json](https://github.com/cuihairu/chirp/tree/nightly-dist)). Downloads are served from the `nightly-dist` branch mirror, directly linkable without login.
 
 ## Getting Started
 
-The platform target is Linux (CI runs Linux only). Dependencies: CMake 3.21+, C++23, Protocol Buffers. Docker, MySQL, and libsodium are optional enhancements.
+The platform target is Linux: the main CI job builds and tests Linux only, with separate macOS/Windows compile-proof legs in `cmake-multi-platform.yml`. Dependencies: CMake 3.21+, C++23, Protocol Buffers. Docker, MySQL, and libsodium are optional enhancements.
 
 ```bash
 ./gen_proto.sh

@@ -8,4 +8,5 @@ Start here to learn about Chirp's local build, verification and deployment paths
 - [Getting started](getting-started.md)
 - [Installation and build](installation.md)
 - [Deployment](deployment.md)
+- [Config switch effects](config-effects.md)
 - [Integration pitfalls](integration-pitfalls.md)

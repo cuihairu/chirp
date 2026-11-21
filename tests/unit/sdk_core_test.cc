@@ -520,6 +520,18 @@ class FakeGateway {
     });
   }
 
+  // Raw bytes onto the accepted connection, no framing applied — for
+  // injecting corrupt streams (framer overflow tests).
+  void PushRaw(const std::string& bytes) {
+    asio::post(io_, [this, bytes] {
+      auto sock = socket_;
+      if (sock && sock->is_open()) {
+        asio::error_code ec;
+        asio::write(*sock, asio::buffer(bytes), ec);
+      }
+    });
+  }
+
  private:
   void DoAccept() {
     auto sock = std::make_shared<asio::ip::tcp::socket>(io_);
@@ -529,7 +541,9 @@ class FakeGateway {
       }
       socket_ = sock;
       client_connected_ = true;
+      partial_ = 0;  // fresh connection: any stale bytes belong to the old one
       DoRead();
+      DoAccept();  // keep listening: reconnect tests bring a second client
     });
   }
 
@@ -539,6 +553,10 @@ class FakeGateway {
         asio::buffer(read_buf_.data() + partial_, read_buf_.size() - partial_),
         [this, self_socket](const std::error_code& ec, std::size_t n) mutable {
           if (ec) {
+            // The client went away (or overflowed its framer and closed):
+            // re-arm WaitClient so a reconnect waits for the *new* accept
+            // instead of returning on the dead connection's stale flag.
+            client_connected_ = false;
             return;
           }
           partial_ += n;
@@ -1837,6 +1855,60 @@ TEST_F(ChatClientLoopbackTest, ReconnectGivesUpAfterMaxAttempts) {
   EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
   std::this_thread::sleep_for(std::chrono::milliseconds(1200));
   EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, FramerOverflowDropsConnectionAndReconnectRecovers) {
+  // A declared frame length past the cap is a hostile or corrupt stream. The
+  // SDK must take the same unified lost-connection path as a transport error
+  // (flush + notify + auto-reconnect) instead of silently going zombie, and
+  // the reconnected client must process frames again — the overflow latch
+  // does not survive the reconnect (Clear() is a full reset).
+  FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("u");
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::LOGIN_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body(resp.SerializeAsString());
+      send(out);
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port(), /*heartbeat_s=*/30));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  gateway.WaitClient();  // accept-vs-push race: only Push once socket_ is set
+  LoginSync(client, "t");
+  ASSERT_EQ(client.GetState(), ConnectionState::LoggedIn);
+
+  // A 0xffffffff declared length trips the framer cap on the next read.
+  gateway.PushRaw(std::string("\xff\xff\xff\xff", 4));
+  WaitState(client, ConnectionState::WaitingReconnect);
+  // The ~0.5s backoff lands the reconnect; the gateway answers LOGIN again.
+  WaitState(client, ConnectionState::Connected);
+  gateway.WaitClient();  // reconnected socket must be accepted before Push
+
+  // The fresh connection actually processes frames: a normal notify arrives.
+  std::atomic<bool> notify_seen{false};
+  client.SetMessageCallback([&notify_seen](const std::string&, const std::string&) {
+    notify_seen = true;
+  });
+  chirp::chat::ChatMessage msg;
+  msg.set_message_id("m-after");
+  msg.set_sender_id("bob");
+  msg.set_content("still alive");
+  chirp::gateway::Packet notify;
+  notify.set_msg_id(chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  notify.set_sequence(0);
+  notify.set_body(msg.SerializeAsString());
+  gateway.Push(notify);
+  for (int i = 0; i < 2500 && !notify_seen.load(); ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  EXPECT_TRUE(notify_seen.load());
   client.Disconnect();
 }
 

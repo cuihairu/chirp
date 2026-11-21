@@ -48,7 +48,7 @@ export default function LoginPage(props: {
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
           Chirp
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+        <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
           登录后与游戏好友私聊、群聊；不在游戏里也不掉线
         </Typography>
         <Box component="form" onSubmit={submit} sx={{ mt: 3 }}>

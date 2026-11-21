@@ -148,7 +148,7 @@ function MessageRow(props: {
     <Box sx={{ display: 'flex', justifyContent: props.mine ? 'flex-end' : 'flex-start', mb: 1 }}>
       <Box sx={{ maxWidth: '72%' }}>
         {!props.mine ? (
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" color="textSecondary">
             {props.senderName ?? props.senderId}
           </Typography>
         ) : null}
@@ -547,7 +547,7 @@ function MessageRow(props: {
           spacing={0.5}
           sx={{ justifyContent: props.mine ? 'flex-end' : 'flex-start', mt: 0.25, alignItems: 'center' }}
         >
-          <Typography variant="caption" color="text.disabled">
+          <Typography variant="caption" color="textDisabled">
             {fmtTime(props.timestamp)}
             {props.edited ? ' · 已编辑' : ''}
           </Typography>
@@ -566,7 +566,7 @@ function MessageRow(props: {
             </Tooltip>
           ) : null}
           {props.pending ? (
-            <Typography variant="caption" color="text.disabled">
+            <Typography variant="caption" color="textDisabled">
               发送中
             </Typography>
           ) : null}
@@ -580,12 +580,12 @@ function MessageRow(props: {
             </Typography>
           ) : null}
           {props.queuedOffline ? (
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="textSecondary">
               对方离线，已入离线队列
             </Typography>
           ) : null}
           {props.mine && props.readByPeer && !props.pending && !props.failed ? (
-            <Typography variant="caption" color="text.disabled">
+            <Typography variant="caption" color="textDisabled">
               已读
             </Typography>
           ) : null}
@@ -727,7 +727,7 @@ export default function ChatPanel(props: {
             variant="outlined"
           />
           {props.membersHint ? (
-            <Typography variant="caption" color="text.secondary" noWrap>
+            <Typography variant="caption" color="textSecondary" noWrap>
               {props.membersHint.length} 名成员
             </Typography>
           ) : null}
@@ -788,7 +788,7 @@ export default function ChatPanel(props: {
       </Box>
 
       {typingUsers.length > 0 ? (
-        <Typography variant="caption" color="text.secondary" sx={{ px: 2, pb: 0.5 }}>
+        <Typography variant="caption" color="textSecondary" sx={{ px: 2, pb: 0.5 }}>
           {typingUsers.join('、')} 正在输入…
         </Typography>
       ) : null}
@@ -809,7 +809,7 @@ export default function ChatPanel(props: {
           >
             <Typography
               variant="caption"
-              color="text.secondary"
+              color="textSecondary"
               noWrap
               sx={{ flex: 1, minWidth: 0 }}
             >
@@ -825,6 +825,7 @@ export default function ChatPanel(props: {
             fullWidth
             multiline
             maxRows={5}
+            aria-label={`发送给 ${conversation.title} 的消息`}
             placeholder={`发消息给 ${conversation.title}（Enter 发送，Shift+Enter 换行）`}
             value={draft}
             onChange={(e) => {

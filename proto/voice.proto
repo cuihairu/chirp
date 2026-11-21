@@ -38,6 +38,23 @@ enum MediaTier {
   FORWARD_BYPASS = 1;  // SFU forwarding bypass (large rooms)
 }
 
+// ---------------------------------------------------------------------------
+// EXPERIMENTAL placeholder - video capability, not implemented.
+//
+// The signaling plane below relays opaque SDP bodies, so a video m-line already
+// flows through it unchanged (probed end to end by
+// apps/web_companion/scripts/voice_media_e2e.mjs with E2E_VIDEO=1). The fields
+// a future video surface would need are shaped like this; no field numbers are
+// reserved here on purpose - the shape stays a comment until a client actually
+// consumes it, and adding real fields then is a plain append.
+//
+//   message CreateRoomRequest { ..., bool enable_video = /* future */; }
+//   message JoinRoomResponse { ..., int32 max_video_bitrate_bps = /* future */; }
+//   message SetMuteRequest  { ..., bool video_muted = /* future */; }
+//
+// Route/sizing research: docs/analysis/video-support-2026-11-13.md
+// ---------------------------------------------------------------------------
+
 // Create voice room
 message CreateRoomRequest {
   string user_id = 1;

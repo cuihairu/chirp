@@ -840,7 +840,15 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     }
 
     bool has_more = false;
-    auto msgs = store->GetHistory(req.channel_type(), req.channel_id(), req.before_timestamp(), req.limit(), &has_more);
+    // Same page window as the enhanced/distributed builds: non-positive falls
+    // back to 50, oversized requests clamp instead of reaching the store raw.
+    int32_t limit = req.limit();
+    if (limit <= 0) {
+      limit = 50;
+    }
+    constexpr int32_t kMaxHistoryPageSize = 200;
+    limit = std::min(limit, kMaxHistoryPageSize);
+    auto msgs = store->GetHistory(req.channel_type(), req.channel_id(), req.before_timestamp(), limit, &has_more);
 
     chirp::chat::GetHistoryResponse resp;
     resp.set_code(chirp::common::OK);

@@ -34,7 +34,7 @@ function SectionTitle(props: { children: string; action?: ReactNode }) {
       direction="row"
       sx={{ px: 2, pt: 2, pb: 0.5, alignItems: 'center', justifyContent: 'space-between' }}
     >
-      <Typography variant="overline" color="text.secondary">
+      <Typography variant="overline" color="textSecondary">
         {props.children}
       </Typography>
       {props.action}
@@ -99,7 +99,7 @@ function ConversationRow(props: {
         }
         secondary={
           expiry || conversation.lastMessagePreview ? (
-            <Typography variant="caption" color="text.secondary" noWrap>
+            <Typography variant="caption" color="textSecondary" noWrap>
               {expiry ? <Box component="span">{expiry} · </Box> : null}
               {conversation.lastMessagePreview ?? ''}
             </Typography>
@@ -174,7 +174,7 @@ export default function Rail(props: {
           />
         ))}
         {conversations.conversations.length === 0 ? (
-          <Typography variant="caption" color="text.secondary" sx={{ px: 2, py: 1, display: 'block' }}>
+          <Typography variant="caption" color="textSecondary" sx={{ px: 2, py: 1, display: 'block' }}>
             还没有会话——加个好友开聊，或建个群
           </Typography>
         ) : null}
@@ -183,7 +183,7 @@ export default function Rail(props: {
       <Divider sx={{ mt: 1 }} />
       <SectionTitle>好友请求</SectionTitle>
       {friends.pendingIn.length === 0 ? (
-        <Typography variant="caption" color="text.secondary" sx={{ px: 2, display: 'block' }}>
+        <Typography variant="caption" color="textSecondary" sx={{ px: 2, display: 'block' }}>
           无
         </Typography>
       ) : (
@@ -223,7 +223,7 @@ export default function Rail(props: {
           );
         })}
         {friends.friends.length === 0 ? (
-          <Typography variant="caption" color="text.secondary" sx={{ px: 2, display: 'block' }}>
+          <Typography variant="caption" color="textSecondary" sx={{ px: 2, display: 'block' }}>
             {props.planeStatus.social ? '还没有好友' : 'social 平面未连接，好友面暂不可用'}
           </Typography>
         ) : null}
@@ -232,6 +232,7 @@ export default function Rail(props: {
         <TextField
           size="small"
           placeholder="用户 ID"
+          aria-label="好友的用户 ID"
           value={newFriend}
           onChange={(e) => setNewFriend(e.target.value)}
           sx={{ flex: 1, '& .MuiInputBase-input': { py: 0.5 } }}
@@ -281,7 +282,7 @@ export default function Rail(props: {
         </ListItemButton>
       </List>
       <Box sx={{ flex: 1 }} />
-      <Typography variant="caption" color="text.disabled" sx={{ px: 2, py: 1.5 }}>
+      <Typography variant="caption" color="textDisabled" sx={{ px: 2, py: 1.5 }}>
         Chirp 桌面版 · 会话经 App 网关（gateway+auth+chat）
       </Typography>
     </Box>

@@ -1,6 +1,7 @@
 #include "redis_auth_store.h"
 
 #include <chrono>
+#include <limits>
 #include <sstream>
 #include <thread>
 
@@ -15,6 +16,39 @@ using chirp::common::Logger;
 int64_t NowMs() {
   using namespace std::chrono;
   return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+}
+
+// Rate-limit and failed-login counters live in shared Redis and are parsed on
+// every login attempt, so a corrupted or foreign value (non-numeric, partial,
+// negative, out of range) must degrade to a plain zero instead of throwing out
+// of the request path. Only exactly what std::to_string produces is accepted:
+// the whole string, ASCII digits only, in [0, INT_MAX] (std::stol would also
+// take signs and leading whitespace, which is not what a counter looks like).
+int ParseCounterOrZero(const std::string& raw) {
+  if (raw.empty()) {
+    return 0;
+  }
+  for (const char c : raw) {
+    if (c < '0' || c > '9') {
+      return 0;
+    }
+  }
+  long parsed = 0;
+  try {
+    parsed = std::stol(raw, nullptr, 10);
+  } catch (...) {
+    return 0;  // digits but beyond long's range
+  }
+  return parsed > static_cast<long>(std::numeric_limits<int>::max())
+             ? std::numeric_limits<int>::max()
+             : static_cast<int>(parsed);
+}
+
+// Saturating increment: a counter already at INT_MAX stays there instead of
+// wrapping negative on the next write.
+int IncrementCounter(int count) {
+  return count >= std::numeric_limits<int>::max() ? std::numeric_limits<int>::max()
+                                                  : count + 1;
 }
 
 std::string SessionKey(const std::string& session_id) {
@@ -295,14 +329,15 @@ bool RedisAuthStore::CheckRateLimit(const std::string& key, int max_attempts) {
   std::string rate_key = RateLimitKey(key);
   auto current = impl_->redis->Get(rate_key);
 
-  int count = current ? std::stoi(*current) : 0;
+  int count = current ? ParseCounterOrZero(*current) : 0;
 
   if (count >= max_attempts) {
     return false;
   }
 
   // Increment counter
-  impl_->redis->SetEx(rate_key, std::to_string(count + 1), impl_->config.rate_limit_ttl_seconds);
+  impl_->redis->SetEx(rate_key, std::to_string(IncrementCounter(count)),
+                      impl_->config.rate_limit_ttl_seconds);
   return true;
 }
 
@@ -312,7 +347,7 @@ int RedisAuthStore::GetRateLimitCount(const std::string& key) {
   }
 
   auto result = impl_->redis->Get(RateLimitKey(key));
-  return result ? std::stoi(*result) : 0;
+  return result ? ParseCounterOrZero(*result) : 0;
 }
 
 bool RedisAuthStore::ResetRateLimit(const std::string& key) {
@@ -331,15 +366,16 @@ bool RedisAuthStore::RecordFailedLogin(const std::string& identifier, const std:
   std::string key = FailedLoginKey(identifier);
   auto current = impl_->redis->Get(key);
 
-  int count = current ? std::stoi(*current) : 0;
+  int count = current ? ParseCounterOrZero(*current) : 0;
 
   // Store for 15 minutes
-  impl_->redis->SetEx(key, std::to_string(count + 1), 900);
+  impl_->redis->SetEx(key, std::to_string(IncrementCounter(count)), 900);
 
   // Also track by IP
   std::string ip_key = FailedLoginKey("ip:" + ip_address);
   auto ip_count = impl_->redis->Get(ip_key);
-  impl_->redis->SetEx(ip_key, std::to_string(ip_count ? std::stoi(*ip_count) + 1 : 1), 900);
+  const int ip_count_value = ip_count ? ParseCounterOrZero(*ip_count) : 0;
+  impl_->redis->SetEx(ip_key, std::to_string(IncrementCounter(ip_count_value)), 900);
 
   return true;
 }
@@ -350,7 +386,7 @@ int RedisAuthStore::GetFailedLoginCount(const std::string& identifier) {
   }
 
   auto result = impl_->redis->Get(FailedLoginKey(identifier));
-  return result ? std::stoi(*result) : 0;
+  return result ? ParseCounterOrZero(*result) : 0;
 }
 
 bool RedisAuthStore::ClearFailedLogins(const std::string& identifier) {
