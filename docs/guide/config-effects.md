@@ -14,6 +14,7 @@ one script — do not hand-edit the images.
 node apps/desktop/dev/capture-switch-effects.mjs        # desktop app toggles
 node apps/web_companion/scripts/capture-switch-effects.mjs   # web app toggles
 python3 scripts/capture_cli_switch_effects.py          # server CLI flags
+python3 scripts/build_config_switch_inventory.py --write   # refresh the switch inventory table
 ```
 
 Outputs land in `docs/screenshots/switches/`. Every script asserts that the
@@ -133,6 +134,43 @@ service in the repo calls `SetMetricsHandler` (only
 into `SimpleMetrics` (e.g. `CHIRP_GAUGE_INC("chirp_chat_sessions")` in
 `services/shared/chat/src/enhanced_dispatch.cc`) are never exported. Collected,
 not published.
+
+
+## Complete switch inventory
+
+Generated and source-verified by `scripts/build_config_switch_inventory.py` (it re-reads
+every row's source file and fails loudly if a flag disappears or its default drifts, so the
+table cannot silently go stale). Scope: **discrete** switches that change what the app does
+once enabled — GUI switch controls plus CLI flags whose value is a discrete enum
+(`on`/`off`, `0`/`1`, `logging|http`, `replace|drop|log`). Explicitly out of scope and
+excluded from the table: numeric tuning knobs (rate limits, TTLs, caps, timeouts, retry
+counts), connection endpoints (host/port), credentials (secret/token/password/key), and
+compile-time or test-only switches.
+
+<!-- switch-inventory:begin -->
+| Switch | Service / plane | Default | Coverage |
+|---|---|---|---|
+| `desktop-notify` | desktop app | — | ✅ off/on + GIF |
+| `friend-online-notify` | desktop app | — | ✅ off/on + GIF |
+| `dm-restriction` | desktop app | — | ✅ off/on + GIF |
+| `notify-enable` | web companion | — | ✅ off/on + GIF |
+| `friend-online-notify-switch` | web companion | — | ✅ off/on + GIF |
+| `dm-restriction-switch` | web companion | — | ✅ off/on + GIF |
+| `game-presence-toggle` | web companion | — | ✅ off/on + GIF |
+| `metrics_port` | chirp_chat and the other long-lived services | 0 | ✅ off/on + GIF |
+| `allow_unknown_peers` | chirp_chat | 0 | not covered: needs a scripted service rig — the effect only shows up across hub multi-instance forwarding; a single instance cannot show a difference |
+| `hub_mode` | chirp_chat | 0 | not covered: needs a scripted service rig — needs a hub+spoke two-instance pair to show any difference |
+| `enable_migration` | chirp_chat (enhanced) | 1 | not covered: needs a scripted service rig — needs a data-bearing old database to diff the migration against |
+| `broker_consumer` | chirp_server_gateway | (空=关) | not covered: needs a scripted service rig — needs the broker stream plus two consumer instances |
+| `kick_previous` | chirp_app_auth | 1 | not covered: needs a scripted service rig — needs a self-hosted auth instance to diff two logins of one account |
+| `allow_scaffold_login` | chirp_app_auth | 0 | not covered: needs a scripted service rig — the dev stack relies on it being on; proving the difference needs a self-hosted auth instance |
+| `word_filter_policy` | chirp_chat | replace | not covered: needs a scripted service rig — needs a message driven through the filter chain — a scripted two-run diff |
+| `asr_disposition` | chirp_voice | flag | not covered: needs the ASR engine — the whole ASR chain needs the ASR engine and --asr_lexicon in place |
+| `push_transport` | chirp_app_notification | logging | not covered: needs provider credentials — the dev stack does not run that service; real egress is also gated on FCM/APNs credentials |
+| `push_verify_tls` | chirp_app_notification | on | not covered: needs provider credentials — same as above: needs one real outbound push |
+| `apns-sandbox` | chirp_app_notification | (不传=生产端点) | not covered: needs provider credentials — ledger L25: missing the .p8 / Team ID / Key ID / Bundle ID |
+
+<!-- switch-inventory:end -->
 
 ## Not covered yet
 

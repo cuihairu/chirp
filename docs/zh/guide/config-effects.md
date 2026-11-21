@@ -12,6 +12,7 @@ GIF。本页全部产物由脚本再生——不要手工修改图片。
 node apps/desktop/dev/capture-switch-effects.mjs         # 桌面端开关
 node apps/web_companion/scripts/capture-switch-effects.mjs   # web 端开关
 python3 scripts/capture_cli_switch_effects.py           # 服务端 CLI 旗标
+python3 scripts/build_config_switch_inventory.py --write   # 刷新开关清单表
 ```
 
 产物落 `docs/screenshots/switches/`。三条脚本都断言开关真的变了状态（桌面端：按钮
@@ -121,6 +122,39 @@ off/on 就是这次文案变化。
 `SimpleMetrics` 的计数器（例如 `services/shared/chat/src/enhanced_dispatch.cc` 里的
 `CHIRP_GAUGE_INC("chirp_chat_sessions")`）根本没被导出——收是收了，但没发出去。
 
+
+## 开关清单
+
+由 `scripts/build_config_switch_inventory.py` 生成并回源码核对（每一行都会重读其源码文件，
+旗标消失或缺省值漂移就报错退出，所以这张表不会悄悄过期）。口径：**离散**开关——开启后会改变
+应用行为的 GUI 开关控件，加上取值是离散枚举（`on`/`off`、`0`/`1`、`logging|http`、
+`replace|drop|log`）的服务端 CLI 旗标。明确排除在表外：数值调优旋钮（限流、TTL、上限、超时、
+重试次数）、连接端点（host/port）、凭据类（secret/token/password/key）、编译期与仅测试用的开关。
+
+<!-- switch-inventory:begin -->
+| 开关 | 所在服务/面 | 缺省 | 覆盖情况 |
+|---|---|---|---|
+| `desktop-notify` | 桌面端 | — | ✅ 有 off/on 图+GIF |
+| `friend-online-notify` | 桌面端 | — | ✅ 有 off/on 图+GIF |
+| `dm-restriction` | 桌面端 | — | ✅ 有 off/on 图+GIF |
+| `notify-enable` | web 端 | — | ✅ 有 off/on 图+GIF |
+| `friend-online-notify-switch` | web 端 | — | ✅ 有 off/on 图+GIF |
+| `dm-restriction-switch` | web 端 | — | ✅ 有 off/on 图+GIF |
+| `game-presence-toggle` | web 端 | — | ✅ 有 off/on 图+GIF |
+| `metrics_port` | chirp_chat 等 10 个长驻服务 | 0 | ✅ 有 off/on 图+GIF |
+| `allow_unknown_peers` | chirp_chat | 0 | 未覆盖：要自建服务实例/双实例对照（效果在 hub 多实例转发上，单机跑不出差别） |
+| `hub_mode` | chirp_chat | 0 | 未覆盖：要自建服务实例/双实例对照（要 hub+spoke 双实例才看得出差异） |
+| `enable_migration` | chirp_chat（增强版） | 1 | 未覆盖：要自建服务实例/双实例对照（需要带数据的旧库做迁移对照） |
+| `broker_consumer` | chirp_server_gateway | (空=关) | 未覆盖：要自建服务实例/双实例对照（需要 broker 流 + 双消费实例） |
+| `kick_previous` | chirp_app_auth | 1 | 未覆盖：要自建服务实例/双实例对照（需自建一个 auth 实例做同账号双登录对照） |
+| `allow_scaffold_login` | chirp_app_auth | 0 | 未覆盖：要自建服务实例/双实例对照（dev 栈正是靠它开着的；关不关的差异要一个自建 auth 实例） |
+| `word_filter_policy` | chirp_chat | replace | 未覆盖：要自建服务实例/双实例对照（要发消息穿过过滤链才能取证，属脚本化双跑） |
+| `asr_disposition` | chirp_voice | flag | 未覆盖：要 ASR 引擎（整条 ASR 链要 ASR 引擎与 --asr_lexicon 才在位） |
+| `push_transport` | chirp_app_notification | logging | 未覆盖：要 FCM/APNs 凭据（dev 栈没起这个服务；真投递又卡在 FCM/APNs 凭据） |
+| `push_verify_tls` | chirp_app_notification | on | 未覆盖：要 FCM/APNs 凭据（同上，要有一次真实推送出向） |
+| `apns-sandbox` | chirp_app_notification | (不传=生产端点) | 未覆盖：要 FCM/APNs 凭据（台账 L25：缺 .p8 / Team ID / Key ID / Bundle ID） |
+
+<!-- switch-inventory:end -->
 ## 尚未覆盖
 
 - `--push_transport logging|http` 与 `--apns-*` / `--fcm-*`——证明真投递需要一个把
