@@ -9,7 +9,9 @@ overrides:
   # vite 5.4.21 有 high GHSA-fx2h-pf6j-xcff 等 3 条 alert（修复线 6.4.3，
   # 8b762b5 抬到 6.4.4 patch 线）；vitepress@1 声明 ^5.4.14，强抬到 6.4.4；
   # plugin-vue peer 支持 ^6，且 6.4.x 要 esbuild ^0.25.0（与上 override 一致）。
-  vite: 6.4.4
+  # 6.4.4 又有 moderate GHSA（server.fs.deny 被查询串绕过，修复线 6.4.5，
+  # 2026-11-25 抬钉）。
+  vite: 6.4.5
   # dompurify <3.4.17 有漏洞（8b762b5 的 patch 线；vitepress/mermaid 传递引入）。
   'dompurify@<3.4.17': 3.4.17
   # source-map-js <1.2.2 有 high GHSA-68fv-2mgg-jv7q/CVE-2026-93749
