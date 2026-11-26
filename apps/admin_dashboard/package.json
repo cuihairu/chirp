@@ -11,7 +11,7 @@
     "@mui/icons-material": "^9.5.0",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
-    "recharts": "^3.10.1",
+    "recharts": "^3.11.0",
     "socket.io-client": "^4.5.0",
     "date-fns": "^4.4.0"
   },
@@ -21,8 +21,8 @@
     "@vitejs/plugin-react": "^6.3.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
-    "vitest": "^5.1.0",
-    "jsdom": "^31.0.0",
+    "vitest": "^5.1.1",
+    "jsdom": "^31.0.1",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.1.0"
   },
