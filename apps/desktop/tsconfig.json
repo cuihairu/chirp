@@ -17,7 +17,8 @@
     "types": ["vite/client"],
     "paths": {
       "@chirp/proto/*": ["../../proto/ts/proto/*"],
-      "@chirp/app-protocol/*": ["../shared/protocol/src/*"]
+      "@chirp/app-protocol/*": ["../shared/protocol/src/*"],
+      "@bufbuild/protobuf/wire": ["../../node_modules/@bufbuild/protobuf/dist/esm/wire/index.d.ts"]
     }
   },
   "include": ["src", "vite.config.ts"]
