@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"net"
 	"sync"
 	"time"
@@ -760,7 +761,11 @@ func (c *Client) writePacket(conn net.Conn, pkt *pbgw.Packet) error {
 	if err != nil {
 		return err
 	}
-	if len(body) == 0 || uint32(len(body)) > uint32(c.cfg.MaxFrameBytes) {
+	// Both operands are non-negative ints (applyDefaults pins MaxFrameBytes
+	// above zero), so compare in the int domain: the uint32 casts invited
+	// wraparound reasoning, and 4+len(body) overflows int if len(body) is
+	// within 4 of MaxInt — reject before allocating the frame.
+	if len(body) == 0 || len(body) > c.cfg.MaxFrameBytes || len(body) > math.MaxInt-4 {
 		return ErrBadFrame
 	}
 	frame := make([]byte, 4+len(body))

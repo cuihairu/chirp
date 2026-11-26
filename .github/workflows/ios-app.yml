@@ -21,6 +21,9 @@ on:
       - 'proto/**'
       - '.github/workflows/ios-app.yml'
 
+permissions:
+  contents: read
+
 jobs:
   build-and-test:
     runs-on: macos-latest

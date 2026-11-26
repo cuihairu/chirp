@@ -20,6 +20,9 @@ on:
       - 'gen_proto.sh'
       - '.github/workflows/unity-sdk.yml'
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-24.04

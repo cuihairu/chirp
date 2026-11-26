@@ -25,6 +25,9 @@ on:
       - 'go.sum'
       - '.github/workflows/go-sdk.yml'
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-24.04

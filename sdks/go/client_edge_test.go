@@ -12,6 +12,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"testing"
 	"time"
@@ -125,6 +126,26 @@ func TestWritePacketRejectsBadBodiesAndDeadConns(t *testing.T) {
 	if err := c.writePacket(conn, &pbgw.Packet{MsgId: 1, Body: []byte("z")}); err == nil {
 		t.Error("write on closed peer must fail")
 	}
+}
+
+func TestWritePacketKeepsCapComparisonInIntDomain(t *testing.T) {
+	// The cap check must compare ints, not uint32 casts: a configured cap
+	// above 4GB (legal config value) wrapped to a smaller — even zero —
+	// uint32 limit, wrongly rejecting ordinary frames. Guarding the
+	// 4+len(body) allocation against int overflow stays in the same
+	// condition.
+	c := NewClient(Config{MaxFrameBytes: 1 << 32})
+	conn, peer := net.Pipe()
+	defer conn.Close()
+	go func() {
+		// net.Pipe is synchronous: drain until the writer side closes,
+		// so the frame's full length (4 + serialized Packet size) lands.
+		_, _ = io.Copy(io.Discard, peer)
+	}()
+	if err := c.writePacket(conn, &pbgw.Packet{MsgId: 1, Body: bytes.Repeat([]byte("x"), 16)}); err != nil {
+		t.Errorf("writePacket with 4GB cap err = %v, want nil", err)
+	}
+	peer.Close()
 }
 
 func TestMustMarshalPanicsOnUnmarshalableMessage(t *testing.T) {
