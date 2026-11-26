@@ -1,0 +1,56 @@
+name: Admin Dashboard
+
+# admin_dashboard is its own pnpm workspace with an independent lockfile and
+# its test suite (vitest + node --test contract runner + vite build); until
+# 2026-11-26 no workflow covered it — a corrupted lockfile plus a red suite
+# sat on main for five days unnoticed. This workflow installs from the
+# lockfile only (frozen: a lock/package.json mismatch fails here, which is
+# the point), then runs the full local gate.
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'apps/admin_dashboard/**'
+      - '.github/workflows/admin-dashboard.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'apps/admin_dashboard/**'
+      - '.github/workflows/admin-dashboard.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: apps/admin_dashboard
+    steps:
+    - uses: actions/checkout@v7.0.1
+
+    - uses: pnpm/action-setup@v6.1.0
+      with:
+        # Same major as local and nightly; the lockfile is v9 format.
+        version: 12
+
+    - uses: actions/setup-node@v7.1.0
+      with:
+        node-version: 24
+        cache: pnpm
+        cache-dependency-path: apps/admin_dashboard/pnpm-lock.yaml
+
+    # --frozen-lockfile makes a broken lockfile a red build instead of a
+    # silent local-only breakage.
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Test dashboard suite
+      run: pnpm run test
+
+    - name: Test admin API contract
+      run: pnpm run test:api
+
+    - name: Build
+      run: pnpm run build
