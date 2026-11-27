@@ -18,7 +18,10 @@
     "paths": {
       "@chirp/proto/*": ["../../proto/ts/proto/*"],
       "@chirp/app-protocol/*": ["../shared/protocol/src/*"],
-      "@bufbuild/protobuf/wire": ["../../node_modules/@bufbuild/protobuf/dist/esm/wire/index.d.ts"]
+      "@bufbuild/protobuf/wire": [
+        "./node_modules/@bufbuild/protobuf/dist/esm/wire/index.d.ts",
+        "../../node_modules/@bufbuild/protobuf/dist/esm/wire/index.d.ts"
+      ]
     }
   },
   "include": ["src", "vite.config.ts"]
