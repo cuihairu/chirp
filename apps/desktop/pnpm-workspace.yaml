@@ -7,3 +7,9 @@ packages:
 # pnpm 12 默认不跑依赖的生命周期脚本,未显式决定时直接报错退出
 # (ERR_PNPM_IGNORED_BUILDS)。protobufjs 的 postinstall 放行条目随 ts-proto
 # 2.x 换 @bufbuild/protobuf 运行时一并移除——依赖树里已无该包。
+
+# pnpm 12 不再读 package.json 的 pnpm 字段(改动会被安装静默丢弃,
+# ERR_PNPM_VERIFY_DEPS_BEFORE_RUN 直接拒装),overrides 必须住这里
+# ——根 pnpm-workspace.yaml 同款下限。
+overrides:
+  '@vitest/mocker@<4.1.12': 4.1.12
