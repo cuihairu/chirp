@@ -4,7 +4,10 @@ import { createTheme } from '@mui/material/styles';
 export const theme = createTheme({
   palette: {
     mode: 'dark',
-    primary: { main: '#2ecc9f' },
+    // contrastText 显式钉住自研气泡文字色（主色底上的近黑文字，UI 审核实测
+    // 对比达标）；ChatPanel 用 primary.contrastText 令牌引用，换主色时这里
+    // 一处跟随。
+    primary: { main: '#2ecc9f', contrastText: '#08130f' },
     secondary: { main: '#7c8cf8' },
     background: { default: '#181a20', paper: '#1f222a' },
     divider: '#2c303a',

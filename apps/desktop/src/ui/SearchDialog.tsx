@@ -161,7 +161,7 @@ export default function SearchDialog({
             加载更多
           </Button>
         )}
-        <Button onClick={onClose}>取消</Button>
+        <Button onClick={onClose}>关闭</Button>
       </DialogActions>
     </Dialog>
   );

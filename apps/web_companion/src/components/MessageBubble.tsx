@@ -8,35 +8,15 @@ import { SenderKind } from '@chirp/proto/chat';
 import { QUICK_REACTIONS } from './quick_reactions';
 import { expandEmojiCodes } from './emoji';
 import { parseRichText } from './rich_text';
+import { qualityColorOf, rarityColorOf } from './rich_colors';
 import type { ChatMessageView } from '../state/models';
 import { zh } from '../i18n/zh';
 
 const timeLabel = (timestamp: number): string =>
   new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-// P0 物品链接：品质配色——白(普通)/绿(优秀)/蓝(精良)/紫(史诗)/橙(传说)。
-// 白品质在浅色底上渲染为灰白（可读性适配）；枚举外未知值回落白（向前
-// 兼容，与 sender_kind 回落同口径）。
-const QUALITY_COLORS: Record<number, string> = {
-  0: '#9e9e9e',
-  1: '#4caf50',
-  2: '#2196f3',
-  3: '#9c27b0',
-  4: '#ff9800',
-};
-
-const qualityColorOf = (quality: number): string => QUALITY_COLORS[quality] ?? QUALITY_COLORS[0];
-
-// P1 成就分享：稀有度分色与物品品质同一阶梯（普通→优秀→稀有→史诗→传说），
-// 枚举外未知值回落普通（向前兼容，与品质回落同口径）。
-const RARITY_COLORS: Record<number, string> = {
-  0: '#9e9e9e',
-  1: '#4caf50',
-  2: '#2196f3',
-  3: '#9c27b0',
-  4: '#ff9800',
-};
-
+// 品质/稀有度色阶抽到 ./rich_colors（与桌面端 UI 审计 P2 同步收口，两处
+// 同文模块）；稀有度文案留在本文件。
 const RARITY_FACES: Record<number, string> = {
   0: '普通',
   1: '优秀',
@@ -44,8 +24,6 @@ const RARITY_FACES: Record<number, string> = {
   3: '史诗',
   4: '传说',
 };
-
-const rarityColorOf = (rarity: number): string => RARITY_COLORS[rarity] ?? RARITY_COLORS[0];
 
 const rarityFaceOf = (rarity: number): string => RARITY_FACES[rarity] ?? RARITY_FACES[0];
 

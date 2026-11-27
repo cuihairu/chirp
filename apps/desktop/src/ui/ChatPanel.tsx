@@ -10,6 +10,7 @@ import {
   Chip,
   CircularProgress,
   Dialog,
+  DialogActions,
   DialogContent,
   DialogTitle,
   Divider,
@@ -21,7 +22,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useEffect, useReducer, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { SenderKind } from '@chirp/proto/chat';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { ChatApi, ChannelRef } from '../api/chat_api';
@@ -41,6 +42,7 @@ import { useStoreValue, type Store } from '../state/store';
 import { TYPING_TTL_MS, type TypingState } from '../state/typing_store';
 import { expandEmojiCodes, SYSTEM_EMOJIS } from './emoji';
 import { parseRichText } from './rich_text';
+import { qualityColorOf, rarityColorOf } from './rich_colors';
 
 const fmtTime = (ts: number): string => {
   const d = new Date(ts);
@@ -64,29 +66,8 @@ const KIND_FACE: Partial<Record<SenderKind, { tag: string; bgcolor: string }>> =
 
 const USER_FACE = { tag: 'user', bgcolor: 'background.paper' };
 
-// P0 物品链接：品质配色——白(普通)/绿(优秀)/蓝(精良)/紫(史诗)/橙(传说)。
-// 白品质在浅色底上渲染为灰白（可读性适配）；枚举外未知值回落白（向前
-// 兼容，与 sender_kind 回落同口径）。与 web_companion 的 MessageBubble 同款。
-const QUALITY_COLORS: Record<number, string> = {
-  0: '#9e9e9e',
-  1: '#4caf50',
-  2: '#2196f3',
-  3: '#9c27b0',
-  4: '#ff9800',
-};
-
-const qualityColorOf = (quality: number): string => QUALITY_COLORS[quality] ?? QUALITY_COLORS[0];
-
-// P1 成就分享：稀有度分色与物品品质同一阶梯（普通→优秀→稀有→史诗→传说），
-// 枚举外未知值回落普通（向前兼容）。与 web_companion 的 MessageBubble 同款。
-const RARITY_COLORS: Record<number, string> = {
-  0: '#9e9e9e',
-  1: '#4caf50',
-  2: '#2196f3',
-  3: '#9c27b0',
-  4: '#ff9800',
-};
-
+// 品质/稀有度色阶抽到 ./rich_colors（UI 审计 P2：色值收口一处，同 web_companion
+// 同文模块）；稀有度文案留在本文件。
 const RARITY_FACES: Record<number, string> = {
   0: '普通',
   1: '优秀',
@@ -95,8 +76,6 @@ const RARITY_FACES: Record<number, string> = {
   4: '传说',
 };
 
-const rarityColorOf = (rarity: number): string => RARITY_COLORS[rarity] ?? RARITY_COLORS[0];
-
 const rarityFaceOf = (rarity: number): string => RARITY_FACES[rarity] ?? RARITY_FACES[0];
 
 const faceOf = (props: { mine: boolean; senderKind?: SenderKind }): { tag: string; bgcolor: string } => {
@@ -104,8 +83,11 @@ const faceOf = (props: { mine: boolean; senderKind?: SenderKind }): { tag: strin
   return KIND_FACE[props.senderKind as SenderKind] ?? USER_FACE;
 };
 
-/** 单条消息行：发送者 + 时间 + 正文 + 本地状态标记 + 引用块/回复入口。 */
-function MessageRow(props: {
+/** 单条消息行：发送者 + 时间 + 正文 + 本地状态标记 + 引用块/回复入口。
+ * memo 化（UI 审计 P3）：stores 里未被改动的消息对象引用稳定，配合父级
+ * 稳定回调与引用块缓存，无关 store 变化（未读/在线/presence）不再重算
+ * 整条列表。 */
+const MessageRow = memo(function MessageRow(props: {
   /** 消息 id：卡片/操作的 testid 锚点。 */
   messageId: string;
   mine: boolean;
@@ -139,9 +121,10 @@ function MessageRow(props: {
   partyRecruit?: PartyRecruitView;
   /** 发送者类别（P0 消息展示）：决定气泡底色，自己的消息恒走主色。 */
   senderKind?: SenderKind;
-  onReply?: () => void;
+  /** 请求回复该行（带 messageId；父级用稳定引用，配合 memo 跳过无关重渲染）。 */
+  onReply?: (messageId: string) => void;
   /** 举报对方消息（REPORT_MESSAGE 2253）；自己的消息不可举报。 */
-  onReport?: () => void;
+  onReport?: (messageId: string) => void;
 }) {
   const [itemOpen, setItemOpen] = useState(false);
   return (
@@ -159,9 +142,10 @@ function MessageRow(props: {
             px: 1.5,
             py: 1,
             bgcolor: faceOf(props).bgcolor,
-            color: props.mine ? '#08130f' : 'text.primary',
+            color: props.mine ? 'primary.contrastText' : 'text.primary',
             opacity: props.pending ? 0.6 : 1,
-            border: props.failed ? '1px solid #e57373' : 'none',
+            border: props.failed ? '1px solid' : 'none',
+            borderColor: 'error.main',
             mt: props.mine ? 0 : 0.25,
           }}
         >
@@ -553,14 +537,24 @@ function MessageRow(props: {
           </Typography>
           {props.onReply ? (
             <Tooltip title="回复">
-              <IconButton size="small" aria-label="回复" onClick={props.onReply} sx={{ p: 0.25 }}>
+              <IconButton
+                size="small"
+                aria-label="回复"
+                onClick={() => props.onReply?.(props.messageId)}
+                sx={{ p: 0.25 }}
+              >
                 <ReplyIcon sx={{ fontSize: 14 }} />
               </IconButton>
             </Tooltip>
           ) : null}
           {!props.mine && props.onReport ? (
             <Tooltip title="举报">
-              <IconButton size="small" aria-label="举报" onClick={props.onReport} sx={{ p: 0.25 }}>
+              <IconButton
+                size="small"
+                aria-label="举报"
+                onClick={() => props.onReport?.(props.messageId)}
+                sx={{ p: 0.25 }}
+              >
                 <FlagIcon sx={{ fontSize: 14 }} />
               </IconButton>
             </Tooltip>
@@ -593,7 +587,7 @@ function MessageRow(props: {
       </Box>
     </Box>
   );
-}
+});
 
 /**
  * 聊天主面板：历史（分页加载）+ 实时收发 + 已读回执 + 正在输入 +
@@ -617,6 +611,8 @@ export default function ChatPanel(props: {
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [replying, setReplying] = useState<ChatMessageView | null>(null);
+  /** 待二次确认的举报目标 messageId（应用内弹窗，替代原生 window.confirm）。 */
+  const [reportTarget, setReportTarget] = useState<string | null>(null);
   const [emojiAnchor, setEmojiAnchor] = useState<HTMLElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const cursors = messages.readCursors[conversation.key] ?? {};
@@ -664,12 +660,25 @@ export default function ChatPanel(props: {
         ? '我'
         : uid;
 
-  /** 解析被引用父消息为展示面；不存在或已撤回 → null（显示不可见兜底）。 */
-  const quotedSummary = (id: string): { senderName: string; content: string } | null => {
-    const src = list.find((m) => m.messageId === id);
-    if (!src || src.deleted) return null;
-    return { senderName: displayName(src.senderId), content: src.content };
-  };
+  // 引用块展示面按父消息 id 缓存（memo 依赖）：list/channel/api/selfId 不变时
+  // 结果对象引用稳定，MessageRow 的 memo 才能跳过无关重渲染。不存在或已撤回
+  // → null（显示不可见兜底）。displayName 读的是 channel/selfId/api 三个面，
+  // 已全部列入依赖。
+  const quotedById = useMemo(() => {
+    const map = new Map<string, { senderName: string; content: string } | null>();
+    for (const m of list) {
+      const pid = m.replyToMessageId;
+      if (!pid || map.has(pid)) continue;
+      const src = list.find((x) => x.messageId === pid);
+      map.set(
+        pid,
+        !src || src.deleted
+          ? null
+          : { senderName: displayName(src.senderId), content: src.content },
+      );
+    }
+    return map;
+  }, [list, channel, selfId, api]);
 
   const send = async (): Promise<void> => {
     const text = draft.trim();
@@ -683,6 +692,20 @@ export default function ChatPanel(props: {
       setError(err instanceof Error ? err.message : String(err));
     }
   };
+
+  // 稳定回调（配合 MessageRow 的 memo）：行内按钮带 messageId 回调上来，
+  // 这里经 listRef 解析当前消息，函数引用不随渲染重建。
+  const listRef = useRef(list);
+  listRef.current = list;
+  const handleReply = useCallback((messageId: string) => {
+    const target = listRef.current.find((m) => m.messageId === messageId);
+    if (target && !target.deleted) setReplying(target);
+  }, []);
+  const handleReport = useCallback((messageId: string) => setReportTarget(messageId), []);
+  const reportConfirm = useCallback(() => {
+    if (reportTarget) void api.reportMessage(reportTarget);
+    setReportTarget(null);
+  }, [api, reportTarget]);
 
   const onDraftKeyDown = (event: ReactKeyboardEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
     if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
@@ -768,7 +791,7 @@ export default function ChatPanel(props: {
             queuedOffline={m.queuedOffline}
             edited={m.edited}
             readByPeer={peerRead}
-            quoted={m.replyToMessageId ? quotedSummary(m.replyToMessageId) : undefined}
+            quoted={m.replyToMessageId ? (quotedById.get(m.replyToMessageId) ?? null) : undefined}
             replyToMessageId={m.replyToMessageId}
             coord={m.coord}
             item={m.deleted ? undefined : m.item}
@@ -778,10 +801,8 @@ export default function ChatPanel(props: {
             guildRecruit={m.deleted ? undefined : m.guildRecruit}
             partyRecruit={m.deleted ? undefined : m.partyRecruit}
             senderKind={m.senderKind}
-            onReply={m.deleted ? undefined : () => setReplying(m)}
-            onReport={m.deleted || m.senderId === selfId ? undefined : () => {
-              if (window.confirm('举报这条消息?')) void api.reportMessage(m.messageId);
-            }}
+            onReply={m.deleted ? undefined : handleReply}
+            onReport={m.deleted || m.senderId === selfId ? undefined : handleReport}
           />
         ))}
         <div ref={bottomRef} />
@@ -798,6 +819,24 @@ export default function ChatPanel(props: {
           {error}
         </Typography>
       ) : null}
+
+      {/* 举报二次确认（UI 审计 P3）：应用内弹窗替代原生 window.confirm，
+          视觉与自研对话框一致，Webview 行为不再因平台而异。 */}
+      <Dialog
+        open={reportTarget !== null}
+        onClose={() => setReportTarget(null)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>举报消息</DialogTitle>
+        <DialogContent>举报这条消息?</DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReportTarget(null)}>取消</Button>
+          <Button color="error" data-testid="report-confirm" onClick={reportConfirm}>
+            举报
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Divider />
       <Box sx={{ p: 1.5, bgcolor: 'background.paper' }}>
