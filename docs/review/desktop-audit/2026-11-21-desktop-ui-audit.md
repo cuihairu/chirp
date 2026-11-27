@@ -137,3 +137,30 @@ Tauri 在 Linux 走 WebKitGTK、在 macOS 走 WKWebView，两者都不暴露 CDP
 3. **[P3] `$impeccable optimize`**：`MessageRow` memo + 表情面板条件挂载。
 
 修复 1/2/3（P1 两条 + 输入标签）已当场落地并通过桌面端 typecheck 与 62 例单测。
+
+## 后续命令落地记录（2026-11-27 ✅ `36fd02b`）
+
+1. **[P2] hex 收令牌（建议 1 + 第 4 条）**：自己气泡文字 `#08130f` 改引 `primary.contrastText`
+   （desktop 主题显式钉值，换主色时主题一处跟随，与 web_companion 既有的同款令牌口径对齐）；
+   失败描边 `#e57373` 改挂 `error.main`（与全 app 既有 `color="error"` 语义面一致，实色随主题
+   落到 dark 缺省 `#f44336`）；品质/稀有度两组色表抽到 `apps/desktop/src/ui/rich_colors.ts`，
+   web_companion 同步抽 `apps/web_companion/src/components/rich_colors.ts` 同文模块
+   （MessageBubble 改 import，两 app 不共享 UI 代码、同文约定不变）。
+2. **[P3] 按钮文案（建议 2 + 第 5 条）**：`SearchDialog` 底部「取消」→「关闭」（纯关闭用途，
+   与 Shell 系口径一致）；`Dialogs.tsx` 内既有「取消」属动作确认流的取消，按用途分区保留。
+3. **[P3] memo（建议 3 前半 + 第 7 条）**：`MessageRow` 包 `React.memo`；`onReply`/`onReport`
+   改为带 messageId 的稳定 `useCallback`（经 `listRef` 解析当前消息，引用不随渲染重建），
+   引用块展示面按父消息 id `useMemo` 缓存（依赖 list/channel/selfId/api）——三个不稳定引用
+   全部钉住后 memo 才真正生效。stores 里未被改动的消息对象引用本就稳定（更新是
+   `list.map` 按 id 替换），无关 store 变化（未读/在线/presence）不再重算整条列表。
+   **建议 3 后半「表情 Popover 常驻」为误报，不动**：MUI Popover 基于 Modal，`keepMounted`
+   默认 false（`Modal.d.ts` `@default false` 实测核对），关闭时 children 已卸载，不存在
+   「列表内每条 emoji 按钮都在 DOM 里」，无需再加条件渲染。
+4. **[P3] window.confirm（第 9 条）**：举报二次确认改为应用内 Dialog（标题「举报消息」，
+   取消/举报两键，确认键 `data-testid="report-confirm"`、`color="error"`），视觉与自研
+   对话框一致，Webview 行为不再因平台而异。
+5. **[P3] 图标按钮 26px（第 6 条）**：WCAG 2.5.8 目标下限为 24×24 CSS px，实测 26px 已
+   达标，触屏平板属增强项，不动。
+
+门禁：desktop typecheck + vitest 62/62 绿；web_companion typecheck + eslint 绿 +
+vitest 363/363 绿。
