@@ -2,10 +2,10 @@ import ChirpAppCore
 import ChirpProtos
 import SwiftUI
 
-/// 群设置面板(P4e,web GroupSettingsDialog 对齐):添加成员(INVITE
-/// 直接入群)、成员清单(群主标识、群主可移出他人、MODERATOR+ 长按
-/// 禁言/改群昵称)、退出群组(确认后退,sessionDropped 事件把聊天面
-/// 弹回列表)。sheet 形态,完成即关。
+/// 群设置面板(10 稿 token 化,P4e,web GroupSettingsDialog 对齐):添加
+/// 成员(INVITE 直接入群)、成员清单(群主标识、群主可移出他人、
+/// MODERATOR+ 长按禁言/改群昵称)、退出群组(确认后退,sessionDropped
+/// 事件把聊天面弹回列表)。sheet 形态,完成即关。
 struct GroupSettingsView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
@@ -42,38 +42,18 @@ struct GroupSettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("添加成员") {
-                    HStack {
-                        TextField("成员用户 ID", text: $inviteTarget)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                        Button("添加") {
-                            let target = inviteTarget
-                            inviteTarget = ""
-                            model.inviteToGroupTapped(
-                                groupId: groupId, targetUserId: target)
-                        }
-                        .disabled(inviteTarget.trimmingCharacters(in: .whitespaces).isEmpty)
-                    }
-                }
-                Section("成员") {
-                    if let notice = model.groupPanelNotice {
-                        Text(notice)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    ForEach(model.groupMembers, id: \.userID) { member in
-                        memberRow(member)
-                    }
-                }
-                Section {
-                    Button("退出群组", role: .destructive) {
-                        confirmLeave = true
-                    }
-                }
+                inviteSection
+                membersSection
+                leaveSection
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(Theme.bg)
             .navigationTitle("群组设置:\(model.groupName(groupId))")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Theme.bg, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
@@ -137,41 +117,101 @@ struct GroupSettingsView: View {
         }
     }
 
+    // ---- 添加成员 -------------------------------------------------------------
+
+    private var inviteSection: some View {
+        Section {
+            HStack(spacing: 8) {
+                TextField("成员用户 ID", text: $inviteTarget)
+                    .font(Theme.fontBody)
+                    .foregroundStyle(Theme.textPrimary)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .chirpField()
+                Button {
+                    let target = inviteTarget
+                    inviteTarget = ""
+                    model.inviteToGroupTapped(
+                        groupId: groupId, targetUserId: target)
+                } label: {
+                    Text("添加")
+                        .frame(width: 64)
+                }
+                .buttonStyle(ChirpButtonStyle(kind: .ghost))
+                .disabled(inviteTarget.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+        } header: {
+            sectionHeader("添加成员")
+        }
+    }
+
+    // ---- 成员 ----------------------------------------------------------------
+
+    private var membersSection: some View {
+        Section {
+            if let notice = model.groupPanelNotice {
+                Text(notice)
+                    .font(Theme.fontSecondary)
+                    .foregroundStyle(Theme.textTertiary)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
+            ForEach(model.groupMembers, id: \.userID) { member in
+                memberRow(member)
+                    .listRowBackground(Theme.surface)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                    .listRowSeparator(.hidden)
+            }
+        } header: {
+            sectionHeader("成员")
+        }
+    }
+
     private func memberRow(_ member: Chirp_Chat_GroupMember) -> some View {
-        HStack {
+        HStack(spacing: 12) {
+            AvatarView(label: displayName(member), size: Theme.avatarSm)
             VStack(alignment: .leading, spacing: 2) {
-                // 显示名:群昵称 > 用户名 > 用户 ID(web displayName 同口径)。
-                Text(member.alias.isEmpty
-                    ? (member.username.isEmpty ? member.userID : member.username)
-                    : member.alias)
-                if member.userID == ownerId {
-                    Text("群主")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    // 显示名:群昵称 > 用户名 > 用户 ID(web displayName 同口径)。
+                    Text(displayName(member))
+                        .font(Theme.fontBodySemibold)
+                        .foregroundStyle(Theme.textPrimary)
+                        .lineLimit(1)
+                    if member.userID == ownerId {
+                        ChipText(text: "群主", tone: .game)
+                    }
                 }
                 if !member.alias.isEmpty {
                     // 设了群昵称时副行回显真实身份(web secondary 同款)。
                     Text(member.username.isEmpty ? member.userID : member.username)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.fontMeta)
+                        .foregroundStyle(Theme.textTertiary)
+                        .lineLimit(1)
                 }
             }
-            Spacer()
+            Spacer(minLength: 8)
             if isMuted(member) {
                 // 徽章只反映服务端 muted_until_ts,不落本地状态。
-                Text("已禁言")
-                    .font(.caption2)
-                    .foregroundStyle(.red)
+                ChipText(text: "已禁言", tone: .warn)
             }
             // 只有群主能移出成员,且不指向自己(web 同款)。
             if amOwner && member.userID != model.currentUserId {
-                Button("移出", role: .destructive) {
+                Button {
                     model.kickGroupMemberTapped(
                         groupId: groupId, targetUserId: member.userID)
+                } label: {
+                    Text("移出")
                 }
-                .font(.subheadline)
+                .font(Theme.fontSecondary)
+                .foregroundStyle(Theme.danger)
+                .buttonStyle(.plain)
             }
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .contentShape(Rectangle())
         // 长按菜单:改群昵称(本人或 MODERATOR+,web/harmony 同门);禁言
         // /解禁仅 MODERATOR+ 且不指向自己——解禁直接走 seconds=0。
         .contextMenu {
@@ -201,6 +241,35 @@ struct GroupSettingsView: View {
                 }
             }
         }
+    }
+
+    /// 显示名口径与旧版一致:群昵称 > 用户名 > 用户 ID。
+    private func displayName(_ member: Chirp_Chat_GroupMember) -> String {
+        member.alias.isEmpty
+            ? (member.username.isEmpty ? member.userID : member.username)
+            : member.alias
+    }
+
+    // ---- 退出 ----------------------------------------------------------------
+
+    private var leaveSection: some View {
+        Section {
+            Button {
+                confirmLeave = true
+            } label: {
+                Text("退出群组")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(ChirpButtonStyle(kind: .danger))
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+        }
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        SectionLabel(text: title)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 12, leading: 2, bottom: -2, trailing: 0))
     }
 }
 
