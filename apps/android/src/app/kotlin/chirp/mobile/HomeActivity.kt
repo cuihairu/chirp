@@ -43,6 +43,7 @@ class HomeActivity : AppCompatActivity() {
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_chat -> show(SessionsFragment())
+                R.id.nav_friends -> show(FriendsFragment())
                 else -> show(StubTabFragment())
             }
             true

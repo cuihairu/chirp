@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Presence dot ring (design 03): bg-colored outline separates the dot from
+     the avatar; dot color is tinted in code from the real presence status. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <solid android:color="@color/chirp_online" />
+    <stroke android:width="2dp" android:color="@color/chirp_surface" />
+</shape>

@@ -41,4 +41,32 @@
     <string name="chat_send_cd">发送</string>
     <string name="chat_error_send_failed">发送失败,请稍后再试</string>
     <string name="chat_error_queued">已加入离线队列,重连后自动发送</string>
+
+    <!-- Friends tab (design 03) -->
+    <string name="friends_add">添加</string>
+    <string name="friends_game">游戏好友</string>
+    <string name="friends_message">发消息</string>
+    <string name="friends_empty">还没有好友</string>
+    <string name="friends_requests">好友请求 (%1$d)</string>
+    <string name="friends_list">好友 (%1$d)</string>
+    <string name="friends_pending_out">等待对方同意</string>
+    <string name="friends_request_note">请求加你为好友</string>
+    <string name="friends_accept">接受</string>
+    <string name="friends_decline">拒绝</string>
+    <string name="friends_waiting">待同意</string>
+    <string name="friends_status_offline">离线</string>
+    <string name="friends_status_online">在线</string>
+    <string name="friends_status_away">离开</string>
+    <string name="friends_status_dnd">勿扰</string>
+    <string name="friends_status_in_game">对局中</string>
+    <string name="friends_add_title">添加好友</string>
+    <string name="friends_add_target">对方 user id</string>
+    <string name="friends_add_send">发送请求</string>
+    <string name="friends_add_done">请求已发送</string>
+    <string name="friends_add_failed">添加失败 (%1$s)</string>
+    <string name="friends_action_failed">操作失败 (%1$s)</string>
+    <string name="friends_load_failed">好友列表加载失败</string>
+    <string name="friends_game_no_binding">游戏在线状态未绑定:在游戏内绑定后,好友能看到你的对局状态</string>
+    <string name="friends_game_enabled">游戏在线状态已开启</string>
+    <string name="friends_game_disabled">游戏在线状态已关闭</string>
 </resources>

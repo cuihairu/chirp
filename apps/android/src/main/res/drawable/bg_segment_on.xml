@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Selected segmented control: accent capsule, matching the prototype. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/chirp_accent" />
+    <corners android:radius="@dimen/radius_row" />
+</shape>

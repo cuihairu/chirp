@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Segmented control track (design 03): bordered surface-2 capsule row. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/chirp_surface2" />
+    <stroke android:width="1dp" android:color="@color/chirp_border" />
+    <corners android:radius="@dimen/radius_row" />
+</shape>
