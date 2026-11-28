@@ -35,6 +35,10 @@
     <string name="section_dm">私聊</string>
     <string name="section_group">群聊</string>
     <string name="sessions_empty">还没有会话</string>
+    <string name="sessions_new_chat">新的私聊</string>
+    <string name="sessions_new_group">新建群组</string>
+    <string name="sessions_chat_target">对方 user id</string>
+    <string name="sessions_chat_title">新的私聊</string>
 
     <!-- Chat window (design 02) -->
     <string name="chat_back_cd">返回</string>
@@ -69,4 +73,44 @@
     <string name="friends_game_no_binding">游戏在线状态未绑定:在游戏内绑定后,好友能看到你的对局状态</string>
     <string name="friends_game_enabled">游戏在线状态已开启</string>
     <string name="friends_game_disabled">游戏在线状态已关闭</string>
+
+    <!-- Create group (design 07) -->
+    <string name="group_create_title">新建群组</string>
+    <string name="group_name_label">群名称</string>
+    <string name="group_name_hint">给群组起个名字</string>
+    <string name="group_desc_label">群描述 (可选)</string>
+    <string name="group_desc_hint">这个群是做什么的</string>
+    <string name="group_ttl_label">有效期</string>
+    <string name="group_ttl_forever">永久</string>
+    <string name="group_ttl_day">1 天</string>
+    <string name="group_ttl_week">7 天</string>
+    <string name="group_ttl_month">30 天</string>
+    <string name="group_members_label">初始成员 (可选)</string>
+    <string name="group_member_hint">输入用户 ID</string>
+    <string name="group_add_member">添加</string>
+    <string name="group_create_btn">创建群组</string>
+    <string name="group_error_name">先填写群名称</string>
+    <string name="group_error_create">创建失败 (%1$s)</string>
+    <string name="group_created">群组已创建,ID 已复制 (%1$s)</string>
+
+    <!-- Group settings (design 10) -->
+    <string name="group_settings_title">群设置</string>
+    <string name="group_settings_info">群信息</string>
+    <string name="group_settings_members">成员 (%1$d)</string>
+    <string name="group_settings_alias">我的群昵称</string>
+    <string name="group_settings_alias_hint">未设置</string>
+    <string name="group_settings_owner">群主</string>
+    <string name="group_settings_muted_until">禁言至 %1$s</string>
+    <string name="group_settings_admin_actions">管理</string>
+    <string name="group_settings_add_member">添加成员</string>
+    <string name="group_settings_invite">邀请</string>
+    <string name="group_settings_kick">移出群组</string>
+    <string name="group_settings_leave">退出群组</string>
+    <string name="group_settings_disband">解散群组</string>
+    <string name="group_settings_disband_unavailable">协议面暂无群解散能力,该操作不可用</string>
+    <string name="group_settings_empty">没有成员数据</string>
+    <string name="group_settings_action_failed">操作失败 (%1$s)</string>
+    <string name="group_settings_alias_title">我的群昵称</string>
+    <string name="group_settings_alias_saved">群昵称已更新</string>
+    <string name="group_settings_mute_title">禁言时长 (秒,0 = 解除)</string>
 </resources>

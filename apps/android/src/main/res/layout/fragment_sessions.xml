@@ -1,13 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Sessions list (design 01): grouped DM/group conversations. -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Sessions list (design 01): primary actions row (新的私聊/新建群组),
+     grouped DM/group conversations, empty state. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingEnd="16dp"
+        android:paddingStart="16dp"
+        android:paddingTop="4dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/new_chat_btn"
+            style="@style/Widget.Chirp.Button"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:text="@string/sessions_new_chat" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/new_group_btn"
+            style="@style/Widget.Chirp.Button.Ghost"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:text="@string/sessions_new_group" />
+    </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/sessions_list"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:clipToPadding="false"
         android:paddingBottom="8dp"
         android:scrollbars="vertical" />
@@ -22,4 +52,4 @@
         android:textSize="13sp"
         android:visibility="gone" />
 
-</FrameLayout>
+</LinearLayout>

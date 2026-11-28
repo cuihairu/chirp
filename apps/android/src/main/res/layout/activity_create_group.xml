@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Create group (design 07): name, description, TTL segment, initial
+     member chips with an id entry row, primary create pill. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:scrollbars="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="24dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/topbar_height"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/back_btn"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/chat_back_cd"
+                android:src="@drawable/ic_back"
+                app:tint="@color/chirp_text_primary"
+                xmlns:app="http://schemas.android.com/apk/res-auto" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/group_create_title"
+                android:textColor="@color/chirp_text_primary"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="@string/group_name_label"
+            android:textColor="@color/chirp_text_secondary"
+            android:textSize="12sp" />
+
+        <EditText
+            android:id="@+id/group_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/bg_input"
+            android:hint="@string/group_name_hint"
+            android:importantForAutofill="no"
+            android:maxLines="1"
+            android:padding="12dp"
+            android:textColor="@color/chirp_text_primary"
+            android:textColorHint="@color/chirp_text_tertiary"
+            android:textSize="14sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="@string/group_desc_label"
+            android:textColor="@color/chirp_text_secondary"
+            android:textSize="12sp" />
+
+        <EditText
+            android:id="@+id/group_desc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/bg_input"
+            android:hint="@string/group_desc_hint"
+            android:importantForAutofill="no"
+            android:maxLines="3"
+            android:padding="12dp"
+            android:textColor="@color/chirp_text_primary"
+            android:textColorHint="@color/chirp_text_tertiary"
+            android:textSize="14sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="@string/group_ttl_label"
+            android:textColor="@color/chirp_text_secondary"
+            android:textSize="12sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/bg_segment_track"
+            android:orientation="horizontal"
+            android:padding="3dp">
+
+            <android.widget.Button
+                android:id="@+id/ttl_forever"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_segment_on"
+                android:text="@string/group_ttl_forever"
+                android:textColor="@android:color/white"
+                android:textSize="12sp" />
+
+            <android.widget.Button
+                android:id="@+id/ttl_day"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:text="@string/group_ttl_day"
+                android:textColor="@color/chirp_text_secondary"
+                android:textSize="12sp" />
+
+            <android.widget.Button
+                android:id="@+id/ttl_week"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:text="@string/group_ttl_week"
+                android:textColor="@color/chirp_text_secondary"
+                android:textSize="12sp" />
+
+            <android.widget.Button
+                android:id="@+id/ttl_month"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:text="@string/group_ttl_month"
+                android:textColor="@color/chirp_text_secondary"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="@string/group_members_label"
+            android:textColor="@color/chirp_text_secondary"
+            android:textSize="12sp" />
+
+        <LinearLayout
+            android:id="@+id/member_chips"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/member_input"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/bg_input"
+                android:hint="@string/group_member_hint"
+                android:importantForAutofill="no"
+                android:maxLines="1"
+                android:padding="12dp"
+                android:textColor="@color/chirp_text_primary"
+                android:textColorHint="@color/chirp_text_tertiary"
+                android:textSize="14sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/add_member_btn"
+                style="@style/Widget.Chirp.Button.Ghost"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
+                android:minWidth="0dp"
+                android:text="@string/group_add_member" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/group_error"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textColor="@color/chirp_danger"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/create_btn"
+            style="@style/Widget.Chirp.Button"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="20dp"
+            android:text="@string/group_create_btn" />
+    </LinearLayout>
+
+</ScrollView>

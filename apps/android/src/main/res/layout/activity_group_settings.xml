@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Group settings (design 10, owner/privileged view): group info, my alias,
+     member list (owner/muted chips + per-member actions), admin action row.
+     The disband key renders disabled with an honest note — the protocol has
+     no group-disband request. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:scrollbars="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="24dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/topbar_height"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/back_btn"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/chat_back_cd"
+                android:src="@drawable/ic_back"
+                app:tint="@color/chirp_text_primary"
+                xmlns:app="http://schemas.android.com/apk/res-auto" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/group_settings_title"
+                android:textColor="@color/chirp_text_primary"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <chirp.mobile.AvatarView
+            android:id="@+id/group_avatar"
+            android:layout_width="@dimen/avatar_lg"
+            android:layout_height="@dimen/avatar_lg"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:importantForAccessibility="no" />
+
+        <TextView
+            android:id="@+id/group_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:textColor="@color/chirp_text_primary"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/group_meta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center"
+            android:textColor="@color/chirp_text_tertiary"
+            android:textSize="12sp" />
+
+        <!-- My alias -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:background="@color/chirp_surface"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="14dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/group_settings_alias"
+                android:textColor="@color/chirp_text_primary"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/my_alias"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:textColor="@color/chirp_text_secondary"
+                android:textSize="13sp" />
+
+            <ImageButton
+                android:id="@+id/edit_alias_btn"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/group_settings_alias_title"
+                android:src="@drawable/ic_edit"
+                app:tint="@color/chirp_text_secondary"
+                xmlns:app="http://schemas.android.com/apk/res-auto" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/members_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:letterSpacing="0.06"
+            android:textColor="@color/chirp_text_tertiary"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/members_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:nestedScrollingEnabled="false" />
+
+        <!-- Admin row (design 10): invite + leave; disband disabled honestly. -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:letterSpacing="0.06"
+            android:text="@string/group_settings_admin_actions"
+            android:textColor="@color/chirp_text_tertiary"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/invite_btn"
+                style="@style/Widget.Chirp.Button.Ghost"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:text="@string/group_settings_add_member" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/leave_btn"
+                style="@style/Widget.Chirp.Button.Danger"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:text="@string/group_settings_leave" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/disband_btn"
+            style="@style/Widget.Chirp.Button.Danger"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="10dp"
+            android:enabled="false"
+            android:alpha="0.5"
+            android:text="@string/group_settings_disband" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/group_settings_disband_unavailable"
+            android:textColor="@color/chirp_text_tertiary"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+</ScrollView>

@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -52,10 +53,35 @@ class SessionsFragment : Fragment() {
                 .putExtra(ChatActivity.EXTRA_TITLE, conv.title)
             startActivity(intent)
         }
+        binding?.newChatBtn?.setOnClickListener { showNewChatDialog() }
+        binding?.newGroupBtn?.setOnClickListener {
+            startActivity(Intent(requireContext(), CreateGroupActivity::class.java))
+        }
         refresh()
         removeListener = chirpSession.addListener(object : ChirpSession.Listener {
             override fun onConversationsChanged() = refresh()
         })
+    }
+
+    /** 新的私聊: by-id DM, same sorted-pair channel id the registry keys on. */
+    private fun showNewChatDialog() {
+        val input = textField(requireContext(), getString(R.string.sessions_chat_target), "")
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.sessions_chat_title)
+            .setView(input)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val target = input.text.toString().trim()
+                val self = chirpSession.selfId
+                if (target.isEmpty() || self == null) return@setPositiveButton
+                startActivity(
+                    Intent(requireContext(), ChatActivity::class.java)
+                        .putExtra(ChatActivity.EXTRA_CHANNEL_ID, listOf(self, target).sorted().joinToString("|"))
+                        .putExtra(ChatActivity.EXTRA_IS_GROUP, false)
+                        .putExtra(ChatActivity.EXTRA_TITLE, target),
+                )
+            }
+            .show()
     }
 
     private fun refresh() {

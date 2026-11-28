@@ -1,7 +1,9 @@
 package chirp.mobile
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -54,6 +56,18 @@ class ChatActivity : AppCompatActivity() {
         binding.chatTitle.text = conversationTitle
         binding.chatAvatar.bind(conversationTitle)
         binding.backBtn.setOnClickListener { finish() }
+        if (isGroup) {
+            // Group header opens the settings screen (design 10 entry point).
+            val open = View.OnClickListener {
+                startActivity(
+                    Intent(this, GroupSettingsActivity::class.java)
+                        .putExtra(GroupSettingsActivity.EXTRA_GROUP_ID, channelId)
+                        .putExtra(GroupSettingsActivity.EXTRA_GROUP_NAME, conversationTitle),
+                )
+            }
+            binding.chatTitle.setOnClickListener(open)
+            binding.chatAvatar.setOnClickListener(open)
+        }
 
         val layout = LinearLayoutManager(this)
         layout.stackFromEnd = true // newest at the bottom, list opens scrolled
