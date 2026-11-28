@@ -9,10 +9,8 @@ import chirp.mobile.protocol.ConnState
 
 /**
  * Home shell (design 01): top bar with brand mark, self id and connection
- * subtitle, five-tab bottom navigation over a fragment host. Only the
- * sessions tab carries real content so far; the other four show an interim
- * 建设中 state until their commits land (组队/语音 share one screen per the
- * design and arrive together).
+ * subtitle, five-tab bottom navigation over a fragment host. 组队/语音 share
+ * one screen per the design; every tab carries its real screen now.
  */
 class HomeActivity : AppCompatActivity() {
 
@@ -46,7 +44,7 @@ class HomeActivity : AppCompatActivity() {
                 R.id.nav_friends -> show(FriendsFragment())
                 R.id.nav_party -> show(PartyVoiceFragment.newInstance(voice = false))
                 R.id.nav_voice -> show(PartyVoiceFragment.newInstance(voice = true))
-                else -> show(StubTabFragment()) // 设备 tab lands next commit
+                else -> show(DevicesFragment())
             }
             true
         }

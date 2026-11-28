@@ -31,7 +31,6 @@
     <string name="tab_party">组队</string>
     <string name="tab_voice">语音</string>
     <string name="tab_devices">设备</string>
-    <string name="tab_stub">建设中</string>
     <string name="section_dm">私聊</string>
     <string name="section_group">群聊</string>
     <string name="sessions_empty">还没有会话</string>
@@ -146,4 +145,33 @@
     <string name="voice_state_deafened">拒听中</string>
     <string name="voice_state_joining">连接中</string>
     <string name="action_failed">操作失败 (%1$s)</string>
+
+    <!-- Devices tab (design 09) -->
+    <string name="devices_title">设备</string>
+    <string name="devices_self_section">本设备</string>
+    <string name="devices_others_section">在线设备</string>
+    <string name="devices_pref_section">偏好</string>
+    <string name="devices_push_on">推送已注册</string>
+    <string name="devices_push_off">推送未注册</string>
+    <string name="devices_not_registered_hint">推送注册未完成,离线消息暂不会投递到本端</string>
+    <string name="devices_registered_at">注册于 %1$s</string>
+    <string name="devices_time_unknown">时间未知</string>
+    <string name="devices_online">在线</string>
+    <string name="devices_offline">离线</string>
+    <string name="devices_platform_fmt">· %1$s</string>
+    <string name="device_platform_self">· android</string>
+    <string name="devices_row_preview">%1$s · 注册于 %2$s</string>
+    <string name="devices_empty">当前没有其他在线端</string>
+    <string name="devices_service_unavailable">设备服务未连接</string>
+    <string name="devices_remove">移除</string>
+    <string name="devices_remove_title">移除 %1$s</string>
+    <string name="devices_remove_confirm">移除会注销该端推送并顶掉它的会话,被移除端停止重连,确定?</string>
+    <string name="devices_removed">已移除该设备</string>
+    <string name="devices_action_failed">操作失败 (%1$s)</string>
+    <string name="devices_takeover_note">同类型端新登录会顶掉旧会话——踢线是终态,被顶端停止重连并弹回登录页。</string>
+    <string name="devices_push_note">离线消息会推送到已注册设备(当前为日志传输,真实厂商推送待接入)。</string>
+    <string name="devices_pref_name">游戏在线状态</string>
+    <string name="devices_pref_desc">开启后好友可见你正在玩的游戏,私聊消息同步投递进游戏内</string>
+    <string name="devices_pref_saved">设置已保存</string>
+    <string name="devices_pref_failed">设置未保存,请稍后重试 (%1$s)</string>
 </resources>

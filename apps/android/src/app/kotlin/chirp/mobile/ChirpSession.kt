@@ -92,6 +92,11 @@ class ChirpSession(private val context: Context) {
         return fresh
     }
 
+    /** Device id this install registers push under; the device screen
+     *  matches GET_USER_DEVICES rows against it for the self row. */
+    val currentDeviceId: String
+        get() = deviceId()
+
     fun login(host: String, userId: String): CompletableFuture<Common.ErrorCode> {
         pipeline?.stop()
         conn?.disconnect()
