@@ -27,8 +27,12 @@ struct ChatView: View {
             replyPreview
             inputRow
         }
+        .background(Theme.bg)
         .navigationTitle(model.chatTitle(forKey: channelKey))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Theme.bg, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             if isGroup {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -60,7 +64,7 @@ struct ChatView: View {
                                 ProgressView()
                             } else {
                                 Text("加载更早的消息")
-                                    .font(.subheadline)
+                                    .font(Theme.fontSecondary)
                             }
                         }
                         .padding(.vertical, 6)
@@ -71,8 +75,8 @@ struct ChatView: View {
                             ProgressView().padding(.top, 40)
                         } else {
                             Text("暂无消息,发送第一条吧")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .font(Theme.fontSecondary)
+                                .foregroundStyle(Theme.textTertiary)
                                 .padding(.top, 40)
                         }
                     }
@@ -136,17 +140,17 @@ struct ChatView: View {
             if let quoted = quotedSummary(id: message.replyToMessageID) {
                 HStack(alignment: .top, spacing: 5) {
                     Rectangle()
-                        .fill(mine ? Color.accentColor : Color.secondary.opacity(0.6))
+                        .fill(mine ? Theme.accentSoft : Theme.textTertiary)
                         .frame(width: 2.5)
                     VStack(alignment: .leading, spacing: 1) {
                         Text("回复 · \(quoted.senderName)")
-                            .font(.caption2)
+                            .font(Theme.fontMeta)
                             .fontWeight(.semibold)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.textSecondary)
                         Text(quoted.content)
-                            .font(.caption2)
+                            .font(Theme.fontMeta)
                             .lineLimit(2)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.textSecondary)
                     }
                     Spacer(minLength: 0)
                 }
@@ -154,12 +158,25 @@ struct ChatView: View {
                 .padding(.horizontal, 8)
             } else {
                 Text("原消息已删除或不可见")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.fontMeta)
+                    .foregroundStyle(Theme.textTertiary)
                     .frame(maxWidth: 260, alignment: .leading)
                     .padding(.horizontal, 8)
             }
         }
+    }
+
+    /// 气泡外形(02 稿):18 圆角、自己/对方各自的底角收 6 做尾角。
+    private func bubbleShape(mine: Bool) -> some Shape {
+        UnevenRoundedRectangle(
+            cornerRadii: RectangleCornerRadii(
+                topLeading: 18,
+                bottomLeading: mine ? 18 : 6,
+                bottomTrailing: mine ? 6 : 18,
+                topTrailing: 18
+            ),
+            style: .continuous
+        )
     }
 
     private func bubble(_ message: Chirp_Chat_ChatMessage) -> some View {
@@ -167,19 +184,21 @@ struct ChatView: View {
         return VStack(alignment: mine ? .trailing : .leading, spacing: 2) {
             // 群消息的非本人气泡带发送者署名行(web 同款;DM 里是显然的)。
             if isGroup && !mine && !message.senderID.isEmpty {
-                Text(message.senderID)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                Text(displayName(message.senderID))
+                    .font(Theme.fontMeta)
+                    .foregroundStyle(Theme.textTertiary)
             }
             quotedBlock(message, mine: mine)
             HStack {
                 if mine { Spacer(minLength: 48) }
                 Text(String(data: message.content, encoding: .utf8) ?? "")
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                    .font(Theme.fontBody)
+                    .foregroundStyle(mine ? Color.white : Theme.textPrimary)
+                    .padding(.horizontal, 13)
+                    .padding(.vertical, 9)
                     .background(
-                        mine ? Color.accentColor.opacity(0.28) : Color(.secondarySystemBackground),
-                        in: RoundedRectangle(cornerRadius: 14)
+                        mine ? Theme.accentStrong : Theme.surface2,
+                        in: bubbleShape(mine: mine)
                     )
                 if !mine { Spacer(minLength: 48) }
             }
@@ -222,15 +241,12 @@ struct ChatView: View {
                     model.toggleReaction(messageId: messageId, emoji: tally.emoji)
                 } label: {
                     Text("\(tally.emoji) \(tally.count)")
-                        .font(.caption2)
+                        .font(Theme.fontChip)
+                        .foregroundStyle(tally.isMine ? Theme.accentSoft : Theme.textSecondary)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
-                        .background(
-                            tally.isMine
-                                ? Color.accentColor.opacity(0.35)
-                                : Color(.secondarySystemBackground),
-                            in: Capsule()
-                        )
+                        .background(tally.isMine ? Theme.accentDim : Theme.surface2, in: Capsule())
+                        .overlay(Capsule().strokeBorder(Theme.accent.opacity(0.4), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
             }
@@ -244,8 +260,8 @@ struct ChatView: View {
             if let first = model.typingPeers.first {
                 HStack(spacing: 4) {
                     Text("\(first) 正在输入…")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.fontCaption)
+                        .foregroundStyle(Theme.textSecondary)
                     Spacer()
                 }
                 .padding(.horizontal, 12)
@@ -262,21 +278,22 @@ struct ChatView: View {
             let quoted = quotedSummary(id: replying.messageID)
             HStack(alignment: .top, spacing: 6) {
                 Rectangle()
-                    .fill(Color.accentColor)
+                    .fill(Theme.accent)
                     .frame(width: 2.5)
                 VStack(alignment: .leading, spacing: 1) {
                     Text("回复 · \(quoted?.senderName ?? displayName(replying.senderID))")
-                        .font(.caption2)
+                        .font(Theme.fontMeta)
                         .fontWeight(.semibold)
+                        .foregroundStyle(Theme.textSecondary)
                     if let quoted {
                         Text(quoted.content)
-                            .font(.caption2)
+                            .font(Theme.fontMeta)
                             .lineLimit(1)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.textSecondary)
                     } else {
                         Text("原消息已删除或不可见")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .font(Theme.fontMeta)
+                            .foregroundStyle(Theme.textTertiary)
                     }
                 }
                 Spacer()
@@ -284,29 +301,63 @@ struct ChatView: View {
                     self.replying = nil
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.caption2)
+                        .font(Theme.fontMeta)
+                        .foregroundStyle(Theme.textSecondary)
                 }
                 .accessibilityLabel("取消回复")
             }
             .padding(.horizontal, 12)
-            .padding(.bottom, 4)
+            .padding(.top, 8)
+            // 引用条并入底部输入坞(02 稿 inputbar):surface 连片,顶线压条。
+            .background(Theme.surface)
+            .overlay(alignment: .top) {
+                Rectangle().fill(Theme.borderSoft).frame(height: 1)
+            }
         }
     }
 
+    private var canSend: Bool {
+        !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// 输入坞(02 稿 inputbar):surface 连片 + border-soft 顶线,字段
+    /// 40 高胶囊(surface-2/border),发送 40 圆钮 accent+白纸飞机。
     private var inputRow: some View {
         HStack(spacing: 8) {
             TextField("消息", text: $draft, axis: .vertical)
-                .textFieldStyle(.roundedBorder)
+                .font(Theme.fontBody)
+                .foregroundStyle(Theme.textPrimary)
                 .lineLimit(1...4)
                 .focused($inputFocused)
                 .onSubmit(send)
                 .onChange(of: draft) { _, newText in
                     model.draftChanged(newText)
                 }
-            Button("发送", action: send)
-                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
+                .background(Capsule().fill(Theme.surface2))
+                .overlay(Capsule().strokeBorder(Theme.border, lineWidth: 1))
+                .accessibilityLabel("消息输入框")
+            Button(action: send) {
+                Image(systemName: "paperplane.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 40, height: 40)
+                    .background(Circle().fill(Theme.accent))
+            }
+            .disabled(!canSend)
+            .opacity(canSend ? 1 : 0.4)
+            .accessibilityLabel("发送")
         }
-        .padding(8)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(Theme.surface)
+        .overlay(alignment: .top) {
+            // 引用条显示时顶线归它,这里不重复压线。
+            if replying == nil {
+                Rectangle().fill(Theme.borderSoft).frame(height: 1)
+            }
+        }
     }
 
     private func send() {
