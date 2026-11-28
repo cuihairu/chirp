@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tab tint: active accent-soft on dark, idle tertiary (prototype colors). -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/chirp_accent_soft" android:state_checked="true" />
+    <item android:color="@color/chirp_text_tertiary" />
+</selector>

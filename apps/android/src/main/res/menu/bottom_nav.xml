@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Five tabs = the desktop Rail mapping (chat/friends/party/voice/devices).
+     Notifications and profile do NOT occupy tabs (design 01 skeleton). -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/nav_chat" android:icon="@drawable/ic_nav_chat" android:title="@string/tab_chat" />
+    <item android:id="@+id/nav_friends" android:icon="@drawable/ic_nav_friends" android:title="@string/tab_friends" />
+    <item android:id="@+id/nav_party" android:icon="@drawable/ic_nav_party" android:title="@string/tab_party" />
+    <item android:id="@+id/nav_voice" android:icon="@drawable/ic_nav_voice" android:title="@string/tab_voice" />
+    <item android:id="@+id/nav_devices" android:icon="@drawable/ic_nav_devices" android:title="@string/tab_devices" />
+</menu>

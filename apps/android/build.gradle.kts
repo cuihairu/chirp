@@ -46,6 +46,11 @@ android {
             java.srcDirs(
                 "src/main/kotlin",
                 "src/app/kotlin",
+                // Shell classes referenced FROM xml layouts (custom views)
+                // must be Java: the view-binding gencode javac pass runs
+                // before built-in Kotlin output exists, so it cannot see
+                // .kt classes. src/app/java holds those few classes.
+                "src/app/java",
                 "../../proto/java",
                 if (pushEnabled) "src/push/kotlin" else "src/nopush/kotlin",
             )

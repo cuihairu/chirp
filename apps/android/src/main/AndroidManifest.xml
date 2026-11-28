@@ -22,6 +22,11 @@
             </intent-filter>
         </activity>
 
+        <!-- Home shell (design 01): five-tab host, entered after login. -->
+        <activity
+            android:name=".HomeActivity"
+            android:exported="false" />
+
         <!-- singleTask：通知点击的深链在应用活着时走 onNewIntent，不叠新实例。 -->
         <activity
             android:name=".MainActivity"

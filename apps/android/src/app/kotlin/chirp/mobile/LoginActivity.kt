@@ -88,9 +88,9 @@ class LoginActivity : AppCompatActivity() {
         binding.loginError.visibility = View.VISIBLE
     }
 
-    /** Session handed to the existing console surface until the shell lands. */
+    /** Session handed to the home shell (design 01). */
     private fun openConsole() {
-        startActivity(Intent(this, MainActivity::class.java))
+        startActivity(Intent(this, HomeActivity::class.java))
         finish()
     }
 

@@ -21,4 +21,18 @@
     <string name="login_error_network">无法连接到服务器,请稍后再试</string>
     <string name="login_error_rejected">登录被拒绝 (%1$s)</string>
     <string name="login_dev_hint">开发模式:输入用户 ID 即可登录</string>
+
+    <!-- Home shell (design 01) -->
+    <string name="home_title">Chirp 伴侣</string>
+    <string name="home_subtitle_online">%1$s · 在线</string>
+    <string name="home_subtitle_offline">%1$s · 未连接</string>
+    <string name="tab_chat">消息</string>
+    <string name="tab_friends">好友</string>
+    <string name="tab_party">组队</string>
+    <string name="tab_voice">语音</string>
+    <string name="tab_devices">设备</string>
+    <string name="tab_stub">建设中</string>
+    <string name="section_dm">私聊</string>
+    <string name="section_group">群聊</string>
+    <string name="sessions_empty">还没有会话</string>
 </resources>
