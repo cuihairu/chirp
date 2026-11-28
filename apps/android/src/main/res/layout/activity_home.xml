@@ -52,8 +52,39 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
-        <!-- Bell (notifications) and avatar (profile) slots land with their
-             screens; both stay out of the tab bar by design. -->
+        <!-- Bell (notifications) and avatar (profile): top-bar entries per
+             design 01 — they stay out of the tab bar by design. -->
+        <FrameLayout
+            android:id="@+id/bell_entry"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginEnd="12dp"
+            android:foreground="?attr/selectableItemBackgroundBorderless">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_bell" />
+
+            <TextView
+                android:id="@+id/bell_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:background="@drawable/bg_unread_pill"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
+                android:textColor="@color/chirp_text_primary"
+                android:textSize="10sp"
+                android:visibility="gone" />
+        </FrameLayout>
+
+        <chirp.mobile.AvatarView
+            android:id="@+id/avatar_entry"
+            android:layout_width="32dp"
+            android:layout_height="32dp" />
     </LinearLayout>
 
     <FrameLayout

@@ -54,6 +54,21 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/device_self_chip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_chip"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:text="@string/profile_self_chip"
+                android:textColor="@color/chirp_accent_soft"
+                android:textSize="10sp"
+                android:visibility="gone" />
+
+            <TextView
                 android:id="@+id/device_platform"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

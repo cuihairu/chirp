@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Notification kind icon: party invite puzzle piece (组队). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M9,3a2,2 0 1,1 4,0v1h4a1,1 0 0,1 1,1v4h1a2,2 0 1,1 0,4h-1v4a1,1 0 0,1 -1,1h-4v-1a2,2 0 1,0 -4,0v1H5a1,1 0 0,1 -1,-1v-4H3a2,2 0 1,1 0,-4h1V5a1,1 0 0,1 1,-1h4z"
+        android:strokeColor="@color/chirp_text_secondary"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

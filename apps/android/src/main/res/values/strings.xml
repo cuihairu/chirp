@@ -174,4 +174,50 @@
     <string name="devices_pref_desc">开启后好友可见你正在玩的游戏,私聊消息同步投递进游戏内</string>
     <string name="devices_pref_saved">设置已保存</string>
     <string name="devices_pref_failed">设置未保存,请稍后重试 (%1$s)</string>
+
+    <!-- Notification feed entries (built in ChirpSession, shown in design 04) -->
+    <string name="feed_push_title">推送注册</string>
+    <string name="feed_push_ok">设备注册成功,本端可接收离线推送</string>
+    <string name="feed_push_fail">设备注册失败 (%1$s)</string>
+    <string name="feed_friend_title">%1$s 请求加你为好友</string>
+    <string name="feed_party_title">%1$s 邀请你入队</string>
+    <string name="feed_party_body">在组队页可接受或拒绝</string>
+
+    <!-- Notification center (design 04) -->
+    <string name="notif_title">通知</string>
+    <string name="notif_mark_read">全部已读</string>
+    <string name="notif_today">今天</string>
+    <string name="notif_earlier">更早</string>
+    <string name="notif_empty">登录期间暂无新通知</string>
+    <string name="notif_feed_note">通知为本次登录期间的实时汇总;服务端暂无历史通知接口,登出即清空。</string>
+    <string name="notif_kind_message">消息</string>
+    <string name="notif_kind_friend">好友</string>
+    <string name="notif_kind_party">组队</string>
+    <string name="notif_kind_system">系统</string>
+    <string name="notif_push_section">推送设置</string>
+    <string name="notif_push_name">系统推送</string>
+    <string name="notif_push_desc">经设备平面注册 (RegisterDevice)</string>
+    <string name="notif_push_note">免打扰时段与类别过滤暂无协议支持,随服务端设置面开放后提供。</string>
+
+    <!-- Profile (design 05) -->
+    <string name="profile_title">我的</string>
+    <string name="profile_id_line">ID: %1$s</string>
+    <string name="profile_copy">复制</string>
+    <string name="profile_copied">已复制</string>
+    <string name="profile_devices_label">在线设备 (%1$d)</string>
+    <string name="profile_self_chip">本机</string>
+    <string name="profile_device_preview">%1$s · %2$s</string>
+    <string name="profile_settings_section">设置</string>
+    <string name="profile_row_notifications">通知设置</string>
+    <string name="profile_unread_chip">%1$d 条未读</string>
+    <string name="profile_row_filter">聊天词库过滤</string>
+    <string name="profile_filter_desc">词库随登录下发,过滤行为由服务器配置</string>
+    <string name="profile_filter_on">已下发 %1$d 词</string>
+    <string name="profile_filter_off">未下发</string>
+    <string name="profile_row_theme">深色模式</string>
+    <string name="profile_theme_value">深色</string>
+    <string name="profile_row_about">关于 Chirp</string>
+    <string name="profile_version_chip">v%1$s</string>
+    <string name="profile_logout">退出登录</string>
+    <string name="profile_logout_confirm">退出后将断开连接并回到登录页,确定?</string>
 </resources>

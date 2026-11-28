@@ -86,6 +86,8 @@ class ChatActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         reload()
+        // Open on screen = not notification-worthy (desktop shouldNotifyFor parity).
+        session.setVisibleChannel(channelType, channelId)
         removeListener = session.addListener(object : ChirpSession.Listener {
             override fun onMessageReceived(message: Chat.ChatMessage) {
                 if (message.channelId != channelId ||
@@ -103,6 +105,7 @@ class ChatActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
+        session.setVisibleChannel(null, null)
         removeListener?.invoke()
         removeListener = null
     }

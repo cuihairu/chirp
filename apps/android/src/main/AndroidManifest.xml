@@ -37,6 +37,11 @@
         <activity android:name=".CreateGroupActivity" android:exported="false" />
         <activity android:name=".GroupSettingsActivity" android:exported="false" />
 
+        <!-- Notification center + profile (design 04/05): home top-bar
+             entries, both stay out of the tab bar. -->
+        <activity android:name=".NotificationsActivity" android:exported="false" />
+        <activity android:name=".ProfileActivity" android:exported="false" />
+
         <!-- singleTask：通知点击的深链在应用活着时走 onNewIntent，不叠新实例。 -->
         <activity
             android:name=".MainActivity"

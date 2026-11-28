@@ -20,6 +20,8 @@ import chirp.mobile.protocol.RequestError
 import chirp.mobile.protocol.SendOptions
 import chirp.mobile.protocol.WordFilterSync
 import chirp.mobile.push.PlatformPushTokenSource
+import chirp.party.Party
+import chirp.social.Social
 import com.google.protobuf.MessageLite
 import okhttp3.OkHttpClient
 import java.io.File
@@ -39,6 +41,22 @@ data class Conversation(
     val lastTimestamp: Long,
     val unread: Int,
 )
+
+/** One row of the notification center (design 04). The protocol has no
+ *  server-side notification history, so the feed is this client's record of
+ *  live traffic since login — it dies with the session and the screen says
+ *  so instead of pretending to be a served inbox. */
+data class NotifItem(
+    val kind: Kind,
+    val title: String,
+    val body: String,
+    val timeMs: Long,
+    /** MESSAGE rows deep-link to the chat window. */
+    val channelId: String? = null,
+    val isGroup: Boolean = false,
+) {
+    enum class Kind { MESSAGE, FRIEND, PARTY, SYSTEM }
+}
 
 /**
  * Process-scoped chat session. The M4 debug console built its
@@ -63,6 +81,7 @@ class ChirpSession(private val context: Context) {
         fun onKicked(reason: String) {}
         fun onMessageReceived(message: Chat.ChatMessage) {}
         fun onConversationsChanged() {}
+        fun onNotificationFeedChanged(unread: Int) {}
     }
 
     private val main = Handler(Looper.getMainLooper())
@@ -77,11 +96,62 @@ class ChirpSession(private val context: Context) {
     var pipeline: ChatPipeline? = null; private set
     var selfId: String? = null; private set
     var offlineQueue: OfflineSendQueue? = null; private set
-    private var wordFilterSync: WordFilterSync? = null
+    var wordFilterSync: WordFilterSync? = null
+        private set
     private var pushRegistrar: DeviceRegistrar? = null
     private var flushWired = false
 
     private val registry = HashMap<String, Conversation>()
+
+    /** Notification center feed (design 04): newest first, capped, dies with
+     *  the session (no server-side history on this protocol). */
+    private val feed = ArrayList<NotifItem>()
+    private var feedUnread = 0
+    /** Channel whose chat window is on screen — messages there never feed. */
+    private var visibleChannelKey: String? = null
+    private val feedConnUnsubs = ArrayList<() -> Unit>()
+
+    fun notificationFeed(): List<NotifItem> = synchronized(feed) { feed.toList() }
+    fun feedUnreadCount(): Int = synchronized(feed) { feedUnread }
+
+    fun markFeedRead() {
+        synchronized(feed) { feedUnread = 0 }
+        emit { it.onNotificationFeedChanged(0) }
+    }
+
+    /** ChatActivity reports its open channel so self-viewing is not notified. */
+    fun setVisibleChannel(channelType: Chat.ChannelType?, channelId: String?) {
+        visibleChannelKey =
+            if (channelType == null || channelId == null) null
+            else conversationKey(channelType, channelId)
+    }
+
+    private fun addFeed(item: NotifItem) {
+        val unread = synchronized(feed) {
+            feed.add(0, item)
+            if (feed.size > FEED_MAX) feed.removeAt(feed.size - 1)
+            feedUnread++
+            feedUnread
+        }
+        emit { it.onNotificationFeedChanged(unread) }
+    }
+
+    private fun feedFromMessage(message: Chat.ChatMessage) {
+        if (message.senderId == selfId) return
+        val key = conversationKey(message.channelType, message.channelId) ?: return
+        if (key == visibleChannelKey) return
+        val conv = synchronized(registry) { registry[key] } ?: return
+        addFeed(
+            NotifItem(
+                kind = NotifItem.Kind.MESSAGE,
+                title = conv.title,
+                body = conv.lastPreview,
+                timeMs = message.timestamp,
+                channelId = message.channelId,
+                isGroup = conv.isGroup,
+            )
+        )
+    }
 
     /** dart auth.dart parity: random UUID persisted on first use. */
     private fun deviceId(): String {
@@ -136,6 +206,7 @@ class ChirpSession(private val context: Context) {
                     selfId = userId
                     main.post {
                         registerForPush(fresh, userId)
+                        wireFeedNotifies(fresh)
                         // Delivered lexicon: one fetch right after login;
                         // failures fall back to the local file silently.
                         wordFilterSync?.fetch()
@@ -156,9 +227,17 @@ class ChirpSession(private val context: Context) {
         pushRegistrar = null
         selfId = null
         flushWired = false
+        feedConnUnsubs.forEach { it() }
+        feedConnUnsubs.clear()
+        visibleChannelKey = null
+        synchronized(feed) {
+            feed.clear()
+            feedUnread = 0
+        }
         synchronized(registry) { registry.clear() }
         PushTokenHub.removeListener(pushTokenRefresh)
         notifyConversationsChanged()
+        emit { it.onNotificationFeedChanged(0) }
     }
 
     /** Typed request seam for the feature planes (friends/groups/party/…). */
@@ -222,6 +301,7 @@ class ChirpSession(private val context: Context) {
             main.post {
                 upsert(message.channelType, message.channelId, message.senderId,
                     message.content.toStringUtf8(), message.timestamp)
+                feedFromMessage(message)
                 emit { it.onMessageReceived(message) }
             }
         }
@@ -347,12 +427,70 @@ class ChirpSession(private val context: Context) {
         PushTokenHub.removeListener(pushTokenRefresh)
         PushTokenHub.addListener(pushTokenRefresh)
         registrar.register(userId, PlatformPushTokenSource(context))
-            .whenComplete { _, _ -> } // registration result surfaces on the device screen
+            .whenComplete { _, err ->
+                main.post {
+                    if (selfId == null) return@post
+                    addFeed(
+                        NotifItem(
+                            kind = NotifItem.Kind.SYSTEM,
+                            title = context.getString(R.string.feed_push_title),
+                            body = if (err == null) context.getString(R.string.feed_push_ok)
+                            else context.getString(R.string.feed_push_fail, err.message ?: "?"),
+                            timeMs = System.currentTimeMillis(),
+                        )
+                    )
+                }
+            }
+    }
+
+    /** Friend requests and party invites land in the notification feed; the
+     *  feature tabs keep their own wiring for in-place action rows. */
+    private fun wireFeedNotifies(conn: ChatConnection) {
+        feedConnUnsubs.forEach { it() }
+        feedConnUnsubs.clear()
+        feedConnUnsubs.add(
+            conn.onNotify(Gateway.MsgID.FRIEND_REQUEST_NOTIFY) { body ->
+                val n = runCatching { Social.FriendRequestNotify.parseFrom(body) }
+                    .getOrNull() ?: return@onNotify
+                main.post {
+                    if (selfId == null) return@post
+                    addFeed(
+                        NotifItem(
+                            kind = NotifItem.Kind.FRIEND,
+                            title = context.getString(
+                                R.string.feed_friend_title,
+                                n.fromUsername.ifEmpty { n.fromUserId },
+                            ),
+                            body = n.message,
+                            timeMs = if (n.timestamp > 0) n.timestamp else System.currentTimeMillis(),
+                        )
+                    )
+                }
+            }
+        )
+        feedConnUnsubs.add(
+            conn.onNotify(Gateway.MsgID.INVITE_NOTIFY) { body ->
+                val n = runCatching { Party.InviteNotify.parseFrom(body) }
+                    .getOrNull() ?: return@onNotify
+                main.post {
+                    if (selfId == null) return@post
+                    addFeed(
+                        NotifItem(
+                            kind = NotifItem.Kind.PARTY,
+                            title = context.getString(R.string.feed_party_title, n.fromUserId),
+                            body = context.getString(R.string.feed_party_body),
+                            timeMs = System.currentTimeMillis(),
+                        )
+                    )
+                }
+            }
+        )
     }
 
     private companion object {
         const val SESSION_PREFS = "chirp_session"
         const val KEY_DEVICE_ID = "device_id"
         const val LEXICON_FILE = "word_filter.txt"
+        const val FEED_MAX = 50
     }
 }

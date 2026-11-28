@@ -2,6 +2,7 @@ package chirp.mobile
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import chirp.mobile.databinding.ActivityHomeBinding
@@ -20,6 +21,10 @@ class HomeActivity : AppCompatActivity() {
     private val sessionListener = object : ChirpSession.Listener {
         override fun onConnectionStateChanged(state: ConnState) {
             bindSubtitle()
+        }
+
+        override fun onNotificationFeedChanged(unread: Int) {
+            bindBellBadge(unread)
         }
 
         override fun onKicked(reason: String) {
@@ -49,9 +54,33 @@ class HomeActivity : AppCompatActivity() {
             true
         }
         show(SessionsFragment()) // initial tab matches the checked nav item
+        when (intent.getStringExtra(EXTRA_TAB)) {
+            TAB_FRIENDS -> binding.bottomNav.selectedItemId = R.id.nav_friends
+            TAB_PARTY -> binding.bottomNav.selectedItemId = R.id.nav_party
+        }
+
+        // Top-bar entries (design 01): bell → notification center,
+        // avatar → profile. Neither occupies a tab.
+        binding.bellEntry.setOnClickListener {
+            startActivity(Intent(this, NotificationsActivity::class.java))
+        }
+        binding.avatarEntry.bind(chirpSession.selfId ?: "")
+        binding.avatarEntry.setOnClickListener {
+            startActivity(Intent(this, ProfileActivity::class.java))
+        }
 
         removeListener = chirpSession.addListener(sessionListener)
         bindSubtitle()
+        bindBellBadge(chirpSession.feedUnreadCount())
+    }
+
+    private fun bindBellBadge(unread: Int) {
+        if (unread <= 0) {
+            binding.bellBadge.visibility = View.GONE
+        } else {
+            binding.bellBadge.visibility = View.VISIBLE
+            binding.bellBadge.text = if (unread > 9) "9+" else unread.toString()
+        }
     }
 
     private fun show(fragment: Fragment) {
@@ -73,5 +102,11 @@ class HomeActivity : AppCompatActivity() {
         super.onDestroy()
         removeListener?.invoke()
         removeListener = null
+    }
+
+    companion object {
+        const val EXTRA_TAB = "tab"
+        const val TAB_FRIENDS = "friends"
+        const val TAB_PARTY = "party"
     }
 }
