@@ -24,5 +24,8 @@
 
     <!-- Icons/buttons -->
     <dimen name="icon_btn">36dp</dimen>
-    <dimen name="send_btn">40dp</dimen>
+    <dimen name="send_button">40dp</dimen>
+
+    <!-- Message bubbles cap at ~75% of the 375dp baseline width -->
+    <dimen name="bubble_max">280dp</dimen>
 </resources>

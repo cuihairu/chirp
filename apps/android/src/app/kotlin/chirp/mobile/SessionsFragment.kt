@@ -1,5 +1,6 @@
 package chirp.mobile
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -44,6 +45,13 @@ class SessionsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        adapter.onOpen = { conv ->
+            val intent = Intent(requireContext(), ChatActivity::class.java)
+                .putExtra(ChatActivity.EXTRA_CHANNEL_ID, conv.channelId)
+                .putExtra(ChatActivity.EXTRA_IS_GROUP, conv.isGroup)
+                .putExtra(ChatActivity.EXTRA_TITLE, conv.title)
+            startActivity(intent)
+        }
         refresh()
         removeListener = chirpSession.addListener(object : ChirpSession.Listener {
             override fun onConversationsChanged() = refresh()
@@ -87,6 +95,9 @@ class SessionsFragment : Fragment() {
 
     private class SessionsAdapter : ListAdapter<Row, RecyclerView.ViewHolder>(Diff) {
 
+        /** Conversation-row tap; set by the fragment (opens the chat window). */
+        var onOpen: ((Conversation) -> Unit)? = null
+
         override fun getItemViewType(position: Int): Int = when (getItem(position)) {
             is Row.Section -> 0
             is Row.Conv -> 1
@@ -104,7 +115,7 @@ class SessionsFragment : Fragment() {
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             when (val row = getItem(position)) {
                 is Row.Section -> (holder as SectionHolder).bind(row.title)
-                is Row.Conv -> (holder as ConvHolder).bind(row.conversation)
+                is Row.Conv -> (holder as ConvHolder).bind(row.conversation, onOpen)
             }
         }
 
@@ -122,7 +133,7 @@ class SessionsFragment : Fragment() {
             private val todayFormat = DateTimeFormatter.ofPattern("HH:mm")
             private val otherDayFormat = DateTimeFormatter.ofPattern("MM-dd")
 
-            fun bind(conv: Conversation) {
+            fun bind(conv: Conversation, onOpen: ((Conversation) -> Unit)?) {
                 binding.convName.text = conv.title
                 binding.convPreview.text = conv.lastPreview
                 binding.convAvatar.bind(conv.title)
@@ -139,6 +150,7 @@ class SessionsFragment : Fragment() {
                 } else {
                     binding.convUnread.visibility = View.GONE
                 }
+                binding.root.setOnClickListener { onOpen?.invoke(conv) }
             }
         }
 

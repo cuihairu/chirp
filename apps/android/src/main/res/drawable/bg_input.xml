@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chat input field (design 02): surface-2 row with the design border. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/chirp_surface2" />
+    <stroke android:width="1dp" android:color="@color/chirp_border" />
+    <corners android:radius="@dimen/radius_row" />
+</shape>

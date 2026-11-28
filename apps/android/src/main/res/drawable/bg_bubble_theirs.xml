@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Peer-message bubble (design 02): surface-2, radius_card 16. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/chirp_surface2" />
+    <corners android:radius="@dimen/radius_card" />
+</shape>

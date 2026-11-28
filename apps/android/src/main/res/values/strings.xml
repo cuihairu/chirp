@@ -35,4 +35,10 @@
     <string name="section_dm">私聊</string>
     <string name="section_group">群聊</string>
     <string name="sessions_empty">还没有会话</string>
+
+    <!-- Chat window (design 02) -->
+    <string name="chat_back_cd">返回</string>
+    <string name="chat_send_cd">发送</string>
+    <string name="chat_error_send_failed">发送失败,请稍后再试</string>
+    <string name="chat_error_queued">已加入离线队列,重连后自动发送</string>
 </resources>
