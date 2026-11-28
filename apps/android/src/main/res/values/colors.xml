@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Design tokens from the approved mobile prototype
+     (design/prototypes/mobile/chirp.css). Dark is the canonical state; a
+     light scheme is a proposal that has NOT been approved or implemented.
+     Names carry the chirp_ prefix so framework colors never collide. -->
+<resources>
+    <!-- Surfaces -->
+    <color name="chirp_bg">#0f1115</color>
+    <color name="chirp_surface">#161923</color>
+    <color name="chirp_surface2">#1c2030</color>
+    <color name="chirp_surface3">#232840</color>
+    <color name="chirp_border">#2a3046</color>
+    <color name="chirp_border_soft">#222741</color>
+
+    <!-- Text: three real tiers (primary / secondary / tertiary). Keep them
+         distinct — the desktop audit taught us flattened tiers fail WCAG
+         hierarchy even when raw contrast passes. -->
+    <color name="chirp_text_primary">#f3f4f6</color>
+    <color name="chirp_text_secondary">#9ca3af</color>
+    <color name="chirp_text_tertiary">#6b7280</color>
+
+    <!-- Brand: indigo, same family as the logo/docs site/web companion. -->
+    <color name="chirp_accent">#6366f1</color>
+    <color name="chirp_accent_strong">#4f46e5</color>
+    <color name="chirp_accent_soft">#a5b4fc</color>
+    <color name="chirp_accent_dim">#246366f1</color><!-- 14% alpha -->
+
+    <!-- Status -->
+    <color name="chirp_online">#34d399</color>
+    <color name="chirp_danger">#f87171</color>
+    <color name="chirp_warn">#fbbf24</color>
+</resources>

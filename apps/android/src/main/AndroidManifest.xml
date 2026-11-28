@@ -10,7 +10,7 @@
     <application
         android:label="chirp"
         android:usesCleartextTraffic="true"
-        android:theme="@android:style/Theme.Material.Light.DarkActionBar">
+        android:theme="@style/Theme.Chirp">
         <!-- singleTask：通知点击的深链在应用活着时走 onNewIntent，不叠新实例。 -->
         <activity
             android:name=".MainActivity"

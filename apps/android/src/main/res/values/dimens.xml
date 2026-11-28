@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Metric tokens mirroring the prototype spacing/radius ladder
+     (docs/ux/design-spec.md §2.3). -->
+<resources>
+    <!-- Bars -->
+    <dimen name="topbar_height">56dp</dimen>
+    <dimen name="tabbar_height">64dp</dimen>
+
+    <!-- Radii -->
+    <dimen name="radius_card">16dp</dimen>
+    <dimen name="radius_row">12dp</dimen>
+
+    <!-- Spacing ladder (base 4) -->
+    <dimen name="space_xs">4dp</dimen>
+    <dimen name="space_sm">8dp</dimen>
+    <dimen name="space_md">12dp</dimen>
+    <dimen name="space_row">14dp</dimen>
+    <dimen name="space_page">16dp</dimen>
+
+    <!-- Avatars -->
+    <dimen name="avatar_md">44dp</dimen>
+    <dimen name="avatar_sm">32dp</dimen>
+    <dimen name="avatar_lg">72dp</dimen>
+
+    <!-- Icons/buttons -->
+    <dimen name="icon_btn">36dp</dimen>
+    <dimen name="send_btn">40dp</dimen>
+</resources>

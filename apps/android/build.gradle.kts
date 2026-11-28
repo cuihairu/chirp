@@ -52,6 +52,12 @@ android {
         }
     }
 
+    // ViewBinding: the redesigned shell binds layouts without findViewById
+    // boilerplate; no codegen beyond the binding classes.
+    buildFeatures {
+        viewBinding = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -84,6 +90,16 @@ dependencies {
     // gencode guard) — same pin as the make gate's Makefile.
     implementation("com.google.protobuf:protobuf-java:4.33.4")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // Design-language face (CHIRP-UX-001 step 3): the approved mobile
+    // prototype tokens (design/prototypes/mobile/chirp.css) land as the
+    // Material 3 theme in res/values/themes.xml; these four libraries carry
+    // it. Plain Views + Material Components — no Compose (the built-in
+    // Kotlin path of AGP 9 stays, no compose compiler plugin needed).
+    implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     // Push build switch: only the ON build fetches Firebase (25.1.3, google()
     // maven); the OFF build has no Firebase class on any classpath.
     if (pushEnabled) {

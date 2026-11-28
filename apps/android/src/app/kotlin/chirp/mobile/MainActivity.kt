@@ -1,6 +1,5 @@
 package chirp.mobile
 
-import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -9,6 +8,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import chirp.chat.Chat
 import chirp.common.Common
 import chirp.gateway.Gateway
@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit
  * 协议 2245-2247，登录成功后 fetch + UPDATE_NOTIFY 热更）；
  * filesDir/word_filter.txt（服务端格式：每行一词、# 注释）降级为回退。
  */
-class MainActivity : Activity() {
+class MainActivity : AppCompatActivity() {
 
     private val main = Handler(Looper.getMainLooper())
     private val okClient = OkHttpClient.Builder()

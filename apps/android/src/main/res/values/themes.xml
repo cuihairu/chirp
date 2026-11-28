@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App theme: Material 3 dark carrying the approved prototype tokens.
+     NoActionBar: every screen draws its own top bar (56dp, per spec) so the
+     back/subtitle/service-state slot stays in our control. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="Theme.Chirp" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- Brand -->
+        <item name="colorPrimary">@color/chirp_accent</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorPrimaryContainer">@color/chirp_accent_dim</item>
+        <item name="colorOnPrimaryContainer">@color/chirp_accent_soft</item>
+
+        <!-- Surfaces -->
+        <item name="android:colorBackground">@color/chirp_bg</item>
+        <item name="colorSurface">@color/chirp_surface</item>
+        <item name="colorSurfaceVariant">@color/chirp_surface2</item>
+        <item name="colorSurfaceContainer">@color/chirp_surface2</item>
+        <item name="colorSurfaceContainerHigh">@color/chirp_surface3</item>
+        <item name="colorOutline">@color/chirp_border</item>
+        <item name="colorOutlineVariant">@color/chirp_border_soft</item>
+
+        <!-- Text: pin the three tiers so widgets do not invent their own. -->
+        <item name="android:textColorPrimary">@color/chirp_text_primary</item>
+        <item name="android:textColorSecondary">@color/chirp_text_secondary</item>
+        <item name="android:textColorTertiary">@color/chirp_text_tertiary</item>
+        <item name="colorOnSurface">@color/chirp_text_primary</item>
+        <item name="colorOnSurfaceVariant">@color/chirp_text_secondary</item>
+
+        <!-- Status -->
+        <item name="colorError">@color/chirp_danger</item>
+
+        <!-- Chrome blends with the page background (prototype topbar/tabbar
+             are near-opaque bg, not lifted surfaces). -->
+        <item name="android:statusBarColor">@color/chirp_bg</item>
+        <item name="android:navigationBarColor">@color/chirp_bg</item>
+        <item name="android:windowBackground">@color/chirp_bg</item>
+    </style>
+
+</resources>
