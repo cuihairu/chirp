@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Brand mark tile: neutral geometric placeholder (see the red line —
+     the real logo asset replaces this when the user provides it). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="315"
+        android:startColor="@color/chirp_accent"
+        android:endColor="@color/chirp_accent_strong" />
+    <corners android:radius="16dp" />
+</shape>

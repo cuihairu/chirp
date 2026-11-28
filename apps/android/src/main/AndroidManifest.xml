@@ -8,19 +8,25 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
+        android:name=".ChirpApp"
         android:label="chirp"
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.Chirp">
-        <!-- singleTask：通知点击的深链在应用活着时走 onNewIntent，不叠新实例。 -->
+        <!-- Login is the launcher (design 06). -->
         <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:launchMode="singleTask">
+            android:name=".LoginActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- singleTask：通知点击的深链在应用活着时走 onNewIntent，不叠新实例。 -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:launchMode="singleTask" />
 
         <!-- FCM 接收面（P5）：仅 -PchirpPush=true 构建编译出
              .push.ChirpFirebaseService（firebase-messaging 只在该构建上

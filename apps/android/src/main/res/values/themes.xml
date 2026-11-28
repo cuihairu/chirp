@@ -37,4 +37,37 @@
         <item name="android:windowBackground">@color/chirp_bg</item>
     </style>
 
+    <!-- Pill button (prototype button language: 999px capsule, 14sp/600). -->
+    <style name="Widget.Chirp.Button" parent="Widget.Material3.Button">
+        <item name="android:textSize">14sp</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Chirp.Pill</item>
+    </style>
+
+    <style name="ShapeAppearance.Chirp.Pill" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">999dp</item>
+    </style>
+
+    <style name="Widget.Chirp.Button.Ghost" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:textSize">14sp</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Chirp.Pill</item>
+        <item name="strokeColor">@color/chirp_border</item>
+        <item name="android:textColor">@color/chirp_text_secondary</item>
+    </style>
+
+    <style name="Widget.Chirp.Button.Danger" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:textSize">14sp</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Chirp.Pill</item>
+        <item name="strokeColor">@color/chirp_border</item>
+        <item name="android:textColor">@color/chirp_danger</item>
+    </style>
+
+    <!-- Filled text field on surface-2 with the design border. -->
+    <style name="Widget.Chirp.TextField" parent="Widget.Material3.TextInputLayout.FilledBox">
+        <item name="boxBackgroundColor">@color/chirp_surface2</item>
+        <item name="boxStrokeColor">@color/chirp_border</item>
+        <item name="hintTextColor">@color/chirp_text_secondary</item>
+        <item name="android:textColorHint">@color/chirp_text_tertiary</item>
+    </style>
+
 </resources>

@@ -7,4 +7,18 @@
     <string name="btn_login">Login</string>
     <string name="btn_send">Send</string>
     <string name="status_idle">idle</string>
+
+    <!-- Login screen (design 06) -->
+    <string name="login_title">登录到 Chirp</string>
+    <string name="login_subtitle">游戏好友与聊天,一个账号通行</string>
+    <string name="login_label_server">服务器</string>
+    <string name="login_server_hint">聊天/好友/组队/语音/设备五个平面按基址拼 /ws/{chat,social,party,voice,device}</string>
+    <string name="login_label_user">用户 ID</string>
+    <string name="login_error_host">地址需以 ws:// 或 wss:// 开头</string>
+    <string name="login_error_user">先填写用户 ID</string>
+    <string name="login_btn">登录</string>
+    <string name="login_btn_in_progress">登录中…</string>
+    <string name="login_error_network">无法连接到服务器,请稍后再试</string>
+    <string name="login_error_rejected">登录被拒绝 (%1$s)</string>
+    <string name="login_dev_hint">开发模式:输入用户 ID 即可登录</string>
 </resources>
