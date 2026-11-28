@@ -4,16 +4,15 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.View;
 
 /**
- * Hue-hash letter avatar (design language): rounded square filled with
+ * Hue-hash letter avatar (design language): circle filled with
  * hsl(h, 42%, 46%) where h comes from a stable hash of the label, the
  * label's first character centered in white. Same label always renders the
  * same color within this client; the recipe matches the approved prototype
- * avatar spec.
+ * avatar spec (chirp.css .avatar: border-radius 50%).
  *
  * Java, not Kotlin: layout-referenced custom views must resolve during the
  * javac pass (view-binding gencode compiles before the built-in Kotlin
@@ -69,11 +68,8 @@ public class AvatarView extends View {
         if (getWidth() == 0 || getHeight() == 0) {
             return;
         }
-        // Design row radius (12) on the row avatar size (44), scaled to any
-        // size the view is laid out at.
-        float radius = getHeight() * (12f / 44f);
-        canvas.drawRoundRect(
-                new RectF(0, 0, getWidth(), getHeight()), radius, radius, fill);
+        // Prototype avatars are circles (.avatar border-radius 50%).
+        canvas.drawCircle(getWidth() / 2f, getHeight() / 2f, Math.min(getWidth(), getHeight()) / 2f, fill);
         if (label.isEmpty()) {
             return;
         }
