@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<!-- chirp 手机端原型 · 10 群设置(补稿,2026-11-28 步骤二)
+     布局:顶栏(返回 + 群设置 + 群名/人数副标题)→ 「群信息」卡(群头像占位/名称/描述 +
+          我的群昵称行)→ 「成员」卡(名单 + 角色 chip + 禁言态 + 移出 + 添加成员行)→
+          「管理」行(退出群组 / 解散群组 双危险键并排)→ 底部页签
+     交互:入口 = 聊天窗头部 ⚙(02 页约定);群昵称行点按改昵称(空串清除);
+          成员行点按出操作 sheet(禁言分钟数/解禁/移出——按我的角色显隐);
+          添加成员按用户 ID;退出/解散均二次确认(「退出这个群组?」「解散整个队伍?」口径
+          同 harmony);解散仅群主可见
+     状态:角色 chip——群主(indigo);禁言中 chip(warn) + 到期时间;
+          成员名单加载态「成员名单加载中…」;操作失败「操作失败,请稍后再试」;
+          禁言提交态「禁言中…」与失败「禁言失败」
+     同源:harmony GroupPage 同文案同动作;桌面 Dialogs 群管理 / web GroupDialogs 同数据面;
+          TTL 档位在 07 建群稿,本页不重复;角色/权限为协议面能力,
+          操作按钮按角色显隐(本稿以群主视角出图) -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chirp 手机原型 · 群设置</title>
+<link rel="stylesheet" href="chirp.css">
+</head>
+<body>
+
+  <!-- 顶栏 -->
+  <header class="topbar">
+    <span class="icon-btn">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+    </span>
+    <div class="grow">
+      <div class="title">群设置</div>
+      <div class="subtitle">战队A · 4 名成员</div>
+    </div>
+  </header>
+
+  <div class="content" style="gap:12px">
+
+    <!-- 群信息 -->
+    <div class="card">
+      <div class="row">
+        <span class="avatar" style="--h:265">战</span>
+        <div class="grow">
+          <div class="name">战队A</div>
+          <div class="preview">周五晚上固定排位,缺一不可</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="grow">
+          <div class="name" style="font-size:14px">我的群昵称</div>
+          <div class="preview">小A(空串清除,仅群内可见)</div>
+        </div>
+        <button class="btn ghost sm" type="button">修改</button>
+      </div>
+    </div>
+
+    <!-- 成员名单(群主视角:管理操作可见) -->
+    <div class="section-label">成员 · 4</div>
+    <div class="card">
+      <div class="row">
+        <span class="avatar-wrap"><span class="avatar sm" style="--h:235">a</span><span class="presence on"></span></span>
+        <div class="grow name">alice <span style="font-size:12px;color:var(--text-3)">(我)</span></div>
+        <span class="chip game">群主</span>
+      </div>
+      <div class="row">
+        <span class="avatar-wrap"><span class="avatar sm" style="--h:150">b</span><span class="presence on"></span></span>
+        <div class="grow name">bob</div>
+        <span class="icon-btn" style="width:30px;height:30px" aria-label="成员操作">
+          <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="19" r="1.3"/></svg>
+        </span>
+      </div>
+      <div class="row">
+        <span class="avatar-wrap"><span class="avatar sm" style="--h:20">c</span></span>
+        <div class="grow name">carol <span style="font-size:12px;color:var(--text-3)">· 至 21:30</span></div>
+        <span class="chip warn">禁言中</span>
+      </div>
+      <div class="row">
+        <span class="avatar-wrap"><span class="avatar sm" style="--h:300">d</span></span>
+        <div class="grow name">dave</div>
+        <span class="icon-btn" style="width:30px;height:30px" aria-label="成员操作">
+          <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="19" r="1.3"/></svg>
+        </span>
+      </div>
+      <!-- 添加成员 -->
+      <div class="row">
+        <span class="icon-btn" style="width:28px;height:28px">
+          <svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 8v6M20 11h-6"/></svg>
+        </span>
+        <div class="grow name" style="color:var(--accent-soft)">添加成员(用户 ID)</div>
+      </div>
+    </div>
+
+    <!-- 管理:双危险键并排(退出全员可见;解散仅群主可见) -->
+    <div class="section-label">管理</div>
+    <div class="btn-row">
+      <button class="btn danger-ghost sm" type="button">退出群组</button>
+      <button class="btn danger-ghost sm" type="button">解散群组</button>
+    </div>
+
+  </div>
+
+  <nav class="tabbar" style="opacity:.4">
+    <span class="tab active">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 8.6 8.6 0 0 1-3.9-.9L3 20l1-5.5a8.3 8.3 0 0 1-1-4A8.4 8.4 0 0 1 11.5 2 8.4 8.4 0 0 1 21 11.5z"/></svg>
+      聊天
+    </span>
+    <span class="tab"></span><span class="tab"></span><span class="tab"></span><span class="tab"></span>
+  </nav>
+
+</body>
+</html>

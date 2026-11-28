@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<!-- chirp 手机端原型 · 08 组队语音(补稿,2026-11-28 步骤二)
+     布局:顶栏(返回 + 组队语音 + 服务态副标题)→ 组队平面(房间头 + 成员名单 +
+          邀请/解散操作行)→ 语音平面(房间成员说话态名单 + 静音/拒听控制 +
+          退出房间)→ 底部页签(组队/语音双入口落同页,页签态以组队为激活示意)
+     交互:组队:邀请按对方用户 ID;准备/取消准备按行切换;移出/转让队长按行操作;
+          解散二次确认(「解散整个队伍?」);语音:「静音/拒听」开关行即时切换,
+          退出房间二次确认(「退出这个语音房间?」)
+     状态:成员行状态 chip——待接受(灰)/已准备(绿)/队长(indigo「alice 是队长」);
+          语音行——说话中(presence 绿点亮)/已静音(chip)/拒听(chip warn);
+          空态文案「还没有加入队伍,创建一个或等待邀请。」
+          「未在语音房间中,创建或加入一个。」;
+          服务未连接降级文案「组队服务未连接/语音服务未连接」(顶栏副标题位)
+     同源:harmony PartyVoicePage 同平面同文案;桌面 Rail+Dialogs / web Party+Voice Dialog
+          动作集一致;音频媒体面未接入(信令名单为协议面现状),
+          本稿不画频谱/波形等媒体装饰 -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chirp 手机原型 · 组队语音</title>
+<link rel="stylesheet" href="chirp.css">
+</head>
+<body>
+
+  <!-- 顶栏:副标题挂服务连接态 -->
+  <header class="topbar">
+    <span class="icon-btn">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+    </span>
+    <div class="grow">
+      <div class="title">组队语音</div>
+      <div class="subtitle">组队 · 语音 已连接</div>
+    </div>
+  </header>
+
+  <div class="content" style="gap:12px">
+
+    <!-- ===== 组队平面 ===== -->
+    <div class="section-label">组队</div>
+    <div class="card">
+      <!-- 房间头:房间名 + 房间 ID + 队长标记 -->
+      <div class="row">
+        <span class="avatar" style="--h:265">周</span>
+        <div class="grow">
+          <div class="name">周五开黑小队</div>
+          <div class="preview">房间 ID · 8f3k2</div>
+        </div>
+        <span class="chip game">alice 是队长</span>
+      </div>
+      <!-- 成员名单(协议面:邀请/准备/移出/转让队长) -->
+      <div class="row">
+        <span class="avatar-wrap"><span class="avatar sm" style="--h:150">b</span><span class="presence on"></span></span>
+        <div class="grow name">bob</div>
+        <span class="chip live">已准备</span>
+      </div>
+      <div class="row">
+        <span class="avatar-wrap"><span class="avatar sm" style="--h:300">d</span></span>
+        <div class="grow name">dave</div>
+        <span class="chip">待接受邀请</span>
+      </div>
+      <!-- 操作行 -->
+      <div class="row" style="gap:10px">
+        <button class="btn ghost sm" type="button" style="flex:1">邀请(对方用户 ID)</button>
+        <button class="btn danger-ghost sm" type="button" style="flex:1">解散队伍</button>
+      </div>
+    </div>
+
+    <!-- ===== 语音平面 ===== -->
+    <div class="section-label">语音 · 开黑房 v-77q1</div>
+    <div class="card">
+      <!-- 成员说话态(信令名单:说话状态/静音态) -->
+      <div class="row">
+        <span class="avatar-wrap"><span class="avatar sm" style="--h:150">b</span><span class="presence on"></span></span>
+        <div class="grow name">bob</div>
+        <span class="chip live">说话中</span>
+      </div>
+      <div class="row">
+        <span class="avatar-wrap"><span class="avatar sm" style="--h:20">c</span></span>
+        <div class="grow name">carol</div>
+        <span class="chip">已静音</span>
+      </div>
+      <div class="row">
+        <span class="avatar-wrap"><span class="avatar sm avatar-ring" style="--h:235">a</span><span class="presence on"></span></span>
+        <div class="grow name">alice <span style="font-size:12px;color:var(--text-3)">(我)</span></div>
+        <span class="chip warn">拒听中</span>
+      </div>
+      <!-- 自位控制:静音 / 拒听 -->
+      <div class="row" style="gap:20px">
+        <div style="display:flex;align-items:center;gap:8px;flex:1">
+          <span class="name">静音</span>
+          <span class="toggle" style="margin-left:auto"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex:1">
+          <span class="name">拒听</span>
+          <span class="toggle on" style="margin-left:auto"></span>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn danger-ghost sm block" type="button">退出房间</button>
+      </div>
+    </div>
+
+    <!-- 协议面注记(如实,不虚构媒体面) -->
+    <div class="system-note">注:此为协议面名单(房间/成员/静音态),音频媒体面未接入。</div>
+
+  </div>
+
+  <nav class="tabbar">
+    <span class="tab">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 8.6 8.6 0 0 1-3.9-.9L3 20l1-5.5a8.3 8.3 0 0 1-1-4A8.4 8.4 0 0 1 11.5 2 8.4 8.4 0 0 1 21 11.5z"/></svg>
+      聊天
+    </span>
+    <span class="tab">
+      <svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9.5" r="2.5"/><path d="M16 15.5a5 5 0 0 1 5.5 4.5"/></svg>
+      好友
+    </span>
+    <span class="tab active">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M9 3a2 2 0 1 1 4 0v1h4a1 1 0 0 1 1 1v4h1a2 2 0 1 1 0 4h-1v4a1 1 0 0 1-1 1h-4v-1a2 2 0 1 0-4 0v1H5a1 1 0 0 1-1-1v-4H3a2 2 0 1 1 0-4h1V5a1 1 0 0 1 1-1h4z"/></svg>
+      组队
+    </span>
+    <span class="tab">
+      <svg class="ic" viewBox="0 0 24 24"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>
+      语音
+    </span>
+    <span class="tab">
+      <svg class="ic" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>
+      设备
+    </span>
+  </nav>
+
+</body>
+</html>

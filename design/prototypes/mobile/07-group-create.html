@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<!-- chirp 手机端原型 · 07 新建群组(补稿,2026-11-28 步骤二)
+     布局:顶栏(返回 + 新建群组)→ 表单卡(群组名称 / 群描述)→
+          有效期 TTL 分段档位(1天/7天/30天)→ 初始成员 chip 行 + 添加成员行 →
+          主操作「创建群组」胶囊 → 底部页签(来源层,半透明示意)
+     交互:从会话列表「新建群组」按钮弹全屏 sheet;TTL 点选即换档
+          (协议面为分钟数、上限 43200=30 天,档位映射固定分钟值,自定义档待拍板);
+          成员 chip 点 × 移除,「添加成员」进选用户 sheet
+     状态:名称必填(为空时创建钮置灰);创建中换「创建中…」;
+          失败行内红字「创建群组失败」;描述为可选项
+     同源:harmony GroupPage 建群面 / 桌面 Dialogs 建群对话框同字段 -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chirp 手机原型 · 新建群组</title>
+<link rel="stylesheet" href="chirp.css">
+<style>
+  /* 页内补充:表单字段,token 与 chirp.css 同源 */
+  .label { font-size: 12px; font-weight: 700; color: var(--text-2); margin-bottom: 6px; display: block; }
+  .input {
+    width: 100%; min-height: 44px; border-radius: var(--r-row);
+    background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--text); font-size: 15px; padding: 10px 14px;
+  }
+  .input .ph { color: var(--text-3); }
+  .field { margin-bottom: 14px; }
+  .ttl-note { font-size: 12px; color: var(--text-3); margin-top: 8px; }
+  .member-chip { display: inline-flex; align-items: center; gap: 6px; }
+  .member-chip .x { color: var(--text-3); font-weight: 700; }
+</style>
+</head>
+<body>
+
+  <!-- 顶栏 -->
+  <header class="topbar">
+    <span class="icon-btn">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+    </span>
+    <div class="title">新建群组</div>
+    <div class="spacer"></div>
+  </header>
+
+  <div class="content" style="gap:16px">
+
+    <!-- 表单卡:名称 + 描述 -->
+    <div class="card" style="padding:14px">
+      <div class="field">
+        <span class="label">群组名称</span>
+        <div class="input">周五开黑小队</div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <span class="label">群描述<span style="font-weight:400;color:var(--text-3)">(可选)</span></span>
+        <div class="input"><span class="ph">一句话介绍这个群…</span></div>
+      </div>
+    </div>
+
+    <!-- 有效期 TTL 档位 -->
+    <div>
+      <span class="label">消息有效期</span>
+      <div class="segmented">
+        <span class="seg">1 天</span>
+        <span class="seg on">7 天</span>
+        <span class="seg">30 天</span>
+      </div>
+      <div class="ttl-note">到期消息自动清理;上限 30 天(43200 分钟)。</div>
+    </div>
+
+    <!-- 初始成员 -->
+    <div>
+      <span class="label">初始成员</span>
+      <div class="fchips">
+        <span class="fchip on member-chip"><span class="avatar sm" style="--h:150;width:20px;height:20px;font-size:10px">b</span>bob <span class="x">×</span></span>
+        <span class="fchip on member-chip"><span class="avatar sm" style="--h:20;width:20px;height:20px;font-size:10px">c</span>carol <span class="x">×</span></span>
+        <span class="fchip on member-chip"><span class="avatar sm" style="--h:300;width:20px;height:20px;font-size:10px">d</span>dave <span class="x">×</span></span>
+      </div>
+      <div class="row" style="border:1px solid var(--border-soft);border-radius:var(--r-row);margin-top:10px">
+        <span class="icon-btn" style="width:28px;height:28px">
+          <svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 8v6M20 11h-6"/></svg>
+        </span>
+        <div class="grow name" style="color:var(--accent-soft)">添加成员</div>
+      </div>
+    </div>
+
+    <button class="btn primary block" type="button">创建群组</button>
+
+  </div>
+
+  <!-- 底部页签:来源层示意(sheet 推入时的底层) -->
+  <nav class="tabbar" style="opacity:.4">
+    <span class="tab active">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 8.6 8.6 0 0 1-3.9-.9L3 20l1-5.5a8.3 8.3 0 0 1-1-4A8.4 8.4 0 0 1 11.5 2 8.4 8.4 0 0 1 21 11.5z"/></svg>
+      聊天
+    </span>
+    <span class="tab"></span><span class="tab"></span><span class="tab"></span><span class="tab"></span>
+  </nav>
+
+</body>
+</html>

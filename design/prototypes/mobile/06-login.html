@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<!-- chirp 手机端原型 · 06 登录(补稿,2026-11-28 步骤二)
+     布局:全屏居中(无页签,未认证态)→ 品牌占位标识 + 「登录到 Chirp」→
+          服务器卡(ws/wss 基址输入,harmony HostPage 语义并入——首次启动展开)→
+          用户 ID 输入 → 主操作「登录」胶囊 → 开发模式注记
+     交互:基址校验失败行内报错(「地址需以 ws:// 或 wss:// 开头」);
+          登录中按钮置灰换「登录中…」;连接失败红字「无法连接到服务器,请稍后再试」
+     状态:本稿画默认态 + 行内错误示例;账号密码登录为协议面正式路径,
+          当前各端实现为 scaffold 用户 ID 直登(开发模式),字段不虚构——
+          密码字段待后端凭据 UI 落地后同版式追加
+     同源:harmony LoginPage+HostPage 语义合并为单屏;桌面/web LoginPage 同字段 -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chirp 手机原型 · 登录</title>
+<link rel="stylesheet" href="chirp.css">
+<style>
+  /* 页内补充:表单字段(原型其余页无输入表单,token 与 chirp.css 同源) */
+  .form { display: flex; flex-direction: column; gap: 14px; }
+  .label { font-size: 12px; font-weight: 700; color: var(--text-2); margin-bottom: 6px; display: block; }
+  .input {
+    width: 100%; height: 44px; border-radius: var(--r-row);
+    background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--text); font-size: 15px; padding: 0 14px;
+    display: flex; align-items: center;
+  }
+  .input.err { border-color: var(--danger); }
+  .input .ph { color: var(--text-3); }
+  .hint { font-size: 12px; color: var(--text-3); margin-top: 6px; }
+  .hint.err { color: var(--danger); }
+  .brand { display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 36px 0 28px; }
+  .brand .logo-mark { width: 56px; height: 56px; border-radius: 16px; }
+  .brand .logo-mark svg { width: 30px; height: 30px; }
+  .brand h1 { font-size: 21px; font-weight: 700; }
+  .brand p { font-size: 13px; color: var(--text-2); }
+</style>
+</head>
+<body>
+
+  <div class="content" style="justify-content:center; padding:0 24px">
+
+    <!-- 品牌区:几何声波占位,非真实 logo -->
+    <div class="brand">
+      <span class="logo-mark" aria-label="Chirp 占位标识">
+        <svg class="ic" viewBox="0 0 24 24" style="stroke:#fff">
+          <path d="M4 12h2M9 6v12M14 9v6M19 11v2"/>
+        </svg>
+      </span>
+      <h1>登录到 Chirp</h1>
+      <p>游戏好友与聊天,一个账号通行</p>
+    </div>
+
+    <div class="form">
+      <!-- 服务器基址(harmony HostPage 语义并入;首次启动展开,已配置时折叠为一行)
+           错误态示例(不在本截图内):输入框红描边 + 红字「地址需以 ws:// 或 wss:// 开头」 -->
+      <div>
+        <span class="label">服务器</span>
+        <div class="input">ws://192.168.1.5:8080</div>
+        <div class="hint">聊天/好友/组队/语音/设备五个平面按基址拼 /ws/{chat,social,party,voice,device}</div>
+      </div>
+
+      <!-- 用户 ID(当前实现:scaffold 直登;密码字段待凭据 UI 后追加,不虚构) -->
+      <div>
+        <span class="label">用户 ID</span>
+        <div class="input">alice</div>
+      </div>
+
+      <button class="btn primary block" type="button">登录</button>
+      <div class="hint" style="text-align:center">开发模式:输入用户 ID 即可登录</div>
+    </div>
+
+  </div>
+
+</body>
+</html>

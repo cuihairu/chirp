@@ -51,7 +51,7 @@
   <h1>Chirp 手机端原型 <span style="font-size:14px;color:var(--text-3)">移动通用稿 · 375×812</span></h1>
   <div class="sub">双平面定位:游戏通信 SDK + 玩家聊天 app · 与 <a href="../../../docs/design-notes/app_chat_prototype.md">app_chat_prototype.md</a>「三、手机端原型」同源,不新增协议能力</div>
 
-  <div class="banner">⚠ 设计稿,二审中——非实现。01/02/04/05 用户已通过;03 按审核意见修订(来源游戏标签+筛选)重发审。整体二审通过前不进文档站轮播、不在 README/能力矩阵引用。</div>
+  <div class="banner">⚠ 设计稿——非实现。01/02/04/05 用户一审通过;03 修订稿代决通过(FW1016D,可推翻)。<b>06–10 五页为 2026-11-28 步骤二补稿(登录/建群/组队语音/设备/群设置,配套 docs/ux/design-spec.md),待用户过目,未过目不算通过。</b></div>
 
   <h2>设计 TOKEN</h2>
   <div class="tokens">
@@ -102,13 +102,43 @@
         <span>在线设备卡 + 顶号契约 · 词库过滤 · 顶栏头像入口</span>
         <span class="file">05-profile.html</span></div>
     </a>
+    <a class="page-card" href="06-login.html">
+      <img src="shots/06-login.png" alt="登录">
+      <div class="cap"><b>06 登录(补稿 2026-11-28)</b>
+        <span>服务器基址(HostPage 并入)· 用户 ID · 行内校验错误态</span>
+        <span class="file">06-login.html</span></div>
+    </a>
+    <a class="page-card" href="07-group-create.html">
+      <img src="shots/07-group-create.png" alt="新建群组">
+      <div class="cap"><b>07 新建群组(补稿 2026-11-28)</b>
+        <span>名称/描述 · TTL 分段档位 · 初始成员 chip</span>
+        <span class="file">07-group-create.html</span></div>
+    </a>
+    <a class="page-card" href="08-party-voice.html">
+      <img src="shots/08-party-voice.png" alt="组队语音">
+      <div class="cap"><b>08 组队语音(补稿 2026-11-28)</b>
+        <span>组队房间/成员状态 chip · 语音说话态/静音/拒听 · 协议面注记</span>
+        <span class="file">08-party-voice.html</span></div>
+    </a>
+    <a class="page-card" href="09-devices.html">
+      <img src="shots/09-devices.png" alt="设备">
+      <div class="cap"><b>09 设备(补稿 2026-11-28)</b>
+        <span>本设备推送注册态 · 在线设备 + 移除 · 顶号契约 · 游戏在线开关</span>
+        <span class="file">09-devices.html</span></div>
+    </a>
+    <a class="page-card" href="10-group-settings.html">
+      <img src="shots/10-group-settings.png" alt="群设置">
+      <div class="cap"><b>10 群设置(补稿 2026-11-28)</b>
+        <span>群信息/群昵称 · 成员角色与禁言 chip · 退出/解散危险键</span>
+        <span class="file">10-group-settings.html</span></div>
+    </a>
   </div>
 
   <h2>导航骨架</h2>
   <div style="color:var(--text-2);font-size:14px;max-width:760px">
     底部五页签 = 桌面 Rail 同源映射(聊天/好友/组队/语音/设备);通知中心从会话列表顶栏 🔔 进入,
     「我的」从顶栏头像进入——两者不占页签。对话框(好友添加/建群/群设置/长按气泡)一律全屏 sheet。
-    本批出用户指定五页;组队/语音/设备/登录等其余屏线框以原型文档 ASCII 稿为准,审核后按同 token 体系补齐。
+    原五页(01–05)之外,登录/建群/组队语音/设备/群设置五屏已按同 token 体系补稿(06–10,2026-11-28),待用户过目。
   </div>
 
   <footer>
