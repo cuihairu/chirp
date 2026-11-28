@@ -44,7 +44,9 @@ class HomeActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.nav_chat -> show(SessionsFragment())
                 R.id.nav_friends -> show(FriendsFragment())
-                else -> show(StubTabFragment())
+                R.id.nav_party -> show(PartyVoiceFragment.newInstance(voice = false))
+                R.id.nav_voice -> show(PartyVoiceFragment.newInstance(voice = true))
+                else -> show(StubTabFragment()) // 设备 tab lands next commit
             }
             true
         }

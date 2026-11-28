@@ -113,4 +113,37 @@
     <string name="group_settings_alias_title">我的群昵称</string>
     <string name="group_settings_alias_saved">群昵称已更新</string>
     <string name="group_settings_mute_title">禁言时长 (秒,0 = 解除)</string>
+
+    <!-- Party + voice (design 08) -->
+    <string name="tab_party_title">组队</string>
+    <string name="tab_voice_title">语音</string>
+    <string name="party_empty_hint">还没有组队。创建一个,拉好友一起开黑。</string>
+    <string name="party_create">创建组队</string>
+    <string name="party_head">%1$s · %2$d/%3$d 人</string>
+    <string name="party_ready_label">我已准备</string>
+    <string name="party_ready_on">已准备</string>
+    <string name="party_ready_off">未准备</string>
+    <string name="party_invite">邀请</string>
+    <string name="party_disband">解散</string>
+    <string name="party_leave">退出组队</string>
+    <string name="party_invite_target">被邀请人 user id</string>
+    <string name="party_invite_sent">邀请已发出</string>
+    <string name="party_invite_card">%1$s 邀请你加入组队</string>
+    <string name="party_disband_confirm">解散后所有成员退出,确定?</string>
+    <string name="party_kick_confirm">把 %1$s 移出组队?</string>
+    <string name="party_kick">移出组队</string>
+    <string name="voice_note">语音为控制面:房间创建/加入/静音/拒听与成员状态在此管理;媒体协商不在本端范围 (与桌面端一致)。</string>
+    <string name="voice_create">创建房间</string>
+    <string name="voice_join">加入房间</string>
+    <string name="voice_join_target">房间 ID</string>
+    <string name="voice_room_head">%1$s · %2$d 人在线</string>
+    <string name="voice_mute_label">静音</string>
+    <string name="voice_deafen_label">拒听</string>
+    <string name="voice_leave">退出房间</string>
+    <string name="voice_state_speaking">说话中</string>
+    <string name="voice_state_connected">在线</string>
+    <string name="voice_state_muted">已静音</string>
+    <string name="voice_state_deafened">拒听中</string>
+    <string name="voice_state_joining">连接中</string>
+    <string name="action_failed">操作失败 (%1$s)</string>
 </resources>

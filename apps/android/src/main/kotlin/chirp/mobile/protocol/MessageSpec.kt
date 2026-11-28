@@ -72,6 +72,11 @@ object MsgSpecs {
     val getGroupMembers = MessageSpec(
         Gateway.MsgID.GET_GROUP_MEMBERS_REQ, Gateway.MsgID.GET_GROUP_MEMBERS_RESP, Chat.GetGroupMembersResponse::parseFrom,
     )
+    // Wire pair 2109/2110 mapped here for the settings screen; no other
+    // client maps it yet (web/desktop read groups from GET_USER_GROUPS).
+    val getGroupInfo = MessageSpec(
+        Gateway.MsgID.GET_GROUP_INFO_REQ, Gateway.MsgID.GET_GROUP_INFO_RESP, Chat.GetGroupInfoResponse::parseFrom,
+    )
 
     // Group-domain moderation/search (alias 2122/2123, search 2248/2249, mute
     // 2250/2251) and report/dm-restriction (2253/2254, 2255-2258).
