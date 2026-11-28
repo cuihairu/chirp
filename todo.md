@@ -314,4 +314,9 @@
 ## App 界面重设计（CHIRP-UX-001，2026-11-28 用户令：三步顺序不可跳）
 - [x] 步骤一 · 功能清单 ✅ `353b36b`：docs/ux/inventory.md——从代码反推 6 图形端功能面/完成度/端差异；关键发现：设计语言已存在且用户审核过（design/prototypes/mobile/ 一审通过 4 页+代决 1 页，harmony Tokens.ts 为第一实现），步骤二改为「整理 token+补五屏稿+逐端差异表」而非新造。
 - [x] 步骤二 · 设计规范+补稿 ✅ `b24301e`：docs/ux/design-spec.md（设计语言成文：indigo 品牌色/深色规范态+浅色提案/字阶/间距圆角阶/组件规范；逐端逐屏差异表 android=大从零建、ios=中 token 化、harmony=小对齐、desktop 青绿→indigo、web/admin 小；实施顺序与待裁决 5 项）+ design/prototypes/mobile/ 06–10 五屏 HTML 稿与截图（登录/建群/组队语音/设备/群设置，同 token 体系，chrome-headless-shell 1255 出图 375×812 @2x），README/index 同步。**设计稿待用户过目——未过目不进步骤三**。
-- [ ] 步骤三 · 逐端实现（BLOCKED on 用户过目步骤二设计稿）：android Material 3+token 从零建界面层（主题骨架→登录→会话→聊天→好友→建群/群设置→组队语音→设备/通知/我的，每屏一 commit 构建绿）；ios SwiftUI token 化逐屏替换；harmony 对齐核查；desktop/web/admin 主题对齐单 commit。每屏截图 vs mockup 对照；UI 闭项=用户真机目验。红线：logo 用户资产不替换；语音媒体面不设计（未接入）；正式版本红线不变。
+- [ ] 步骤三 · 逐端实现（用户 2026-11-28 重发「执行 CHIRP-UX-001」= §6 默认裁决放行）：
+  - [x] android 全屏 ✅（Material 3+token 从零建，每屏一 commit 构建绿 testDebugUnitTest 同跑）：主题骨架 ✅ `45408009`；登录 ✅ `edb900c1`；会话列表+五页签骨架 ✅ `abd4c31`；聊天窗 ✅ `b9c423e`；好友(请求/在线/游戏段) ✅ `774b7f1`；建群+群设置 ✅ `054c0b0`；组队+语音(控制面) ✅ `651af08`；设备(推送注册态/顶号契约/游戏在线偏好) ✅ `2d96dbf`；通知中心(实时 feed,无服务端历史如实注记)+我的+退出登录 ✅ `0214ab7`。协议诚实降级:群解散无协议→禁用+注记;语音 join 空 sdp_offer(桌面同口径);词库过滤=服务端驱动只读态;通知 feed=客户端实时汇总登出即清。
+  - [ ] ios SwiftUI token 化逐屏替换
+  - [ ] harmony 对齐核查（§4.3）
+  - [ ] desktop/web/admin 主题对齐单 commit（青绿→indigo+圆角阶+三档文本）
+  - 每屏截图 vs mockup 对照（待模拟器/真机）；UI 闭项=用户真机目验。红线：logo 用户资产不替换；语音媒体面不设计（未接入）；正式版本红线不变。
